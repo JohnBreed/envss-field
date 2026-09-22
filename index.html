@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2D3A6A">
+  <title>ENVSS Field</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <img src="logo.svg" alt="Environmental Site Services">
+    <div class="titles">
+      <h1>ENVSS Field</h1>
+      <p id="whoLabel">Capture · offline first</p>
+    </div>
+    <div id="onlineDot" class="online-dot" title="Online status"></div>
+  </header>
+  <div id="loginGate" class="login-gate hidden">
+    <div class="login-card">
+      <h2>Sign in</h2>
+      <p>Use your Environmental Site Services Google account. You stay signed in on this device until you sign out.</p>
+      <div id="googleBtn"></div>
+      <p class="muted" style="margin-top:16px">If Google is not set up yet, type your name.</p>
+      <label>Name</label>
+      <input id="manualName" placeholder="Jane Smith">
+      <label>Work email</label>
+      <input id="manualEmail" placeholder="jane@envss.com.au">
+      <div class="footer-actions">
+        <button class="btn orange" onclick="manualLogin()">Continue</button>
+      </div>
+    </div>
+  </div>
+  <div id="app"></div>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

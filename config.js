@@ -1,7 +1,6 @@
-/* Paste the Google Cloud OAuth Web client ID here after you create it.
-   Until then the app still asks for a name so field trials keep working. */
+/* Google Workspace Web client ID */
 window.ENVSS_CONFIG = {
-  googleClientId: "",
+  googleClientId: "774855253897-dfb6mm9j2bi14uig1lg06pbi43qdp4bf.apps.googleusercontent.com",
   allowedDomain: "envss.com.au",
   appTitle: "ENVSS Field"
 };
