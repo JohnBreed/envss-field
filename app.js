@@ -1,16 +1,29 @@
-const KEY = "envss-field-v02";
+const KEY = "envss-field-v03";
+
+const REJECTS = [
+  { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
+  { code: "damaged_filter", label: "Damaged filter / cassette", photo: true },
+  { code: "flow_tolerance", label: "Flow outside tolerance", photo: false },
+  { code: "unused", label: "Unused / not deployed", photo: false },
+  { code: "other", label: "Other", photo: false }
+];
 
 const DEFAULT = {
   catalogs: {
     contaminants: [
-      { id: "INH", name: "Inhalable dust", code: "INH", headHint: "IESS", flowTolPct: 10, defaultFlow: "2.0" },
-      { id: "ASB", name: "Asbestos fibres", code: "ASB", headHint: "RESS", flowTolPct: 5, defaultFlow: "1.0" },
-      { id: "SIL", name: "Respirable silica", code: "SIL", headHint: "RESS", flowTolPct: 5, defaultFlow: "2.2" },
-      { id: "DP", name: "Diesel particulate", code: "DP", headHint: "DP", flowTolPct: 5, defaultFlow: "2.0" },
-      { id: "WLD", name: "Welding fume", code: "WLD", headHint: "IESS", flowTolPct: 10, defaultFlow: "2.0" }
+      { id: "INH", name: "Inhalable dust", code: "INH", kind: "airborne", headHint: "IESS", flowTolPct: 10, defaultFlow: "2.0", minMinutes: "", minVolumeL: "", desiredVolumeL: "" },
+      { id: "ASB", name: "Asbestos fibres", code: "ASB", kind: "airborne", headHint: "RESS", flowTolPct: 5, defaultFlow: "1.0", minMinutes: "", minVolumeL: "", desiredVolumeL: "" },
+      { id: "SIL", name: "Respirable silica", code: "SIL", kind: "airborne", headHint: "RESS", flowTolPct: 5, defaultFlow: "2.2", minMinutes: "", minVolumeL: "", desiredVolumeL: "" },
+      { id: "DP", name: "Diesel particulate", code: "DP", kind: "airborne", headHint: "DP", flowTolPct: 5, defaultFlow: "2.0", minMinutes: "", minVolumeL: "", desiredVolumeL: "" },
+      { id: "WLD", name: "Welding fume", code: "WLD", kind: "airborne", headHint: "IESS", flowTolPct: 10, defaultFlow: "2.0", minMinutes: "", minVolumeL: "", desiredVolumeL: "" },
+      { id: "NOISE", name: "Noise dose", code: "NOISE", kind: "noise", headHint: "", flowTolPct: "", defaultFlow: "", minMinutes: "", minVolumeL: "", desiredVolumeL: "" }
     ],
     pumps: [{ serial: "123456" }, { serial: "234567" }],
-    heads: [{ id: "IESS01", kind: "inhalable" }, { id: "RESS001", kind: "respirable" }, { id: "DP01", kind: "diesel" }]
+    heads: [{ id: "IESS01", kind: "inhalable" }, { id: "RESS001", kind: "respirable" }, { id: "DP01", kind: "diesel" }],
+    dosimeters: [{ serial: "N0001" }],
+    occupations: ["Plant operator","Maintainer / fitter","Boilermaker / welder","Shotfirer","Supervisor","Labourer","HV driver","Process technician"],
+    respirators: [{ brand: "3M", model: "6000 series" }, { brand: "Unknown", model: "" }],
+    hpds: [{ brand: "Unknown", model: "", style: "earmuff", classRating: "" }]
   },
   projects: [{ id: "p1900", number: "001900", name: "Demo – Perth site", site: "Perth" }],
   events: [{ id: "e1900-001", projectId: "p1900", code: "001900-001", stage: "prepped", date: new Date().toISOString().slice(0,10), notes: "" }],
@@ -135,6 +148,20 @@ function deriveEventStage(ev) {
   return ev.stage || "planned";
 }
 
+function kindLabel(t) {
+  return ({
+    airborne_personal: "Airborne · personal",
+    airborne_static: "Airborne · static",
+    blank: "Field blank",
+    noise_personal: "Noise · personal",
+    noise_static: "Noise · static"
+  })[t.trainKind || (t.mode === "static" ? "airborne_static" : "airborne_personal")] || t.trainKind || "";
+}
+function isNoise(t) { return (t.trainKind || "").startsWith("noise") || t.contaminantId === "NOISE"; }
+function isBlank(t) { return t.trainKind === "blank"; }
+function isAirbornePersonal(t) { return (t.trainKind || "airborne_personal") === "airborne_personal"; }
+function isStatic(t) { return (t.trainKind || "").endsWith("static") || t.mode === "static"; }
+
 function badge(status) {
   const label = ({
     planned: "Planned", prepped: "Prepped", active: "Active", complete: "Complete",
@@ -158,6 +185,7 @@ function render() {
   else if (view.page === "event") root.innerHTML = eventHtml();
   else if (view.page === "train") root.innerHTML = trainHtml();
   else if (view.page === "newEvent") root.innerHTML = newEventHtml();
+  else if (view.page === "pickType") root.innerHTML = pickTypeHtml();
   bind();
 }
 
@@ -209,7 +237,7 @@ function eventHtml() {
       </div>
       <div class="row" style="margin:10px 0">
         <button class="btn ghost" onclick="goDash()">Dashboard</button>
-        <button class="btn mid" onclick="addTrain('${ev.id}')">Add sample train</button>
+        <button class="btn mid" onclick="openPickType('${ev.id}')">Add sample train</button>
         <button class="btn green" onclick="exportEvent('${ev.id}')">Export JSON</button>
         <button class="btn ghost" onclick="exportCsv('${ev.id}')">Export CSV</button>
       </div>
@@ -221,7 +249,7 @@ function eventHtml() {
         return `<div class="train" onclick="openTrain('${t.id}')">
           <div class="pouch">${t.pouch}</div>
           <div>
-            <div><strong>${c ? c.code + " · " + c.name : "Contaminant"}</strong> · ${t.pumpSerial || "no pump"} · ${t.headId || "no cassette"}</div>
+            <div><strong>${kindLabel(t)} · ${c ? c.code + " · " + c.name : "—"}</strong> · ${t.trainKind && t.trainKind.startsWith("noise") ? (t.dosimeterSerial || "no badge") : ((t.pumpSerial || "no pump") + " · " + (t.headId || "no cassette"))}</div>
             <div class="muted">${who} ${t.startAt ? "· start " + fmtTime(t.startAt) : ""} ${t.endAt ? "· stop " + fmtTime(t.endAt) : ""}</div>
           </div>
           ${badge(t.status)}
@@ -249,15 +277,30 @@ function trainHtml() {
         <h2 class="brand-type" style="margin:0;color:var(--navy)">Sample train / pouch ${esc(t.pouch)}</h2>
         ${badge(t.status)}
       </div>
+      <p class="muted">${kindLabel(t)}</p>
+      <input type="hidden" id="mode" value="${esc(t.mode || "personal")}">
       <div class="grid2">
         <div>
           <label>Pouch number</label>
           <input id="pouch" value="${esc(t.pouch)}">
           <label>Contaminant</label>
           <div class="combo">
-            <input id="contam" value="${esc(c ? c.code + " — " + c.name : "")}" placeholder="INH, SIL, DP, WLD, ASB">
+            <input id="contam" value="${esc(c ? c.code + " — " + c.name : "")}" placeholder="${isNoise(t) ? "NOISE" : "INH, SIL, DP, WLD, ASB"}">
             <div class="suggest" id="sug-contam"></div>
           </div>
+          ${isNoise(t) ? `
+          <label>Dosimeter serial</label>
+          <div class="combo">
+            <input id="dosimeter" value="${esc(t.dosimeterSerial)}" placeholder="Badge serial">
+            <div class="suggest" id="sug-dosimeter"></div>
+          </div>` : isBlank(t) ? `
+          <label>Sampling cassette / head</label>
+          <div class="combo">
+            <input id="head" value="${esc(t.headId)}" placeholder="IESS… / RESS… / DP…">
+            <div class="suggest" id="sug-head"></div>
+          </div>
+          <label>Media / filter ID (if different)</label>
+          <input id="media" value="${esc(t.mediaId)}">` : `
           <label>Pump serial</label>
           <div class="combo">
             <input id="pump" value="${esc(t.pumpSerial)}" placeholder="Type serial — fleet or hire">
@@ -269,10 +312,11 @@ function trainHtml() {
             <div class="suggest" id="sug-head"></div>
           </div>
           <label>Media / filter ID (if different)</label>
-          <input id="media" value="${esc(t.mediaId)}" placeholder="Lab number if not the cassette ID">
+          <input id="media" value="${esc(t.mediaId)}">`}
         </div>
         <div>
-          <label>Start flow (L/min) — set to the intended flow</label>
+          ${isBlank(t) || isNoise(t) ? `<p class="muted">${isBlank(t) ? "Field blank is not started. No flow or volume." : "Noise trains have no pump flow or cassette volume."}</p>` : `
+          <label>Start flow (L/min)</label>
           <input id="startFlow" value="${esc(t.startFlow)}" inputmode="decimal">
           <label>End flow (L/min)</label>
           <input id="endFlow" value="${esc(t.endFlow)}" inputmode="decimal">
@@ -282,18 +326,20 @@ function trainHtml() {
           <input value="${mins == null ? "—" : mins.toFixed(1)}" disabled>
           <label>Volume sampled (L)</label>
           <input value="${vol == null ? "—" : vol.toFixed(1)}" disabled>
-          <label>Sample type</label>
-          <select id="mode">
-            <option value="personal" ${t.mode==="personal"?"selected":""}>Personal (worn)</option>
-            <option value="static" ${t.mode==="static"?"selected":""}>Static (location)</option>
-          </select>
+          <label>Desired / method minimum volume (L)</label>
+          <input id="desiredVolume" value="${esc(t.desiredVolumeL || c?.desiredVolumeL || "")}" inputmode="decimal">
+          <label>Method minimum minutes</label>
+          <input id="minMinutes" value="${esc(t.minMinutes || c?.minMinutes || "")}" inputmode="decimal">`}
         </div>
       </div>
-      ${chk.pct != null ? `<p class="${chk.ok ? "muted" : ""}" style="${chk.ok ? "" : "color:var(--danger);font-weight:700"}">
-        End flow is ${chk.pct.toFixed(1)}% from start. Tolerance for ${c ? c.code : "this method"} is ±${chk.tol}% (${c?.code === "INH" || c?.code === "WLD" ? "inhalable 10%" : "respirable / fibre / DPM 5%"}).
+      ${!isBlank(t) && !isNoise(t) && chk.pct != null ? `<p class="${chk.ok ? "muted" : ""}" style="${chk.ok ? "" : "color:var(--danger);font-weight:700"}">
+        End flow is ${chk.pct.toFixed(1)}% from start. Tolerance ±${chk.tol}%.
         ${chk.ok ? "Within tolerance." : "Outside tolerance — reject unless you have a documented reason."}
-      </p>` : `<p class="muted">Tolerance check runs when both start and end flow are entered. INH / WLD ±10%. SIL / DP / ASB ±5%. Confirm against the method if this is wrong.</p>`}
-      <div id="modeFields">${modeFields(t)}</div>
+      </p>` : ""}
+      <div id="modeFields">${isBlank(t) ? "" : modeFields(t)}</div>
+      ${isAirbornePersonal(t) ? rpdFields(t) : ""}
+      ${isNoise(t) ? hpdFields(t) : ""}
+      ${isBlank(t) ? "" : `
       <div class="times" style="margin-top:8px">
         <div>
           <label>Start time (editable)</label>
@@ -308,11 +354,18 @@ function trainHtml() {
         <button class="btn orange lg" id="btnStart" ${running||t.status==="rejected"?"disabled":""}>START</button>
         <button class="btn green lg" id="btnStop" ${!running?"disabled":""}>STOP</button>
       </div>
-      <p class="muted">If someone hits START or STOP by mistake, change the times above and Save. That write is kept in the audit log.</p>
+      <p class="muted">Accidental START/STOP: edit the times and Save. Logged in the audit trail.</p>`}
       <label>Comments</label>
       <textarea id="comments">${esc(t.comments)}</textarea>
+      <button type="button" class="btn ghost" id="btnSpeak">Speak comment</button>
       <label>Reject reason</label>
-      <input id="rejectReason" value="${esc(t.rejectReason)}" placeholder="Flow out of tolerance, damaged cassette, unused…">
+      <div class="filters" id="rejectChips">
+        ${REJECTS.map(r => `<button type="button" class="chip ${t.rejectCode===r.code?"on":""}" data-rej="${r.code}">${r.label}</button>`).join("")}
+      </div>
+      <input id="rejectReason" value="${esc(t.rejectReason)}" placeholder="Extra detail if Other">
+      ${t.rejectCode === "damaged_filter" ? `<label>Photo of damage (optional)</label>
+        <input id="photo" type="file" accept="image/*" capture="environment">
+        ${t.photo ? `<p class="muted">A photo is saved on this device.</p><img alt="damage" src="${t.photo}" style="max-width:220px;border-radius:8px">` : ""}` : ""}
       <div class="footer-actions">
         <button class="btn" id="btnSave">Save changes</button>
         <button class="btn ghost" id="btnAddPump">Add this pump to fleet</button>
@@ -329,19 +382,88 @@ function trainHtml() {
 }
 
 function modeFields(t) {
-  if (t.mode === "static") {
+  if (isStatic(t)) {
     return `<label>Static location</label><input id="location" value="${esc(t.location)}" placeholder="e.g. Crusher west">`;
   }
   const p = t.person || {};
   return `<div class="grid2">
     <div><label>First name</label><input id="first" value="${esc(p.first)}"></div>
     <div><label>Last name</label><input id="last" value="${esc(p.last)}"></div>
+    <div><label>Sex</label>
+      <select id="sex">
+        <option value="">Not stated</option>
+        <option value="male" ${p.sex==="male"?"selected":""}>Male</option>
+        <option value="female" ${p.sex==="female"?"selected":""}>Female</option>
+      </select>
+    </div>
     <div><label>Date of birth</label><input id="dob" type="date" value="${esc(p.dob)}"></div>
-    <div><label>Occupation</label><input id="occupation" value="${esc(p.occupation)}"></div>
+    <div><label>Occupation</label>
+      <div class="combo">
+        <input id="occupation" value="${esc(p.occupation)}" placeholder="Type or pick">
+        <div class="suggest" id="sug-occupation"></div>
+      </div>
+    </div>
     <div><label>Company / contractor</label><input id="company" value="${esc(p.company)}"></div>
     <div><label>Hours / shift</label><input id="hours" value="${esc(p.hours)}"></div>
     <div><label>Days on</label><input id="daysOn" value="${esc(p.daysOn)}"></div>
     <div><label>Days off</label><input id="daysOff" value="${esc(p.daysOff)}"></div>
+  </div>`;
+}
+function rpdFields(t) {
+  const r = t.rpd || {};
+  return `<h3 class="brand-type" style="color:var(--navy)">Respirator</h3>
+    <label>Respirator worn</label>
+    <select id="rpdWorn"><option value="">—</option>
+      <option value="yes" ${r.worn==="yes"?"selected":""}>Yes</option>
+      <option value="no" ${r.worn==="no"?"selected":""}>No</option>
+    </select>
+    <label>Brand / model</label>
+    <input id="rpdModel" value="${esc(r.model)}" placeholder="3M 6000 or Unknown">
+    <label>Clean-shaven</label>
+    <select id="rpdShaven"><option value="">—</option>
+      <option value="yes" ${r.shaven==="yes"?"selected":""}>Yes</option>
+      <option value="no" ${r.shaven==="no"?"selected":""}>No</option>
+      <option value="na" ${r.shaven==="na"?"selected":""}>NA</option>
+    </select>
+    <label>Fit-tested</label>
+    <select id="rpdFit"><option value="">—</option>
+      <option value="yes" ${r.fit==="yes"?"selected":""}>Yes</option>
+      <option value="no" ${r.fit==="no"?"selected":""}>No</option>
+      <option value="unknown" ${r.fit==="unknown"?"selected":""}>Unknown</option>
+    </select>`;
+}
+function hpdFields(t) {
+  const h = t.hpd || {};
+  return `<h3 class="brand-type" style="color:var(--navy)">Hearing protection</h3>
+    <label>HPD worn</label>
+    <select id="hpdWorn"><option value="">—</option>
+      <option value="yes" ${h.worn==="yes"?"selected":""}>Yes</option>
+      <option value="no" ${h.worn==="no"?"selected":""}>No</option>
+      <option value="unknown" ${h.worn==="unknown"?"selected":""}>Unknown</option>
+    </select>
+    <label>Brand / model</label>
+    <input id="hpdModel" value="${esc(h.model)}" placeholder="Brand model or Unknown">
+    <label>Style</label>
+    <input id="hpdStyle" value="${esc(h.style)}" placeholder="earmuff / earplug">
+    <label>Class / attenuation</label>
+    <input id="hpdClass" value="${esc(h.classRating)}" placeholder="if known">`;
+}
+
+function pickTypeHtml() {
+  const ev = eventById(view.eventId);
+  const opts = [
+    ["airborne_personal", "Airborne · personal", "Worn pump. Person, RPD, flow, start/stop."],
+    ["airborne_static", "Airborne · static", "Fixed location. No person, no RPD."],
+    ["blank", "Field blank", "Control. Contaminant + cassette only. Not run."],
+    ["noise_personal", "Noise · personal", "Dose badge on a person. HPD. No cassette."],
+    ["noise_static", "Noise · static", "Dose badge at a location."]
+  ];
+  return `<div class="wrap">
+    <button class="btn ghost" onclick="openEvent('${view.eventId}')">← ${ev ? ev.code : "Event"}</button>
+    <h2 class="brand-type" style="color:var(--navy)">Add sample train</h2>
+    ${opts.map(([id, title, blurb]) => `<div class="card" style="cursor:pointer" onclick="addTrain('${view.eventId}','${id}')">
+      <strong>${title}</strong><div class="muted">${blurb}</div>
+    </div>`).join("")}
   </div>`;
 }
 
@@ -385,25 +507,54 @@ function bind() {
       }
       t.contaminantId = c.id;
     });
-    wireCombo("pump", db.catalogs.pumps.map(p => p.serial), (val) => { t.pumpSerial = val.trim(); });
-    wireCombo("head", db.catalogs.heads.map(h => h.id), (val) => { t.headId = val.trim().toUpperCase(); });
-    document.getElementById("mode").onchange = () => { collectTrain(t); t.mode = document.getElementById("mode").value; save(); };
-    document.getElementById("btnStart").onclick = () => {
+    wireCombo("pump", (db.catalogs.pumps || []).map(p => p.serial), (val) => { t.pumpSerial = val.trim(); });
+    wireCombo("head", (db.catalogs.heads || []).map(h => h.id), (val) => { t.headId = val.trim().toUpperCase(); });
+    wireCombo("dosimeter", (db.catalogs.dosimeters || []).map(d => d.serial), (val) => { t.dosimeterSerial = val.trim(); });
+    wireCombo("occupation", db.catalogs.occupations || [], (val) => { t.person = t.person || {}; t.person.occupation = val; });
+    document.querySelectorAll("[data-rej]").forEach(b => b.onclick = () => {
+      t.rejectCode = b.dataset.rej;
+      t.rejectReason = REJECTS.find(r => r.code === t.rejectCode)?.label || t.rejectReason;
+      save();
+    });
+    const speak = document.getElementById("btnSpeak");
+    if (speak) speak.onclick = () => startSpeech();
+    const photo = document.getElementById("photo");
+    if (photo) photo.onchange = () => {
+      const f = photo.files && photo.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => { t.photo = reader.result; audit(t, "Photo attached", "damaged filter"); save(); };
+      reader.readAsDataURL(f);
+    };
+    const stopBtn = document.getElementById("btnStop");
+    if (stopBtn) stopBtn.onclick = () => {
+      collectTrain(t);
+      const mins = (() => {
+        const start = t.startAt ? new Date(t.startAt) : new Date();
+        return (Date.now() - start) / 60000;
+      })();
+      const vol = volumeLitres({ ...t, endAt: nowIso() });
+      const needM = parseFloat(t.minMinutes || "");
+      const needV = parseFloat(t.desiredVolumeL || "");
+      let warn = "";
+      if (Number.isFinite(needM) && mins < needM) warn = `Runtime about ${mins.toFixed(0)} min is under the method minimum of ${needM} min.`;
+      if (Number.isFinite(needV) && vol != null && vol < needV) warn += ` Volume about ${vol.toFixed(0)} L is under the desired ${needV} L.`;
+      if (warn && !confirm(warn + " Stop anyway? This is logged.")) return;
+      const prev = t.endAt;
+      t.endAt = nowIso();
+      t.status = "ended";
+      audit(t, "STOP pressed", (prev ? `previous stop ${fmtTime(prev)}` : "") + (warn ? " · early-stop confirmed" : ""));
+      const chk = flowCheck(t);
+      if (!chk.ok) audit(t, "Flow outside tolerance", `${chk.pct.toFixed(1)}% vs ±${chk.tol}%`);
+      save();
+    };
+    const startBtn = document.getElementById("btnStart");
+    if (startBtn) startBtn.onclick = () => {
       collectTrain(t);
       const prev = t.startAt;
       t.startAt = nowIso();
       t.status = "running";
       audit(t, "START pressed", prev ? `previous start ${fmtTime(prev)}` : "");
-      save();
-    };
-    document.getElementById("btnStop").onclick = () => {
-      collectTrain(t);
-      const prev = t.endAt;
-      t.endAt = nowIso();
-      t.status = "ended";
-      audit(t, "STOP pressed", prev ? `previous stop ${fmtTime(prev)}` : "");
-      const chk = flowCheck(t);
-      if (!chk.ok) audit(t, "Flow outside tolerance", `${chk.pct.toFixed(1)}% vs ±${chk.tol}%`);
       save();
     };
     document.getElementById("btnSave").onclick = () => {
@@ -465,6 +616,25 @@ function collectTrain(t) {
   t.mode = g("mode")?.value || t.mode;
   t.comments = g("comments")?.value || "";
   t.rejectReason = g("rejectReason")?.value || "";
+  t.dosimeterSerial = g("dosimeter")?.value.trim() || t.dosimeterSerial || "";
+  t.desiredVolumeL = g("desiredVolume")?.value || t.desiredVolumeL || "";
+  t.minMinutes = g("minMinutes")?.value || t.minMinutes || "";
+  if (g("sex") || g("first")) {
+    t.person = t.person || {};
+    t.person.sex = g("sex")?.value || "";
+  }
+  t.rpd = {
+    worn: g("rpdWorn")?.value || "",
+    model: g("rpdModel")?.value || "",
+    shaven: g("rpdShaven")?.value || "",
+    fit: g("rpdFit")?.value || ""
+  };
+  t.hpd = {
+    worn: g("hpdWorn")?.value || "",
+    model: g("hpdModel")?.value || "",
+    style: g("hpdStyle")?.value || "",
+    classRating: g("hpdClass")?.value || ""
+  };
   if (g("startAt")) t.startAt = fromLocalInput(g("startAt").value) || t.startAt;
   if (g("endAt")) {
     const v = fromLocalInput(g("endAt").value);
@@ -502,16 +672,28 @@ function openTrain(id) { view.page = "train"; view.trainId = id; render(); }
 function goDash() { view.page = "dash"; render(); }
 function openNewEvent() { view.page = "newEvent"; render(); }
 
-function addTrain(eventId) {
+function openPickType(eventId) { view.page = "pickType"; view.eventId = eventId; render(); }
+function addTrain(eventId, trainKind) {
   const existing = trainsOf(eventId);
   const next = String((existing.map(t => Number(t.pouch) || 0).sort((a,b)=>b-a)[0] || 0) + 1);
-  db.trains.push({
-    id: uid("t"), eventId, pouch: next, contaminantId: "INH", pumpSerial: "", headId: "",
-    mediaId: "", startFlow: "2.0", endFlow: "", mode: "personal",
-    person: { first: "", last: "", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
-    location: "", startAt: "", endAt: "", status: "prepped", comments: "", rejectReason: "", audit: [{ at: nowIso(), action: "Created", detail: "" }]
-  });
+  const noise = (trainKind || "").startsWith("noise");
+  const blank = trainKind === "blank";
+  const stat = (trainKind || "").endsWith("static");
+  const t = {
+    id: uid("t"), eventId, pouch: next, trainKind: trainKind || "airborne_personal",
+    contaminantId: noise ? "NOISE" : "INH", pumpSerial: "", dosimeterSerial: "", headId: "",
+    mediaId: "", startFlow: blank || noise ? "" : "2.0", endFlow: "", desiredVolumeL: "", minMinutes: "",
+    mode: stat ? "static" : "personal",
+    person: { first: "", last: "", sex: "", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
+    rpd: { worn: "", model: "", shaven: "", fit: "" },
+    hpd: { worn: "", model: "", style: "", classRating: "" },
+    location: "", startAt: "", endAt: "", status: "prepped", comments: "",
+    rejectReason: "", rejectCode: "", photo: "",
+    audit: [{ at: nowIso(), action: "Created", detail: trainKind || "" }]
+  };
+  db.trains.push(t);
   save();
+  openTrain(t.id);
 }
 
 function createEvent() {
@@ -546,11 +728,11 @@ function exportEvent(eventId) {
 }
 function exportCsv(eventId) {
   const ev = eventById(eventId);
-  const rows = [["event","pouch","status","code","contaminant","pump","cassette","media","mode","who_or_where","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectReason","comments"]];
+  const rows = [["event","pouch","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments"]];
   trainsOf(eventId).forEach(t => {
-    const who = t.mode === "static" ? t.location : [t.person.first, t.person.last].filter(Boolean).join(" ");
+    const who = isStatic(t) ? t.location : [t.person.first, t.person.last].filter(Boolean).join(" ");
     const c = contam(t.contaminantId);
-    rows.push([ev.code, t.pouch, t.status, c?.code || "", c?.name || "", t.pumpSerial, t.headId, t.mediaId, t.mode, who, t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectReason, t.comments]);
+    rows.push([ev.code, t.pouch, t.trainKind || "", t.status, c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments]);
   });
   const csv = rows.map(r => r.map(x => `"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   download(new Blob([csv], { type: "text/csv" }), ev.code + "-ENVSS-Field.csv");
@@ -566,7 +748,23 @@ window.openEvent = openEvent;
 window.openTrain = openTrain;
 window.goDash = goDash;
 window.openNewEvent = openNewEvent;
+window.openPickType = openPickType;
 window.addTrain = addTrain;
+
+function startSpeech() {
+  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const box = document.getElementById("comments");
+  if (!Rec || !box) { alert("Voice to text is not available in this browser. Use Chrome."); return; }
+  const r = new Rec();
+  r.lang = "en-AU";
+  r.interimResults = false;
+  r.onresult = ev => {
+    const said = ev.results[0][0].transcript;
+    box.value = (box.value ? box.value + " " : "") + said;
+  };
+  r.onerror = () => alert("Could not hear that. Check the microphone and try again.");
+  r.start();
+}
 window.exportEvent = exportEvent;
 window.exportCsv = exportCsv;
 window.changeOperator = changeOperator;
