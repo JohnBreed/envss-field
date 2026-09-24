@@ -104,6 +104,16 @@ textarea { min-height: 80px; }
   background: #fff; border-radius: 16px; padding: 22px; max-width: 420px; width: 100%;
 }
 .login-card h2 { margin: 0 0 8px; color: var(--navy); font-family: Montserrat, Arial, sans-serif; }
+.check-row { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-weight: 600; }
+.check-row input { width: auto; }
+.comment-wrap { position: relative; }
+.comment-wrap textarea { padding-right: 44px; }
+.mic-btn {
+  position: absolute; right: 8px; top: 8px; border: 0; background: transparent;
+  font-size: 18px; cursor: pointer; color: var(--navy);
+}
+.help { color: #6b7280; font-size: 12px; margin: 4px 0 10px; }
+.back { background: transparent; color: #fff; border: 0; cursor: pointer; font-weight: 700; }
 @media (min-width: 800px) {
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 }

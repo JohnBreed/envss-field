@@ -278,6 +278,12 @@ function trainHtml() {
         ${badge(t.status)}
       </div>
       <p class="muted">${kindLabel(t)}</p>
+      ${isBlank(t) ? "" : `<label>Placement</label>
+        <select id="placement">
+          <option value="personal" ${!isStatic(t)?"selected":""}>Personal</option>
+          <option value="static" ${isStatic(t)?"selected":""}>Static</option>
+        </select>
+        <p class="help">Change this if the train was set up wrong. Person fields and location swap when you save.</p>`}
       <input type="hidden" id="mode" value="${esc(t.mode || "personal")}">
       <div class="grid2">
         <div>
@@ -337,8 +343,6 @@ function trainHtml() {
         ${chk.ok ? "Within tolerance." : "Outside tolerance — reject unless you have a documented reason."}
       </p>` : ""}
       <div id="modeFields">${isBlank(t) ? "" : modeFields(t)}</div>
-      ${isAirbornePersonal(t) ? rpdFields(t) : ""}
-      ${isNoise(t) ? hpdFields(t) : ""}
       ${isBlank(t) ? "" : `
       <div class="times" style="margin-top:8px">
         <div>
@@ -354,18 +358,37 @@ function trainHtml() {
         <button class="btn orange lg" id="btnStart" ${running||t.status==="rejected"?"disabled":""}>START</button>
         <button class="btn green lg" id="btnStop" ${!running?"disabled":""}>STOP</button>
       </div>
-      <p class="muted">Accidental START/STOP: edit the times and Save. Logged in the audit trail.</p>`}
-      <label>Comments</label>
-      <textarea id="comments">${esc(t.comments)}</textarea>
-      <button type="button" class="btn ghost" id="btnSpeak">Speak comment</button>
-      <label>Reject reason</label>
-      <div class="filters" id="rejectChips">
-        ${REJECTS.map(r => `<button type="button" class="chip ${t.rejectCode===r.code?"on":""}" data-rej="${r.code}">${r.label}</button>`).join("")}
+      <p class="help">Accidental START/STOP: edit the times and Save. That change is kept in the audit log.</p>`}
+      <label class="check-row"><input type="checkbox" id="rejectedOn" ${t.status==="rejected" || t.rejectCode ? "checked" : ""}> Sample rejected</label>
+      <p class="help">Tick only if this sample must not go to the lab as valid. Tick again to clear.</p>
+      <div id="rejectBox" style="${t.status==="rejected" || t.rejectCode ? "" : "display:none"}">
+        <div class="filters" id="rejectChips">
+          ${REJECTS.map(r => `<button type="button" class="chip ${t.rejectCode===r.code?"on":""}" data-rej="${r.code}">${r.label}</button>`).join("")}
+        </div>
+        <p class="help">Tap the same reason again to deselect it.</p>
+        ${t.rejectCode ? `<label>Extra detail (optional)</label>
+          <input id="rejectReason" value="${esc(t.rejectReason && t.rejectReason !== (REJECTS.find(r=>r.code===t.rejectCode)||{}).label ? t.rejectReason : "")}" placeholder="Only if needed">` : ""}
+        ${t.rejectCode === "damaged_filter" ? `<label>Photo of filter (optional)</label>
+          <input id="photo" type="file" accept="image/*" capture="environment">
+          ${t.photo ? `<img alt="filter" src="${t.photo}" style="max-width:220px;border-radius:8px">` : ""}` : ""}
       </div>
-      <input id="rejectReason" value="${esc(t.rejectReason)}" placeholder="Extra detail if Other">
-      ${t.rejectCode === "damaged_filter" ? `<label>Photo of damage (optional)</label>
-        <input id="photo" type="file" accept="image/*" capture="environment">
-        ${t.photo ? `<p class="muted">A photo is saved on this device.</p><img alt="damage" src="${t.photo}" style="max-width:220px;border-radius:8px">` : ""}` : ""}
+      <label class="check-row"><input type="checkbox" id="equipDamaged" ${t.equipDamaged ? "checked" : ""}> ENVSS equipment damaged</label>
+      <p class="help">Use this for kit that needs repair billed to the client. Does not reject the sample by itself.</p>
+      <div id="equipBox" style="${t.equipDamaged ? "" : "display:none"}">
+        <label>Photo (time-stamped in the audit log)</label>
+        <input id="equipPhoto" type="file" accept="image/*" capture="environment">
+        ${t.equipPhoto ? `<img alt="equipment" src="${t.equipPhoto}" style="max-width:220px;border-radius:8px">` : ""}
+        <label>What was damaged</label>
+        <input id="equipNote" value="${esc(t.equipNote || "")}" placeholder="Pump case, tubing, badge clip…">
+      </div>
+      ${isAirbornePersonal(t) ? rpdFields(t) : ""}
+      ${isNoise(t) && !isStatic(t) ? hpdFields(t) : ""}
+      <label>Comments</label>
+      <div class="comment-wrap">
+        <textarea id="comments">${esc(t.comments)}</textarea>
+        <button type="button" class="mic-btn" id="btnSpeak" title="Voice to text">🎤</button>
+      </div>
+      <p class="help">Tap the microphone, speak, then edit the text if needed. Needs Chrome and a microphone.</p>
       <div class="footer-actions">
         <button class="btn" id="btnSave">Save changes</button>
         <button class="btn ghost" id="btnAddPump">Add this pump to fleet</button>
@@ -411,42 +434,39 @@ function modeFields(t) {
 }
 function rpdFields(t) {
   const r = t.rpd || {};
-  return `<h3 class="brand-type" style="color:var(--navy)">Respirator</h3>
-    <label>Respirator worn</label>
-    <select id="rpdWorn"><option value="">—</option>
-      <option value="yes" ${r.worn==="yes"?"selected":""}>Yes</option>
-      <option value="no" ${r.worn==="no"?"selected":""}>No</option>
-    </select>
-    <label>Brand / model</label>
-    <input id="rpdModel" value="${esc(r.model)}" placeholder="3M 6000 or Unknown">
-    <label>Clean-shaven</label>
-    <select id="rpdShaven"><option value="">—</option>
-      <option value="yes" ${r.shaven==="yes"?"selected":""}>Yes</option>
-      <option value="no" ${r.shaven==="no"?"selected":""}>No</option>
-      <option value="na" ${r.shaven==="na"?"selected":""}>NA</option>
-    </select>
-    <label>Fit-tested</label>
-    <select id="rpdFit"><option value="">—</option>
-      <option value="yes" ${r.fit==="yes"?"selected":""}>Yes</option>
-      <option value="no" ${r.fit==="no"?"selected":""}>No</option>
-      <option value="unknown" ${r.fit==="unknown"?"selected":""}>Unknown</option>
-    </select>`;
+  const on = r.worn === "yes";
+  return `<label class="check-row"><input type="checkbox" id="rpdOn" ${on ? "checked" : ""}> Respirator worn</label>
+    <p class="help">Personal airborne samples only. Tick if an RPD was worn.</p>
+    <div id="rpdBox" style="${on ? "" : "display:none"}">
+      <label>Brand / model</label>
+      <input id="rpdModel" value="${esc(r.model)}" placeholder="3M 6000 or Unknown">
+      <label>Clean-shaven</label>
+      <select id="rpdShaven"><option value="">—</option>
+        <option value="yes" ${r.shaven==="yes"?"selected":""}>Yes</option>
+        <option value="no" ${r.shaven==="no"?"selected":""}>No</option>
+        <option value="na" ${r.shaven==="na"?"selected":""}>NA</option>
+      </select>
+      <label>Fit-tested</label>
+      <select id="rpdFit"><option value="">—</option>
+        <option value="yes" ${r.fit==="yes"?"selected":""}>Yes</option>
+        <option value="no" ${r.fit==="no"?"selected":""}>No</option>
+        <option value="unknown" ${r.fit==="unknown"?"selected":""}>Unknown</option>
+      </select>
+    </div>`;
 }
 function hpdFields(t) {
   const h = t.hpd || {};
-  return `<h3 class="brand-type" style="color:var(--navy)">Hearing protection</h3>
-    <label>HPD worn</label>
-    <select id="hpdWorn"><option value="">—</option>
-      <option value="yes" ${h.worn==="yes"?"selected":""}>Yes</option>
-      <option value="no" ${h.worn==="no"?"selected":""}>No</option>
-      <option value="unknown" ${h.worn==="unknown"?"selected":""}>Unknown</option>
-    </select>
-    <label>Brand / model</label>
-    <input id="hpdModel" value="${esc(h.model)}" placeholder="Brand model or Unknown">
-    <label>Style</label>
-    <input id="hpdStyle" value="${esc(h.style)}" placeholder="earmuff / earplug">
-    <label>Class / attenuation</label>
-    <input id="hpdClass" value="${esc(h.classRating)}" placeholder="if known">`;
+  const on = h.worn === "yes";
+  return `<label class="check-row"><input type="checkbox" id="hpdOn" ${on ? "checked" : ""}> Hearing protection worn</label>
+    <p class="help">Noise personal samples only. Tick if an HPD was worn.</p>
+    <div id="hpdBox" style="${on ? "" : "display:none"}">
+      <label>Brand / model</label>
+      <input id="hpdModel" value="${esc(h.model)}" placeholder="Brand model or Unknown">
+      <label>Style</label>
+      <input id="hpdStyle" value="${esc(h.style)}" placeholder="earmuff / earplug">
+      <label>Class / attenuation</label>
+      <input id="hpdClass" value="${esc(h.classRating)}" placeholder="if known">
+    </div>`;
 }
 
 function pickTypeHtml() {
@@ -512,10 +532,60 @@ function bind() {
     wireCombo("dosimeter", (db.catalogs.dosimeters || []).map(d => d.serial), (val) => { t.dosimeterSerial = val.trim(); });
     wireCombo("occupation", db.catalogs.occupations || [], (val) => { t.person = t.person || {}; t.person.occupation = val; });
     document.querySelectorAll("[data-rej]").forEach(b => b.onclick = () => {
-      t.rejectCode = b.dataset.rej;
-      t.rejectReason = REJECTS.find(r => r.code === t.rejectCode)?.label || t.rejectReason;
+      if (t.rejectCode === b.dataset.rej) {
+        t.rejectCode = "";
+        t.rejectReason = "";
+      } else {
+        t.rejectCode = b.dataset.rej;
+        t.rejectReason = REJECTS.find(r => r.code === t.rejectCode)?.label || "";
+      }
       save();
     });
+    const rejectedOn = document.getElementById("rejectedOn");
+    if (rejectedOn) rejectedOn.onchange = () => {
+      const box = document.getElementById("rejectBox");
+      if (rejectedOn.checked) {
+        if (box) box.style.display = "";
+      } else {
+        t.rejectCode = "";
+        t.rejectReason = "";
+        if (t.status === "rejected") t.status = t.endAt ? "ended" : (t.startAt ? "running" : "prepped");
+        audit(t, "Reject cleared", "");
+        save();
+      }
+    };
+    const equipDamaged = document.getElementById("equipDamaged");
+    if (equipDamaged) equipDamaged.onchange = () => {
+      const box = document.getElementById("equipBox");
+      t.equipDamaged = equipDamaged.checked;
+      if (box) box.style.display = t.equipDamaged ? "" : "none";
+      if (!t.equipDamaged) save();
+    };
+    const rpdOn = document.getElementById("rpdOn");
+    if (rpdOn) rpdOn.onchange = () => {
+      const box = document.getElementById("rpdBox");
+      if (box) box.style.display = rpdOn.checked ? "" : "none";
+    };
+    const hpdOn = document.getElementById("hpdOn");
+    if (hpdOn) hpdOn.onchange = () => {
+      const box = document.getElementById("hpdBox");
+      if (box) box.style.display = hpdOn.checked ? "" : "none";
+    };
+    const placement = document.getElementById("placement");
+    if (placement) placement.onchange = () => {
+      collectTrain(t);
+      applyPlacement(t, placement.value);
+      audit(t, "Placement changed", t.trainKind);
+      save();
+    };
+    const equipPhoto = document.getElementById("equipPhoto");
+    if (equipPhoto) equipPhoto.onchange = () => {
+      const f = equipPhoto.files && equipPhoto.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => { t.equipPhoto = reader.result; t.equipDamaged = true; audit(t, "Equipment damage photo", nowIso()); save(); };
+      reader.readAsDataURL(f);
+    };
     const speak = document.getElementById("btnSpeak");
     if (speak) speak.onclick = () => startSpeech();
     const photo = document.getElementById("photo");
@@ -624,17 +694,21 @@ function collectTrain(t) {
     t.person.sex = g("sex")?.value || "";
   }
   t.rpd = {
-    worn: g("rpdWorn")?.value || "",
+    worn: g("rpdOn")?.checked ? "yes" : (t.rpd && t.rpd.worn === "yes" && !g("rpdOn") ? "yes" : "no"),
     model: g("rpdModel")?.value || "",
     shaven: g("rpdShaven")?.value || "",
     fit: g("rpdFit")?.value || ""
   };
+  if (g("rpdOn")) t.rpd.worn = g("rpdOn").checked ? "yes" : "no";
   t.hpd = {
-    worn: g("hpdWorn")?.value || "",
+    worn: g("hpdOn")?.checked ? "yes" : "no",
     model: g("hpdModel")?.value || "",
     style: g("hpdStyle")?.value || "",
     classRating: g("hpdClass")?.value || ""
   };
+  if (g("hpdOn")) t.hpd.worn = g("hpdOn").checked ? "yes" : "no";
+  t.equipDamaged = !!(g("equipDamaged") && g("equipDamaged").checked);
+  t.equipNote = g("equipNote")?.value || t.equipNote || "";
   if (g("startAt")) t.startAt = fromLocalInput(g("startAt").value) || t.startAt;
   if (g("endAt")) {
     const v = fromLocalInput(g("endAt").value);
@@ -672,6 +746,12 @@ function openTrain(id) { view.page = "train"; view.trainId = id; render(); }
 function goDash() { view.page = "dash"; render(); }
 function openNewEvent() { view.page = "newEvent"; render(); }
 
+function applyPlacement(t, placement) {
+  const noise = isNoise(t);
+  if (noise) t.trainKind = placement === "static" ? "noise_static" : "noise_personal";
+  else t.trainKind = placement === "static" ? "airborne_static" : "airborne_personal";
+  t.mode = placement === "static" ? "static" : "personal";
+}
 function openPickType(eventId) { view.page = "pickType"; view.eventId = eventId; render(); }
 function addTrain(eventId, trainKind) {
   const existing = trainsOf(eventId);
@@ -681,8 +761,8 @@ function addTrain(eventId, trainKind) {
   const stat = (trainKind || "").endsWith("static");
   const t = {
     id: uid("t"), eventId, pouch: next, trainKind: trainKind || "airborne_personal",
-    contaminantId: noise ? "NOISE" : "INH", pumpSerial: "", dosimeterSerial: "", headId: "",
-    mediaId: "", startFlow: blank || noise ? "" : "2.0", endFlow: "", desiredVolumeL: "", minMinutes: "",
+    contaminantId: noise ? "NOISE" : "", pumpSerial: "", dosimeterSerial: "", headId: "",
+    mediaId: "", startFlow: "", endFlow: "", desiredVolumeL: "", minMinutes: "",
     mode: stat ? "static" : "personal",
     person: { first: "", last: "", sex: "", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
     rpd: { worn: "", model: "", shaven: "", fit: "" },
