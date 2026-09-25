@@ -27,7 +27,8 @@ const DEFAULT = {
   },
   projects: [{ id: "p1900", number: "001900", name: "Demo – Perth site", site: "Perth" }],
   events: [{ id: "e1900-001", projectId: "p1900", code: "001900-001", stage: "prepped", date: new Date().toISOString().slice(0,10), notes: "" }],
-  trains: []
+  trains: [],
+  deletions: []
 };
 
 const WHO_KEY = "envss-field-operator";
@@ -76,6 +77,7 @@ function load() {
     const d = { ...structuredClone(DEFAULT), ...parsed };
     d.catalogs = { ...DEFAULT.catalogs, ...(parsed.catalogs || {}) };
     if (!d.catalogs.contaminants?.some(c => c.code === "INH")) d.catalogs.contaminants = DEFAULT.catalogs.contaminants;
+    if (!Array.isArray(d.deletions)) d.deletions = [];
     (d.trains || []).forEach(t => { if (!t.audit) t.audit = []; });
     return d;
   } catch {
@@ -241,6 +243,7 @@ function eventHtml() {
         <button class="btn green" onclick="exportEvent('${ev.id}')">Export JSON</button>
         <button class="btn ghost" onclick="exportCsv('${ev.id}')">Export CSV</button>
       </div>
+      ${(db.deletions || []).filter(d => d.eventId === ev.id).length ? `<p class="help">Deleted trains on this event are listed at the bottom. They cannot be restored from the phone.</p>` : ""}
       ${ts.map(t => {
         const c = contam(t.contaminantId);
         const who = t.mode === "static"
@@ -255,7 +258,15 @@ function eventHtml() {
           ${badge(t.status)}
         </div>`;
       }).join("") || `<div class="empty">No sample trains yet.</div>`}
+      ${deletionLogHtml(ev.id)}
     </div>`;
+}
+function deletionLogHtml(eventId) {
+  const rows = (db.deletions || []).filter(d => d.eventId === eventId);
+  if (!rows.length) return "";
+  return `<h3 class="brand-type" style="color:var(--navy);margin-top:22px">Deleted sample trains</h3>
+    <p class="help">These cannot be undone on this device.</p>
+    ${rows.map(d => `<div class="muted" style="margin-bottom:6px">${fmtTime(d.at)} · ${esc(d.who || "")} · pouch ${esc(d.pouch)} · ${esc(d.kind || "")} · ${esc(d.detail || "Deleted")}</div>`).join("")}`;
 }
 
 function trainHtml() {
@@ -277,13 +288,11 @@ function trainHtml() {
         <h2 class="brand-type" style="margin:0;color:var(--navy)">Sample train / pouch ${esc(t.pouch)}</h2>
         ${badge(t.status)}
       </div>
-      <p class="muted">${kindLabel(t)}</p>
-      ${isBlank(t) ? "" : `<label>Placement</label>
-        <select id="placement">
-          <option value="personal" ${!isStatic(t)?"selected":""}>Personal</option>
-          <option value="static" ${isStatic(t)?"selected":""}>Static</option>
-        </select>
-        <p class="help">Change this if the train was set up wrong. Person fields and location swap when you save.</p>`}
+      <label>Sample train type</label>
+      <select id="trainKind">${trainKindOptions(t)}</select>
+      <p class="help">${isNoise(t)
+        ? "Noise trains can switch personal ↔ static only."
+        : "Airborne and field blank can switch between personal, static and blank."}</p>
       <input type="hidden" id="mode" value="${esc(t.mode || "personal")}">
       <div class="grid2">
         <div>
@@ -393,8 +402,9 @@ function trainHtml() {
         <button class="btn" id="btnSave">Save changes</button>
         <button class="btn ghost" id="btnAddPump">Add this pump to fleet</button>
         <button class="btn ghost" id="btnAddHead">Add this cassette</button>
-        <button class="btn danger" id="btnReject">Reject sample</button>
+        <button class="btn danger" id="btnReject">Mark rejected</button>
         ${t.status==="rejected"?`<button class="btn ghost" id="btnUnreject">Clear reject</button>`:""}
+        <button class="btn danger" id="btnDelete">Delete sample train</button>
         ${t.status==="ended"?`<button class="btn green" id="btnUploaded">Mark uploaded</button>`:""}
       </div>
       <h3 class="brand-type" style="color:var(--navy);margin-top:22px">Audit log</h3>
@@ -522,10 +532,17 @@ function bind() {
       const code = val.split("—")[0].trim().toUpperCase();
       let c = db.catalogs.contaminants.find(x => x.code === code || x.name.toLowerCase() === val.toLowerCase());
       if (!c) {
-        c = { id: code || uid("c"), name: val, code: code || val.slice(0,3).toUpperCase(), headHint: "", flowTolPct: 5, defaultFlow: "2.0" };
+        c = { id: code || uid("c"), name: val, code: code || val.slice(0,3).toUpperCase(), headHint: "", flowTolPct: 5, defaultFlow: "" };
         db.catalogs.contaminants.push(c);
       }
       t.contaminantId = c.id;
+      if (c.defaultFlow && !t.startFlow) {
+        t.startFlow = String(c.defaultFlow);
+        const sf = document.getElementById("startFlow");
+        if (sf) sf.value = t.startFlow;
+      }
+      if (c.minMinutes && !t.minMinutes) t.minMinutes = String(c.minMinutes);
+      if (c.desiredVolumeL && !t.desiredVolumeL) t.desiredVolumeL = String(c.desiredVolumeL);
     });
     wireCombo("pump", (db.catalogs.pumps || []).map(p => p.serial), (val) => { t.pumpSerial = val.trim(); });
     wireCombo("head", (db.catalogs.heads || []).map(h => h.id), (val) => { t.headId = val.trim().toUpperCase(); });
@@ -571,11 +588,11 @@ function bind() {
       const box = document.getElementById("hpdBox");
       if (box) box.style.display = hpdOn.checked ? "" : "none";
     };
-    const placement = document.getElementById("placement");
-    if (placement) placement.onchange = () => {
+    const kindSel = document.getElementById("trainKind");
+    if (kindSel) kindSel.onchange = () => {
       collectTrain(t);
-      applyPlacement(t, placement.value);
-      audit(t, "Placement changed", t.trainKind);
+      applyTrainKind(t, kindSel.value);
+      audit(t, "Train type changed", t.trainKind);
       save();
     };
     const equipPhoto = document.getElementById("equipPhoto");
@@ -636,16 +653,19 @@ function bind() {
       save();
       alert("Saved on this device.");
     };
-    document.getElementById("btnReject").onclick = () => {
+    const rejBtn = document.getElementById("btnReject");
+    if (rejBtn) rejBtn.onclick = () => {
       collectTrain(t);
-      if (!t.rejectReason.trim()) {
-        alert("Enter a reject reason first.");
+      if (!t.rejectCode) {
+        alert("Tick Sample rejected and pick a reason first.");
         return;
       }
       t.status = "rejected";
-      audit(t, "Rejected", t.rejectReason);
+      audit(t, "Rejected", t.rejectCode);
       save();
     };
+    const delBtn = document.getElementById("btnDelete");
+    if (delBtn) delBtn.onclick = () => deleteTrain(t);
     const ur = document.getElementById("btnUnreject");
     if (ur) ur.onclick = () => { collectTrain(t); t.status = t.endAt ? "ended" : (t.startAt ? "running" : "prepped"); audit(t, "Reject cleared"); save(); };
     const up = document.getElementById("btnUploaded");
@@ -746,11 +766,52 @@ function openTrain(id) { view.page = "train"; view.trainId = id; render(); }
 function goDash() { view.page = "dash"; render(); }
 function openNewEvent() { view.page = "newEvent"; render(); }
 
+function trainKindOptions(t) {
+  const cur = t.trainKind || (t.mode === "static" ? "airborne_static" : "airborne_personal");
+  const noiseSet = [
+    ["noise_personal", "Noise · personal"],
+    ["noise_static", "Noise · static"]
+  ];
+  const airSet = [
+    ["airborne_personal", "Airborne · personal"],
+    ["airborne_static", "Airborne · static"],
+    ["blank", "Field blank"]
+  ];
+  const set = cur.startsWith("noise") ? noiseSet : airSet;
+  return set.map(([id, label]) => `<option value="${id}" ${cur===id?"selected":""}>${label}</option>`).join("");
+}
+function applyTrainKind(t, kind) {
+  const prev = t.trainKind;
+  t.trainKind = kind;
+  t.mode = kind.endsWith("static") ? "static" : (kind === "blank" ? "blank" : "personal");
+  if (kind.startsWith("noise")) t.contaminantId = "NOISE";
+  else if (prev && prev.startsWith("noise") && t.contaminantId === "NOISE") t.contaminantId = "";
+  if (kind === "blank") {
+    t.startAt = t.startAt || "";
+    t.endAt = t.endAt || "";
+  }
+}
 function applyPlacement(t, placement) {
-  const noise = isNoise(t);
-  if (noise) t.trainKind = placement === "static" ? "noise_static" : "noise_personal";
-  else t.trainKind = placement === "static" ? "airborne_static" : "airborne_personal";
-  t.mode = placement === "static" ? "static" : "personal";
+  applyTrainKind(t, isNoise(t)
+    ? (placement === "static" ? "noise_static" : "noise_personal")
+    : (placement === "static" ? "airborne_static" : "airborne_personal"));
+}
+function deleteTrain(t) {
+  const ok = confirm("Delete sample train pouch " + (t.pouch || "") + "?\n\nThis cannot be undone on this device.");
+  if (!ok) return;
+  db.deletions = db.deletions || [];
+  db.deletions.push({
+    at: nowIso(),
+    who: whoLabel(),
+    eventId: t.eventId,
+    trainId: t.id,
+    pouch: t.pouch,
+    kind: t.trainKind,
+    detail: (contam(t.contaminantId)?.code || "") + " deleted"
+  });
+  db.trains = db.trains.filter(x => x.id !== t.id);
+  save();
+  openEvent(t.eventId);
 }
 function openPickType(eventId) { view.page = "pickType"; view.eventId = eventId; render(); }
 function addTrain(eventId, trainKind) {
