@@ -110,8 +110,11 @@ textarea { min-height: 80px; }
 .comment-wrap textarea { padding-right: 44px; }
 .mic-btn {
   position: absolute; right: 8px; top: 8px; border: 0; background: transparent;
-  font-size: 18px; cursor: pointer; color: var(--navy);
+  width: 32px; height: 32px; padding: 0; cursor: pointer; color: var(--navy);
 }
+.mic-btn.live { color: var(--orange); }
+.mic-bars { display: flex; gap: 2px; align-items: flex-end; height: 22px; margin: 4px 0 8px; }
+.mic-bars span { width: 3px; background: var(--orange); display: inline-block; min-height: 2px; }
 .help { color: #6b7280; font-size: 12px; margin: 4px 0 10px; }
 .back { background: transparent; color: #fff; border: 0; cursor: pointer; font-weight: 700; }
 @media (min-width: 800px) {
