@@ -1,5 +1,5 @@
-/* v33 form fixes — loaded after app-fibre.js */
-window.ENVSS_FIBRE = "33";
+/* v34 form fixes */
+window.ENVSS_FIBRE = "34";
 
 const FORM_PAGES = { newProject: 1, newEvent: 1 };
 function formTyping() {
@@ -38,8 +38,11 @@ if (!window._envssPullWrapped) {
 
 function toggleFibreEventFields() {
   const type = (document.getElementById("ntype") || {}).value;
+  const fibre = type === "fibre";
   const box = document.getElementById("fibreEventFields");
-  if (box) box.style.display = type === "fibre" ? "" : "none";
+  const multi = document.getElementById("hygieneMultiWrap");
+  if (box) box.style.display = fibre ? "" : "none";
+  if (multi) multi.style.display = fibre ? "none" : "";
 }
 
 newEventHtml = function () {
@@ -71,8 +74,10 @@ newEventHtml = function () {
         <option value="emergency">Emergency</option>
       </select>
     </div>
-    <label class="check-row"><input type="checkbox" id="nmulti"> Multiple days / shifts (mine trip)</label>
-    <p class="help">Hygiene stays date + multi-day. AFM adds type, task and lab TAT. Rotameter is not captured here.</p>
+    <div id="hygieneMultiWrap">
+      <label class="check-row"><input type="checkbox" id="nmulti"> Multiple days / shifts (mine trip)</label>
+      <p class="help">Hygiene only. One event, one COC at the end.</p>
+    </div>
     <div class="footer-actions"><button class="btn orange" id="btnCreateEv">Create event</button></div>
   </div>`;
 };
@@ -91,7 +96,7 @@ createEvent = function () {
   const ev = {
     id: uid("e"), projectId, type, stage: "planned", date,
     code: fibreEventCode(p, date, n),
-    multiDay: !!(document.getElementById("nmulti") || {}).checked,
+    multiDay: false,
     notes: "", uploadReady: false, operators: [],
     protocol: (document.getElementById("nprotocol") && document.getElementById("nprotocol").value) || "background",
     taskDesc: (document.getElementById("ntask") && document.getElementById("ntask").value) || "",
