@@ -116,6 +116,17 @@ textarea { min-height: 80px; }
 .mic-bars { display: flex; gap: 2px; align-items: flex-end; height: 22px; margin: 4px 0 8px; }
 .mic-bars span { width: 3px; background: var(--orange); display: inline-block; min-height: 2px; }
 .help { color: #6b7280; font-size: 12px; margin: 4px 0 10px; }
+
+.train.tint-red { background: #fde8e8; }
+.train.tint-amber { background: #fff4e0; }
+.menu-wrap { position: relative; margin-left: auto; }
+.menu {
+  position: absolute; right: 0; top: 40px; background: #fff; border: 1px solid #d1d5db;
+  border-radius: 10px; min-width: 180px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+.menu button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 10px 12px; cursor: pointer; }
+.menu button:hover { background: #e8f0ee; }
+
 .back { background: transparent; color: #fff; border: 0; cursor: pointer; font-weight: 700; }
 @media (min-width: 800px) {
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

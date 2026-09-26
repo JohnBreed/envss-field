@@ -67,7 +67,8 @@ function allowedEmail(email) {
 }
 
 let db = load();
-let view = { page: "dash", filter: "all", eventId: null, trainId: null };
+let view = { page: "dash", filter: "all", eventId: null, trainId: null, projectId: null };
+let tickMin = null;
 
 function load() {
   try {
@@ -157,12 +158,59 @@ function flowCheck(t) {
 
 function deriveEventStage(ev) {
   const ts = trainsOf(ev.id);
+  if (ev.uploadReady) return "upload_ready";
   if (!ts.length) return "planned";
-  if (ts.some(t => t.status === "running")) return "active";
-  if (ts.every(t => ["uploaded"].includes(t.status))) return "uploaded";
-  if (ts.every(t => ["ended", "uploaded", "rejected", "fault", "field_blank"].includes(t.status))) return "complete";
-  if (ts.every(t => ["prepped", "rejected", "fault", "field_blank"].includes(t.status))) return "prepped";
+  if (ts.some(t => t.status === "running")) return "running";
+  if (ts.some(t => t.status === "ended")) return "ended";
+  if (ts.some(t => t.status === "prepped")) return "prepped";
+  if (ts.some(t => t.status === "field_blank")) return "field_blank";
   return ev.stage || "planned";
+}
+function eventTypeLabel(e) { return e.type === "fibre" ? "Airborne fibre monitoring" : "Hygiene event"; }
+function elapsedLabel(startAt) {
+  const ms = Date.now() - new Date(startAt);
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  const m = Math.floor(ms / 60000);
+  const h = Math.floor(m / 60);
+  return (h ? h + "h " : "") + (m % 60) + "m running";
+}
+function startGaps(t) {
+  const miss = [];
+  if (isBlank(t)) return miss;
+  if (isNoise(t)) {
+    if (!t.dosimeterSerial) miss.push("Dosimeter serial");
+    if (isStatic(t)) { if (!t.location) miss.push("Location"); }
+    else {
+      if (!t.person?.first) miss.push("First name");
+      if (!t.person?.last) miss.push("Last name");
+    }
+    return miss;
+  }
+  if (!t.contaminantId) miss.push("Contaminant");
+  if (!t.pumpSerial) miss.push("Pump serial");
+  if (!t.headId) miss.push("Sample head");
+  if (!t.mediaId) miss.push("Cassette / filter / tube");
+  if (!t.startFlow) miss.push("Start flow");
+  if (isStatic(t)) { if (!t.location) miss.push("Location"); }
+  else {
+    if (!t.person?.first) miss.push("First name");
+    if (!t.person?.last) miss.push("Last name");
+  }
+  return miss;
+}
+function optionalGaps(t) {
+  if (isBlank(t)) return [];
+  const miss = [];
+  if (!isStatic(t) && !t.person?.occupation) miss.push("Occupation");
+  if (!isNoise(t) && t.status === "ended" && !t.endFlow) miss.push("End flow");
+  if (!t.comments) miss.push("Comments");
+  return miss;
+}
+function rowTint(t) {
+  if (["running","ended","rejected","fault"].includes(t.status)) return optionalGaps(t).length ? "tint-amber" : "";
+  if (startGaps(t).length) return "tint-red";
+  if (optionalGaps(t).length) return "tint-amber";
+  return "";
 }
 
 function kindLabel(t) {
@@ -183,7 +231,7 @@ function badge(status) {
   const label = ({
     planned: "Planned", prepped: "Prepped", active: "Active", complete: "Complete",
     uploaded: "Uploaded", running: "Running", ended: "Sample ended", rejected: "Rejected",
-    field_blank: "Field blank", fault: "Fault"
+    field_blank: "Field blank", fault: "Fault", upload_ready: "Upload event"
   })[status] || status;
   return `<span class="badge s-${status}">${label}</span>`;
 }
@@ -199,46 +247,83 @@ function render() {
   if (whoEl) whoEl.textContent = whoText();
   paintLogin();
   const root = document.getElementById("app");
+  if (tickMin) { clearInterval(tickMin); tickMin = null; }
   if (view.page === "dash") root.innerHTML = dashHtml();
+  else if (view.page === "project") root.innerHTML = projectHtml();
   else if (view.page === "event") root.innerHTML = eventHtml();
   else if (view.page === "train") root.innerHTML = trainHtml();
   else if (view.page === "newEvent") root.innerHTML = newEventHtml();
+  else if (view.page === "editEvent") root.innerHTML = editEventHtml();
   else if (view.page === "pickType") root.innerHTML = pickTypeHtml();
   bind();
+  if (view.page === "event" && (trainsOf(view.eventId)||[]).some(t => t.status === "running" && !isBlank(t))) {
+    tickMin = setInterval(() => {
+      document.querySelectorAll("[data-run]").forEach(el => {
+        const t = db.trains.find(x => x.id === el.dataset.run);
+        if (t && t.startAt) el.textContent = elapsedLabel(t.startAt);
+      });
+    }, 60000);
+  }
 }
 
 function dashHtml() {
-  const list = db.events
-    .map(e => ({ ...e, stageNow: deriveEventStage(e) }))
-    .filter(e => view.filter === "all" || e.stageNow === view.filter);
   return `
     <div class="wrap">
       <div class="row">
-        <h2 class="brand-type" style="margin:0;color:var(--navy)">Events</h2>
-        <button class="btn orange" onclick="openNewEvent()">New event</button>
+        <h2 class="brand-type" style="margin:0;color:var(--navy)">Projects</h2>
+        <button class="btn orange" onclick="openNewEvent()">New project / event</button>
+      </div>
+      ${db.projects.map(p => {
+        const evs = db.events.filter(e => e.projectId === p.id);
+        const stages = evs.map(deriveEventStage);
+        const stage = stages.includes("running") ? "running" : stages.includes("ended") ? "ended" : evs.length ? stages[0] : "planned";
+        return `<div class="card" onclick="openProject('${p.id}')" style="cursor:pointer">
+          <div class="row">
+            <div class="grow">
+              <div class="brand-type" style="font-weight:700;color:var(--navy);font-size:18px">${p.number}</div>
+              <div class="muted">${esc(p.name || "")} · ${esc(p.site || "")} · ${evs.length} event${evs.length===1?"":"s"}</div>
+            </div>
+            ${badge(stage)}
+          </div>
+        </div>`;
+      }).join("") || `<div class="empty">No projects yet.</div>`}
+      <p class="muted">Signed in as ${esc(whoText())} — <button class="btn ghost" onclick="changeOperator()">Change operator</button></p>
+    </div>`;
+}
+function projectHtml() {
+  const p = project(view.projectId);
+  if (!p) return `<div class="wrap">Missing project.</div>`;
+  const list = db.events.filter(e => e.projectId === p.id).map(e => ({ ...e, stageNow: deriveEventStage(e) }))
+    .filter(e => view.filter === "all" || e.stageNow === view.filter);
+  return `
+    <div class="wrap">
+      <button class="btn ghost" onclick="goDash()">← Projects</button>
+      <div class="row" style="margin-top:10px">
+        <div class="grow">
+          <h2 class="brand-type" style="margin:0;color:var(--navy)">${p.number}</h2>
+          <div class="muted">${esc(p.name || "")} · ${esc(p.site || "")}</div>
+        </div>
+        <button class="btn orange" onclick="openNewEvent('${p.id}')">New event</button>
       </div>
       <div class="filters">
-        ${["all","planned","prepped","active","complete","uploaded"].map(s =>
-          `<button class="chip ${view.filter===s?"on":""}" data-filter="${s}">${s==="all"?"All":s}</button>`
+        ${["all","running","ended","prepped","field_blank","planned","upload_ready"].map(s =>
+          `<button class="chip ${view.filter===s?"on":""}" data-filter="${s}">${s==="all"?"All":s.replace("_"," ")}</button>`
         ).join("")}
       </div>
       ${list.length ? list.map(e => {
-        const p = project(e.projectId);
         const n = trainsOf(e.id).length;
         return `<div class="card" onclick="openEvent('${e.id}')" style="cursor:pointer">
           <div class="row">
             <div class="grow">
               <div class="brand-type" style="font-weight:700;color:var(--navy);font-size:18px">${e.code}</div>
-              <div class="muted">${p ? p.name : ""} · ${e.date || ""} · ${n} sample train${n===1?"":"s"}</div>
+              <div class="muted">${eventTypeLabel(e)} · ${e.date || ""} · ${n} sample${n===1?"":"s"}</div>
             </div>
             ${badge(e.stageNow)}
           </div>
         </div>`;
       }).join("") : `<div class="empty">No events in this filter.</div>`}
-      <p class="muted">Data stays on this device until you export. Signed in as ${esc(whoText())} — <button class="btn ghost" onclick="changeOperator()">Change operator</button></p>
     </div>`;
 }
-
 function eventHtml() {
   const ev = eventById(view.eventId);
   if (!ev) return `<div class="wrap">Missing event.</div>`;
@@ -248,16 +333,24 @@ function eventHtml() {
     <div class="wrap">
       <div class="row">
         <div class="grow">
-          <div class="muted">${p ? p.number + " · " + p.name : ""}</div>
+          <div class="muted" onclick="openEditEvent('${ev.id}')" style="cursor:pointer">${p ? p.number + " · " + p.name : ""} · tap to edit</div>
           <h2 class="brand-type" style="margin:4px 0;color:var(--navy)">${ev.code}</h2>
+          <div class="muted">${eventTypeLabel(ev)}</div>
         </div>
         ${badge(deriveEventStage(ev))}
       </div>
       <div class="row" style="margin:10px 0">
-        <button class="btn ghost" onclick="goDash()">Dashboard</button>
+        <button class="btn ghost" onclick="openProject('${ev.projectId}')">Dashboard</button>
         <button class="btn mid" onclick="openPickType('${ev.id}')">Add sample</button>
-        <button class="btn green" onclick="exportEvent('${ev.id}')">Export JSON</button>
-        <button class="btn ghost" onclick="exportCsv('${ev.id}')">Export CSV</button>
+        <button class="btn green" onclick="markEventUpload('${ev.id}')">Upload event</button>
+        <div class="menu-wrap">
+          <button class="btn ghost" type="button" id="btnMenu">☰</button>
+          <div class="menu" id="eventMenu" hidden>
+            <button type="button" onclick="exportEvent('${ev.id}')">Export JSON</button>
+            <button type="button" onclick="exportCsv('${ev.id}')">Export CSV</button>
+            <button type="button" onclick="window.print()">Print</button>
+          </div>
+        </div>
       </div>
       ${eventListHtml(ts)}
       ${deletionLogHtml(ev.id)}
@@ -269,11 +362,13 @@ function trainRowHtml(t) {
     ? (t.location || "Static — location not set")
     : ([t.person?.first, t.person?.last].filter(Boolean).join(" ") || "Person not attached");
   const kit = isNoise(t) ? (t.dosimeterSerial || "no badge") : isBlank(t) ? (t.headId || "no head") : ((t.pumpSerial || "no pump") + " · " + (t.headId || "no head"));
-  return `<div class="train" onclick="openTrain('${t.id}')">
+  const run = t.status === "running" && !isBlank(t) && t.startAt;
+  const tint = rowTint(t);
+  return `<div class="train ${tint}" onclick="openTrain('${t.id}')">
     <div class="pouch">${sampleNoOf(t) || "–"}</div>
     <div>
       <div><strong>${displayNo(t)}</strong> · ${kindLabel(t)}${c && !isNoise(t) ? " · " + c.code : ""} · ${kit}</div>
-      <div class="muted">${who} ${t.startAt ? "· start " + fmtTime(t.startAt) : ""} ${t.endAt ? "· stop " + fmtTime(t.endAt) : ""}</div>
+      <div class="muted">${who} ${t.startAt ? "· start " + fmtTime(t.startAt) : ""} ${t.endAt ? "· stop " + fmtTime(t.endAt) : ""} ${run ? `· <span data-run="${t.id}">${elapsedLabel(t.startAt)}</span>` : ""}</div>
     </div>
     ${badge(t.status)}
   </div>`;
@@ -394,8 +489,8 @@ function trainHtml() {
         <button class="btn green lg" id="btnStop" ${!running?"disabled":""}>STOP</button>
       </div>
       <p class="help">Accidental START/STOP: edit the times. Leaving the field saves it. Location is stored when START or STOP gets a GPS fix.</p>
-      ${t.startLoc ? `<p class="help">Start location ±${Math.round(t.startLoc.acc || 0)} m</p>` : ""}
-      ${t.endLoc ? `<p class="help">Stop location ±${Math.round(t.endLoc.acc || 0)} m</p>` : ""}
+      ${t.startLoc ? `<p class="help">Start location ${Number(t.startLoc.lat).toFixed(5)}, ${Number(t.startLoc.lng).toFixed(5)}</p>` : ""}
+      ${t.endLoc ? `<p class="help">Stop location ${Number(t.endLoc.lat).toFixed(5)}, ${Number(t.endLoc.lng).toFixed(5)}</p>` : ""}
       `}
       ${isBlank(t) ? "" : rejectBlockHtml(t)}
       <label class="check-row"><input type="checkbox" id="equipDamaged" ${t.equipDamaged ? "checked" : ""}> ENVSS equipment damaged</label>
@@ -418,13 +513,15 @@ function trainHtml() {
       <p class="help">Tap the microphone to start, tap again to stop.</p>
       <div class="footer-actions">
         ${isNoise(t) ? `<button class="btn ghost" id="btnAddPump">Add this dosimeter to fleet</button>` : isBlank(t) ? "" : `<button class="btn ghost" id="btnAddPump">Add this pump to fleet</button>`}
-        ${isNoise(t) || isBlank(t) ? "" : `<button class="btn ghost" id="btnAddHead">Add this sample head</button>`}
+        ${isNoise(t) || isBlank(t) ? "" : `<button class="btn ghost" id="btnAddHead">Add this sample head to fleet</button>`}
         <button class="btn danger" id="btnDelete">Delete sample</button>
       </div>
-      <h3 class="brand-type" style="color:var(--navy);margin-top:22px">Audit log</h3>
+      <h3 class="brand-type" style="color:var(--navy);margin-top:22px;cursor:pointer" id="auditToggle">Audit log ▸</h3>
+      <div id="auditBox" hidden>
       ${audit.length ? `<div class="card">${audit.slice().reverse().map(a =>
         `<div class="muted" style="margin-bottom:6px">${fmtTime(a.at)} · ${esc(a.who || "")} · ${esc(a.action)}${a.detail ? " · " + esc(a.detail) : ""}</div>`
       ).join("")}</div>` : `<p class="muted">No edits yet.</p>`}
+      </div>
     </div>`;
 }
 
@@ -451,6 +548,22 @@ function rejectBlockHtml(t) {
         <input id="photo" type="file" accept="image/*" capture="environment">
         ${t.photo ? `<img alt="filter" src="${t.photo}" style="max-width:220px;border-radius:8px">` : ""}` : ""}
     </div>`;
+}
+function tickSvg() {
+  return `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M9 16.2l-3.5-3.5-1.4 1.4L9 19 20.3 7.7l-1.4-1.4z"/></svg>`;
+}
+let micAnim = null;
+function startMicBars(bars) {
+  const spans = [...bars.querySelectorAll("span")];
+  if (micAnim) clearInterval(micAnim);
+  micAnim = setInterval(() => {
+    spans.forEach(sp => { sp.style.height = (4 + Math.random()*18) + "px"; });
+  }, 120);
+}
+function stopMicUi(btn, bars) {
+  if (micAnim) { clearInterval(micAnim); micAnim = null; }
+  if (btn) { btn.classList.remove("live"); btn.innerHTML = micSvg(); }
+  if (bars) bars.hidden = true;
 }
 function micSvg() {
   return `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>`;
@@ -540,10 +653,15 @@ function pickTypeHtml() {
 }
 
 function newEventHtml() {
-  const opts = db.projects.map(p => `<option value="${p.id}">${p.number} — ${p.name}</option>`).join("");
+  const opts = db.projects.map(p => `<option value="${p.id}" ${view.projectId===p.id?"selected":""}>${p.number} — ${p.name}</option>`).join("");
   return `<div class="wrap">
-    <button class="btn ghost" onclick="goDash()">← Dashboard</button>
-    <h2 class="brand-type" style="color:var(--navy)">New project event</h2>
+    <button class="btn ghost" onclick="view.projectId ? openProject(view.projectId) : goDash()">← Back</button>
+    <h2 class="brand-type" style="color:var(--navy)">New event</h2>
+    <label>Event type</label>
+    <select id="ntype">
+      <option value="hygiene">Hygiene event</option>
+      <option value="fibre" disabled>Airborne fibre monitoring (soon)</option>
+    </select>
     <label>Project</label>
     <select id="np">${opts}</select>
     <label>Or new project number</label>
@@ -553,6 +671,21 @@ function newEventHtml() {
     <label>Event date</label>
     <input id="ndate" type="date" value="${new Date().toISOString().slice(0,10)}">
     <div class="footer-actions"><button class="btn orange" id="btnCreateEv">Create event</button></div>
+  </div>`;
+}
+function editEventHtml() {
+  const ev = eventById(view.eventId);
+  const p = ev ? project(ev.projectId) : null;
+  if (!ev || !p) return `<div class="wrap">Missing.</div>`;
+  return `<div class="wrap">
+    <button class="btn ghost" onclick="openEvent('${ev.id}')">← ${ev.code}</button>
+    <h2 class="brand-type" style="color:var(--navy)">Edit project / event</h2>
+    <label>Project number</label><input id="enum" value="${esc(p.number)}">
+    <label>Project name</label><input id="ename" value="${esc(p.name)}">
+    <label>Site</label><input id="esite" value="${esc(p.site || "")}">
+    <label>Event date</label><input id="edate" type="date" value="${esc(ev.date || "")}">
+    <label>Notes</label><textarea id="enotes">${esc(ev.notes || "")}</textarea>
+    <div class="footer-actions"><button class="btn orange" id="btnSaveEv">Save</button></div>
   </div>`;
 }
 
@@ -567,6 +700,17 @@ function audit(t, action, detail) {
 
 function bind() {
   document.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { view.filter = b.dataset.filter; render(); });
+  const menuBtn = document.getElementById("btnMenu");
+  const menu = document.getElementById("eventMenu");
+  if (menuBtn && menu) menuBtn.onclick = ev => { ev.stopPropagation(); menu.hidden = !menu.hidden; };
+  const auditToggle = document.getElementById("auditToggle");
+  const auditBox = document.getElementById("auditBox");
+  if (auditToggle && auditBox) auditToggle.onclick = () => {
+    auditBox.hidden = !auditBox.hidden;
+    auditToggle.textContent = auditBox.hidden ? "Audit log ▸" : "Audit log ▾";
+  };
+  const saveEv = document.getElementById("btnSaveEv");
+  if (saveEv) saveEv.onclick = saveEventEdits;
   const t = db.trains.find(x => x.id === view.trainId);
   if (view.page === "train" && t) {
     const names = db.catalogs.contaminants.map(c => c.code + " — " + c.name);
@@ -680,13 +824,15 @@ function bind() {
       captureLocation().then(loc => {
         if (!loc) { audit(t, "Stop location", "no fix"); save(); return; }
         t.endLoc = loc;
-        audit(t, "Stop location", loc.lat.toFixed(5) + "," + loc.lng.toFixed(5) + " ±" + Math.round(loc.acc) + "m");
+        audit(t, "Stop location", loc.lat.toFixed(5) + ", " + loc.lng.toFixed(5));
         save();
       });
     };
     const startBtn = document.getElementById("btnStart");
     if (startBtn) startBtn.onclick = () => {
       collectTrain(t);
+      const gaps = startGaps(t);
+      if (gaps.length) { alert("Cannot start until these are filled:\n• " + gaps.join("\n• ")); return; }
       const prev = t.startAt;
       t.startAt = nowIso();
       t.status = "running";
@@ -695,7 +841,7 @@ function bind() {
       captureLocation().then(loc => {
         if (!loc) { audit(t, "Start location", "no fix"); save(); return; }
         t.startLoc = loc;
-        audit(t, "Start location", loc.lat.toFixed(5) + "," + loc.lng.toFixed(5) + " ±" + Math.round(loc.acc) + "m");
+        audit(t, "Start location", loc.lat.toFixed(5) + ", " + loc.lng.toFixed(5));
         save();
       });
     };
@@ -770,7 +916,7 @@ function bindAutosave(t) {
       const before = snapshotTrain(t);
       collectTrain(t);
       if (snapshotTrain(t) !== before) {
-        audit(t, "Field saved", el.id || el.name || "field");
+        audit(t, "Field changed", (el.id || "field") + " saved");
         save();
       }
     });
@@ -858,8 +1004,31 @@ function wireCombo(inputId, items, onPick) {
 
 function openEvent(id) { view.page = "event"; view.eventId = id; render(); }
 function openTrain(id) { view.page = "train"; view.trainId = id; render(); }
-function goDash() { view.page = "dash"; render(); }
-function openNewEvent() { view.page = "newEvent"; render(); }
+function goDash() { view.page = "dash"; view.projectId = null; render(); }
+function openProject(id) { view.page = "project"; view.projectId = id; render(); }
+function openNewEvent(projectId) { view.page = "newEvent"; if (projectId) view.projectId = projectId; render(); }
+function openEditEvent(id) { view.page = "editEvent"; view.eventId = id; render(); }
+function markEventUpload(id) {
+  const ev = eventById(id);
+  if (!ev) return;
+  ev.uploadReady = true;
+  save();
+  alert("Event flagged for upload. Export from the menu until Podio is connected.");
+}
+function saveEventEdits() {
+  const ev = eventById(view.eventId);
+  const p = ev && project(ev.projectId);
+  if (!ev || !p) return;
+  p.number = document.getElementById("enum").value.trim() || p.number;
+  p.name = document.getElementById("ename").value.trim();
+  p.site = document.getElementById("esite").value.trim();
+  ev.date = document.getElementById("edate").value;
+  ev.notes = document.getElementById("enotes").value;
+  const parts = ev.code.split("-");
+  if (parts.length >= 2) ev.code = p.number + "-" + parts.slice(1).join("-");
+  save();
+  openEvent(ev.id);
+}
 
 function trainKindOptions(t) {
   const cur = t.trainKind || (t.mode === "static" ? "airborne_static" : "airborne_personal");
@@ -943,7 +1112,7 @@ function createEvent() {
   const p = project(projectId);
   const siblings = db.events.filter(e => e.eventId === projectId || e.projectId === projectId);
   const n = String(siblings.length + 1).padStart(3, "0");
-  const ev = { id: uid("e"), projectId, code: `${p.number}-${n}`, stage: "planned", date: document.getElementById("ndate").value, notes: "" };
+  const ev = { id: uid("e"), projectId, type: (document.getElementById("ntype")||{}).value || "hygiene", code: `${p.number}-${n}`, stage: "planned", date: document.getElementById("ndate").value, notes: "", uploadReady: false };
   db.events.push(ev);
   save();
   openEvent(ev.id);
@@ -996,8 +1165,7 @@ function startSpeech() {
   if (recHold) {
     recHold.stop();
     recHold = null;
-    if (btn) btn.classList.remove("live");
-    if (bars) bars.hidden = true;
+    stopMicUi(btn, bars);
     return;
   }
   const r = new Rec();
@@ -1005,8 +1173,8 @@ function startSpeech() {
   r.lang = "en-AU";
   r.continuous = true;
   r.interimResults = true;
-  if (btn) btn.classList.add("live");
-  if (bars) bars.hidden = false;
+  if (btn) { btn.classList.add("live"); btn.innerHTML = tickSvg(); }
+  if (bars) { bars.hidden = false; startMicBars(bars); }
   r.onresult = ev => {
     let said = "";
     for (let i = ev.resultIndex; i < ev.results.length; i++) said += ev.results[i][0].transcript;
@@ -1015,13 +1183,15 @@ function startSpeech() {
   r.onstart = () => { box.dataset.base = box.value; };
   r.onend = () => {
     recHold = null;
-    if (btn) btn.classList.remove("live");
-    if (bars) bars.hidden = true;
+    stopMicUi(btn, bars);
     box.dispatchEvent(new Event("change"));
   };
-  r.onerror = () => { recHold = null; if (btn) btn.classList.remove("live"); if (bars) bars.hidden = true; };
+  r.onerror = () => { recHold = null; stopMicUi(btn, bars); };
   r.start();
 }
+window.openProject = openProject;
+window.openEditEvent = openEditEvent;
+window.markEventUpload = markEventUpload;
 window.exportEvent = exportEvent;
 window.exportCsv = exportCsv;
 window.changeOperator = changeOperator;
