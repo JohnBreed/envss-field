@@ -243,6 +243,11 @@ function followUpComplete(t) {
   if (t.equipAsked === "yes" && !(t.equipNote || t.equipPhoto)) return false;
   if (t.commentAsked !== "yes" && t.commentAsked !== "no") return false;
   if (t.commentAsked === "yes" && !(t.comments || "").trim()) return false;
+  if (isAirbornePersonal(t)) {
+    const worn = t.rpdAsked || t.rpd?.worn;
+    if (worn !== "yes" && worn !== "no" && worn !== "unknown") return false;
+    if (worn === "yes" && !(t.rpd?.model || "").trim()) return false;
+  }
   return true;
 }
 function badge(status) {
@@ -393,6 +398,12 @@ function summaryLine(t) {
   if (t.status === "running" && t.startAt) bits.push("LIVE");
   return bits.join(" · ");
 }
+function titleLine(t) {
+  const c = contam(t.contaminantId);
+  if (isBlank(t)) return displayNo(t) + " · Field blank" + (c ? " · " + c.code : "");
+  if (isNoise(t)) return displayNo(t) + " · " + kindLabel(t);
+  return displayNo(t) + " · " + kindLabel(t) + (c ? " · " + c.code : "");
+}
 function trainRowHtml(t) {
   const run = t.status === "running" && !isBlank(t) && t.startAt;
   const tint = rowTint(t);
@@ -400,6 +411,7 @@ function trainRowHtml(t) {
   return `<div class="train ${tint}" onclick="openTrain('${t.id}')">
     <div class="pouch">${sampleNoOf(t) || "–"}</div>
     <div>
+      <div class="row-title">${titleLine(t)}</div>
       <div class="muted">${line}</div>
     </div>
     ${badge(displayStatus(t))}
@@ -549,10 +561,10 @@ function noiseRejects() {
 }
 function rejectList(t) { return isNoise(t) ? noiseRejects() : REJECTS; }
 
-function yn(name, val) {
+function yn(name, val, extra) {
+  const opts = extra || [["yes","Yes"],["no","No"]];
   return `<div class="filters">
-    <button type="button" class="chip ${val==="yes"?"on":""}" data-yn="${name}" data-val="yes">Yes</button>
-    <button type="button" class="chip ${val==="no"?"on":""}" data-yn="${name}" data-val="no">No</button>
+    ${opts.map(([v,l]) => `<button type="button" class="chip ${val===v?"on":""}" data-yn="${name}" data-val="${v}">${l}</button>`).join("")}
   </div>`;
 }
 function followUpHtml(t) {
@@ -663,9 +675,12 @@ function modeFields(t) {
 }
 function rpdFields(t) {
   const r = t.rpd || {};
-  const on = r.worn === "yes";
-  return `<label class="check-row"><input type="checkbox" id="rpdOn" ${on ? "checked" : ""}> Respirator worn</label>
-    <p class="help">Personal airborne samples only. Tick if an RPD was worn.</p>
+  const asked = t.rpdAsked || r.worn || "";
+  const on = asked === "yes";
+  return `<div class="${asked ? "" : "need-yn"}">
+      <label>Respirator worn?</label>
+      ${yn("rpd", asked, [["yes","Yes"],["no","No"],["unknown","Unknown"]])}
+    </div>
     <div id="rpdBox" style="${on ? "" : "display:none"}">
       <label>Brand / model</label>
       <input id="rpdModel" value="${esc(r.model)}" placeholder="3M 6000 or Unknown">
@@ -800,7 +815,7 @@ function bind() {
     wireCombo("occupation", db.catalogs.occupations || [], (val) => { t.person = t.person || {}; t.person.occupation = val; });
     document.querySelectorAll("[data-yn]").forEach(b => b.onclick = () => {
       const field = b.dataset.yn, val = b.dataset.val;
-      const prev = field === "reject" ? t.rejectAsked : field === "equip" ? t.equipAsked : t.commentAsked;
+      const prev = field === "reject" ? t.rejectAsked : field === "equip" ? t.equipAsked : field === "rpd" ? t.rpdAsked : t.commentAsked;
       if (field === "reject") {
         t.rejectAsked = val;
         if (val === "no") { t.rejectCode = ""; t.status = t.endAt ? "ended" : t.status; }
@@ -808,6 +823,11 @@ function bind() {
       }
       if (field === "equip") { t.equipAsked = val; t.equipDamaged = val === "yes"; }
       if (field === "comment") t.commentAsked = val;
+      if (field === "rpd") {
+        t.rpdAsked = val;
+        t.rpd = t.rpd || {};
+        t.rpd.worn = val;
+      }
       audit(t, field + " set", (prev || "unset") + " → " + val);
       save();
     });
@@ -1032,12 +1052,11 @@ function collectTrain(t) {
     t.person.sex = g("sex")?.value || "";
   }
   t.rpd = {
-    worn: g("rpdOn")?.checked ? "yes" : (t.rpd && t.rpd.worn === "yes" && !g("rpdOn") ? "yes" : "no"),
-    model: g("rpdModel")?.value || "",
-    shaven: g("rpdShaven")?.value || "",
-    fit: g("rpdFit")?.value || ""
+    worn: t.rpdAsked || t.rpd?.worn || "",
+    model: g("rpdModel")?.value || t.rpd?.model || "",
+    shaven: g("rpdShaven")?.value || t.rpd?.shaven || "",
+    fit: g("rpdFit")?.value || t.rpd?.fit || ""
   };
-  if (g("rpdOn")) t.rpd.worn = g("rpdOn").checked ? "yes" : "no";
   t.hpd = {
     worn: g("hpdOn")?.checked ? "yes" : "no",
     model: g("hpdModel")?.value || "",

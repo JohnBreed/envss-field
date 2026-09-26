@@ -134,3 +134,5 @@ textarea { min-height: 80px; }
 
 .need-yn label { color: #b45309; }
 .need-yn { background: #fff7ed; padding: 8px; border-radius: 10px; margin: 8px 0; }
+
+.row-title { font-weight: 700; color: var(--navy); font-size: 16px; font-family: Montserrat, Arial, sans-serif; }
