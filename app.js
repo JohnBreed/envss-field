@@ -1,5 +1,5 @@
 const KEY = "envss-field-v04";
-const APP_VERSION = "27";
+const APP_VERSION = "28";
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -110,33 +110,79 @@ function sbHeaders() {
   };
 }
 window._envssSync = "off";
+function sbCfg() {
+  const c = window.ENVSS_CONFIG || {};
+  if (!c.supabaseUrl || !c.supabaseAnonKey) return null;
+  return c;
+}
+function sbHeaders(prefer) {
+  const c = sbCfg();
+  const h = {
+    apikey: c.supabaseAnonKey,
+    Authorization: "Bearer " + c.supabaseAnonKey,
+    "Content-Type": "application/json"
+  };
+  if (prefer) h.Prefer = prefer;
+  return h;
+}
+async function sbGet(table) {
+  const c = sbCfg();
+  const res = await fetch(c.supabaseUrl + "/rest/v1/" + table + "?select=id,payload,updated_at,event_id,project_id", { headers: sbHeaders() });
+  if (!res.ok) throw new Error(table + " " + res.status);
+  return res.json();
+}
+async function sbUpsert(table, row) {
+  const c = sbCfg();
+  const res = await fetch(c.supabaseUrl + "/rest/v1/" + table + "?on_conflict=id", {
+    method: "POST",
+    headers: sbHeaders("resolution=merge-duplicates,return=minimal"),
+    body: JSON.stringify(row)
+  });
+  if (!res.ok) throw new Error(table + " upsert " + res.status);
+}
+async function sbDelete(table, id) {
+  const c = sbCfg();
+  await fetch(c.supabaseUrl + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id), {
+    method: "DELETE",
+    headers: sbHeaders()
+  });
+}
+function mergeById(localArr, remoteRows) {
+  const map = new Map((localArr || []).map(x => [x.id, x]));
+  (remoteRows || []).forEach(r => {
+    if (!r || !r.payload || !r.payload.id) return;
+    const cur = map.get(r.payload.id);
+    const remoteAt = r.updated_at || r.payload.updatedAt || "";
+    const localAt = (cur && (cur.updatedAt || cur.syncedAt)) || "";
+    if (!cur || remoteAt >= localAt) map.set(r.payload.id, Object.assign({}, r.payload, { updatedAt: remoteAt }));
+  });
+  return Array.from(map.values());
+}
 async function pullRemote() {
   const c = sbCfg();
   if (!c) { window._envssSync = "off"; return; }
   try {
-    const res = await fetch(c.supabaseUrl + "/rest/v1/envss_state?id=eq.main&select=payload,updated_at", { headers: sbHeaders() });
-    window._envssSync = res.ok ? "ok" : "err " + res.status;
-    if (!res.ok) return;
-    const rows = await res.json();
-    const row = rows && rows[0];
-    if (!row || !row.payload) return;
-    const remote = row.payload;
-    const has = (remote.projects && remote.projects.length) || (remote.events && remote.events.length) || (remote.trains && remote.trains.length);
-    if (!has) return;
-    const localStamp = db.syncedAt || "";
-    const remoteStamp = remote.syncedAt || row.updated_at || "";
-    if (!localStamp || remoteStamp >= localStamp) {
-      db = { ...structuredClone(DEFAULT), ...remote };
-      db.catalogs = { ...DEFAULT.catalogs, ...(remote.catalogs || {}) };
-      if (!Array.isArray(db.deletions)) db.deletions = [];
-      localStorage.setItem(KEY, JSON.stringify(db));
-      render();
-    }
+    const [projects, events, trains, deletions] = await Promise.all([
+      sbGet("envss_projects"), sbGet("envss_events"), sbGet("envss_trains"), sbGet("envss_deletions")
+    ]);
+    window._envssSync = "ok";
+    const gone = new Set((deletions || []).map(r => r.payload && r.payload.trainId).filter(Boolean));
+    db.projects = mergeById(db.projects, projects);
+    db.events = mergeById(db.events, events);
+    db.trains = mergeById(db.trains, trains).filter(t => !gone.has(t.id));
+    db.deletions = mergeById(db.deletions, deletions);
+    db.syncedAt = new Date().toISOString();
+    localStorage.setItem(KEY, JSON.stringify(db));
+    render();
   } catch (e) {
     window._envssSync = "err";
   }
 }
 let pushTimer = null;
+function touch(rec) {
+  if (rec && typeof rec === "object") rec.updatedAt = new Date().toISOString();
+  return rec;
+}
 function pushRemote() {
   const c = sbCfg();
   if (!c) return;
@@ -145,16 +191,29 @@ function pushRemote() {
   clearTimeout(pushTimer);
   pushTimer = setTimeout(async () => {
     try {
-      const res = await fetch(c.supabaseUrl + "/rest/v1/envss_state?on_conflict=id", {
-        method: "POST",
-        headers: Object.assign(sbHeaders(), { Prefer: "resolution=merge-duplicates,return=minimal" }),
-        body: JSON.stringify({ id: "main", payload: db, updated_at: db.syncedAt, updated_by: whoText() })
-      });
-      window._envssSync = res.ok ? "ok" : "err " + res.status;
+      const who = whoText();
+      const now = new Date().toISOString();
+      for (const rec of db.projects || []) {
+        touch(rec);
+        await sbUpsert("envss_projects", { id: rec.id, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
+      }
+      for (const rec of db.events || []) {
+        touch(rec);
+        await sbUpsert("envss_events", { id: rec.id, project_id: rec.projectId, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
+      }
+      for (const rec of db.trains || []) {
+        touch(rec);
+        await sbUpsert("envss_trains", { id: rec.id, event_id: rec.eventId, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
+      }
+      for (const rec of db.deletions || []) {
+        if (!rec.id) rec.id = rec.trainId || rec.at;
+        await sbUpsert("envss_deletions", { id: rec.id, event_id: rec.eventId, payload: rec, updated_at: rec.at || now, updated_by: who });
+      }
+      window._envssSync = "ok";
     } catch (e) {
       window._envssSync = "err";
     }
-  }, 300);
+  }, 400);
 }
 function uid(p) { return p + Math.random().toString(36).slice(2, 9); }
 function nowIso() { return new Date().toISOString(); }
@@ -1456,6 +1515,7 @@ function deleteSample(id) {
     const eventId = t.eventId;
     db.deletions = db.deletions || [];
     db.deletions.push({
+      id: t.id, trainId: t.id,
       at: nowIso(),
       who: whoText(),
       eventId: eventId,
@@ -1469,6 +1529,8 @@ function deleteSample(id) {
     view.page = "event";
     view.eventId = eventId;
     localStorage.setItem(KEY, JSON.stringify(db));
+    if (typeof sbDelete === "function") sbDelete("envss_trains", t.id);
+    pushRemote();
     render();
   } catch (err) {
     alert("Delete failed: " + err.message);
