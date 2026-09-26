@@ -131,3 +131,13 @@ textarea { min-height: 80px; }
 @media (min-width: 800px) {
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 }
+
+.need-yn label { color: #b45309; }
+.need-yn { background: #fff7ed; padding: 8px; border-radius: 10px; margin: 8px 0; }
+
+.row-title { font-weight: 700; color: var(--navy); font-size: 16px; font-family: Montserrat, Arial, sans-serif; }
+
+.dob-row { display: flex; gap: 6px; }
+.dob-row input { width: 4.2em; text-align: center; }
+.filters .chip { font-size: 12px; padding: 5px 9px; min-height: 0; }
+.row-title { font-weight: 700; color: var(--navy) !important; font-size: 17px; font-family: Montserrat, Arial, sans-serif; }

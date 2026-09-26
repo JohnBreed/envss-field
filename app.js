@@ -229,10 +229,14 @@ function isStatic(t) { return (t.trainKind || "").endsWith("static") || t.mode =
 
 function displayStatus(t) {
   if (typeof t === "string") return t;
-  if (isBlank(t)) return t.status === "field_blank" ? "field_blank" : t.status;
+  if (isBlank(t)) {
+    return (t.contaminantId && t.headId) ? "field_blank" : "incomplete_blank";
+  }
+  if (t.status === "running") return followUpComplete(t) ? "running" : "running_incomplete";
   if (t.status === "ended" || t.status === "sample_stopped") {
     return followUpComplete(t) ? "sample_stopped" : "incomplete";
   }
+  if (t.status === "prepped" && !followUpComplete(t) && (t.startAt || t.rejectAsked)) return "incomplete";
   return t.status;
 }
 function followUpComplete(t) {
@@ -255,6 +259,7 @@ function badge(status) {
     planned: "Planned", prepped: "Prepped", active: "Active", complete: "Complete",
     uploaded: "Uploaded", running: "Running", ended: "Sample stopped",
     sample_stopped: "Sample stopped", incomplete: "Sample stopped — complete fields",
+    incomplete_blank: "Complete fields", running_incomplete: "Running — complete fields",
     rejected: "Rejected",
     field_blank: "Field blank", fault: "Fault", upload_ready: "Upload event"
   })[status] || status;
@@ -503,15 +508,18 @@ function trainHtml() {
           <label>End flow (L/min)</label>
           <input id="endFlow" value="${esc(t.endFlow)}" inputmode="decimal">
           <label>Average flow (L/min)</label>
-          <input value="${avg == null ? "—" : avg.toFixed(3)}" disabled>
+          <input value="${t.endFlow && avg != null ? avg.toFixed(3) : "—"}" disabled>
           <label>Runtime (minutes)</label>
           <input value="${mins == null ? "—" : mins.toFixed(1)}" disabled>
           <label>Volume sampled (L)</label>
-          <input value="${vol == null ? "—" : vol.toFixed(1)}" disabled>
-          <label>Desired / method minimum volume (L)</label>
-          <input id="desiredVolume" value="${esc(t.desiredVolumeL || c?.desiredVolumeL || "")}" inputmode="decimal">
-          <label>Method minimum minutes</label>
-          <input id="minMinutes" value="${esc(t.minMinutes || c?.minMinutes || "")}" inputmode="decimal">`}
+          <input value="${t.endFlow && vol != null ? vol.toFixed(1) : "—"}" disabled>
+          <label class="check-row"><input type="checkbox" id="methodOn" ${t.methodOn || t.desiredVolumeL || t.minMinutes ? "checked" : ""}> Method minimum volume or minutes</label>
+          <div id="methodBox" style="${t.methodOn || t.desiredVolumeL || t.minMinutes ? "" : "display:none"}">
+            <label>Desired / method minimum volume (L)</label>
+            <input id="desiredVolume" value="${esc(t.desiredVolumeL || "")}" inputmode="decimal">
+            <label>Method minimum minutes</label>
+            <input id="minMinutes" value="${esc(t.minMinutes || "")}" inputmode="decimal">
+          </div>`}
         </div>
       </div>
       ${!isBlank(t) && !isNoise(t) && chk.pct != null ? `<p class="${chk.ok ? "muted" : ""}" style="${chk.ok ? "" : "color:var(--danger);font-weight:700"}">
@@ -660,7 +668,13 @@ function modeFields(t) {
         <option value="female" ${p.sex==="female"?"selected":""}>Female</option>
       </select>
     </div>
-    <div><label>Date of birth</label><input id="dob" type="date" value="${esc(p.dob)}"></div>
+    <div><label>Date of birth</label>
+      <div class="dob-row">
+        <input id="dobD" maxlength="2" inputmode="numeric" placeholder="DD" value="${esc((p.dob||"").split("-")[2]||"")}">
+        <input id="dobM" maxlength="2" inputmode="numeric" placeholder="MM" value="${esc((p.dob||"").split("-")[1]||"")}">
+        <input id="dobY" maxlength="4" inputmode="numeric" placeholder="YYYY" value="${esc((p.dob||"").split("-")[0]||"")}">
+      </div>
+    </div>
     <div><label>Occupation</label>
       <div class="combo">
         <input id="occupation" value="${esc(p.occupation)}" placeholder="Type or pick">
@@ -684,18 +698,8 @@ function rpdFields(t) {
     <div id="rpdBox" style="${on ? "" : "display:none"}">
       <label>Brand / model</label>
       <input id="rpdModel" value="${esc(r.model)}" placeholder="3M 6000 or Unknown">
-      <label>Clean-shaven</label>
-      <select id="rpdShaven"><option value="">—</option>
-        <option value="yes" ${r.shaven==="yes"?"selected":""}>Yes</option>
-        <option value="no" ${r.shaven==="no"?"selected":""}>No</option>
-        <option value="na" ${r.shaven==="na"?"selected":""}>NA</option>
-      </select>
-      <label>Fit-tested</label>
-      <select id="rpdFit"><option value="">—</option>
-        <option value="yes" ${r.fit==="yes"?"selected":""}>Yes</option>
-        <option value="no" ${r.fit==="no"?"selected":""}>No</option>
-        <option value="unknown" ${r.fit==="unknown"?"selected":""}>Unknown</option>
-      </select>
+      <label class="check-row"><input type="checkbox" id="rpdShaven" ${r.shaven==="yes"?"checked":""}> Clean-shaven</label>
+      <label class="check-row"><input type="checkbox" id="rpdFit" ${r.fit==="yes"?"checked":""}> Fit-tested</label>
     </div>`;
 }
 function hpdFields(t) {
@@ -875,6 +879,15 @@ function bind() {
       const box = document.getElementById("hpdBox");
       if (box) box.style.display = hpdOn.checked ? "" : "none";
     };
+    const methodOn = document.getElementById("methodOn");
+    if (methodOn) methodOn.onchange = () => {
+      t.methodOn = methodOn.checked;
+      const box = document.getElementById("methodBox");
+      if (box) box.style.display = t.methodOn ? "" : "none";
+      if (!t.methodOn) { t.desiredVolumeL = ""; t.minMinutes = ""; }
+      audit(t, "Method minimum", t.methodOn ? "on" : "off");
+      save();
+    };
     const kindSel = document.getElementById("trainKind");
     if (kindSel) kindSel.onchange = () => {
       collectTrain(t);
@@ -1053,12 +1066,16 @@ function collectTrain(t) {
   if (g("sex") || g("first")) {
     t.person = t.person || {};
     t.person.sex = g("sex")?.value || "";
+    const dd = (g("dobD")?.value || "").padStart(2,"0");
+    const mm = (g("dobM")?.value || "").padStart(2,"0");
+    const yy = g("dobY")?.value || "";
+    if (yy && mm && dd && yy !== "00") t.person.dob = yy + "-" + mm + "-" + dd;
   }
   t.rpd = {
     worn: t.rpdAsked || t.rpd?.worn || "",
     model: g("rpdModel")?.value || t.rpd?.model || "",
-    shaven: g("rpdShaven")?.value || t.rpd?.shaven || "",
-    fit: g("rpdFit")?.value || t.rpd?.fit || ""
+    shaven: g("rpdShaven")?.checked ? "yes" : (g("rpdShaven") ? "no" : (t.rpd?.shaven || "")),
+    fit: g("rpdFit")?.checked ? "yes" : (g("rpdFit") ? "no" : (t.rpd?.fit || ""))
   };
   t.hpd = {
     worn: g("hpdOn")?.checked ? "yes" : "no",
