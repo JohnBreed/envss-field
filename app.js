@@ -1,5 +1,5 @@
 const KEY = "envss-field-v04";
-const APP_VERSION = "28";
+const APP_VERSION = "29";
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -194,15 +194,12 @@ function pushRemote() {
       const who = whoText();
       const now = new Date().toISOString();
       for (const rec of db.projects || []) {
-        touch(rec);
         await sbUpsert("envss_projects", { id: rec.id, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
       }
       for (const rec of db.events || []) {
-        touch(rec);
         await sbUpsert("envss_events", { id: rec.id, project_id: rec.projectId, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
       }
       for (const rec of db.trains || []) {
-        touch(rec);
         await sbUpsert("envss_trains", { id: rec.id, event_id: rec.eventId, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
       }
       for (const rec of db.deletions || []) {
@@ -1341,6 +1338,7 @@ function collectTrain(t) {
   t.locationCode = g("locCode")?.value || t.locationCode || "";
   t.irsstCat = g("irsst")?.value || t.irsstCat || "";
   t.shiftDate = g("shiftDate")?.value || t.shiftDate || "";
+  t.updatedAt = new Date().toISOString();
 }
 
 function wireCombo(inputId, items, onPick) {
@@ -1747,3 +1745,6 @@ render();
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
+
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pullRemote(); });
+setInterval(() => { if (!document.hidden) pullRemote(); }, 8000);
