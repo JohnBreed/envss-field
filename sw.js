@@ -1,5 +1,5 @@
-const CACHE = "envss-field-v04";
-const ASSETS = ["./index.html", "./styles.css", "./app.js", "./config.js", "./manifest.json", "./logo.svg", "./vOSog.png"];
+const CACHE = "envss-field-sw-36";
+const ASSETS = ["./index.html", "./styles.css", "./app.js", "./app-fibre.js", "./app-fibre-fix.js", "./config.js", "./manifest.json", "./logo.svg", "./vOSog.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
   self.skipWaiting();
