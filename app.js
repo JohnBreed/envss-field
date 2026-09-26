@@ -1,5 +1,5 @@
 const KEY = "envss-field-v04";
-const APP_VERSION = "25";
+const APP_VERSION = "26";
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -68,6 +68,7 @@ function allowedEmail(email) {
 }
 
 let db = load();
+setTimeout(pullRemote, 400);
 let view = { page: "dash", filter: "all", eventId: null, trainId: null, projectId: null };
 let tickMin = null;
 
@@ -86,10 +87,54 @@ function load() {
     return structuredClone(DEFAULT);
   }
 }
-function saveQuiet() { localStorage.setItem(KEY, JSON.stringify(db)); }
+function saveQuiet() {
+  localStorage.setItem(KEY, JSON.stringify(db));
+  pushRemote();
+}
 function save() {
   saveQuiet();
   render();
+}
+function sbClient() {
+  const c = window.ENVSS_CONFIG || {};
+  if (!c.supabaseUrl || !c.supabaseAnonKey || !window.supabase) return null;
+  if (!window._envssSb) window._envssSb = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey);
+  return window._envssSb;
+}
+async function pullRemote() {
+  const sb = sbClient();
+  if (!sb) return;
+  const { data, error } = await sb.from("envss_state").select("payload,updated_at").eq("id", "main").maybeSingle();
+  if (error || !data || !data.payload) return;
+  const remote = data.payload;
+  if (!remote.projects && !remote.events) return;
+  const localStamp = db.syncedAt || "";
+  const remoteStamp = remote.syncedAt || data.updated_at || "";
+  const localCount = (db.trains || []).length;
+  const remoteCount = (remote.trains || []).length;
+  if (remoteStamp > localStamp || remoteCount > localCount) {
+    db = { ...structuredClone(DEFAULT), ...remote };
+    db.catalogs = { ...DEFAULT.catalogs, ...(remote.catalogs || {}) };
+    if (!Array.isArray(db.deletions)) db.deletions = [];
+    localStorage.setItem(KEY, JSON.stringify(db));
+    render();
+  }
+}
+let pushTimer = null;
+function pushRemote() {
+  const sb = sbClient();
+  if (!sb) return;
+  db.syncedAt = new Date().toISOString();
+  localStorage.setItem(KEY, JSON.stringify(db));
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(async () => {
+    await sb.from("envss_state").upsert({
+      id: "main",
+      payload: db,
+      updated_at: db.syncedAt,
+      updated_by: whoText()
+    });
+  }, 400);
 }
 function uid(p) { return p + Math.random().toString(36).slice(2, 9); }
 function nowIso() { return new Date().toISOString(); }
