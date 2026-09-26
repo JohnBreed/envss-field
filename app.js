@@ -232,7 +232,7 @@ function isStatic(t) { return (t.trainKind || "").endsWith("static") || t.mode =
 function displayStatus(t) {
   if (typeof t === "string") return t;
   if (isBlank(t)) {
-    return (t.contaminantId && t.headId) ? "field_blank" : "incomplete_blank";
+    return (t.contaminantId && t.headId) ? "sample_complete" : "incomplete_blank";
   }
   if (t.status === "running") return followUpComplete(t) ? "running" : "running_incomplete";
   if (t.status === "ended" || t.status === "sample_stopped") {
@@ -244,7 +244,8 @@ function displayStatus(t) {
 function personComplete(t) {
   if (isBlank(t) || isStatic(t)) return true;
   const p = t.person || {};
-  return !!(p.sex && p.dob && p.occupation && p.company && p.hours && p.daysOn && p.daysOff);
+  const sexOk = p.sex === "male" || p.sex === "female" || p.sex === "not_stated";
+  return !!(sexOk && p.dob && p.occupation && p.company && p.hours && p.daysOn && p.daysOff);
 }
 function followUpComplete(t) {
   if (isBlank(t)) return !!(t.contaminantId && t.headId);
@@ -302,6 +303,7 @@ function render() {
   else if (view.page === "event") root.innerHTML = eventHtml();
   else if (view.page === "train") root.innerHTML = trainHtml();
   else if (view.page === "newEvent") root.innerHTML = newEventHtml();
+  else if (view.page === "newProject") root.innerHTML = newProjectHtml();
   else if (view.page === "editEvent") root.innerHTML = editEventHtml();
   else if (view.page === "pickType") root.innerHTML = pickTypeHtml();
   bind();
@@ -312,7 +314,7 @@ function dashHtml() {
     <div class="wrap">
       <div class="row">
         <h2 class="brand-type" style="margin:0;color:var(--navy)">Projects</h2>
-        <button class="btn orange" onclick="openNewEvent()">New project / event</button>
+        <button class="btn orange" onclick="openNewProject()">New project</button>
       </div>
       ${db.projects.map(p => {
         const evs = db.events.filter(e => e.projectId === p.id);
@@ -341,7 +343,8 @@ function projectHtml() {
       <button class="btn ghost" onclick="goDash()">← Projects</button>
       <div class="row" style="margin-top:10px">
         <div class="grow">
-          <h2 class="brand-type" style="margin:0;color:var(--navy)">${p.number}</h2>
+          <h2 class="brand-type" style="margin:0;color:var(--navy)">Project events</h2>
+          <div class="muted">${p.number}</div>
           <div class="muted">${esc(p.name || "")} · ${esc(p.site || "")}</div>
         </div>
         <button class="btn orange" onclick="openNewEvent('${p.id}')">New event</button>
@@ -448,7 +451,7 @@ function deletionLogHtml(eventId) {
   if (!rows.length) return "";
   return `<h3 class="brand-type" style="color:var(--navy);margin-top:22px">Deleted sample trains</h3>
     <p class="help">These cannot be undone on this device.</p>
-    ${rows.map(d => `<div class="muted" style="margin-bottom:6px">${fmtTime(d.at)} · ${esc(d.who || "")} · pouch ${esc(d.pouch)} · ${esc(d.kind || "")} · ${esc(d.detail || "Deleted")}</div>`).join("")}`;
+    ${rows.map(d => `<div class="muted" style="margin-bottom:6px">${fmtTime(d.at)} · ${esc(d.who || "")} · sample ${esc(d.pouch || d.sampleNo || "")} · ${esc(d.kind || "")} · ${esc(d.detail || "Deleted")}</div>`).join("")}`;
 }
 
 function trainHtml() {
@@ -469,6 +472,14 @@ function trainHtml() {
       <div class="row" style="margin-top:10px">
         <h2 class="brand-type" style="margin:0;color:var(--navy)">${displayNo(t)}</h2>
         ${badge(displayStatus(t))}
+        <div class="menu-wrap">
+          <button class="btn ghost" type="button" id="btnSampleMenu">☰</button>
+          <div class="menu" id="sampleMenu" hidden>
+            ${isNoise(t) ? `<button type="button" id="btnAddPump">Add this dosimeter to fleet</button>` : isBlank(t) ? "" : `<button type="button" id="btnAddPump">Add this pump to fleet</button>`}
+            ${isNoise(t) || isBlank(t) ? "" : `<button type="button" id="btnAddHead">Add this sample head to fleet</button>`}
+            <button type="button" onclick="window.print()">Print</button>
+          </div>
+        </div>
       </div>
       <label>Sample train type</label>
       <select id="trainKind">${trainKindOptions(t)}</select>
@@ -512,7 +523,7 @@ function trainHtml() {
           <input id="media" value="${esc(t.mediaId)}">`}
         </div>
         <div>
-          ${isBlank(t) || isNoise(t) ? (isBlank(t) ? `<p class="muted">Field blank is not started. No flow or volume.</p>` : "") : `
+          ${isBlank(t) || isNoise(t) ? "" : `
           <label>Start flow (L/min)</label>
           <input id="startFlow" value="${esc(t.startFlow)}" inputmode="decimal">
           <label>End flow (L/min)</label>
@@ -677,7 +688,7 @@ function modeFields(t) {
     <div><label>Last name</label><input id="last" value="${esc(p.last)}"></div>
     <div><label>Sex</label>
       <select id="sex">
-        <option value="">Not stated</option>
+        <option value="not_stated" ${!p.sex || p.sex==="not_stated"?"selected":""}>Not stated</option>
         <option value="male" ${p.sex==="male"?"selected":""}>Male</option>
         <option value="female" ${p.sex==="female"?"selected":""}>Female</option>
       </select>
@@ -753,24 +764,32 @@ function pickTypeHtml() {
 }
 
 function newEventHtml() {
-  const opts = db.projects.map(p => `<option value="${p.id}" ${view.projectId===p.id?"selected":""}>${p.number} — ${p.name}</option>`).join("");
+  const p = project(view.projectId);
   return `<div class="wrap">
-    <button class="btn ghost" onclick="view.projectId ? openProject(view.projectId) : goDash()">← Back</button>
+    <button class="btn ghost" onclick="openProject('${view.projectId || ""}')">← Project events</button>
     <h2 class="brand-type" style="color:var(--navy)">New event</h2>
+    <p class="muted">${p ? p.number + " · " + (p.name || "") : ""}</p>
     <label>Event type</label>
     <select id="ntype">
       <option value="hygiene">Hygiene event</option>
       <option value="fibre" disabled>Airborne fibre monitoring (soon)</option>
     </select>
-    <label>Project</label>
-    <select id="np">${opts}</select>
-    <label>Or new project number</label>
-    <input id="nnum" placeholder="001900">
-    <label>Project name / site</label>
-    <input id="nname" placeholder="Client / site">
     <label>Event date</label>
     <input id="ndate" type="date" value="${new Date().toISOString().slice(0,10)}">
     <div class="footer-actions"><button class="btn orange" id="btnCreateEv">Create event</button></div>
+  </div>`;
+}
+function newProjectHtml() {
+  return `<div class="wrap">
+    <button class="btn ghost" onclick="goDash()">← Projects</button>
+    <h2 class="brand-type" style="color:var(--navy)">New project</h2>
+    <label>Project number</label>
+    <input id="nnum" placeholder="001900">
+    <label>Project name</label>
+    <input id="nname" placeholder="Client / site name">
+    <label>Site</label>
+    <input id="nsite" placeholder="Site">
+    <div class="footer-actions"><button class="btn orange" id="btnCreateProj">Create project</button></div>
   </div>`;
 }
 function editEventHtml() {
@@ -825,11 +844,7 @@ function bind() {
         db.catalogs.contaminants.push(c);
       }
       t.contaminantId = c.id;
-      if (c.defaultFlow && !t.startFlow) {
-        t.startFlow = String(c.defaultFlow);
-        const sf = document.getElementById("startFlow");
-        if (sf) sf.value = t.startFlow;
-      }
+      /* start flow stays empty until typed */
       if (c.minMinutes && !t.minMinutes) t.minMinutes = String(c.minMinutes);
       if (c.desiredVolumeL && !t.desiredVolumeL) t.desiredVolumeL = String(c.desiredVolumeL);
     });
@@ -1025,6 +1040,8 @@ function bind() {
   }
   const ce = document.getElementById("btnCreateEv");
   if (ce) ce.onclick = createEvent;
+  const cp = document.getElementById("btnCreateProj");
+  if (cp) cp.onclick = createProject;
 }
 
 function snapshotTrain(t) {
@@ -1140,6 +1157,7 @@ function openEvent(id) { view.page = "event"; view.eventId = id; render(); }
 function openTrain(id) { view.page = "train"; view.trainId = id; render(); }
 function goDash() { view.page = "dash"; view.projectId = null; render(); }
 function openProject(id) { view.page = "project"; view.projectId = id; render(); }
+function openNewProject() { view.page = "newProject"; render(); }
 function openNewEvent(projectId) { view.page = "newEvent"; if (projectId) view.projectId = projectId; render(); }
 function openEditEvent(id) { view.page = "editEvent"; view.eventId = id; render(); }
 function markEventUpload(id) {
@@ -1243,7 +1261,7 @@ function addTrain(eventId, trainKind) {
     contaminantId: noise ? "NOISE" : "", pumpSerial: "", dosimeterSerial: "", headId: "",
     mediaId: "", startFlow: "", endFlow: "", desiredVolumeL: "", minMinutes: "",
     mode: stat ? "static" : "personal",
-    person: { first: "", last: "", sex: "", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
+    person: { first: "", last: "", sex: "not_stated", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
     rpd: { worn: "", model: "", shaven: "", fit: "" },
     hpd: { worn: "", model: "", style: "", classRating: "" },
     location: "", startAt: "", endAt: "", status: "prepped", comments: "",
@@ -1255,16 +1273,21 @@ function addTrain(eventId, trainKind) {
   openTrain(t.id);
 }
 
+function createProject() {
+  const num = (document.getElementById("nnum")?.value || "").trim();
+  const name = (document.getElementById("nname")?.value || "").trim();
+  const site = (document.getElementById("nsite")?.value || "").trim();
+  if (!num) { alert("Enter a project number."); return; }
+  if (db.projects.some(x => x.number === num)) { alert("That project number already exists."); return; }
+  const p = { id: uid("p"), number: num, name: name || num, site };
+  db.projects.push(p);
+  save();
+  openProject(p.id);
+}
 function createEvent() {
-  let projectId = document.getElementById("np").value;
-  const num = document.getElementById("nnum").value.trim();
-  const name = document.getElementById("nname").value.trim();
-  if (num) {
-    let p = db.projects.find(x => x.number === num);
-    if (!p) { p = { id: uid("p"), number: num, name: name || num, site: name }; db.projects.push(p); }
-    projectId = p.id;
-  }
+  const projectId = view.projectId;
   const p = project(projectId);
+  if (!p) { alert("Open a project first."); return; }
   const siblings = db.events.filter(e => e.eventId === projectId || e.projectId === projectId);
   const n = String(siblings.length + 1).padStart(3, "0");
   const ev = { id: uid("e"), projectId, type: (document.getElementById("ntype")||{}).value || "hygiene", code: `${p.number}-${n}`, stage: "planned", date: document.getElementById("ndate").value, notes: "", uploadReady: false };
@@ -1287,11 +1310,11 @@ function exportEvent(eventId) {
 }
 function exportCsv(eventId) {
   const ev = eventById(eventId);
-  const rows = [["event","pouch","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments"]];
+  const rows = [["event","sample_no","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","dob","occupation","company","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments"]];
   trainsOf(eventId).forEach(t => {
-    const who = isStatic(t) ? t.location : [t.person.first, t.person.last].filter(Boolean).join(" ");
+    const who = isStatic(t) ? t.location : [t.person?.first, t.person?.last].filter(Boolean).join(" ");
     const c = contam(t.contaminantId);
-    rows.push([ev.code, t.pouch, t.trainKind || "", t.status, c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments]);
+    rows.push([ev.code, t.sampleNo || t.pouch, t.trainKind || "", displayStatus(t), c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.person?.dob || "", t.person?.occupation || "", t.person?.company || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments]);
   });
   const csv = rows.map(r => r.map(x => `"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   download(new Blob([csv], { type: "text/csv" }), ev.code + "-ENVSS-Field.csv");
@@ -1307,6 +1330,7 @@ window.leaveSample = leaveSample;
 window.openEvent = openEvent;
 window.openTrain = openTrain;
 window.goDash = goDash;
+window.openNewProject = openNewProject;
 window.openNewEvent = openNewEvent;
 window.openPickType = openPickType;
 window.addTrain = addTrain;
