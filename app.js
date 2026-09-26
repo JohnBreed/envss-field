@@ -227,35 +227,10 @@ function isBlank(t) { return t.trainKind === "blank"; }
 function isAirbornePersonal(t) { return (t.trainKind || "airborne_personal") === "airborne_personal"; }
 function isStatic(t) { return (t.trainKind || "").endsWith("static") || t.mode === "static"; }
 
-function displayStatus(t) {
-  if (typeof t === "string") return t;
-  if (isBlank(t)) return t.status === "field_blank" ? "field_blank" : t.status;
-  if (t.status === "ended" || t.status === "sample_stopped") {
-    return followUpComplete(t) ? "sample_stopped" : "incomplete";
-  }
-  return t.status;
-}
-function followUpComplete(t) {
-  if (isBlank(t)) return true;
-  if (t.rejectAsked !== "yes" && t.rejectAsked !== "no") return false;
-  if (t.rejectAsked === "yes" && !t.rejectCode) return false;
-  if (t.equipAsked !== "yes" && t.equipAsked !== "no") return false;
-  if (t.equipAsked === "yes" && !(t.equipNote || t.equipPhoto)) return false;
-  if (t.commentAsked !== "yes" && t.commentAsked !== "no") return false;
-  if (t.commentAsked === "yes" && !(t.comments || "").trim()) return false;
-  if (isAirbornePersonal(t)) {
-    const worn = t.rpdAsked || t.rpd?.worn;
-    if (worn !== "yes" && worn !== "no" && worn !== "unknown") return false;
-    if (worn === "yes" && !(t.rpd?.model || "").trim()) return false;
-  }
-  return true;
-}
 function badge(status) {
   const label = ({
     planned: "Planned", prepped: "Prepped", active: "Active", complete: "Complete",
-    uploaded: "Uploaded", running: "Running", ended: "Sample stopped",
-    sample_stopped: "Sample stopped", incomplete: "Sample stopped — complete fields",
-    rejected: "Rejected",
+    uploaded: "Uploaded", running: "Running", ended: "Sample ended", rejected: "Rejected",
     field_blank: "Field blank", fault: "Fault", upload_ready: "Upload event"
   })[status] || status;
   return `<span class="badge s-${status}">${label}</span>`;
@@ -381,40 +356,21 @@ function eventHtml() {
       ${deletionLogHtml(ev.id)}
     </div>`;
 }
-function dash(v) { return (v && String(v).trim()) ? String(v).trim() : "—"; }
-function summaryLine(t) {
-  const c = contam(t.contaminantId);
-  const bits = [displayNo(t), kindLabel(t)];
-  if (isBlank(t)) {
-    bits.push(c ? c.code : "—", dash(t.headId), t.mediaId ? dash(t.mediaId) : null);
-    return bits.filter(Boolean).join(" · ");
-  }
-  if (isNoise(t)) bits.push("serial " + dash(t.dosimeterSerial));
-  else bits.push(c ? c.code : "—", "pump " + dash(t.pumpSerial), "head " + dash(t.headId), "cassette " + dash(t.mediaId));
-  if (isStatic(t)) bits.push(dash(t.location));
-  else bits.push(dash([t.person?.first, t.person?.last].filter(Boolean).join(" ")), dash(t.person?.company), dash(t.person?.occupation));
-  bits.push(t.startAt ? "start " + fmtTime(t.startAt) : "start —");
-  bits.push(t.endAt ? "stop " + fmtTime(t.endAt) : "stop —");
-  if (t.status === "running" && t.startAt) bits.push("LIVE");
-  return bits.join(" · ");
-}
-function titleLine(t) {
-  const c = contam(t.contaminantId);
-  if (isBlank(t)) return displayNo(t) + " · Field blank" + (c ? " · " + c.code : "");
-  if (isNoise(t)) return displayNo(t) + " · " + kindLabel(t);
-  return displayNo(t) + " · " + kindLabel(t) + (c ? " · " + c.code : "");
-}
 function trainRowHtml(t) {
+  const c = contam(t.contaminantId);
+  const who = isStatic(t)
+    ? (t.location || "Static — location not set")
+    : ([t.person?.first, t.person?.last].filter(Boolean).join(" ") || "Person not attached");
+  const kit = isNoise(t) ? (t.dosimeterSerial || "no badge") : isBlank(t) ? (t.headId || "no head") : ((t.pumpSerial || "no pump") + " · " + (t.headId || "no head"));
   const run = t.status === "running" && !isBlank(t) && t.startAt;
   const tint = rowTint(t);
-  const line = summaryLine(t).replace("LIVE", `<span data-run="${t.id}">${elapsedLabel(t.startAt)}</span>`);
   return `<div class="train ${tint}" onclick="openTrain('${t.id}')">
     <div class="pouch">${sampleNoOf(t) || "–"}</div>
     <div>
-      <div class="row-title">${titleLine(t)}</div>
-      <div class="muted">${line}</div>
+      <div><strong>${displayNo(t)}</strong> · ${kindLabel(t)}${c && !isNoise(t) ? " · " + c.code : ""} · ${kit}</div>
+      <div class="muted">${who} ${t.startAt ? "· start " + fmtTime(t.startAt) : ""} ${t.endAt ? "· stop " + fmtTime(t.endAt) : ""} ${run ? `· <span data-run="${t.id}">${elapsedLabel(t.startAt)}</span>` : ""}</div>
     </div>
-    ${badge(displayStatus(t))}
+    ${badge(t.status)}
   </div>`;
 }
 function eventListHtml(ts) {
@@ -451,7 +407,7 @@ function trainHtml() {
       <button class="btn ghost" onclick="openEvent('${t.eventId}')">← ${ev ? ev.code : "Event"}</button>
       <div class="row" style="margin-top:10px">
         <h2 class="brand-type" style="margin:0;color:var(--navy)">${displayNo(t)}</h2>
-        ${badge(displayStatus(t))}
+        ${badge(t.status)}
       </div>
       <label>Sample train type</label>
       <select id="trainKind">${trainKindOptions(t)}</select>
@@ -536,13 +492,29 @@ function trainHtml() {
       ${t.startLoc ? `<p class="help">Start location ${Number(t.startLoc.lat).toFixed(5)}, ${Number(t.startLoc.lng).toFixed(5)}</p>` : ""}
       ${t.endLoc ? `<p class="help">Stop location ${Number(t.endLoc.lat).toFixed(5)}, ${Number(t.endLoc.lng).toFixed(5)}</p>` : ""}
       `}
-      ${isBlank(t) ? "" : followUpHtml(t)}
+      ${isBlank(t) ? "" : rejectBlockHtml(t)}
+      <label class="check-row"><input type="checkbox" id="equipDamaged" ${t.equipDamaged ? "checked" : ""}> ENVSS equipment damaged</label>
+      <p class="help">Use this for kit that needs repair billed to the client. Does not reject the sample by itself.</p>
+      <div id="equipBox" style="${t.equipDamaged ? "" : "display:none"}">
+        <label>Photo (time-stamped in the audit log)</label>
+        <input id="equipPhoto" type="file" accept="image/*" capture="environment">
+        ${t.equipPhoto ? `<img alt="equipment" src="${t.equipPhoto}" style="max-width:220px;border-radius:8px">` : ""}
+        <label>What was damaged</label>
+        <input id="equipNote" value="${esc(t.equipNote || "")}" placeholder="Pump case, tubing, badge clip…">
+      </div>
       ${isAirbornePersonal(t) ? rpdFields(t) : ""}
       ${isNoise(t) && !isStatic(t) ? hpdFields(t) : ""}
+      <label>Comments</label>
+      <div class="comment-wrap">
+        <textarea id="comments">${esc(t.comments)}</textarea>
+        <button type="button" class="mic-btn" id="btnSpeak" title="Voice to text" aria-label="Microphone">${micSvg()}</button>
+      </div>
+      <div class="mic-bars" id="micBars" hidden>${"<span></span>".repeat(12)}</div>
+      <p class="help">Tap the microphone to start, tap again to stop.</p>
       <div class="footer-actions">
         ${isNoise(t) ? `<button class="btn ghost" id="btnAddPump">Add this dosimeter to fleet</button>` : isBlank(t) ? "" : `<button class="btn ghost" id="btnAddPump">Add this pump to fleet</button>`}
         ${isNoise(t) || isBlank(t) ? "" : `<button class="btn ghost" id="btnAddHead">Add this sample head to fleet</button>`}
-        <button class="btn danger" id="btnDelete" type="button" onclick="event.stopPropagation(); deleteSample('${t.id}')">Delete sample</button>
+        <button class="btn danger" id="btnDelete">Delete sample</button>
       </div>
       <h3 class="brand-type" style="color:var(--navy);margin-top:22px;cursor:pointer" id="auditToggle">Audit log ▸</h3>
       <div id="auditBox" hidden>
@@ -560,54 +532,6 @@ function noiseRejects() {
   ];
 }
 function rejectList(t) { return isNoise(t) ? noiseRejects() : REJECTS; }
-
-function yn(name, val, extra) {
-  const opts = extra || [["yes","Yes"],["no","No"]];
-  return `<div class="filters">
-    ${opts.map(([v,l]) => `<button type="button" class="chip ${val===v?"on":""}" data-yn="${name}" data-val="${v}">${l}</button>`).join("")}
-  </div>`;
-}
-function followUpHtml(t) {
-  const list = rejectList(t);
-  const need = (t.status === "ended" || t.status === "running" || t.status === "rejected" || t.status === "fault");
-  const askC = t.commentAsked || "";
-  return `
-    <div class="${t.rejectAsked ? "" : "need-yn"}">
-      <label>${isNoise(t) ? "Fault?" : "Sample rejected?"}</label>
-      ${yn("reject", t.rejectAsked || "")}
-    </div>
-    <div id="rejectBox" style="${t.rejectAsked==="yes" ? "" : "display:none"}">
-      <div class="filters" id="rejectChips">
-        ${list.map(r => `<button type="button" class="chip ${t.rejectCode===r.code?"on":""}" data-rej="${r.code}">${r.label}</button>`).join("")}
-      </div>
-      ${t.rejectCode === "damaged_filter" ? `<label>Photo of filter (optional)</label>
-        <input id="photo" type="file" accept="image/*" capture="environment">
-        ${t.photo ? `<img alt="filter" src="${t.photo}" style="max-width:220px;border-radius:8px">` : ""}` : ""}
-    </div>
-    <div class="${t.equipAsked ? "" : "need-yn"}">
-      <label>ENVSS equipment damaged?</label>
-      ${yn("equip", t.equipAsked || "")}
-    </div>
-    <div id="equipBox" style="${t.equipAsked==="yes" ? "" : "display:none"}">
-      <label>Photo</label>
-      <input id="equipPhoto" type="file" accept="image/*" capture="environment">
-      ${t.equipPhoto ? `<img alt="equipment" src="${t.equipPhoto}" style="max-width:220px;border-radius:8px">` : ""}
-      <label>What was damaged</label>
-      <input id="equipNote" value="${esc(t.equipNote || "")}">
-    </div>
-    <div class="${t.commentAsked ? "" : "need-yn"}">
-      <label>Comments?</label>
-      ${yn("comment", t.commentAsked || "")}
-    </div>
-    <div id="commentBox" style="${t.commentAsked==="yes" ? "" : "display:none"}">
-      <div class="comment-wrap">
-        <textarea id="comments">${esc(t.comments)}</textarea>
-        <button type="button" class="mic-btn" id="btnSpeak" title="Voice to text">${micSvg()}</button>
-      </div>
-      <div class="mic-bars" id="micBars" hidden>${"<span></span>".repeat(12)}</div>
-      <p class="help">Tap mic to start, tick to stop.</p>
-    </div>`;
-}
 function rejectBlockHtml(t) {
   const list = rejectList(t);
   const on = t.status === "rejected" || t.status === "fault" || !!t.rejectCode;
@@ -675,12 +599,9 @@ function modeFields(t) {
 }
 function rpdFields(t) {
   const r = t.rpd || {};
-  const asked = t.rpdAsked || r.worn || "";
-  const on = asked === "yes";
-  return `<div class="${asked ? "" : "need-yn"}">
-      <label>Respirator worn?</label>
-      ${yn("rpd", asked, [["yes","Yes"],["no","No"],["unknown","Unknown"]])}
-    </div>
+  const on = r.worn === "yes";
+  return `<label class="check-row"><input type="checkbox" id="rpdOn" ${on ? "checked" : ""}> Respirator worn</label>
+    <p class="help">Personal airborne samples only. Tick if an RPD was worn.</p>
     <div id="rpdBox" style="${on ? "" : "display:none"}">
       <label>Brand / model</label>
       <input id="rpdModel" value="${esc(r.model)}" placeholder="3M 6000 or Unknown">
@@ -813,24 +734,6 @@ function bind() {
     wireCombo("head", (db.catalogs.heads || []).map(h => h.id), (val) => { t.headId = val.trim().toUpperCase(); });
     wireCombo("dosimeter", (db.catalogs.dosimeters || []).map(d => d.serial), (val) => { t.dosimeterSerial = val.trim(); });
     wireCombo("occupation", db.catalogs.occupations || [], (val) => { t.person = t.person || {}; t.person.occupation = val; });
-    document.querySelectorAll("[data-yn]").forEach(b => b.onclick = () => {
-      const field = b.dataset.yn, val = b.dataset.val;
-      const prev = field === "reject" ? t.rejectAsked : field === "equip" ? t.equipAsked : field === "rpd" ? t.rpdAsked : t.commentAsked;
-      if (field === "reject") {
-        t.rejectAsked = val;
-        if (val === "no") { t.rejectCode = ""; t.status = t.endAt ? "ended" : t.status; }
-        if (val === "yes" && t.endAt) t.status = isNoise(t) ? "fault" : "rejected";
-      }
-      if (field === "equip") { t.equipAsked = val; t.equipDamaged = val === "yes"; }
-      if (field === "comment") t.commentAsked = val;
-      if (field === "rpd") {
-        t.rpdAsked = val;
-        t.rpd = t.rpd || {};
-        t.rpd.worn = val;
-      }
-      audit(t, field + " set", (prev || "unset") + " → " + val);
-      save();
-    });
     document.querySelectorAll("[data-rej]").forEach(b => b.onclick = () => {
       if (t.rejectCode === b.dataset.rej) {
         t.rejectCode = "";
@@ -1052,11 +955,12 @@ function collectTrain(t) {
     t.person.sex = g("sex")?.value || "";
   }
   t.rpd = {
-    worn: t.rpdAsked || t.rpd?.worn || "",
-    model: g("rpdModel")?.value || t.rpd?.model || "",
-    shaven: g("rpdShaven")?.value || t.rpd?.shaven || "",
-    fit: g("rpdFit")?.value || t.rpd?.fit || ""
+    worn: g("rpdOn")?.checked ? "yes" : (t.rpd && t.rpd.worn === "yes" && !g("rpdOn") ? "yes" : "no"),
+    model: g("rpdModel")?.value || "",
+    shaven: g("rpdShaven")?.value || "",
+    fit: g("rpdFit")?.value || ""
   };
+  if (g("rpdOn")) t.rpd.worn = g("rpdOn").checked ? "yes" : "no";
   t.hpd = {
     worn: g("hpdOn")?.checked ? "yes" : "no",
     model: g("hpdModel")?.value || "",
@@ -1107,17 +1011,6 @@ function openEditEvent(id) { view.page = "editEvent"; view.eventId = id; render(
 function markEventUpload(id) {
   const ev = eventById(id);
   if (!ev) return;
-  const bad = trainsOf(id).filter(t => {
-    if (isBlank(t)) return !(t.contaminantId && t.headId);
-    if (t.status === "running") return true;
-    if (t.status === "prepped") return true;
-    if ((t.status === "ended" || t.status === "rejected" || t.status === "fault") && !followUpComplete(t)) return true;
-    return false;
-  });
-  if (bad.length) {
-    alert("This event cannot be uploaded until all samples are complete.\nIncomplete: " + bad.map(displayNo).join(", "));
-    return;
-  }
   ev.uploadReady = true;
   save();
   alert("Event flagged for upload. Export from the menu until Podio is connected.");
@@ -1167,33 +1060,23 @@ function applyPlacement(t, placement) {
     ? (placement === "static" ? "noise_static" : "noise_personal")
     : (placement === "static" ? "airborne_static" : "airborne_personal"));
 }
-function deleteSample(id) {
-  try {
-    const t = db.trains.find(x => x.id === id) || db.trains.find(x => x.id === view.trainId);
-    if (!t) { alert("That sample is already gone."); openEvent(view.eventId); return; }
-    if (!confirm("Delete " + displayNo(t) + "? This cannot be undone on this device.")) return;
-    const eventId = t.eventId;
-    db.deletions = db.deletions || [];
-    db.deletions.push({
-      at: nowIso(),
-      who: whoText(),
-      eventId: eventId,
-      trainId: t.id,
-      pouch: t.pouch || t.sampleNo,
-      kind: t.trainKind,
-      detail: "deleted"
-    });
-    db.trains = db.trains.filter(x => x.id !== t.id);
-    view.trainId = null;
-    view.page = "event";
-    view.eventId = eventId;
-    localStorage.setItem(KEY, JSON.stringify(db));
-    render();
-  } catch (err) {
-    alert("Delete failed: " + err.message);
-  }
+function deleteTrain(t) {
+  const ok = confirm("Delete " + displayNo(t) + "?\n\nThis cannot be undone on this device.");
+  if (!ok) return;
+  db.deletions = db.deletions || [];
+  db.deletions.push({
+    at: nowIso(),
+    who: whoLabel(),
+    eventId: t.eventId,
+    trainId: t.id,
+    pouch: t.pouch,
+    kind: t.trainKind,
+    detail: (contam(t.contaminantId)?.code || "") + " deleted"
+  });
+  db.trains = db.trains.filter(x => x.id !== t.id);
+  save();
+  openEvent(t.eventId);
 }
-function deleteTrain(t) { deleteSample(t && t.id); }
 function openPickType(eventId) { view.page = "pickType"; view.eventId = eventId; render(); }
 function addTrain(eventId, trainKind) {
   const noise = (trainKind || "").startsWith("noise");
@@ -1271,8 +1154,6 @@ window.goDash = goDash;
 window.openNewEvent = openNewEvent;
 window.openPickType = openPickType;
 window.addTrain = addTrain;
-window.deleteSample = deleteSample;
-window.deleteTrain = deleteTrain;
 
 let recHold = null;
 function startSpeech() {
@@ -1294,20 +1175,12 @@ function startSpeech() {
   r.interimResults = true;
   if (btn) { btn.classList.add("live"); btn.innerHTML = tickSvg(); }
   if (bars) { bars.hidden = false; startMicBars(bars); }
-  let finalText = "";
   r.onresult = ev => {
-    let interim = "";
-    for (let i = 0; i < ev.results.length; i++) {
-      const piece = ev.results[i][0].transcript;
-      if (ev.results[i].isFinal) {
-        if (i >= (r._finalCount || 0)) finalText += (finalText ? " " : "") + piece;
-      } else interim += piece;
-    }
-    r._finalCount = [...ev.results].filter(x => x.isFinal).length;
-    const base = box.dataset.base || "";
-    box.value = [base, finalText, interim].filter(Boolean).join(" ").replace(/\s+/g, " ");
+    let said = "";
+    for (let i = ev.resultIndex; i < ev.results.length; i++) said += ev.results[i][0].transcript;
+    if (said) box.value = (box.dataset.base || box.value.replace(/\s+$/, "") + " ").trimStart() + said;
   };
-  r.onstart = () => { box.dataset.base = box.value || ""; finalText = ""; r._finalCount = 0; };
+  r.onstart = () => { box.dataset.base = box.value; };
   r.onend = () => {
     recHold = null;
     stopMicUi(btn, bars);
