@@ -85,8 +85,9 @@ function load() {
     return structuredClone(DEFAULT);
   }
 }
+function saveQuiet() { localStorage.setItem(KEY, JSON.stringify(db)); }
 function save() {
-  localStorage.setItem(KEY, JSON.stringify(db));
+  saveQuiet();
   render();
 }
 function uid(p) { return p + Math.random().toString(36).slice(2, 9); }
@@ -683,9 +684,9 @@ function modeFields(t) {
     </div>
     <div><label>Date of birth</label>
       <div class="dob-row">
-        <input id="dobD" maxlength="2" inputmode="numeric" placeholder="DD" value="${esc((p.dob||"").split("-")[2]||"")}">
-        <input id="dobM" maxlength="2" inputmode="numeric" placeholder="MM" value="${esc((p.dob||"").split("-")[1]||"")}">
-        <input id="dobY" maxlength="4" inputmode="numeric" placeholder="YYYY" value="${esc((p.dob||"").split("-")[0]||"")}">
+        <input id="dobD" maxlength="2" inputmode="numeric" placeholder="DD" value="${esc(p.dobD || (p.dob||"").split("-")[2]||"")}">
+        <input id="dobM" maxlength="2" inputmode="numeric" placeholder="MM" value="${esc(p.dobM || (p.dob||"").split("-")[1]||"")}">
+        <input id="dobY" maxlength="4" inputmode="numeric" placeholder="YYYY" value="${esc(p.dobY || (p.dob||"").split("-")[0]||"")}">
       </div>
     </div>
     <div><label>Occupation</label>
@@ -1041,7 +1042,7 @@ function bindAutosave(t) {
     if (el.type === "file" || el.id === "rejectedOn" || el.id === "equipDamaged" || el.id === "rpdOn" || el.id === "hpdOn" || el.id === "trainKind") return;
     const persist = () => {
       collectTrain(t);
-      save();
+      saveQuiet();
     };
     el.addEventListener("change", persist);
     el.addEventListener("blur", persist);
@@ -1077,11 +1078,7 @@ function collectTrain(t) {
   t.minMinutes = g("minMinutes")?.value || t.minMinutes || "";
   if (g("sex") || g("first")) {
     t.person = t.person || {};
-    t.person.sex = g("sex")?.value || "";
-    const dd = (g("dobD")?.value || "").padStart(2,"0");
-    const mm = (g("dobM")?.value || "").padStart(2,"0");
-    const yy = g("dobY")?.value || "";
-    if (yy && mm && dd && yy !== "00") t.person.dob = yy + "-" + mm + "-" + dd;
+    t.person.sex = g("sex")?.value || t.person.sex || "";
   }
   t.rpd = {
     worn: t.rpdAsked || t.rpd?.worn || "",
@@ -1104,13 +1101,13 @@ function collectTrain(t) {
   }
   if (t.mode === "static") t.location = g("location")?.value || "";
   else {
-    const dd = (g("dobD")?.value || "").replace(/\D/g,"").padStart(2,"0");
-    const mm = (g("dobM")?.value || "").replace(/\D/g,"").padStart(2,"0");
+    const dd = (g("dobD")?.value || "").replace(/\D/g,"");
+    const mm = (g("dobM")?.value || "").replace(/\D/g,"");
     const yy = (g("dobY")?.value || "").replace(/\D/g,"");
-    const dob = (yy.length===4 && mm!=="00" && dd!=="00") ? (yy+"-"+mm+"-"+dd) : (t.person?.dob || "");
+    const dob = (yy.length===4 && dd && mm) ? (yy+"-"+mm.padStart(2,"0")+"-"+dd.padStart(2,"0")) : (t.person?.dob || "");
     t.person = {
       first: g("first")?.value || "", last: g("last")?.value || "", sex: g("sex")?.value || "",
-      dob: dob,
+      dob, dobD: dd, dobM: mm, dobY: yy,
       occupation: g("occupation")?.value || "", company: g("company")?.value || "",
       hours: g("hours")?.value || "", daysOn: g("daysOn")?.value || "", daysOff: g("daysOff")?.value || ""
     };
