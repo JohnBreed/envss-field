@@ -207,9 +207,10 @@ function optionalGaps(t) {
   return miss;
 }
 function rowTint(t) {
-  if (["running","ended","rejected","fault"].includes(t.status)) return optionalGaps(t).length ? "tint-amber" : "";
-  if (startGaps(t).length) return "tint-red";
-  if (optionalGaps(t).length) return "tint-amber";
+  const st = displayStatus(t);
+  if (st === "sample_complete") return "tint-green";
+  if (st === "incomplete" || st === "incomplete_blank" || st === "running_incomplete") return "tint-amber";
+  if (startGaps(t).length && t.status !== "running") return "tint-red";
   return "";
 }
 
@@ -234,13 +235,18 @@ function displayStatus(t) {
   }
   if (t.status === "running") return followUpComplete(t) ? "running" : "running_incomplete";
   if (t.status === "ended" || t.status === "sample_stopped") {
-    return followUpComplete(t) ? "sample_stopped" : "incomplete";
+    return followUpComplete(t) ? "sample_complete" : "incomplete";
   }
   if (t.status === "prepped" && !followUpComplete(t) && (t.startAt || t.rejectAsked)) return "incomplete";
   return t.status;
 }
+function personComplete(t) {
+  if (isBlank(t) || isStatic(t)) return true;
+  const p = t.person || {};
+  return !!(p.sex && p.dob && p.occupation && p.company && p.hours && p.daysOn && p.daysOff);
+}
 function followUpComplete(t) {
-  if (isBlank(t)) return true;
+  if (isBlank(t)) return !!(t.contaminantId && t.headId);
   if (t.rejectAsked !== "yes" && t.rejectAsked !== "no") return false;
   if (t.rejectAsked === "yes" && !t.rejectCode) return false;
   if (t.equipAsked !== "yes" && t.equipAsked !== "no") return false;
@@ -248,10 +254,17 @@ function followUpComplete(t) {
   if (t.commentAsked !== "yes" && t.commentAsked !== "no") return false;
   if (t.commentAsked === "yes" && !(t.comments || "").trim()) return false;
   if (isAirbornePersonal(t)) {
-    const worn = t.rpdAsked || t.rpd?.worn;
+    const worn = t.rpdAsked || "";
     if (worn !== "yes" && worn !== "no" && worn !== "unknown") return false;
     if (worn === "yes" && !(t.rpd?.model || "").trim()) return false;
   }
+  if (isNoise(t) && !isStatic(t)) {
+    const worn = t.hpdAsked || "";
+    if (worn !== "yes" && worn !== "no" && worn !== "unknown") return false;
+    if (worn === "yes" && !(t.hpd?.model || "").trim()) return false;
+  }
+  if (!personComplete(t)) return false;
+  if (!isNoise(t) && !isBlank(t) && t.status === "ended" && !t.endFlow) return false;
   return true;
 }
 function badge(status) {
@@ -260,12 +273,17 @@ function badge(status) {
     uploaded: "Uploaded", running: "Running", ended: "Sample stopped",
     sample_stopped: "Sample stopped", incomplete: "Sample stopped — complete fields",
     incomplete_blank: "Complete fields", running_incomplete: "Running — complete fields",
+    sample_complete: "Sample complete — ready for upload",
     rejected: "Rejected",
     field_blank: "Field blank", fault: "Fault", upload_ready: "Upload event"
   })[status] || status;
   return `<span class="badge s-${status}">${label}</span>`;
 }
 
+function tRunNeed() {
+  const tr = db.trains.find(x => x.id === view.trainId);
+  return !!(tr && tr.status === "running" && tr.startAt);
+}
 function setOnline() {
   const el = document.getElementById("onlineDot");
   if (el) el.classList.toggle("off", !navigator.onLine);
@@ -286,6 +304,14 @@ function render() {
   else if (view.page === "editEvent") root.innerHTML = editEventHtml();
   else if (view.page === "pickType") root.innerHTML = pickTypeHtml();
   bind();
+  const live = document.getElementById("liveRuntime");
+  if (view.page === "train" && tRunNeed()) {
+    tickMin = setInterval(() => {
+      const tr = db.trains.find(x => x.id === view.trainId);
+      const el = document.getElementById("liveRuntime");
+      if (tr && tr.startAt && el) el.value = elapsedLabel(tr.startAt);
+    }, 60000);
+  }
   if (view.page === "event" && (trainsOf(view.eventId)||[]).some(t => t.status === "running" && !isBlank(t))) {
     tickMin = setInterval(() => {
       document.querySelectorAll("[data-run]").forEach(el => {
@@ -502,15 +528,15 @@ function trainHtml() {
           <input id="media" value="${esc(t.mediaId)}">`}
         </div>
         <div>
-          ${isBlank(t) || isNoise(t) ? `<p class="muted">${isBlank(t) ? "Field blank is not started. No flow or volume." : "Noise trains have no pump flow or cassette volume."}</p>` : `
+          ${isBlank(t) || isNoise(t) ? (isBlank(t) ? `<p class="muted">Field blank is not started. No flow or volume.</p>` : `<label>Runtime</label><input id="liveRuntime" value="${t.startAt ? elapsedLabel(t.startAt) : "—"}" disabled>`) : `
           <label>Start flow (L/min)</label>
           <input id="startFlow" value="${esc(t.startFlow)}" inputmode="decimal">
           <label>End flow (L/min)</label>
           <input id="endFlow" value="${esc(t.endFlow)}" inputmode="decimal">
           <label>Average flow (L/min)</label>
           <input value="${t.endFlow && avg != null ? avg.toFixed(3) : "—"}" disabled>
-          <label>Runtime (minutes)</label>
-          <input value="${mins == null ? "—" : mins.toFixed(1)}" disabled>
+          <label>Runtime</label>
+          <input id="liveRuntime" value="${t.status==="running" && t.startAt ? elapsedLabel(t.startAt) : (mins == null ? "—" : mins.toFixed(1) + " min")}" disabled>
           <label>Volume sampled (L)</label>
           <input value="${t.endFlow && vol != null ? vol.toFixed(1) : "—"}" disabled>
           <label class="check-row"><input type="checkbox" id="methodOn" ${t.methodOn || t.desiredVolumeL || t.minMinutes ? "checked" : ""}> Method minimum volume or minutes</label>
@@ -549,6 +575,7 @@ function trainHtml() {
       ${isBlank(t) ? "" : followUpHtml(t)}
       ${isAirbornePersonal(t) ? rpdFields(t) : ""}
       ${isNoise(t) && !isStatic(t) ? hpdFields(t) : ""}
+      ${isBlank(t) ? "" : commentHtml(t)}
       <div class="footer-actions">
         <button class="btn danger" id="btnDelete" type="button" onclick="event.stopPropagation(); deleteSample('${t.id}')">Delete sample</button>
       </div>
@@ -603,7 +630,10 @@ function followUpHtml(t) {
       <label>What was damaged</label>
       <input id="equipNote" value="${esc(t.equipNote || "")}">
     </div>
-    <div class="${t.commentAsked ? "" : "need-yn"}">
+    `;
+}
+function commentHtml(t) {
+  return `<div class="${t.commentAsked ? "" : "need-yn"}">
       <label>Comments?</label>
       ${yn("comment", t.commentAsked || "")}
     </div>
@@ -704,9 +734,12 @@ function rpdFields(t) {
 }
 function hpdFields(t) {
   const h = t.hpd || {};
-  const on = h.worn === "yes";
-  return `<label class="check-row"><input type="checkbox" id="hpdOn" ${on ? "checked" : ""}> Hearing protection worn</label>
-    <p class="help">Noise personal samples only. Tick if an HPD was worn.</p>
+  const asked = t.hpdAsked || "";
+  const on = asked === "yes";
+  return `<div class="${asked ? "" : "need-yn"}">
+      <label>Hearing protection worn?</label>
+      ${yn("hpd", asked, [["yes","Yes"],["no","No"],["unknown","Unknown"]])}
+    </div>
     <div id="hpdBox" style="${on ? "" : "display:none"}">
       <label>Brand / model</label>
       <input id="hpdModel" value="${esc(h.model)}" placeholder="Brand model or Unknown">
@@ -822,20 +855,18 @@ function bind() {
     wireCombo("occupation", db.catalogs.occupations || [], (val) => { t.person = t.person || {}; t.person.occupation = val; });
     document.querySelectorAll("[data-yn]").forEach(b => b.onclick = () => {
       const field = b.dataset.yn, val = b.dataset.val;
-      const prev = field === "reject" ? t.rejectAsked : field === "equip" ? t.equipAsked : field === "rpd" ? t.rpdAsked : t.commentAsked;
+      const cur = field === "reject" ? t.rejectAsked : field === "equip" ? t.equipAsked : field === "rpd" ? t.rpdAsked : field === "hpd" ? t.hpdAsked : t.commentAsked;
+      const next = cur === val ? "" : val;
       if (field === "reject") {
-        t.rejectAsked = val;
-        if (val === "no") { t.rejectCode = ""; t.status = t.endAt ? "ended" : t.status; }
-        if (val === "yes" && t.endAt) t.status = isNoise(t) ? "fault" : "rejected";
+        t.rejectAsked = next;
+        if (next !== "yes") { t.rejectCode = ""; if (t.status === "rejected" || t.status === "fault") t.status = t.endAt ? "ended" : t.status; }
+        if (next === "yes" && t.endAt) t.status = isNoise(t) ? "fault" : "rejected";
       }
-      if (field === "equip") { t.equipAsked = val; t.equipDamaged = val === "yes"; }
-      if (field === "comment") t.commentAsked = val;
-      if (field === "rpd") {
-        t.rpdAsked = val;
-        t.rpd = t.rpd || {};
-        t.rpd.worn = val;
-      }
-      audit(t, field + " set", (prev || "unset") + " → " + val);
+      if (field === "equip") { t.equipAsked = next; t.equipDamaged = next === "yes"; }
+      if (field === "comment") t.commentAsked = next;
+      if (field === "rpd") { t.rpdAsked = next; t.rpd = t.rpd || {}; t.rpd.worn = next; }
+      if (field === "hpd") { t.hpdAsked = next; t.hpd = t.hpd || {}; t.hpd.worn = next; }
+      audit(t, field + " set", (cur || "unset") + " → " + (next || "cleared"));
       save();
     });
     document.querySelectorAll("[data-rej]").forEach(b => b.onclick = () => {
@@ -1078,12 +1109,11 @@ function collectTrain(t) {
     fit: g("rpdFit")?.checked ? "yes" : (g("rpdFit") ? "no" : (t.rpd?.fit || ""))
   };
   t.hpd = {
-    worn: g("hpdOn")?.checked ? "yes" : "no",
-    model: g("hpdModel")?.value || "",
-    style: g("hpdStyle")?.value || "",
-    classRating: g("hpdClass")?.value || ""
+    worn: t.hpdAsked || t.hpd?.worn || "",
+    model: g("hpdModel")?.value || t.hpd?.model || "",
+    style: g("hpdStyle")?.value || t.hpd?.style || "",
+    classRating: g("hpdClass")?.value || t.hpd?.classRating || ""
   };
-  if (g("hpdOn")) t.hpd.worn = g("hpdOn").checked ? "yes" : "no";
   t.equipDamaged = !!(g("equipDamaged") && g("equipDamaged").checked);
   t.equipNote = g("equipNote")?.value || t.equipNote || "";
   if (g("startAt")) t.startAt = fromLocalInput(g("startAt").value) || t.startAt;

@@ -141,3 +141,6 @@ textarea { min-height: 80px; }
 .dob-row input { width: 4.2em; text-align: center; }
 .filters .chip { font-size: 12px; padding: 5px 9px; min-height: 0; }
 .row-title { font-weight: 700; color: var(--navy) !important; font-size: 17px; font-family: Montserrat, Arial, sans-serif; }
+
+.train.tint-green { background: #e7f6ee; }
+.badge.s-sample_complete { background: #1F7A4D; color: #fff; }
