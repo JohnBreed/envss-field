@@ -1,5 +1,5 @@
 const KEY = "envss-field-v04";
-const APP_VERSION = "29";
+const APP_VERSION = "30";
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -127,7 +127,7 @@ function sbHeaders(prefer) {
 }
 async function sbGet(table) {
   const c = sbCfg();
-  const res = await fetch(c.supabaseUrl + "/rest/v1/" + table + "?select=id,payload,updated_at,event_id,project_id", { headers: sbHeaders() });
+  const res = await fetch(c.supabaseUrl + "/rest/v1/" + table + "?select=id,payload,updated_at", { headers: sbHeaders() });
   if (!res.ok) throw new Error(table + " " + res.status);
   return res.json();
 }
