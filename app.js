@@ -122,6 +122,15 @@ function nextSampleNo(eventId, noise) {
   const n = trainsOf(eventId).filter(t => isNoise(t) === noise).map(sampleNoOf);
   return (n.sort((a,b)=>b-a)[0] || 0) + 1;
 }
+function shiftLabel(t) {
+  if (!t.shiftDate && !t.shiftKind) return "Unassigned";
+  const k = ({ day: "Day", afternoon: "Afternoon", night: "Night" })[t.shiftKind] || "Day";
+  return (t.shiftDate || "no date") + " " + k;
+}
+function shiftSortKey(t) {
+  const order = { day: 1, afternoon: 2, night: 3 };
+  return (t.shiftDate || "9999-99-99") + "-" + String(order[t.shiftKind] || 0);
+}
 function displayNo(t) {
   const n = sampleNoOf(t) || t.pouch || "";
   return isNoise(t) ? ("Noise Dosimeter " + n) : ("Sample " + n);
@@ -438,13 +447,23 @@ function trainRowHtml(t) {
   </div>`;
 }
 function eventListHtml(ts) {
-  const air = ts.filter(t => !isNoise(t));
-  const noise = ts.filter(isNoise);
   if (!ts.length) return `<div class="empty">No samples yet.</div>`;
-  return `${air.length ? `<h3 class="brand-type" style="color:var(--navy);margin:16px 0 8px">Airborne</h3>` : ""}
-    ${air.map(trainRowHtml).join("")}
-    ${noise.length ? `<h3 class="brand-type" style="color:var(--navy);margin:16px 0 8px">Noise</h3>` : ""}
-    ${noise.map(trainRowHtml).join("")}`;
+  const ev = eventById(view.eventId);
+  const multi = !!(ev && ev.multiDay);
+  const groups = {};
+  ts.forEach(t => {
+    const key = multi ? shiftSortKey(t) : (isNoise(t) ? "noise" : "air");
+    (groups[key] = groups[key] || []).push(t);
+  });
+  const keys = Object.keys(groups).sort();
+  return keys.map(k => {
+    const list = groups[k].slice().sort((a,b) => (isNoise(a)-isNoise(b)) || (sampleNoOf(a)-sampleNoOf(b)));
+    const title = multi
+      ? (list[0].shiftDate || list[0].shiftKind ? shiftLabel(list[0]) : "Unassigned / prepped")
+      : (k === "noise" ? "Noise" : "Airborne");
+    return `<h3 class="brand-type" style="color:var(--navy);margin:16px 0 8px">${title}</h3>
+      ${list.map(trainRowHtml).join("")}`;
+  }).join("");
 }
 function deletionLogHtml(eventId) {
   const rows = (db.deletions || []).filter(d => d.eventId === eventId);
@@ -486,6 +505,14 @@ function trainHtml() {
       <p class="help">${isNoise(t)
         ? "Noise trains can switch personal ↔ static only."
         : "Airborne and field blank can switch between personal, static and blank."}</p>
+      <label>Shift date</label>
+      <input id="shiftDate" type="date" value="${esc(t.shiftDate || (ev && ev.date) || "")}">
+      <label>Shift</label>
+      <div class="filters" id="shiftKind">
+        ${[["day","Day"],["afternoon","Afternoon"],["night","Night"]].map(([v,l]) =>
+          `<button type="button" class="chip ${(t.shiftKind||"day")===v?"on":""}" data-shift="${v}">${l}</button>`).join("")}
+      </div>
+      <p class="help">Prepped trains can be moved to another date or shift. Sample number does not change.</p>
       <input type="hidden" id="mode" value="${esc(t.mode || "personal")}">
       <div class="grid2">
         <div>
@@ -797,6 +824,8 @@ function newEventHtml() {
     </select>
     <label>Event date</label>
     <input id="ndate" type="date" value="${new Date().toISOString().slice(0,10)}">
+    <label class="check-row"><input type="checkbox" id="nmulti"> Multiple days / shifts (mine trip)</label>
+    <p class="help">One event, one COC at the end. Tick if sampling spans more than one day or day and night.</p>
     <div class="footer-actions"><button class="btn orange" id="btnCreateEv">Create event</button></div>
   </div>`;
 }
@@ -824,6 +853,7 @@ function editEventHtml() {
     <label>Project name</label><input id="ename" value="${esc(p.name)}">
     <label>Site</label><input id="esite" value="${esc(p.site || "")}">
     <label>Event date</label><input id="edate" type="date" value="${esc(ev.date || "")}">
+    <label class="check-row"><input type="checkbox" id="emulti" ${ev.multiDay ? "checked" : ""}> Multiple days / shifts</label>
     <label>Notes</label><textarea id="enotes">${esc(ev.notes || "")}</textarea>
     <div class="footer-actions"><button class="btn orange" id="btnSaveEv">Save</button></div>
   </div>`;
@@ -873,6 +903,11 @@ function bind() {
     wireCombo("head", (db.catalogs.heads || []).map(h => h.id), (val) => { t.headId = val.trim().toUpperCase(); });
     wireCombo("dosimeter", (db.catalogs.dosimeters || []).map(d => d.serial), (val) => { t.dosimeterSerial = val.trim(); });
     wireCombo("occupation", db.catalogs.occupations || [], (val) => { t.person = t.person || {}; t.person.occupation = val; });
+    document.querySelectorAll("[data-shift]").forEach(b => b.onclick = () => {
+      t.shiftKind = b.dataset.shift;
+      audit(t, "Shift", shiftLabel(t));
+      save();
+    });
     document.querySelectorAll("[data-yn]").forEach(b => b.onclick = () => {
       const field = b.dataset.yn, val = b.dataset.val;
       const cur = field === "reject" ? t.rejectAsked : field === "equip" ? t.equipAsked : field === "rpd" ? t.rpdAsked : field === "hpd" ? t.hpdAsked : t.commentAsked;
@@ -1162,6 +1197,7 @@ function collectTrain(t) {
   t.occupationCode = g("occCode")?.value || t.occupationCode || "";
   t.locationCode = g("locCode")?.value || t.locationCode || "";
   t.irsstCat = g("irsst")?.value || t.irsstCat || "";
+  t.shiftDate = g("shiftDate")?.value || t.shiftDate || "";
 }
 
 function wireCombo(inputId, items, onPick) {
@@ -1290,6 +1326,7 @@ function saveEventEdits() {
   p.name = document.getElementById("ename").value.trim();
   p.site = document.getElementById("esite").value.trim();
   ev.date = document.getElementById("edate").value;
+  ev.multiDay = !!(document.getElementById("emulti")||{}).checked;
   ev.notes = document.getElementById("enotes").value;
   const parts = ev.code.split("-");
   if (parts.length >= 2) ev.code = p.number + "-" + parts.slice(1).join("-");
@@ -1369,6 +1406,7 @@ function addTrain(eventId, trainKind) {
     rpd: { worn: "", model: "", shaven: "", fit: "" },
     hpd: { worn: "", model: "", style: "", classRating: "" },
     location: "", startAt: "", endAt: "", status: "prepped", comments: "",
+    shiftDate: (eventById(eventId)||{}).date || "", shiftKind: "day",
     rejectReason: "", rejectCode: "", photo: "",
     audit: [{ at: nowIso(), action: "Created", detail: trainKind || "" }]
   };
@@ -1394,7 +1432,7 @@ function createEvent() {
   if (!p) { alert("Open a project first."); return; }
   const siblings = db.events.filter(e => e.eventId === projectId || e.projectId === projectId);
   const n = String(siblings.length + 1).padStart(3, "0");
-  const ev = { id: uid("e"), projectId, type: (document.getElementById("ntype")||{}).value || "hygiene", code: `${p.number}-${n}`, stage: "planned", date: document.getElementById("ndate").value, notes: "", uploadReady: false };
+  const ev = { id: uid("e"), projectId, type: (document.getElementById("ntype")||{}).value || "hygiene", code: `${p.number}-${n}`, stage: "planned", date: document.getElementById("ndate").value, multiDay: !!(document.getElementById("nmulti")||{}).checked, notes: "", uploadReady: false, operators: [] };
   db.events.push(ev);
   save();
   openEvent(ev.id);
