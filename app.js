@@ -1,4 +1,5 @@
 const KEY = "envss-field-v04";
+const APP_VERSION = "25";
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -136,9 +137,15 @@ function nextSampleNo(eventId, noise) {
   return (n.sort((a,b)=>b-a)[0] || 0) + 1;
 }
 function shiftLabel(t) {
-  if (!t.shiftDate && !t.shiftKind) return "Unassigned";
-  const k = ({ day: "Day", afternoon: "Afternoon", night: "Night" })[t.shiftKind] || "Day";
-  return (t.shiftDate || "no date") + " " + k;
+  if (!t.shiftDate && !t.shiftKind) return "Unassigned / prepped";
+  const k = ({ day: "Day Shift", afternoon: "Afternoon Shift", night: "Night Shift" })[t.shiftKind] || "Day Shift";
+  if (!t.shiftDate) return k;
+  const d = new Date(t.shiftDate + "T12:00:00");
+  if (isNaN(d)) return t.shiftDate + " — " + k;
+  const day = d.getDate();
+  const ord = (day%10===1 && day%100!==11) ? "st" : (day%10===2 && day%100!==12) ? "nd" : (day%10===3 && day%100!==13) ? "rd" : "th";
+  const wk = d.toLocaleDateString("en-AU", { weekday: "long" });
+  return wk + " " + day + ord + " — " + k;
 }
 function shiftSortKey(t) {
   const order = { day: 1, afternoon: 2, night: 3 };
@@ -353,6 +360,7 @@ function dashHtml() {
         </div>`;
       }).join("") || `<div class="empty">No projects yet.</div>`}
       <p class="muted">Signed in as ${esc(whoText())} — <button class="btn ghost" onclick="changeOperator()">Change operator</button></p>
+      <p class="help">ENVSS Field v${APP_VERSION} · data on this device only until sync is on</p>
     </div>`;
 }
 function projectHtml() {
@@ -420,6 +428,7 @@ function eventHtml() {
       </div>
       ${eventListHtml(ts)}
       ${deletionLogHtml(ev.id)}
+      <p class="help">ENVSS Field v${APP_VERSION}</p>
     </div>`;
 }
 function dash(v) { return (v && String(v).trim()) ? String(v).trim() : "—"; }
