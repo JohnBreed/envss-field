@@ -47,56 +47,38 @@ fibreTrainHtml = function (t, ev) {
   const vol = (t.endAt && num(t.endFlow) != null) ? volumeLitres(t) : null;
   const mins = fibreLiveMinutes(t);
   const volWarn = (!blank && t.endAt && vol != null && vol < 360)
-    ? `<p class="help">Volume ${vol} L is under 360 L. Limit of detection rises to 0.01 f/mL.</p>` : "";
+    ? "<p class=\"help\">Volume " + vol + " L is under 360 L. Limit of detection rises to 0.01 f/mL.</p>" : "";
   const protoOpts = [["background","Background"],["control","Control"],["clearance","Clearance"]]
-    .map(([v,l]) => `<option value="${v}" ${proto===v?"selected":""}>${l}</option>`).join("");
-  return `<div class="wrap">
-      <button class="btn ghost" onclick="leaveSample('${t.id}','${t.eventId}')">← ${ev ? ev.code : "Event"}</button>
-      <div class="row" style="margin-top:10px">
-        <h2 class="brand-type" style="margin:0;color:var(--navy)">${displayNo(t)}</h2>
-        ${badge(displayStatus(t))}
-      </div>
-      ${blank ? "" : ""}
-      <label>Cowl number</label>
-      <div class="row"><span class="muted" style="padding-top:10px">ENVSS</span>
-        <input id="cowlNo" class="grow" inputmode="numeric" value="${esc(cowl)}" placeholder="11850">
-      </div>
-      <p class="help">Digits only. Printed as ENVSS + number.</p>
-      ${blank ? `<p class="help">Field blank — pump, times and volume stay n/a.</p><input type="hidden" id="fibreBlank" checked>` : `
-      <label>Monitoring type</label>
-      <select id="monitorType">${protoOpts}</select>
-      <label>Cowl number</label>` === "skip" ? "" : ""}
-      ${blank ? "" : `
-      <label>Pump serial</label>
-      <input id="pump" value="${esc(t.pumpSerial)}" placeholder="Type serial">
-      <div class="suggest" id="sug-pump"></div>
-      <label>Location</label>
-      <input id="location" value="${esc(t.location)}" placeholder="1- North Eastern Boundary">
-      <label>Start flow (L/min)</label>
-      <input id="startFlow" inputmode="decimal" value="${esc(t.startFlow || "2.0")}">
-      <div class="row" style="margin:12px 0;gap:10px;align-items:end">
-        <button class="btn orange lg" id="btnStart" ${running || t.status==="rejected" ? "disabled" : ""}>START</button>
-        <div class="grow"><label>Start time</label>
-        <input id="startAt" type="time" value="${esc(toLocalInput(t.startAt))}"></div>
-      </div>
-      <div class="row" style="margin:0 0 12px;gap:10px;align-items:end">
-        <button class="btn mid lg" id="btnStop" ${t.status!=="running" ? "disabled" : ""}>STOP</button>
-        <div class="grow"><label>Stop time</label>
-        <input id="endAt" type="time" value="${esc(toLocalInput(t.endAt))}"></div>
-      </div>
-      <label>End flow (L/min)</label>
-      <input id="endFlow" inputmode="decimal" value="${esc(t.endFlow)}">
-      <div class="grid2">
-        <label>Average flow</label>
-        <input value="${avg != null ? Number(avg).toFixed(1) : ""}" disabled>
-        <label>Volume (L)</label>
-        <input value="${vol != null ? vol : ""}" disabled>
-      </div>
-      <p class="muted">${mins != null ? Math.round(mins) + " min" : ""}</p>
-      ${volWarn}`}
-      ${rejectBlockHtml(t)}
-      <div class="footer-actions"><button class="btn ghost" id="btnDelete">Delete sample</button></div>
-    </div>`;
+    .map(function (x) { return "<option value=\"" + x[0] + "\" " + (proto === x[0] ? "selected" : "") + ">" + x[1] + "</option>"; }).join("");
+  var html = "<div class=\"wrap\">";
+  html += "<button class=\"btn ghost\" onclick=\"leaveSample('" + t.id + "','" + t.eventId + "')\">\u2190 " + (ev ? ev.code : "Event") + "</button>";
+  html += "<div class=\"row\" style=\"margin-top:10px\"><h2 class=\"brand-type\" style=\"margin:0;color:var(--navy)\">" + displayNo(t) + "</h2>" + badge(displayStatus(t)) + "</div>";
+  if (!blank) {
+    html += "<label>Monitoring type</label><select id=\"monitorType\">" + protoOpts + "</select>";
+  }
+  html += "<label>Cowl number</label><div class=\"row\"><span class=\"muted\" style=\"padding-top:10px\">ENVSS</span>";
+  html += "<input id=\"cowlNo\" class=\"grow\" inputmode=\"numeric\" value=\"" + esc(cowl) + "\" placeholder=\"11850\"></div>";
+  html += "<p class=\"help\">Digits only. Printed as ENVSS + number.</p>";
+  if (blank) {
+    html += "<p class=\"help\">Field blank — pump, times and volume stay n/a.</p>";
+  } else {
+    html += "<label>Pump serial</label><input id=\"pump\" value=\"" + esc(t.pumpSerial) + "\" placeholder=\"Type serial\"><div class=\"suggest\" id=\"sug-pump\"></div>";
+    html += "<label>Location</label><input id=\"location\" value=\"" + esc(t.location) + "\" placeholder=\"1- North Eastern Boundary\">";
+    html += "<label>Start flow (L/min)</label><input id=\"startFlow\" inputmode=\"decimal\" value=\"" + esc(t.startFlow || "2.0") + "\">";
+    html += "<div class=\"row\" style=\"margin:12px 0;gap:10px;align-items:end\">";
+    html += "<button class=\"btn orange lg\" id=\"btnStart\" " + (running || t.status === "rejected" ? "disabled" : "") + ">START</button>";
+    html += "<div class=\"grow\"><label>Start time</label><input id=\"startAt\" type=\"time\" value=\"" + esc(toLocalInput(t.startAt)) + "\"></div></div>";
+    html += "<div class=\"row\" style=\"margin:0 0 12px;gap:10px;align-items:end\">";
+    html += "<button class=\"btn mid lg\" id=\"btnStop\" " + (t.status !== "running" ? "disabled" : "") + ">STOP</button>";
+    html += "<div class=\"grow\"><label>Stop time</label><input id=\"endAt\" type=\"time\" value=\"" + esc(toLocalInput(t.endAt)) + "\"></div></div>";
+    html += "<label>End flow (L/min)</label><input id=\"endFlow\" inputmode=\"decimal\" value=\"" + esc(t.endFlow) + "\">";
+    html += "<div class=\"grid2\"><label>Average flow</label><input value=\"" + (avg != null ? Number(avg).toFixed(1) : "") + "\" disabled>";
+    html += "<label>Volume (L)</label><input value=\"" + (vol != null ? vol : "") + "\" disabled></div>";
+    html += "<p class=\"muted\">" + (mins != null ? Math.round(mins) + " min" : "") + "</p>" + volWarn;
+  }
+  html += rejectBlockHtml(t);
+  html += "<div class=\"footer-actions\"><button class=\"btn ghost\" id=\"btnDelete\">Delete sample</button></div></div>";
+  return html;
 };
 
 if (typeof dashHtml === "function") {
