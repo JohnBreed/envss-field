@@ -548,6 +548,7 @@ function trainHtml() {
         ${chk.ok ? "Within tolerance." : "Outside tolerance — reject unless you have a documented reason."}
       </p>` : ""}
       <div id="modeFields">${isBlank(t) ? "" : modeFields(t)}</div>
+      ${isBlank(t) ? "" : mineCodesHtml(t)}
       ${isBlank(t) ? "" : `
       <div class="times" style="margin-top:8px">
         <div>
@@ -711,6 +712,26 @@ function modeFields(t) {
     <div><label>Days on</label><input id="daysOn" value="${esc(p.daysOn)}"></div>
     <div><label>Days off</label><input id="daysOff" value="${esc(p.daysOff)}"></div>
   </div>`;
+}
+function mineCodesHtml(t) {
+  if (isBlank(t)) return "";
+  const on = !!(t.mineCodesOn || t.seg || t.occupationCode || t.locationCode || t.irsstCat);
+  const p = t.person || {};
+  return `<label class="check-row"><input type="checkbox" id="mineOn" ${on ? "checked" : ""}> Mine / report codes (optional)</label>
+    <p class="help">SEG, occupation code, location code and IRSST. Never required to start, stop or complete.</p>
+    <div id="mineBox" style="${on ? "" : "display:none"}">
+      <div class="grid2">
+        <div><label>SEG</label><input id="seg" value="${esc(t.seg || "")}" placeholder="e.g. 4 - Mobile plant"></div>
+        <div><label>Occupation code</label><input id="occCode" value="${esc(t.occupationCode || p.occupationCode || "")}" placeholder="e.g. 346000"></div>
+        <div><label>Location code</label><input id="locCode" value="${esc(t.locationCode || "")}" placeholder="e.g. 210"></div>
+        <div><label>IRSST category</label>
+          <select id="irsst">
+            <option value="">—</option>
+            ${[1,2,3,4].map(n => `<option value="${n}" ${String(t.irsstCat)===String(n)?"selected":""}>${n}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+    </div>`;
 }
 function rpdFields(t) {
   const r = t.rpd || {};
@@ -908,6 +929,13 @@ function bind() {
     if (hpdOn) hpdOn.onchange = () => {
       const box = document.getElementById("hpdBox");
       if (box) box.style.display = hpdOn.checked ? "" : "none";
+    };
+    const mineOn = document.getElementById("mineOn");
+    if (mineOn) mineOn.onchange = () => {
+      t.mineCodesOn = mineOn.checked;
+      const box = document.getElementById("mineBox");
+      if (box) box.style.display = t.mineCodesOn ? "" : "none";
+      saveQuiet();
     };
     const methodOn = document.getElementById("methodOn");
     if (methodOn) methodOn.onchange = () => {
@@ -1126,9 +1154,14 @@ function collectTrain(t) {
       first: g("first")?.value || "", last: g("last")?.value || "", sex: g("sex")?.value || "",
       dob, dobD: dd, dobM: mm, dobY: yy,
       occupation: g("occupation")?.value || "", company: g("company")?.value || "",
-      hours: g("hours")?.value || "", daysOn: g("daysOn")?.value || "", daysOff: g("daysOff")?.value || ""
+      hours: g("hours")?.value || "", daysOn: g("daysOn")?.value || "", daysOff: g("daysOff")?.value || "",
+      occupationCode: g("occCode")?.value || t.person?.occupationCode || ""
     };
   }
+  t.seg = g("seg")?.value || t.seg || "";
+  t.occupationCode = g("occCode")?.value || t.occupationCode || "";
+  t.locationCode = g("locCode")?.value || t.locationCode || "";
+  t.irsstCat = g("irsst")?.value || t.irsstCat || "";
 }
 
 function wireCombo(inputId, items, onPick) {
@@ -1310,11 +1343,11 @@ function exportEvent(eventId) {
 }
 function exportCsv(eventId) {
   const ev = eventById(eventId);
-  const rows = [["event","sample_no","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","dob","occupation","company","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments"]];
+  const rows = [["event","sample_no","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","dob","occupation","occupation_code","company","seg","location_code","irsst","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments"]];
   trainsOf(eventId).forEach(t => {
     const who = isStatic(t) ? t.location : [t.person?.first, t.person?.last].filter(Boolean).join(" ");
     const c = contam(t.contaminantId);
-    rows.push([ev.code, t.sampleNo || t.pouch, t.trainKind || "", displayStatus(t), c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.person?.dob || "", t.person?.occupation || "", t.person?.company || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments]);
+    rows.push([ev.code, t.sampleNo || t.pouch, t.trainKind || "", displayStatus(t), c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.person?.dob || "", t.person?.occupation || "", t.occupationCode || t.person?.occupationCode || "", t.person?.company || "", t.seg || "", t.locationCode || "", t.irsstCat || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments]);
   });
   const csv = rows.map(r => r.map(x => `"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   download(new Blob([csv], { type: "text/csv" }), ev.code + "-ENVSS-Field.csv");
