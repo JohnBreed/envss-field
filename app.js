@@ -101,12 +101,25 @@ function toLocalInput(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   const pad = n => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 function fromLocalInput(val) {
   if (!val) return "";
   const d = new Date(val);
   return isNaN(d) ? "" : d.toISOString();
+}
+function combineShiftTime(shiftDate, hm, isEnd, startHm) {
+  if (!hm) return "";
+  const day = shiftDate || new Date().toISOString().slice(0,10);
+  let iso = day + "T" + hm + ":00";
+  if (isEnd && startHm && hm < startHm) {
+    const d = new Date(day + "T12:00:00");
+    d.setDate(d.getDate() + 1);
+    const pad = n => String(n).padStart(2, "0");
+    iso = d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + "T" + hm + ":00";
+  }
+  const dt = new Date(iso);
+  return isNaN(dt) ? "" : dt.toISOString();
 }
 function project(id) { return db.projects.find(p => p.id === id); }
 function eventById(id) { return db.events.find(e => e.id === id); }
@@ -448,21 +461,20 @@ function trainRowHtml(t) {
 }
 function eventListHtml(ts) {
   if (!ts.length) return `<div class="empty">No samples yet.</div>`;
-  const ev = eventById(view.eventId);
-  const multi = !!(ev && ev.multiDay);
   const groups = {};
   ts.forEach(t => {
-    const key = multi ? shiftSortKey(t) : (isNoise(t) ? "noise" : "air");
+    const key = shiftSortKey(t);
     (groups[key] = groups[key] || []).push(t);
   });
   const keys = Object.keys(groups).sort();
   return keys.map(k => {
     const list = groups[k].slice().sort((a,b) => (isNoise(a)-isNoise(b)) || (sampleNoOf(a)-sampleNoOf(b)));
-    const title = multi
-      ? (list[0].shiftDate || list[0].shiftKind ? shiftLabel(list[0]) : "Unassigned / prepped")
-      : (k === "noise" ? "Noise" : "Airborne");
+    const title = (list[0].shiftDate || list[0].shiftKind) ? shiftLabel(list[0]) : "Unassigned / prepped";
+    const air = list.filter(t => !isNoise(t));
+    const noise = list.filter(isNoise);
     return `<h3 class="brand-type" style="color:var(--navy);margin:16px 0 8px">${title}</h3>
-      ${list.map(trainRowHtml).join("")}`;
+      ${air.map(trainRowHtml).join("")}
+      ${noise.map(trainRowHtml).join("")}`;
   }).join("");
 }
 function deletionLogHtml(eventId) {
@@ -579,12 +591,12 @@ function trainHtml() {
       ${isBlank(t) ? "" : `
       <div class="times" style="margin-top:8px">
         <div>
-          <label>Start time (editable)</label>
-          <input id="startAt" type="datetime-local" value="${toLocalInput(t.startAt)}">
+          <label>Start time</label>
+          <input id="startAt" type="time" value="${toLocalInput(t.startAt)}">
         </div>
         <div>
-          <label>Stop time (editable)</label>
-          <input id="endAt" type="datetime-local" value="${toLocalInput(t.endAt)}">
+          <label>Stop time</label>
+          <input id="endAt" type="time" value="${toLocalInput(t.endAt)}">
         </div>
       </div>
       <div class="startstop">
@@ -1174,11 +1186,9 @@ function collectTrain(t) {
   };
   t.equipDamaged = !!(g("equipDamaged") && g("equipDamaged").checked);
   t.equipNote = g("equipNote")?.value || t.equipNote || "";
-  if (g("startAt")) t.startAt = fromLocalInput(g("startAt").value) || t.startAt;
-  if (g("endAt")) {
-    const v = fromLocalInput(g("endAt").value);
-    t.endAt = g("endAt").value ? v : t.endAt;
-  }
+  const sd = g("shiftDate")?.value || t.shiftDate || "";
+  if (g("startAt") && g("startAt").value) t.startAt = combineShiftTime(sd, g("startAt").value, false);
+  if (g("endAt") && g("endAt").value) t.endAt = combineShiftTime(sd, g("endAt").value, true, g("startAt")?.value || toLocalInput(t.startAt));
   if (t.mode === "static") t.location = g("location")?.value || "";
   else {
     const dd = (g("dobD")?.value || "").replace(/\D/g,"");
