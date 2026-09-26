@@ -1208,8 +1208,81 @@ function markEventUpload(id) {
     return;
   }
   ev.uploadReady = true;
-  save();
-  alert("Event flagged for upload. Export from the menu until Podio is connected.");
+  saveQuiet();
+  exportWorkbookCsvs(id);
+  alert("Event complete. Downloaded samples + noise + coc CSVs for the Drive workbook.\nPaste into the matching tabs of a copy of ENVSS-Event-Workbook-Template.\nThe phone cannot write to Drive itself.");
+  render();
+}
+function csvEscape(v) {
+  return `"${String(v ?? "").replace(/"/g,'""')}"`;
+}
+function downloadText(name, text) {
+  download(new Blob([text], { type: "text/csv;charset=utf-8" }), name);
+}
+function typeOfSample(t) {
+  if (isBlank(t)) return "Blank";
+  if (isStatic(t)) return "Static";
+  return "Personal";
+}
+function exportWorkbookCsvs(eventId) {
+  const ev = eventById(eventId);
+  const air = trainsOf(eventId).filter(t => !isNoise(t));
+  const noise = trainsOf(eventId).filter(isNoise);
+  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id"];
+  const sampleRows = [sampleHead];
+  air.forEach(t => {
+    const p = t.person || {};
+    const c = contam(t.contaminantId);
+    const mins = runtimeMinutes(t);
+    const vol = volumeLitres(t);
+    const include = (t.rejectAsked === "yes" && !t.includeOnCoc) ? "NO" : "YES";
+    sampleRows.push([
+      ev.code, t.sampleNo || t.pouch, t.trainKind, displayStatus(t), include,
+      ev.date || (t.startAt || "").slice(0,10), p.first || "", p.last || "", p.dob || "", p.sex || "",
+      p.occupation || "", t.occupationCode || p.occupationCode || "", p.company || "",
+      t.location || "", t.locationCode || "", t.seg || "", p.hours || "", p.daysOn || "", p.daysOff || "",
+      c ? c.code : "", t.irsstCat || "", t.pumpSerial || "", t.headId || "", t.mediaId || "",
+      t.startFlow || "", t.endFlow || "", avgFlow(t) ?? "", t.startAt || "", t.endAt || "",
+      mins ?? "", vol ?? "", (vol != null ? (vol/1000).toFixed(6) : ""),
+      t.rpd?.worn || t.rpdAsked || "", t.rpd?.model || "", t.rpd?.shaven || "", t.rpd?.fit || "",
+      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "",
+      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", ""
+    ]);
+  });
+  const noiseHead = ["event_code","dosimeter_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak"];
+  const noiseRows = [noiseHead];
+  noise.forEach(t => {
+    const p = t.person || {};
+    noiseRows.push([
+      ev.code, t.sampleNo || t.pouch, t.trainKind, displayStatus(t),
+      ev.date || (t.startAt || "").slice(0,10), p.first || "", p.last || "", p.dob || "", p.sex || "",
+      p.occupation || "", t.occupationCode || "", p.company || "", t.location || "", t.locationCode || "",
+      t.seg || "", p.hours || "", p.daysOn || "", p.daysOff || "", t.dosimeterSerial || "",
+      t.startAt || "", t.endAt || "", runtimeMinutes(t) ?? "",
+      t.hpd?.worn || t.hpdAsked || "", t.hpd?.model || "", t.hpd?.style || "", t.hpd?.classRating || "",
+      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", ""
+    ]);
+  });
+  const cocHead = ["include","client_sample_id","depth","date_sampled","type_of_sample","tests_required","runtime_min","volume_L","comments","sample_no","contaminant","person_or_location"];
+  const cocRows = [cocHead];
+  air.forEach(t => {
+    const skip = t.rejectAsked === "yes" && !t.includeOnCoc;
+    if (skip) return;
+    const c = contam(t.contaminantId);
+    const p = t.person || {};
+    const who = isStatic(t) ? (t.location || "") : [p.first, p.last].filter(Boolean).join(" ");
+    const d = t.startAt ? new Date(t.startAt) : null;
+    const date = d ? `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}` : (ev.date || "");
+    cocRows.push([
+      "YES", t.mediaId || "", "N/A", date, typeOfSample(t), c ? c.code : "",
+      runtimeMinutes(t) ?? "", volumeLitres(t) ?? "", "",
+      t.sampleNo || "", c ? c.code : "", who
+    ]);
+  });
+  const toCsv = rows => rows.map(r => r.map(csvEscape).join(",")).join("\n");
+  downloadText(ev.code + "-samples.csv", toCsv(sampleRows));
+  setTimeout(() => downloadText(ev.code + "-noise.csv", toCsv(noiseRows)), 400);
+  setTimeout(() => downloadText(ev.code + "-coc.csv", toCsv(cocRows)), 800);
 }
 function saveEventEdits() {
   const ev = eventById(view.eventId);
