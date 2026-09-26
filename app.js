@@ -1263,20 +1263,18 @@ function exportWorkbookCsvs(eventId) {
       t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", ""
     ]);
   });
-  const cocHead = ["include","client_sample_id","depth","date_sampled","type_of_sample","tests_required","runtime_min","volume_L","comments","sample_no","contaminant","person_or_location"];
+  const cocHead = ["include","client_sample_id","depth","date_sampled","type_of_sample","tests_required","runtime_min","volume_L","comments","sample_no","contaminant","envss_sampler"];
   const cocRows = [cocHead];
   air.forEach(t => {
     const skip = t.rejectAsked === "yes" && !t.includeOnCoc;
     if (skip) return;
     const c = contam(t.contaminantId);
-    const p = t.person || {};
-    const who = isStatic(t) ? (t.location || "") : [p.first, p.last].filter(Boolean).join(" ");
     const d = t.startAt ? new Date(t.startAt) : null;
     const date = d ? `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}` : (ev.date || "");
     cocRows.push([
       "YES", t.mediaId || "", "N/A", date, typeOfSample(t), c ? c.code : "",
       runtimeMinutes(t) ?? "", volumeLitres(t) ?? "", "",
-      t.sampleNo || "", c ? c.code : "", who
+      t.sampleNo || "", c ? c.code : "", whoText()
     ]);
   });
   const toCsv = rows => rows.map(r => r.map(csvEscape).join(",")).join("\n");
