@@ -1,5 +1,5 @@
 const KEY = "envss-field-v04";
-const APP_VERSION = "26";
+const APP_VERSION = "27";
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -95,46 +95,66 @@ function save() {
   saveQuiet();
   render();
 }
-function sbClient() {
+function sbCfg() {
   const c = window.ENVSS_CONFIG || {};
-  if (!c.supabaseUrl || !c.supabaseAnonKey || !window.supabase) return null;
-  if (!window._envssSb) window._envssSb = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey);
-  return window._envssSb;
+  if (!c.supabaseUrl || !c.supabaseAnonKey) return null;
+  return c;
 }
+function sbHeaders() {
+  const c = sbCfg();
+  return {
+    apikey: c.supabaseAnonKey,
+    Authorization: "Bearer " + c.supabaseAnonKey,
+    "Content-Type": "application/json",
+    Prefer: "return=minimal"
+  };
+}
+window._envssSync = "off";
 async function pullRemote() {
-  const sb = sbClient();
-  if (!sb) return;
-  const { data, error } = await sb.from("envss_state").select("payload,updated_at").eq("id", "main").maybeSingle();
-  if (error || !data || !data.payload) return;
-  const remote = data.payload;
-  if (!remote.projects && !remote.events) return;
-  const localStamp = db.syncedAt || "";
-  const remoteStamp = remote.syncedAt || data.updated_at || "";
-  const localCount = (db.trains || []).length;
-  const remoteCount = (remote.trains || []).length;
-  if (remoteStamp > localStamp || remoteCount > localCount) {
-    db = { ...structuredClone(DEFAULT), ...remote };
-    db.catalogs = { ...DEFAULT.catalogs, ...(remote.catalogs || {}) };
-    if (!Array.isArray(db.deletions)) db.deletions = [];
-    localStorage.setItem(KEY, JSON.stringify(db));
-    render();
+  const c = sbCfg();
+  if (!c) { window._envssSync = "off"; return; }
+  try {
+    const res = await fetch(c.supabaseUrl + "/rest/v1/envss_state?id=eq.main&select=payload,updated_at", { headers: sbHeaders() });
+    window._envssSync = res.ok ? "ok" : "err " + res.status;
+    if (!res.ok) return;
+    const rows = await res.json();
+    const row = rows && rows[0];
+    if (!row || !row.payload) return;
+    const remote = row.payload;
+    const has = (remote.projects && remote.projects.length) || (remote.events && remote.events.length) || (remote.trains && remote.trains.length);
+    if (!has) return;
+    const localStamp = db.syncedAt || "";
+    const remoteStamp = remote.syncedAt || row.updated_at || "";
+    if (!localStamp || remoteStamp >= localStamp) {
+      db = { ...structuredClone(DEFAULT), ...remote };
+      db.catalogs = { ...DEFAULT.catalogs, ...(remote.catalogs || {}) };
+      if (!Array.isArray(db.deletions)) db.deletions = [];
+      localStorage.setItem(KEY, JSON.stringify(db));
+      render();
+    }
+  } catch (e) {
+    window._envssSync = "err";
   }
 }
 let pushTimer = null;
 function pushRemote() {
-  const sb = sbClient();
-  if (!sb) return;
+  const c = sbCfg();
+  if (!c) return;
   db.syncedAt = new Date().toISOString();
   localStorage.setItem(KEY, JSON.stringify(db));
   clearTimeout(pushTimer);
   pushTimer = setTimeout(async () => {
-    await sb.from("envss_state").upsert({
-      id: "main",
-      payload: db,
-      updated_at: db.syncedAt,
-      updated_by: whoText()
-    });
-  }, 400);
+    try {
+      const res = await fetch(c.supabaseUrl + "/rest/v1/envss_state?on_conflict=id", {
+        method: "POST",
+        headers: Object.assign(sbHeaders(), { Prefer: "resolution=merge-duplicates,return=minimal" }),
+        body: JSON.stringify({ id: "main", payload: db, updated_at: db.syncedAt, updated_by: whoText() })
+      });
+      window._envssSync = res.ok ? "ok" : "err " + res.status;
+    } catch (e) {
+      window._envssSync = "err";
+    }
+  }, 300);
 }
 function uid(p) { return p + Math.random().toString(36).slice(2, 9); }
 function nowIso() { return new Date().toISOString(); }
@@ -405,7 +425,7 @@ function dashHtml() {
         </div>`;
       }).join("") || `<div class="empty">No projects yet.</div>`}
       <p class="muted">Signed in as ${esc(whoText())} — <button class="btn ghost" onclick="changeOperator()">Change operator</button></p>
-      <p class="help">ENVSS Field v${APP_VERSION} · data on this device only until sync is on</p>
+      <p class="help">ENVSS Field v${APP_VERSION} · sync ${window._envssSync || "…"}</p>
     </div>`;
 }
 function projectHtml() {
