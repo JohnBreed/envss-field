@@ -131,3 +131,6 @@ textarea { min-height: 80px; }
 @media (min-width: 800px) {
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 }
+
+.need-yn label { color: #b45309; }
+.need-yn { background: #fff7ed; padding: 8px; border-radius: 10px; margin: 8px 0; }
