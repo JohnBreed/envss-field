@@ -304,22 +304,6 @@ function render() {
   else if (view.page === "editEvent") root.innerHTML = editEventHtml();
   else if (view.page === "pickType") root.innerHTML = pickTypeHtml();
   bind();
-  const live = document.getElementById("liveRuntime");
-  if (view.page === "train" && tRunNeed()) {
-    tickMin = setInterval(() => {
-      const tr = db.trains.find(x => x.id === view.trainId);
-      const el = document.getElementById("liveRuntime");
-      if (tr && tr.startAt && el) el.value = elapsedLabel(tr.startAt);
-    }, 60000);
-  }
-  if (view.page === "event" && (trainsOf(view.eventId)||[]).some(t => t.status === "running" && !isBlank(t))) {
-    tickMin = setInterval(() => {
-      document.querySelectorAll("[data-run]").forEach(el => {
-        const t = db.trains.find(x => x.id === el.dataset.run);
-        if (t && t.startAt) el.textContent = elapsedLabel(t.startAt);
-      });
-    }, 60000);
-  }
 }
 
 function dashHtml() {
@@ -416,7 +400,6 @@ function dash(v) { return (v && String(v).trim()) ? String(v).trim() : "—"; }
 function runPhrase(t) {
   const mins = runtimeMinutes(t);
   if (mins != null) return Math.round(mins) + " min";
-  if (t.status === "running" && t.startAt) return "LIVE";
   return "";
 }
 function summaryLine(t) {
@@ -481,7 +464,7 @@ function trainHtml() {
   const audit = t.audit || [];
   return `
     <div class="wrap">
-      <button class="btn ghost" onclick="openEvent('${t.eventId}')">← ${ev ? ev.code : "Event"}</button>
+      <button class="btn ghost" onclick="leaveSample('${t.id}','${t.eventId}')">← ${ev ? ev.code : "Event"}</button>
       <div class="row" style="margin-top:10px">
         <h2 class="brand-type" style="margin:0;color:var(--navy)">${displayNo(t)}</h2>
         ${badge(displayStatus(t))}
@@ -528,7 +511,7 @@ function trainHtml() {
           <input id="media" value="${esc(t.mediaId)}">`}
         </div>
         <div>
-          ${isBlank(t) || isNoise(t) ? (isBlank(t) ? `<p class="muted">Field blank is not started. No flow or volume.</p>` : `<label>Runtime</label><input id="liveRuntime" value="${t.startAt ? elapsedLabel(t.startAt) : "—"}" disabled>`) : `
+          ${isBlank(t) || isNoise(t) ? (isBlank(t) ? `<p class="muted">Field blank is not started. No flow or volume.</p>` : "") : `
           <label>Start flow (L/min)</label>
           <input id="startFlow" value="${esc(t.startFlow)}" inputmode="decimal">
           <label>End flow (L/min)</label>
@@ -536,7 +519,7 @@ function trainHtml() {
           <label>Average flow (L/min)</label>
           <input value="${t.endFlow && avg != null ? avg.toFixed(3) : "—"}" disabled>
           <label>Runtime</label>
-          <input id="liveRuntime" value="${t.status==="running" && t.startAt ? elapsedLabel(t.startAt) : (mins == null ? "—" : mins.toFixed(1) + " min")}" disabled>
+          <input value="${mins == null ? "—" : mins.toFixed(1) + " min"}" disabled>
           <label>Volume sampled (L)</label>
           <input value="${t.endFlow && vol != null ? vol.toFixed(1) : "—"}" disabled>
           <label class="check-row"><input type="checkbox" id="methodOn" ${t.methodOn || t.desiredVolumeL || t.minMinutes ? "checked" : ""}> Method minimum volume or minutes</label>
@@ -1056,14 +1039,12 @@ function bindAutosave(t) {
   if (!root) return;
   root.querySelectorAll("input, textarea, select").forEach(el => {
     if (el.type === "file" || el.id === "rejectedOn" || el.id === "equipDamaged" || el.id === "rpdOn" || el.id === "hpdOn" || el.id === "trainKind") return;
-    el.addEventListener("change", () => {
-      const before = snapshotTrain(t);
+    const persist = () => {
       collectTrain(t);
-      if (snapshotTrain(t) !== before) {
-        audit(t, "Field changed", (el.id || "field") + " saved");
-        save();
-      }
-    });
+      save();
+    };
+    el.addEventListener("change", persist);
+    el.addEventListener("blur", persist);
   });
 }
 function captureLocation() {
@@ -1123,8 +1104,13 @@ function collectTrain(t) {
   }
   if (t.mode === "static") t.location = g("location")?.value || "";
   else {
+    const dd = (g("dobD")?.value || "").replace(/\D/g,"").padStart(2,"0");
+    const mm = (g("dobM")?.value || "").replace(/\D/g,"").padStart(2,"0");
+    const yy = (g("dobY")?.value || "").replace(/\D/g,"");
+    const dob = (yy.length===4 && mm!=="00" && dd!=="00") ? (yy+"-"+mm+"-"+dd) : (t.person?.dob || "");
     t.person = {
-      first: g("first")?.value || "", last: g("last")?.value || "", dob: g("dob")?.value || "",
+      first: g("first")?.value || "", last: g("last")?.value || "", sex: g("sex")?.value || "",
+      dob: dob,
       occupation: g("occupation")?.value || "", company: g("company")?.value || "",
       hours: g("hours")?.value || "", daysOn: g("daysOn")?.value || "", daysOff: g("daysOff")?.value || ""
     };
@@ -1148,6 +1134,11 @@ function wireCombo(inputId, items, onPick) {
   input.addEventListener("blur", () => setTimeout(() => box.classList.remove("on"), 180));
 }
 
+function leaveSample(trainId, eventId) {
+  const t = db.trains.find(x => x.id === trainId);
+  if (t) { collectTrain(t); localStorage.setItem(KEY, JSON.stringify(db)); }
+  openEvent(eventId);
+}
 function openEvent(id) { view.page = "event"; view.eventId = id; render(); }
 function openTrain(id) { view.page = "train"; view.trainId = id; render(); }
 function goDash() { view.page = "dash"; view.projectId = null; render(); }
@@ -1315,6 +1306,7 @@ function download(blob, name) {
   a.click();
 }
 
+window.leaveSample = leaveSample;
 window.openEvent = openEvent;
 window.openTrain = openTrain;
 window.goDash = goDash;
