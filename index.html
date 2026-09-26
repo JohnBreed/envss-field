@@ -6,27 +6,26 @@
   <meta name="theme-color" content="#2D3A6A">
   <title>ENVSS Field</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="vOSog.png">
-  <link rel="stylesheet" href="styles.css">
-  <script src="kill-sw.js"></script>
+  <link rel="icon" href="logo.svg">
+  <link rel="stylesheet" href="styles.css?v=11">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <header class="app-header">
-    <img src="./vOSog.png" width="180" height="32" alt="Environmental Site Services">
+    <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
       <h1>ENVSS Field</h1>
       <p id="whoLabel">Capture · offline first</p>
     </div>
-    <div id="onlineDot" class="online-dot" title="Online status"></div>
+    <div id="onlineDot" class="online-dot"></div>
   </header>
   <div id="loginGate" class="login-gate hidden">
     <div class="login-card">
       <h2>Sign in</h2>
-      <p>Use your Environmental Site Services Google account.</p>
+      <p>Use your ENVSS Google account, or type your name.</p>
       <div id="googleBtn"></div>
       <label>Name</label>
-      <input id="manualName" placeholder="Jane Smith">
+      <input id="manualName">
       <label>Work email</label>
       <input id="manualEmail" placeholder="jane@envss.com.au">
       <div class="footer-actions">
@@ -34,8 +33,8 @@
       </div>
     </div>
   </div>
-  <div id="app"><div class="wrap muted">Loading…</div></div>
+  <div id="app"></div>
   <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

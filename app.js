@@ -530,7 +530,7 @@ function trainHtml() {
       <div class="footer-actions">
         ${isNoise(t) ? `<button class="btn ghost" id="btnAddPump">Add this dosimeter to fleet</button>` : isBlank(t) ? "" : `<button class="btn ghost" id="btnAddPump">Add this pump to fleet</button>`}
         ${isNoise(t) || isBlank(t) ? "" : `<button class="btn ghost" id="btnAddHead">Add this sample head to fleet</button>`}
-        <button class="btn danger" id="btnDelete">Delete sample</button>
+        <button class="btn danger" id="btnDelete" type="button" onclick="event.stopPropagation(); deleteSample('${t.id}')">Delete sample</button>
       </div>
       <h3 class="brand-type" style="color:var(--navy);margin-top:22px;cursor:pointer" id="auditToggle">Audit log ▸</h3>
       <div id="auditBox" hidden>
@@ -1148,27 +1148,33 @@ function applyPlacement(t, placement) {
     ? (placement === "static" ? "noise_static" : "noise_personal")
     : (placement === "static" ? "airborne_static" : "airborne_personal"));
 }
-function deleteTrain(t) {
-  const ok = confirm("Delete " + displayNo(t) + "?\n\nThis cannot be undone on this device.");
-  if (!ok) return;
-  db.deletions = db.deletions || [];
-  db.deletions.push({
-    at: nowIso(),
-    who: whoText(),
-    eventId: t.eventId,
-    trainId: t.id,
-    pouch: t.pouch,
-    kind: t.trainKind,
-    detail: (contam(t.contaminantId)?.code || "") + " deleted"
-  });
-  const eventId = t.eventId;
-  db.trains = db.trains.filter(x => x.id !== t.id);
-  view.page = "event";
-  view.eventId = eventId;
-  view.trainId = null;
-  localStorage.setItem(KEY, JSON.stringify(db));
-  render();
+function deleteSample(id) {
+  try {
+    const t = db.trains.find(x => x.id === id) || db.trains.find(x => x.id === view.trainId);
+    if (!t) { alert("That sample is already gone."); openEvent(view.eventId); return; }
+    if (!confirm("Delete " + displayNo(t) + "? This cannot be undone on this device.")) return;
+    const eventId = t.eventId;
+    db.deletions = db.deletions || [];
+    db.deletions.push({
+      at: nowIso(),
+      who: whoText(),
+      eventId: eventId,
+      trainId: t.id,
+      pouch: t.pouch || t.sampleNo,
+      kind: t.trainKind,
+      detail: "deleted"
+    });
+    db.trains = db.trains.filter(x => x.id !== t.id);
+    view.trainId = null;
+    view.page = "event";
+    view.eventId = eventId;
+    localStorage.setItem(KEY, JSON.stringify(db));
+    render();
+  } catch (err) {
+    alert("Delete failed: " + err.message);
+  }
 }
+function deleteTrain(t) { deleteSample(t && t.id); }
 function openPickType(eventId) { view.page = "pickType"; view.eventId = eventId; render(); }
 function addTrain(eventId, trainKind) {
   const noise = (trainKind || "").startsWith("noise");
@@ -1246,6 +1252,8 @@ window.goDash = goDash;
 window.openNewEvent = openNewEvent;
 window.openPickType = openPickType;
 window.addTrain = addTrain;
+window.deleteSample = deleteSample;
+window.deleteTrain = deleteTrain;
 
 let recHold = null;
 function startSpeech() {
