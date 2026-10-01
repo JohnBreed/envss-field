@@ -1,5 +1,5 @@
-const CACHE = "envss-field-sw-36";
-const ASSETS = ["./index.html", "./styles.css", "./app.js", "./app-fibre.js", "./app-fibre-fix.js", "./config.js", "./manifest.json", "./logo.svg", "./vOSog.png"];
+const CACHE = "envss-field-sw-42";
+const ASSETS = ["./index.html", "./styles.css", "./config.js", "./manifest.json", "./logo.svg", "./vOSog.png", "./catalogs-srs.js", "./app-fibre.js", "./app-fibre-v38.js", "./app-fibre-v39.js", "./app-fibre-v40.js", "./app-fibre-v41.js", "./app-fibre-v42.js"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
   self.skipWaiting();
