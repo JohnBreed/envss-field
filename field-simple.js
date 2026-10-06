@@ -198,7 +198,8 @@ function importFieldCsv(text) {
     var sample = (db.trains || []).find(function (t) { return t.eventId === ev.id && t.mediaId === g.cassette && t.shiftDate === g.date; });
     if (!sample) {
       var sampleNo = (db.trains || []).filter(function (t) { return t.eventId === ev.id; }).length + 1;
-      var kind = val(cols, "type").toLowerCase() === "blank" ? "blank" : "airborne_personal";
+      var rawType = val(cols, "type").toLowerCase();
+      var kind = rawType === "blank" ? "blank" : "airborne_personal";
       sample = { id: uid("t"), eventId: ev.id, pouch: String(sampleNo), sampleNo: sampleNo, trainKind: kind, mode: kind === "blank" ? "blank" : "personal", status: "prepped", comments: "" };
       db.trains = db.trains || [];
       db.trains.push(sample);
@@ -214,7 +215,9 @@ function importFieldCsv(text) {
     sample.shiftKind = val(cols, "shift") || "day";
     sample.trainKind = val(cols, "type").toLowerCase() === "blank" ? "blank" : "airborne_personal";
     sample.mode = sample.trainKind === "blank" ? "blank" : "personal";
-    sample.status = sample.trainKind === "blank" ? "ended" : ((start && end) ? "ended" : "prepped");
+    sample.rejected = val(cols, "type").toLowerCase() === "rejected";
+    sample.rejectReason = sample.rejected ? "Sample rejected" : "";
+    sample.status = sample.rejected ? "rejected" : (sample.trainKind === "blank" ? "ended" : ((start && end) ? "ended" : "prepped"));
     sample.startAt = typeof combineShiftTime === "function" ? combineShiftTime(g.date, start, false) : (start ? g.date + "T" + start + ":00" : "");
     sample.endAt = typeof combineShiftTime === "function" ? combineShiftTime(g.date, end, true, start) : (end ? g.date + "T" + end + ":00" : "");
     sample.location = val(cols, "location");
@@ -257,9 +260,11 @@ function cocRuntime(sample) {
 }
 function cocVolume(sample) {
   var mins = cocRuntime(sample);
-  var flow = parseFloat(sample.startFlow);
+  var start = parseFloat(sample.startFlow);
+  var end = parseFloat(sample.endFlow);
+  var flow = isFinite(start) && isFinite(end) ? (start + end) / 2 : start;
   if (!mins || !isFinite(flow)) return "";
-  return Math.round(mins * flow);
+  return Math.round(mins * flow * 10) / 10;
 }
 function createCoc() {
   var p = project(view.projectId);
