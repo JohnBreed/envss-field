@@ -316,8 +316,9 @@ window.createCoc = createCoc;
 var _projectCoc = projectHtml;
 projectHtml = function () {
   var html = _projectCoc();
-  if (html.indexOf("createCoc") >= 0) return html;
-  
+  if (html.indexOf("importCsv") >= 0) return html;
+  return html.replace("</h2>", "</h2><label class=\"btn ghost\" style=\"display:inline-block\">Import field CSV<input id=\"importCsv\" type=\"file\" accept=\".csv,text/csv\" style=\"display:none\"></label>");
+};
 var _eventCoc = eventHtml;
 eventHtml = function () {
   var html = _eventCoc();
