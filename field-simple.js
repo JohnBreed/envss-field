@@ -156,46 +156,67 @@ pullRemote = async function () {
 function importFieldCsv(text) {
   var p = project(view.projectId);
   if (!p) { alert("Open a project first."); return; }
-  var rows = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean);
-  var head = rows.shift().split(",").map(function (h) { return h.trim().toLowerCase(); });
+  var rows = [];
+  var row = [], cur = "", q = false;
+  text = text.replace(/^\uFEFF/, "");
+  for (var i = 0; i < text.length; i++) {
+    var ch = text[i];
+    if (q) { if (ch === '"') q = false; else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ",") { row.push(cur); cur = ""; }
+    else if (ch === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; }
+    else if (ch !== "\r") cur += ch;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  var head = rows.shift().map(function (h) { return h.trim().toLowerCase(); });
   function val(cols, name) { var i = head.indexOf(name); return i < 0 ? "" : (cols[i] || "").trim(); }
+  function hm(v) { return /^\d{2}:\d{2}/.test(v) ? v.slice(0, 5) : ""; }
   var groups = {};
-  rows.forEach(function (line) {
-    var cols = line.split(",");
-    var date = val(cols, "date");
-    var cassette = val(cols, "cassette");
-    var cont = val(cols, "contaminant");
+  rows.forEach(function (cols) {
+    var date = val(cols, "date"), cassette = val(cols, "cassette"), cont = val(cols, "contaminant");
     if (!date || !cassette || !cont) return;
     var key = date + "|" + cassette;
     if (!groups[key]) groups[key] = { date: date, cassette: cassette, cols: cols, analyses: [] };
     if (!groups[key].analyses.some(function (a) { return a.code === cont; })) groups[key].analyses.push({ code: cont, name: "" });
   });
   var byDate = {};
+  db.events.filter(function (e) { return e.projectId === p.id && e.notes === "Imported from field sheet"; }).forEach(function (e) { byDate[e.date] = e; });
   Object.keys(groups).forEach(function (key) {
-    var g = groups[key];
+    var g = groups[key], cols = g.cols;
     if (!byDate[g.date]) {
-      var n = String(db.events.filter(function (e) { return e.projectId === p.id; }).length + Object.keys(byDate).length + 1).padStart(3, "0");
+      var n = String(db.events.filter(function (e) { return e.projectId === p.id; }).length + 1).padStart(3, "0");
       var ev = { id: uid("e"), projectId: p.id, type: "hygiene", code: p.number + "-" + n, stage: "planned", date: g.date, multiDay: false, notes: "Imported from field sheet", uploadReady: false, operators: [] };
       db.events.push(ev);
       byDate[g.date] = ev;
     }
     var ev = byDate[g.date];
-    var cols = g.cols;
-    var sampleNo = (db.trains || []).filter(function (t) { return t.eventId === ev.id; }).length + 1;
-    db.trains = db.trains || [];
-    db.trains.push({
-      id: uid("t"), eventId: ev.id, pouch: String(sampleNo), sampleNo: sampleNo, trainKind: "airborne_personal",
-      contaminantId: g.analyses[0].code, analyses: g.analyses,
-      pumpSerial: val(cols, "pump"), headId: val(cols, "head"), mediaId: g.cassette,
-      startFlow: val(cols, "flow_start"), endFlow: val(cols, "flow_end"),
-      mode: "personal", status: "prepped", comments: "",
-      person: { first: val(cols, "given"), last: val(cols, "surname"), sex: (val(cols, "gender") || "not_stated").toLowerCase(), dob: val(cols, "dob"), occupation: val(cols, "occupation"), company: val(cols, "company"), hours: val(cols, "shift_hours"), daysOn: val(cols, "days_on"), daysOff: val(cols, "days_off") },
-      location: val(cols, "location"), startAt: val(cols, "start"), endAt: val(cols, "end"),
-      shiftDate: g.date
-    });
+    var start = hm(val(cols, "start")), end = hm(val(cols, "end"));
+    var sample = (db.trains || []).find(function (t) { return t.eventId === ev.id && t.mediaId === g.cassette; });
+    if (!sample) {
+      var sampleNo = (db.trains || []).filter(function (t) { return t.eventId === ev.id; }).length + 1;
+      sample = { id: uid("t"), eventId: ev.id, pouch: String(sampleNo), sampleNo: sampleNo, trainKind: "airborne_personal", mode: "personal", status: "prepped", comments: "" };
+      db.trains = db.trains || [];
+      db.trains.push(sample);
+    }
+    sample.contaminantId = g.analyses[0].code;
+    sample.analyses = g.analyses;
+    sample.pumpSerial = val(cols, "pump");
+    sample.headId = val(cols, "head");
+    sample.mediaId = g.cassette;
+    sample.startFlow = val(cols, "flow_start");
+    sample.endFlow = val(cols, "flow_end");
+    sample.shiftDate = g.date;
+    sample.startAt = typeof combineShiftTime === "function" ? combineShiftTime(g.date, start, false) : (start ? g.date + "T" + start + ":00" : "");
+    sample.endAt = typeof combineShiftTime === "function" ? combineShiftTime(g.date, end, true, start) : (end ? g.date + "T" + end + ":00" : "");
+    sample.location = val(cols, "location");
+    sample.locationCode = val(cols, "location_code");
+    sample.occupationCode = String(val(cols, "occupation_code")).replace(/\.0$/, "");
+    sample.seg = val(cols, "seg");
+    sample.mineCodesOn = true;
+    sample.person = { first: val(cols, "given"), last: val(cols, "surname"), sex: (val(cols, "gender") || "not_stated").toLowerCase(), dob: val(cols, "dob"), occupation: val(cols, "occupation"), company: val(cols, "company"), hours: val(cols, "shift_hours"), daysOn: val(cols, "days_on"), daysOff: val(cols, "days_off") };
   });
   save();
-  alert("Imported " + Object.keys(groups).length + " samples across " + Object.keys(byDate).length + " days. Check them before making the chain of custody.");
+  alert("Imported " + Object.keys(groups).length + " samples. Start, stop, occupation and location are on the sample. Volume is calculated from the times and flow.");
   openProject(p.id);
 }
 window.importFieldCsv = importFieldCsv;
