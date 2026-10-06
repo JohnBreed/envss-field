@@ -66,11 +66,58 @@
   <script src="app-fibre-v53.js?v=55"></script>
   <script src="app-fibre-v54.js?v=55"></script>
   <script src="app-fibre-v55.js?v=55"></script>
-  <div id="v54banner" style="position:fixed;left:0;right:0;bottom:0;background:#2D3A6A;color:white;padding:8px 12px;z-index:9999;font-weight:700">ENVSS Field v55</div>
+  
+  <script>
+    dashHtml = function () {
+      var controllers = [], statuses = [];
+      (db.projects || []).forEach(function (p) {
+        if (p.source === "podio" && p.active === false) return;
+        if (p.controller && controllers.indexOf(p.controller) === -1) controllers.push(p.controller);
+        if (p.status && statuses.indexOf(p.status) === -1) statuses.push(p.status);
+      });
+      controllers.sort(); statuses.sort();
+      if (!view.controller) view.controller = "all";
+      if (!view.statusFilter) view.statusFilter = "all";
+      var list = (db.projects || []).filter(function (p) {
+        if (p.source === "podio" && p.active === false) return false;
+        if (view.controller && view.controller !== "all" && p.controller !== view.controller) return false;
+        if (view.statusFilter !== "all" && p.status !== view.statusFilter) return false;
+        return true;
+      }).sort(function (a, b) { return String(b.number || "").localeCompare(String(a.number || "")); });
+      var html = "<div class=\"wrap\"><div class=\"row\"><h2 class=\"brand-type\" style=\"margin:0;color:var(--navy)\">Active projects</h2><button class=\"btn orange\" onclick=\"openNewProject()\">New project</button></div>";
+      html += "<label>Controller</label><select id=\"controllerFilter\"><option value=\"all\">All controllers</option>";
+      controllers.forEach(function (name) { html += "<option value=\"" + esc(name) + "\"" + (view.controller === name ? " selected" : "") + ">" + esc(name) + "</option>"; });
+      html += "</select><label>Status</label><select id=\"statusFilter\"><option value=\"all\">All active statuses</option>";
+      statuses.forEach(function (name) { html += "<option value=\"" + esc(name) + "\"" + (view.statusFilter === name ? " selected" : "") + ">" + esc(name) + "</option>"; });
+      html += "</select><p class=\"help\">" + list.length + " active job" + (list.length === 1 ? "" : "s") + ".</p>";
+      list.forEach(function (p) {
+        html += "<div class=\"card\" onclick=\"openProject('" + p.id + "')\" style=\"cursor:pointer\"><div class=\"row\" style=\"align-items:flex-start\"><div class=\"grow\">";
+        html += "<div class=\"brand-type\" style=\"font-weight:700;color:var(--navy);font-size:18px\">" + esc(p.name || p.number || "No title") + "</div>";
+        html += "<div class=\"muted\">" + esc(p.number || "") + (p.client ? " · " + esc(p.client) : "") + (p.site ? " · " + esc(p.site) : "") + "</div>";
+        html += "<div class=\"muted\">" + esc(p.controller || "No controller") + "</div></div>";
+        html += "<div style=\"font-weight:700;color:var(--navy);text-align:right;max-width:160px\">" + esc(p.status || "No status") + "</div></div></div>";
+      });
+      html += "<p class=\"help\">ENVSS Field v56</p></div>";
+      return html;
+    };
+    if (typeof bind === "function") {
+      var _bind56 = bind;
+      bind = function () {
+        _bind56();
+        var sel = document.getElementById("controllerFilter");
+        if (sel) sel.onchange = function () { view.controller = sel.value; render(); };
+        var st = document.getElementById("statusFilter");
+        if (st) st.onchange = function () { view.statusFilter = st.value; render(); };
+      };
+    }
+    if (typeof render === "function") render();
+  </script>
+
+  <div id="v54banner" style="position:fixed;left:0;right:0;bottom:0;background:#2D3A6A;color:white;padding:8px 12px;z-index:9999;font-weight:700">ENVSS Field v56</div>
   <script>
     setInterval(function () {
       var b = document.getElementById("v54banner");
-      if (b) b.textContent = "ENVSS Field v55";
+      if (b) b.textContent = "ENVSS Field v56";
     }, 500);
   </script>
 </body>
