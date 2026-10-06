@@ -90,6 +90,7 @@ trainHtml = function () {
   var t = (db.trains || []).find(function (x) { return x.id === view.trainId; });
   if (!t || html.indexOf("analysisList") >= 0) return html;
   html = html.replace(/<label>Contaminant<\/label>\s*(?:<input[^>]*>|<div class="combo">[\s\S]*?id="sug-contam"><\/div>\s*<\/div>)/, analysisBlock(t));
+  if (t.trainKind === "blank") html = html.replace(/<label>Sample head<\/label>\s*<div class="combo">[\s\S]*?id="sug-head"><\/div>\s*<\/div>/, "");
   return html;
 };
 
