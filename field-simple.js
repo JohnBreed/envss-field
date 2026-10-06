@@ -268,37 +268,36 @@ function cocVolume(sample) {
 }
 async function createCoc() {
   var p = project(view.projectId);
-  if (!p || typeof XLSX === "undefined") { alert("Open a project, then try Create COC again."); return; }
+  if (!p || typeof ExcelJS === "undefined") { alert("Open a project, then try Create COC again."); return; }
   var events = db.events.filter(function (e) { return e.projectId === p.id; });
   var samples = (db.trains || []).filter(function (s) { return events.some(function (e) { return e.id === s.eventId; }); });
   if (!samples.length) { alert("No samples on this project."); return; }
-  var res = await fetch("coc-template.xlsx");
-  var book = XLSX.read(await res.arrayBuffer(), { type: "array", cellDates: true });
-  var ws = book.Sheets[book.SheetNames[0]];
-  function cell(ref, value) { ws[ref] = { v: value, t: typeof value === "number" ? "n" : "s" }; }
-  for (var r = 18; r < 76; r++) ["B","C","D","E","F","G","H","I","J","K","S","T"].forEach(function (col) { delete ws[col + r]; });
+  var book = new ExcelJS.Workbook();
+  await book.xlsx.load(await (await fetch("coc-template.xlsx")).arrayBuffer());
+  var ws = book.getWorksheet("Client") || book.worksheets[0];
+  for (var r = 18; r < 76; r++) [2,3,4,5,6,7,8,9,10,11,19,20,21].forEach(function (c) { ws.getCell(r, c).value = null; });
   var tests = ["INH","GYP","RES","SIL","DP","WLD"];
   var metal = ["WLD","CRM","CUF","FEO","MNF","NI","ZNF"];
   samples.forEach(function (s, n) {
     var r = 18 + n;
     var codes = (s.analyses || []).map(function (a) { return a.code; });
     var kind = s.rejected ? "rejected" : (s.trainKind === "blank" ? "blank" : "personal");
-    cell("B" + r, s.mediaId || "");
-    cell("C" + r, "N/A");
-    cell("D" + r, (s.shiftDate || "").split("-").reverse().join("/"));
-    cell("E" + r, kind === "blank" ? "Blank" : "Personal");
-    if (kind === "rejected") cell("U" + r, "voided needs clean and return");
+    ws.getCell(r, 2).value = s.mediaId || "";
+    ws.getCell(r, 3).value = "N/A";
+    ws.getCell(r, 4).value = (s.shiftDate || "").split("-").reverse().join("/");
+    ws.getCell(r, 5).value = kind === "blank" ? "Blank" : "Personal";
+    if (kind === "rejected") ws.getCell(r, 21).value = "voided needs clean and return";
     else tests.forEach(function (code, i) {
-      if (codes.indexOf(code) >= 0 || (code === "WLD" && metal.some(function (m) { return codes.indexOf(m) >= 0; }))) cell(XLSX.utils.encode_col(5 + i) + r, "x");
+      if (codes.indexOf(code) >= 0 || (code === "WLD" && metal.some(function (m) { return codes.indexOf(m) >= 0; }))) ws.getCell(r, 6 + i).value = "x";
     });
-    if (kind === "blank" || kind === "rejected") { cell("S" + r, "N/A"); cell("T" + r, "N/A"); }
-    else { var mins = cocRuntime(s), vol = cocVolume(s); if (mins !== "") cell("S" + r, mins); if (vol !== "") cell("T" + r, vol); }
+    if (kind === "blank" || kind === "rejected") { ws.getCell(r, 19).value = "N/A"; ws.getCell(r, 20).value = "N/A"; }
+    else { var mins = cocRuntime(s), vol = cocVolume(s); if (mins !== "") ws.getCell(r, 19).value = mins; if (vol !== "") ws.getCell(r, 20).value = vol; }
   });
-  var widths = [14,22,10,12,14,12,10,12,12,16,28,8,8,8,8,8,8,8,12,14,28,8,12];
-  ws["!cols"] = widths.map(function (w) { return { wch: w }; });
-  ws["!rows"] = ws["!rows"] || [];
-  ws["!rows"][16] = { hpt: 48 };
-  XLSX.writeFile(book, (p.number || "ENVSS") + "_Laboratory_COC.xlsx");
+  var blob = new Blob([await book.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (p.number || "ENVSS") + "_Laboratory_COC.xlsx";
+  a.click();
 }
 window.createCoc = createCoc;
 var _projectCoc = projectHtml;
