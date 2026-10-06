@@ -244,3 +244,50 @@ bind = function () {
     reader.readAsText(file);
   };
 };
+
+function cocRuntime(sample) {
+  if (!sample.startAt || !sample.endAt) return "";
+  var ms = new Date(sample.endAt) - new Date(sample.startAt);
+  if (!isFinite(ms) || ms < 0) return "";
+  return Math.round(ms / 60000);
+}
+function cocVolume(sample) {
+  var mins = cocRuntime(sample);
+  var flow = parseFloat(sample.startFlow);
+  if (!mins || !isFinite(flow)) return "";
+  return Math.round(mins * flow);
+}
+function createCoc() {
+  var p = project(view.projectId);
+  if (!p) { alert("Open a project first."); return; }
+  var events = db.events.filter(function (e) { return e.projectId === p.id; });
+  var samples = (db.trains || []).filter(function (s) { return events.some(function (e) { return e.id === s.eventId; }); });
+  if (!samples.length) { alert("No samples on this project."); return; }
+  var tests = ["INH", "GYP", "RES", "SIL", "DP", "WLD"];
+  var headers = ["Client Sample ID", "Depth", "Date Sampled", "Type of Sample", "Inhalable Dust", "Gypsum", "Respirable Dust", "Crystalline Silica", "Diesel Particulate Matter", "Welding Fume and Metals", "Run Time (min)", "Volume Sampled (L)"];
+  var rows = samples.map(function (s) {
+    var codes = (s.analyses || []).map(function (a) { return a.code; });
+    if (!codes.length && s.contaminantId) codes = [s.contaminantId];
+    var date = (s.shiftDate || "").split("-").reverse().join("/");
+    return [s.mediaId || s.headId || s.sampleNo, "N/A", date, s.trainKind === "blank" ? "Blank" : "Personal"].concat(tests.map(function (code) { return codes.indexOf(code) >= 0 ? "x" : ""; })).concat([cocRuntime(s), cocVolume(s)]);
+  });
+  var xml = "<table><tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>" + rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + String(c == null ? "" : c) + "</td>"; }).join("") + "</tr>"; }).join("") + "</table>";
+  var blob = new Blob(["\ufeff" + xml], { type: "application/vnd.ms-excel" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = p.number + "_Laboratory_COC.xls";
+  a.click();
+}
+window.createCoc = createCoc;
+var _projectCoc = projectHtml;
+projectHtml = function () {
+  var html = _projectCoc();
+  if (html.indexOf("createCoc") >= 0) return html;
+  return html.replace("Import field CSV", "Import field CSV</label><button class=\"btn orange\" id=\"btnCoc\" type=\"button\">Create COC");
+};
+var _bindCoc = bind;
+bind = function () {
+  _bindCoc();
+  var btn = document.getElementById("btnCoc");
+  if (btn) btn.onclick = createCoc;
+};
