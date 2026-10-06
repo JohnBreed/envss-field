@@ -1,0 +1,149 @@
+/* One clean layer. Does not wrap render. */
+window.ENVSS_SIMPLE = "1";
+
+function activeProject(p) {
+  if (!p || p.source !== "podio") return true;
+  var s = String(p.status || "").toLowerCase();
+  return s && s !== "closed" && s !== "cancelled" && s !== "on hold" && p.active !== false;
+}
+
+dashHtml = function () {
+  var controllers = [], statuses = [];
+  (db.projects || []).forEach(function (p) {
+    if (!activeProject(p)) return;
+    if (p.controller && controllers.indexOf(p.controller) < 0) controllers.push(p.controller);
+    if (p.status && statuses.indexOf(p.status) < 0) statuses.push(p.status);
+  });
+  controllers.sort(); statuses.sort();
+  view.controller = view.controller || "all";
+  view.statusFilter = view.statusFilter || "all";
+  var list = (db.projects || []).filter(function (p) {
+    if (!activeProject(p)) return false;
+    if (view.controller !== "all" && p.controller !== view.controller) return false;
+    if (view.statusFilter !== "all" && p.status !== view.statusFilter) return false;
+    return true;
+  }).sort(function (a, b) { return String(b.number || "").localeCompare(String(a.number || "")); });
+  var html = "<div class=\"wrap\"><div class=\"row\"><h2 class=\"brand-type\" style=\"margin:0;color:var(--navy)\">Active projects</h2><button class=\"btn orange\" id=\"btnNewProject\">New project</button></div>";
+  html += "<label>Controller</label><select id=\"controllerFilter\"><option value=\"all\">All controllers</option>";
+  controllers.forEach(function (n) { html += "<option value=\"" + esc(n) + "\"" + (view.controller === n ? " selected" : "") + ">" + esc(n) + "</option>"; });
+  html += "</select><label>Status</label><select id=\"statusFilter\"><option value=\"all\">All active statuses</option>";
+  statuses.forEach(function (n) { html += "<option value=\"" + esc(n) + "\"" + (view.statusFilter === n ? " selected" : "") + ">" + esc(n) + "</option>"; });
+  html += "</select><p class=\"help\">" + list.length + " active job" + (list.length === 1 ? "" : "s") + ".</p>";
+  list.forEach(function (p) {
+    html += "<button class=\"card open-project\" data-project=\"" + esc(p.id) + "\" style=\"display:block;width:100%;text-align:left\"><div class=\"row\"><div class=\"grow\">";
+    html += "<div class=\"brand-type\" style=\"font-weight:700;color:var(--navy);font-size:18px\">" + esc(p.name || p.number || "No title") + "</div>";
+    html += "<div class=\"muted\">" + esc(p.number || "") + (p.client ? " · " + esc(p.client) : "") + (p.site ? " · " + esc(p.site) : "") + "</div>";
+    html += "<div class=\"muted\">" + esc(p.controller || "No controller") + "</div></div>";
+    html += "<div style=\"font-weight:700;color:var(--navy);text-align:right;max-width:160px\">" + esc(p.status || "") + "</div></div></button>";
+  });
+  html += "<p class=\"help\">ENVSS Field simple</p></div>";
+  return html;
+};
+
+newProjectHtml = function () {
+  var statuses = ["New", "ENVSS to propose start date", "In Progress", "Awaiting Start Date/PO/Information from Client", "Lab Results Pending", "Report Pending", "Report in Review", "On Hold", "Closed", "Cancelled"];
+  var opts = statuses.map(function (s) { return "<option" + (s === "In Progress" ? " selected" : "") + ">" + esc(s) + "</option>"; }).join("");
+  return "<div class=\"wrap\"><button class=\"btn ghost\" id=\"btnBackDash\">← Projects</button><h2 class=\"brand-type\" style=\"color:var(--navy)\">New project</h2>" +
+    "<label>Job number</label><input id=\"nnum\">" +
+    "<label>Project title</label><input id=\"nname\">" +
+    "<label>Client</label><input id=\"nclient\">" +
+    "<label>Site</label><input id=\"nsite\">" +
+    "<label>Status</label><select id=\"nstatus\">" + opts + "</select>" +
+    "<label>Project controller</label><input id=\"ncontroller\">" +
+    "<label>Controller email</label><input id=\"ncontrollerEmail\">" +
+    "<label>Job type</label><input id=\"njobType\" value=\"HYG - Occupational Hygiene\">" +
+    "<div class=\"footer-actions\"><button class=\"btn orange\" id=\"btnCreateProj\">Create project</button></div></div>";
+};
+
+createProject = function () {
+  var num = ((document.getElementById("nnum") || {}).value || "").trim();
+  if (!num) { alert("Enter a job number."); return; }
+  var status = ((document.getElementById("nstatus") || {}).value || "In Progress");
+  var p = {
+    id: uid("p"), source: "field", number: num,
+    name: ((document.getElementById("nname") || {}).value || "").trim() || num,
+    client: ((document.getElementById("nclient") || {}).value || "").trim(),
+    site: ((document.getElementById("nsite") || {}).value || "").trim(),
+    status: status, active: status !== "Closed" && status !== "Cancelled" && status !== "On Hold",
+    controller: ((document.getElementById("ncontroller") || {}).value || "").trim(),
+    controllerEmail: ((document.getElementById("ncontrollerEmail") || {}).value || "").trim(),
+    jobType: ((document.getElementById("njobType") || {}).value || "").trim()
+  };
+  db.projects.push(p);
+  save();
+  openProject(p.id);
+};
+
+function analysesOf(t) {
+  if (!t.analyses || !t.analyses.length) {
+    var c = typeof contam === "function" ? contam(t.contaminantId) : null;
+    t.analyses = c ? [{ code: c.code || t.contaminantId, name: c.name || "" }] : [];
+  }
+  return t.analyses;
+}
+var _trainSimple = trainHtml;
+trainHtml = function () {
+  var html = _trainSimple();
+  var t = trainById(view.trainId);
+  if (!t || html.indexOf("analysisList") >= 0) return html;
+  var rows = analysesOf(t).map(function (a, i) {
+    return "<div class=\"row\"><span class=\"grow\">" + esc(a.code) + (a.name ? " — " + esc(a.name) : "") + "</span><button type=\"button\" class=\"btn ghost drop-analysis\" data-i=\"" + i + "\">Remove</button></div>";
+  }).join("");
+  var block = "<label>Analyses on this sample</label><div id=\"analysisList\">" + (rows || "<p class=\"muted\">None yet.</p>") + "</div><input id=\"addAnalysis\" placeholder=\"Add analysis — INH, GYP, SIL\">";
+  return html.replace("id=\"sug-contam\"></div>", "id=\"sug-contam\"></div>" + block);
+};
+
+var _bindSimple = bind;
+bind = function () {
+  _bindSimple();
+  var np = document.getElementById("btnNewProject");
+  if (np) np.onclick = function () { openNewProject(); };
+  var back = document.getElementById("btnBackDash");
+  if (back) back.onclick = function () { goDash(); };
+  var create = document.getElementById("btnCreateProj");
+  if (create) create.onclick = function () { createProject(); };
+  var cf = document.getElementById("controllerFilter");
+  if (cf) cf.onchange = function () { view.controller = cf.value; render(); };
+  var sf = document.getElementById("statusFilter");
+  if (sf) sf.onchange = function () { view.statusFilter = sf.value; render(); };
+  document.querySelectorAll(".open-project").forEach(function (btn) {
+    btn.onclick = function () { openProject(btn.getAttribute("data-project")); };
+  });
+  var add = document.getElementById("addAnalysis");
+  if (add) add.onchange = function () {
+    var t = trainById(view.trainId);
+    var code = add.value.trim();
+    if (!t || !code) return;
+    var c = typeof contam === "function" ? contam(code) : null;
+    analysesOf(t);
+    if (!t.analyses.some(function (a) { return a.code === (c && c.code || code); })) t.analyses.push({ code: (c && c.code) || code, name: (c && c.name) || "" });
+    t.contaminantId = t.analyses[0].code;
+    save();
+  };
+  document.querySelectorAll(".drop-analysis").forEach(function (btn) {
+    btn.onclick = function () {
+      var t = trainById(view.trainId);
+      analysesOf(t).splice(Number(btn.getAttribute("data-i")), 1);
+      t.contaminantId = t.analyses[0] ? t.analyses[0].code : "";
+      save();
+    };
+  });
+};
+
+var _pullSimple = pullRemote;
+pullRemote = async function () {
+  await _pullSimple();
+  var c = typeof sbCfg === "function" ? sbCfg() : null;
+  if (!c) return;
+  var all = [];
+  for (var offset = 0; offset < 6000; offset += 1000) {
+    var res = await fetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&limit=1000&offset=" + offset, { headers: sbHeaders() });
+    if (!res.ok) break;
+    var rows = await res.json();
+    all = all.concat(rows);
+    if (rows.length < 1000) break;
+  }
+  if (typeof mergeById === "function") db.projects = mergeById(db.projects, all);
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+  if (view.page === "dash") render();
+};

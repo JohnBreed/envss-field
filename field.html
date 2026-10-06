@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2D3A6A">
+  <title>ENVSS Field</title>
+  <link rel="icon" href="logo.svg">
+  <link rel="stylesheet" href="styles.css?simple=1">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register = function () { return Promise.resolve(); };
+      navigator.serviceWorker.getRegistrations().then(function (regs) { regs.forEach(function (r) { r.unregister(); }); });
+    }
+  </script>
+  <header class="app-header">
+    <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
+    <div class="titles">
+      <h1>ENVSS Field</h1>
+      <p id="whoLabel">Capture</p>
+    </div>
+    <div id="onlineDot" class="online-dot"></div>
+  </header>
+  <div id="loginGate" class="login-gate hidden">
+    <div class="login-card">
+      <h2>Sign in</h2>
+      <p>Use your ENVSS Google account, or type your name.</p>
+      <div id="googleBtn"></div>
+      <label>Name</label><input id="manualName">
+      <label>Work email</label><input id="manualEmail" placeholder="jane@envss.com.au">
+      <div class="footer-actions"><button class="btn orange" onclick="manualLogin()">Continue</button></div>
+    </div>
+  </div>
+  <div id="app"></div>
+  <script src="config.js?simple=1"></script>
+  <script src="https://cdn.jsdelivr.net/gh/JohnBreed/envss-field@138a583f7a75f3ba61024ec6c839080d8b46c33a/app.js"></script>
+  <script src="catalogs-srs.js?simple=1"></script>
+  <script src="field-simple.js?simple=1"></script>
+</body>
+</html>
