@@ -317,11 +317,30 @@ var _projectCoc = projectHtml;
 projectHtml = function () {
   var html = _projectCoc();
   if (html.indexOf("createCoc") >= 0) return html;
-  return html.replace("Import field CSV", "Import field CSV</label><button class=\"btn orange\" id=\"btnCoc\" type=\"button\">Create COC");
+  
+var _eventCoc = eventHtml;
+eventHtml = function () {
+  var html = _eventCoc();
+  if (html.indexOf("btnEventMenu") >= 0) return html;
+  return html.replace("</h2>", "</h2><div class=\"menu-wrap\"><button class=\"btn ghost\" type=\"button\" id=\"btnEventMenu\">☰</button><div class=\"menu\" id=\"eventMenu\" hidden><button type=\"button\" id=\"btnCoc\">Create COC</button></div></div>");
 };
-var _bindCoc = bind;
+var _bindEventCoc = bind;
 bind = function () {
-  _bindCoc();
-  var btn = document.getElementById("btnCoc");
-  if (btn) btn.onclick = createCoc;
+  _bindEventCoc();
+  var menuBtn = document.getElementById("btnEventMenu");
+  var menu = document.getElementById("eventMenu");
+  if (menuBtn && menu) menuBtn.onclick = function () { menu.hidden = !menu.hidden; };
+  var coc = document.getElementById("btnCoc");
+  if (coc) coc.onclick = function () { if (menu) menu.hidden = true; createCoc(); };
+  var input = document.getElementById("importCsv");
+  if (input && !input.dataset.bound) {
+    input.dataset.bound = "1";
+    input.onchange = function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () { importFieldCsv(String(reader.result || "")); };
+      reader.readAsText(file);
+    };
+  }
 };
