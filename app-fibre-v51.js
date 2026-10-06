@@ -1,0 +1,68 @@
+window.ENVSS_FIBRE = "51";
+
+function isActiveProject(p) {
+  if (!p) return false;
+  if (p.source !== "podio") return true;
+  const s = String(p.status || "").trim().toLowerCase();
+  if (!s) return false;
+  return s !== "closed" && s !== "cancelled" && s !== "on hold" && p.active !== false;
+}
+
+function keepActiveProjects() {
+  db.projects = (db.projects || []).filter(isActiveProject);
+}
+
+dashHtml = function () {
+  keepActiveProjects();
+  const controllers = [];
+  (db.projects || []).forEach(function (p) {
+    if (p.controller && controllers.indexOf(p.controller) === -1) controllers.push(p.controller);
+  });
+  controllers.sort();
+  if (!view.controller) view.controller = "all";
+  const who = typeof whoText === "function" ? whoText() : "";
+  const mine = (who.match(/[A-Z0-9._%+-]+@envss\.com\.au/i) || [""])[0].toLowerCase();
+  const list = (db.projects || []).filter(function (p) {
+    if (view.controller === "mine") return mine && String(p.controllerEmail || "").toLowerCase() === mine;
+    if (view.controller && view.controller !== "all") return p.controller === view.controller;
+    return true;
+  }).sort(function (a, b) { return String(b.number || "").localeCompare(String(a.number || "")); });
+  var html = "<div class=\"wrap\"><div class=\"row\"><h2 class=\"brand-type\" style=\"margin:0;color:var(--navy)\">Active projects</h2>";
+  html += "<button class=\"btn orange\" onclick=\"openNewProject()\">New project</button></div>";
+  html += "<label>Controller</label><select id=\"controllerFilter\">";
+  html += "<option value=\"all\"" + (view.controller === "all" ? " selected" : "") + ">All controllers</option>";
+  if (mine) html += "<option value=\"mine\"" + (view.controller === "mine" ? " selected" : "") + ">My jobs</option>";
+  controllers.forEach(function (name) {
+    html += "<option value=\"" + esc(name) + "\"" + (view.controller === name ? " selected" : "") + ">" + esc(name) + "</option>";
+  });
+  html += "</select>";
+  html += "<p class=\"help\">" + list.length + " active job" + (list.length === 1 ? "" : "s") + ". Closed, cancelled and on hold stay in Podio and are not shown.</p>";
+  if (!list.length) html += "<div class=\"empty\">No active projects.</div>";
+  list.forEach(function (p) {
+    const n = (db.events || []).filter(function (e) { return e.projectId === p.id; }).length;
+    html += "<div class=\"card\" onclick=\"openProject('" + p.id + "')\" style=\"cursor:pointer\"><div class=\"row\"><div class=\"grow\">";
+    html += "<div class=\"brand-type\" style=\"font-weight:700;color:var(--navy);font-size:18px\">" + esc(p.number || "No number") + "</div>";
+    html += "<div class=\"muted\">" + esc(p.client || p.name || "") + (p.site ? " · " + esc(p.site) : "") + "</div>";
+    html += "<div class=\"muted\">" + esc(p.controller || "No controller") + (p.status ? " · " + esc(p.status) : "") + " · " + n + " event" + (n === 1 ? "" : "s") + "</div>";
+    html += "</div></div></div>";
+  });
+  html += "<p class=\"help\">ENVSS Field v51</p></div>";
+  return html;
+};
+
+const _pull51 = pullRemote;
+pullRemote = async function () {
+  await _pull51();
+  keepActiveProjects();
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+  if (view && view.page === "dash" && typeof render === "function") render();
+};
+keepActiveProjects();
+
+const _bind51 = bind;
+bind = function () {
+  _bind51();
+  const sel = document.getElementById("controllerFilter");
+  if (sel) sel.onchange = function () { view.controller = sel.value; render(); };
+};
+if (typeof render === "function") render();
