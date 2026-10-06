@@ -286,8 +286,8 @@ async function createCoc() {
     cell("B" + r, s.mediaId || "");
     cell("C" + r, "N/A");
     cell("D" + r, (s.shiftDate || "").split("-").reverse().join("/"));
-    cell("E" + r, kind === "blank" ? "Blank" : (kind === "rejected" ? "VOIDED" : "Personal"));
-    if (kind === "rejected") cell("F" + r, "SAMPLE VOIDED - Please clean and return");
+    cell("E" + r, kind === "blank" ? "Blank" : "Personal");
+    if (kind === "rejected") cell("U" + r, "voided needs clean and return");
     else tests.forEach(function (code, i) {
       if (codes.indexOf(code) >= 0 || (code === "WLD" && metal.some(function (m) { return codes.indexOf(m) >= 0; }))) cell(XLSX.utils.encode_col(5 + i) + r, "x");
     });
