@@ -83,8 +83,8 @@ function analysesOf(t) {
 }
 var _trainSimple = trainHtml;
 trainHtml = function () {
-  var html = _trainSimple();
-  var t = trainById(view.trainId);
+  var html; try { html = _trainSimple(); } catch (e) { return "<div class=\"wrap\">Sample could not be drawn.</div>"; }
+  var t = (db.trains || []).find(function (x) { return x.id === view.trainId; });
   if (!t || html.indexOf("analysisList") >= 0) return html;
   var rows = analysesOf(t).map(function (a, i) {
     return "<div class=\"row\"><span class=\"grow\">" + esc(a.code) + (a.name ? " — " + esc(a.name) : "") + "</span><button type=\"button\" class=\"btn ghost drop-analysis\" data-i=\"" + i + "\">Remove</button></div>";
@@ -111,7 +111,7 @@ bind = function () {
   });
   var add = document.getElementById("addAnalysis");
   if (add) add.onchange = function () {
-    var t = trainById(view.trainId);
+    var t = (db.trains || []).find(function (x) { return x.id === view.trainId; });
     var code = add.value.trim();
     if (!t || !code) return;
     var c = typeof contam === "function" ? contam(code) : null;
@@ -122,7 +122,7 @@ bind = function () {
   };
   document.querySelectorAll(".drop-analysis").forEach(function (btn) {
     btn.onclick = function () {
-      var t = trainById(view.trainId);
+      var t = (db.trains || []).find(function (x) { return x.id === view.trainId; });
       analysesOf(t).splice(Number(btn.getAttribute("data-i")), 1);
       t.contaminantId = t.analyses[0] ? t.analyses[0].code : "";
       save();
