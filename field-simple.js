@@ -82,19 +82,20 @@ function analysisBlock(t) {
   var rows = analysesOf(t).map(function (a, i) {
     return "<div class=\"row\"><span class=\"grow\">" + esc(a.code) + (a.name ? " — " + esc(a.name) : "") + "</span><button type=\"button\" class=\"btn ghost drop-analysis\" data-i=\"" + i + "\">Remove</button></div>";
   }).join("");
-  return "<label>Add analysis</label><div class=\"combo\"><input id=\"addAnalysis\" placeholder=\"Type a contaminant\" autocomplete=\"off\"><div class=\"suggest\" id=\"sug-analysis\"></div></div><div id=\"analysisList\">" + (rows || "<p class=\"muted\">None yet. Each analysis becomes its own row in the sheet.</p>") + "</div>";
+  return "<div class=\"analysis-box\"><label>Add analysis</label><input id=\"addAnalysis\" placeholder=\"Type a contaminant\" autocomplete=\"off\"><div id=\"sug-analysis\"></div><div id=\"analysisList\">" + (rows || "<p class=\"muted\">None yet. Each analysis becomes its own row in the sheet.</p>") + "</div></div>";
 }
 var _trainSimple = trainHtml;
 trainHtml = function () {
   var html; try { html = _trainSimple(); } catch (e) { return "<div class=\"wrap\">Sample could not be drawn.</div>"; }
   var t = (db.trains || []).find(function (x) { return x.id === view.trainId; });
   if (!t || html.indexOf("analysisList") >= 0) return html;
-  return html.replace(/<label>Contaminant<\/label>[\s\S]*?id="sug-contam"><\/div>/, analysisBlock(t));
+  html = html.replace(/<label>Contaminant<\/label>\s*(?:<input[^>]*>|<div class="combo">[\s\S]*?id="sug-contam"><\/div>\s*<\/div>)/, analysisBlock(t));
+  return html;
 };
 
 var _bindSimple = bind;
 bind = function () {
-  _bindSimple();
+  try { _bindSimple(); } catch (e) {}
   var np = document.getElementById("btnNewProject");
   if (np) np.onclick = function () { openNewProject(); };
   var back = document.getElementById("btnBackDash");
