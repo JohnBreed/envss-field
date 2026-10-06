@@ -259,24 +259,55 @@ function cocVolume(sample) {
 }
 function createCoc() {
   var p = project(view.projectId);
-  if (!p) { alert("Open a project first."); return; }
+  if (!p || typeof XLSX === "undefined") { alert("Open a project, then try Create COC again."); return; }
   var events = db.events.filter(function (e) { return e.projectId === p.id; });
   var samples = (db.trains || []).filter(function (s) { return events.some(function (e) { return e.id === s.eventId; }); });
   if (!samples.length) { alert("No samples on this project."); return; }
-  var tests = ["INH", "GYP", "RES", "SIL", "DP", "WLD"];
-  var headers = ["Client Sample ID", "Depth", "Date Sampled", "Type of Sample", "Inhalable Dust", "Gypsum", "Respirable Dust", "Crystalline Silica", "Diesel Particulate Matter", "Welding Fume and Metals", "Run Time (min)", "Volume Sampled (L)"];
-  var rows = samples.map(function (s) {
+  var ws = {};
+  function cell(ref, value) { if (value !== "" && value != null) ws[ref] = { v: value, t: typeof value === "number" ? "n" : "s" }; }
+  cell("C1", "CHAIN OF CUSTODY FORM - Client");
+  cell("R1", "ENVIROLAB GROUP");
+  cell("R2", "National phone number 1300 424 344");
+  cell("A3", "[Copyright and Confidential]");
+  cell("A4", " Company:"); cell("B4", "Environmental Site Services"); cell("F4", "Client Project Name/Number/Site etc (ie report title):");
+  cell("A5", " Contact Person:"); cell("B5", "Minah Munshi"); cell("F5", p.number || "");
+  cell("A6", " Project Mgr:"); cell("B6", "Minah Munshi"); cell("F6", "PO No. (if applicable):");
+  cell("A7", " Sampler:"); cell("B7", "Minah Munshi"); cell("F7", "Envirolab Quote No. :"); cell("J7", "Online price list");
+  cell("A8", " Address:"); cell("B8", "10 Bermondsey St, West Leederville WA 6007"); cell("F8", "Date results required:");
+  cell("F9", "Or choose:"); cell("H9", "x");
+  cell("H10", "Standard"); cell("J10", "Same Day"); cell("L10", "1 day"); cell("N10", "2 day"); cell("P10", "3 day");
+  cell("A11", " Phone:  "); cell("B11", "(08) 9355 4010"); cell("C11", " Mob:"); cell("D11", "0419 628 710");
+  cell("F11", "Note: Inform lab in advance if urgent turnaround is required - surcharges apply");
+  cell("A12", " Email Results to:"); cell("B12", "lab@envss.com.au"); cell("F12", "Additional report format:"); cell("L12", "Esdat"); cell("O12", "Equis");
+  cell("F13", "Lab Comments:");
+  cell("A14", " Email Invoice to:"); cell("B14", "accounts@envss.com.au & lab@envss.com.au");
+  cell("A16", "Sample information"); cell("F16", "Tests Required");
+  ["Envirolab Sample ID (Lab use only)", "Client Sample ID  or Information", "Depth", "Date Sampled", "Type of Sample", "Inhalable Dust", "Gypsum", "Respirable Dust", "Crystalline Silica", "Diesel Particulate Matter", "Welding Fume & Metals (Cr, Cu, FeO, Mn, Ni & ZnO)"].forEach(function (h, i) { cell(XLSX.utils.encode_cell({ r: 16, c: i }), h); });
+  cell("S17", "Run Time (min)"); cell("T17", "Volume Sampled (L)"); cell("U17", "Provide as much information about the sample as you can");
+  samples.forEach(function (s, n) {
     var codes = (s.analyses || []).map(function (a) { return a.code; });
     if (!codes.length && s.contaminantId) codes = [s.contaminantId];
-    var date = (s.shiftDate || "").split("-").reverse().join("/");
-    return [s.mediaId || s.headId || s.sampleNo, "N/A", date, s.trainKind === "blank" ? "Blank" : "Personal"].concat(tests.map(function (code) { return codes.indexOf(code) >= 0 ? "x" : ""; })).concat([cocRuntime(s), cocVolume(s)]);
+    var r = 17 + n;
+    cell(XLSX.utils.encode_cell({ r: r, c: 1 }), s.mediaId || "");
+    cell(XLSX.utils.encode_cell({ r: r, c: 2 }), "N/A");
+    cell(XLSX.utils.encode_cell({ r: r, c: 3 }), (s.shiftDate || "").split("-").reverse().join("/"));
+    cell(XLSX.utils.encode_cell({ r: r, c: 4 }), s.trainKind === "blank" ? "Blank" : "Personal");
+    [["INH", 5], ["GYP", 6], ["RES", 7], ["SIL", 8], ["DP", 9]].forEach(function (pair) { if (codes.indexOf(pair[0]) >= 0) cell(XLSX.utils.encode_cell({ r: r, c: pair[1] }), "x"); });
+    if (["WLD", "CRM", "CUF", "FEO", "MNF", "NI", "ZNF"].some(function (code) { return codes.indexOf(code) >= 0; })) cell(XLSX.utils.encode_cell({ r: r, c: 10 }), "x");
+    var mins = cocRuntime(s), vol = cocVolume(s);
+    if (mins !== "") cell(XLSX.utils.encode_cell({ r: r, c: 18 }), mins);
+    if (vol !== "") cell(XLSX.utils.encode_cell({ r: r, c: 19 }), vol);
   });
-  var xml = "<table><tr>" + headers.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>" + rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + String(c == null ? "" : c) + "</td>"; }).join("") + "</tr>"; }).join("") + "</table>";
-  var blob = new Blob(["\ufeff" + xml], { type: "application/vnd.ms-excel" });
-  var a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = p.number + "_Laboratory_COC.xls";
-  a.click();
+  var foot = 19 + samples.length;
+  cell("B" + foot, "Please tick the box if observed settled sediment present in water samples is to be included in the extraction and/or analysis");
+  cell("A" + (foot + 1), " Relinquished by (Company):"); cell("C" + (foot + 1), "ENVSS"); cell("E" + (foot + 1), "Received by (Company):");
+  cell("A" + (foot + 2), " Print Name:"); cell("B" + (foot + 2), "Minah Munshi"); cell("E" + (foot + 2), "Print Name:");
+  cell("A" + (foot + 3), " Date & Time:"); cell("E" + (foot + 3), "Date & Time:");
+  cell("A" + (foot + 4), " Signature:"); cell("E" + (foot + 4), "Signature:");
+  ws["!ref"] = "A1:U" + (foot + 4);
+  var book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, ws, "Client");
+  XLSX.writeFile(book, (p.number || "ENVSS") + "_Laboratory_COC.xlsx");
 }
 window.createCoc = createCoc;
 var _projectCoc = projectHtml;
