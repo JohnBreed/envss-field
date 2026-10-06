@@ -152,3 +152,69 @@ pullRemote = async function () {
   try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
   if (view.page === "dash") render();
 };
+
+function importFieldCsv(text) {
+  var p = project(view.projectId);
+  if (!p) { alert("Open a project first."); return; }
+  var rows = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean);
+  var head = rows.shift().split(",").map(function (h) { return h.trim().toLowerCase(); });
+  function val(cols, name) { var i = head.indexOf(name); return i < 0 ? "" : (cols[i] || "").trim(); }
+  var groups = {};
+  rows.forEach(function (line) {
+    var cols = line.split(",");
+    var date = val(cols, "date");
+    var cassette = val(cols, "cassette");
+    var cont = val(cols, "contaminant");
+    if (!date || !cassette || !cont) return;
+    var key = date + "|" + cassette;
+    if (!groups[key]) groups[key] = { date: date, cassette: cassette, cols: cols, analyses: [] };
+    if (!groups[key].analyses.some(function (a) { return a.code === cont; })) groups[key].analyses.push({ code: cont, name: "" });
+  });
+  var byDate = {};
+  Object.keys(groups).forEach(function (key) {
+    var g = groups[key];
+    if (!byDate[g.date]) {
+      var n = String(db.events.filter(function (e) { return e.projectId === p.id; }).length + Object.keys(byDate).length + 1).padStart(3, "0");
+      var ev = { id: uid("e"), projectId: p.id, type: "hygiene", code: p.number + "-" + n, stage: "planned", date: g.date, multiDay: false, notes: "Imported from field sheet", uploadReady: false, operators: [] };
+      db.events.push(ev);
+      byDate[g.date] = ev;
+    }
+    var ev = byDate[g.date];
+    var cols = g.cols;
+    var sampleNo = (db.trains || []).filter(function (t) { return t.eventId === ev.id; }).length + 1;
+    db.trains = db.trains || [];
+    db.trains.push({
+      id: uid("t"), eventId: ev.id, pouch: String(sampleNo), sampleNo: sampleNo, trainKind: "airborne_personal",
+      contaminantId: g.analyses[0].code, analyses: g.analyses,
+      pumpSerial: val(cols, "pump"), headId: val(cols, "head"), mediaId: g.cassette,
+      startFlow: val(cols, "flow_start"), endFlow: val(cols, "flow_end"),
+      mode: "personal", status: "prepped", comments: "",
+      person: { first: val(cols, "given"), last: val(cols, "surname"), sex: (val(cols, "gender") || "not_stated").toLowerCase(), dob: val(cols, "dob"), occupation: val(cols, "occupation"), company: val(cols, "company"), hours: val(cols, "shift_hours"), daysOn: val(cols, "days_on"), daysOff: val(cols, "days_off") },
+      location: val(cols, "location"), startAt: val(cols, "start"), endAt: val(cols, "end"),
+      shiftDate: g.date
+    });
+  });
+  save();
+  alert("Imported " + Object.keys(groups).length + " samples across " + Object.keys(byDate).length + " days. Check them before making the chain of custody.");
+  openProject(p.id);
+}
+window.importFieldCsv = importFieldCsv;
+var _projectSimple = projectHtml;
+projectHtml = function () {
+  var html = _projectSimple();
+  if (html.indexOf("importCsv") >= 0) return html;
+  return html.replace("</h2>", "</h2><label class=\"btn ghost\" style=\"display:inline-block\">Import field CSV<input id=\"importCsv\" type=\"file\" accept=\".csv,text/csv\" style=\"display:none\"></label>");
+};
+var _bindImport = bind;
+bind = function () {
+  _bindImport();
+  var input = document.getElementById("importCsv");
+  if (!input) return;
+  input.onchange = function () {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () { importFieldCsv(String(reader.result || "")); };
+    reader.readAsText(file);
+  };
+};
