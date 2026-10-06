@@ -75,22 +75,21 @@ createProject = function () {
 };
 
 function analysesOf(t) {
-  if (!t.analyses || !t.analyses.length) {
-    var c = typeof contam === "function" ? contam(t.contaminantId) : null;
-    t.analyses = c ? [{ code: c.code || t.contaminantId, name: c.name || "" }] : [];
-  }
+  if (!Array.isArray(t.analyses)) t.analyses = [];
   return t.analyses;
+}
+function analysisBlock(t) {
+  var rows = analysesOf(t).map(function (a, i) {
+    return "<div class=\"row\"><span class=\"grow\">" + esc(a.code) + (a.name ? " — " + esc(a.name) : "") + "</span><button type=\"button\" class=\"btn ghost drop-analysis\" data-i=\"" + i + "\">Remove</button></div>";
+  }).join("");
+  return "<label>Add analysis</label><div class=\"combo\"><input id=\"addAnalysis\" placeholder=\"Type a contaminant\" autocomplete=\"off\"><div class=\"suggest\" id=\"sug-analysis\"></div></div><div id=\"analysisList\">" + (rows || "<p class=\"muted\">None yet. Each analysis becomes its own row in the sheet.</p>") + "</div>";
 }
 var _trainSimple = trainHtml;
 trainHtml = function () {
   var html; try { html = _trainSimple(); } catch (e) { return "<div class=\"wrap\">Sample could not be drawn.</div>"; }
   var t = (db.trains || []).find(function (x) { return x.id === view.trainId; });
   if (!t || html.indexOf("analysisList") >= 0) return html;
-  var rows = analysesOf(t).map(function (a, i) {
-    return "<div class=\"row\"><span class=\"grow\">" + esc(a.code) + (a.name ? " — " + esc(a.name) : "") + "</span><button type=\"button\" class=\"btn ghost drop-analysis\" data-i=\"" + i + "\">Remove</button></div>";
-  }).join("");
-  var block = "<label>Analyses on this sample</label><div id=\"analysisList\">" + (rows || "<p class=\"muted\">None yet.</p>") + "</div><input id=\"addAnalysis\" placeholder=\"Add analysis — INH, GYP, SIL\">";
-  return html.replace("id=\"sug-contam\"></div>", "id=\"sug-contam\"></div>" + block);
+  return html.replace(/<label>Contaminant<\/label>[\s\S]*?id="sug-contam"><\/div>/, analysisBlock(t));
 };
 
 var _bindSimple = bind;
@@ -110,15 +109,20 @@ bind = function () {
     btn.onclick = function () { openProject(btn.getAttribute("data-project")); };
   });
   var add = document.getElementById("addAnalysis");
-  if (add) add.onchange = function () {
-    var t = (db.trains || []).find(function (x) { return x.id === view.trainId; });
-    var code = add.value.trim();
-    if (!t || !code) return;
-    var c = typeof contam === "function" ? contam(code) : null;
-    analysesOf(t);
-    if (!t.analyses.some(function (a) { return a.code === (c && c.code || code); })) t.analyses.push({ code: (c && c.code) || code, name: (c && c.name) || "" });
-    t.contaminantId = t.analyses[0].code;
+  var sug = document.getElementById("sug-analysis");
+  function addOne(code, name) {
+    var sample = (db.trains || []).find(function (x) { return x.id === view.trainId; });
+    if (!sample || !code) return;
+    analysesOf(sample);
+    if (!sample.analyses.some(function (a) { return a.code === code; })) sample.analyses.push({ code: code, name: name || "" });
+    sample.contaminantId = sample.analyses[0].code;
     save();
+  }
+  if (add && sug) add.oninput = function () {
+    var q = add.value.toLowerCase();
+    var hits = ((db.catalogs && db.catalogs.contaminants) || []).filter(function (c) { return (c.code + " " + (c.name || "")).toLowerCase().indexOf(q) >= 0; }).slice(0, 8);
+    sug.innerHTML = hits.map(function (c) { return "<button type=\"button\" data-code=\"" + esc(c.code) + "\" data-name=\"" + esc(c.name || "") + "\">" + esc(c.code) + " — " + esc(c.name || "") + "</button>"; }).join("");
+    sug.querySelectorAll("button").forEach(function (btn) { btn.onmousedown = function (e) { e.preventDefault(); addOne(btn.getAttribute("data-code"), btn.getAttribute("data-name")); }; });
   };
   document.querySelectorAll(".drop-analysis").forEach(function (btn) {
     btn.onclick = function () {
