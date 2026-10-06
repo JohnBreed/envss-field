@@ -7,12 +7,13 @@
   <title>ENVSS Field</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="logo.svg">
-  <link rel="stylesheet" href="styles.css?v=53">
+  <link rel="stylesheet" href="styles.css?v=54">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <script>
     if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register = function () { return Promise.resolve(); };
       navigator.serviceWorker.getRegistrations().then(function (regs) {
         regs.forEach(function (r) { r.unregister(); });
       });
@@ -43,25 +44,26 @@
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=53"></script>
+  <script src="config.js?v=54"></script>
   <script src="https://cdn.jsdelivr.net/gh/JohnBreed/envss-field@138a583f7a75f3ba61024ec6c839080d8b46c33a/app.js"></script>
-  <script src="catalogs-srs.js?v=53"></script>
-  <script src="app-fibre.js?v=53"></script>
-  <script src="app-fibre-v38.js?v=53"></script>
-  <script src="app-fibre-v39.js?v=53"></script>
-  <script src="app-fibre-v40.js?v=53"></script>
-  <script src="app-fibre-v41.js?v=53"></script>
-  <script src="app-fibre-v42.js?v=53"></script>
-  <script src="app-fibre-v43.js?v=53"></script>
-  <script src="app-fibre-v44.js?v=53"></script>
-  <script src="app-fibre-v45.js?v=53"></script>
-  <script src="app-fibre-v46.js?v=53"></script>
-  <script src="app-fibre-v47.js?v=53"></script>
-  <script src="app-fibre-v48.js?v=53"></script>
-  <script src="app-fibre-v49.js?v=53"></script>
-  <script src="app-fibre-v50.js?v=53"></script>
-  <script src="app-fibre-v51.js?v=53"></script>
-  <script src="app-fibre-v52.js?v=53"></script>
-  <script src="app-fibre-v53.js?v=53"></script>
+  <script src="catalogs-srs.js?v=54"></script>
+  <script src="app-fibre.js?v=54"></script>
+  <script src="app-fibre-v38.js?v=54"></script>
+  <script src="app-fibre-v39.js?v=54"></script>
+  <script src="app-fibre-v40.js?v=54"></script>
+  <script src="app-fibre-v41.js?v=54"></script>
+  <script src="app-fibre-v42.js?v=54"></script>
+  <script src="app-fibre-v43.js?v=54"></script>
+  <script src="app-fibre-v44.js?v=54"></script>
+  <script src="app-fibre-v45.js?v=54"></script>
+  <script src="app-fibre-v46.js?v=54"></script>
+  <script src="app-fibre-v47.js?v=54"></script>
+  <script src="app-fibre-v48.js?v=54"></script>
+  <script src="app-fibre-v49.js?v=54"></script>
+  <script src="app-fibre-v50.js?v=54"></script>
+  <script src="app-fibre-v51.js?v=54"></script>
+  <script src="app-fibre-v52.js?v=54"></script>
+  <script src="app-fibre-v53.js?v=54"></script>
+  <script src="app-fibre-v54.js?v=54"></script>
 </body>
 </html>
