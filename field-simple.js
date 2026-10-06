@@ -179,19 +179,22 @@ function importFieldCsv(text) {
     if (!groups[key]) groups[key] = { date: date, cassette: cassette, cols: cols, analyses: [] };
     if (!groups[key].analyses.some(function (a) { return a.code === cont; })) groups[key].analyses.push({ code: cont, name: "" });
   });
-  var byDate = {};
-  db.events.filter(function (e) { return e.projectId === p.id && e.notes === "Imported from field sheet"; }).forEach(function (e) { byDate[e.date] = e; });
+  var imported = db.events.filter(function (e) { return e.projectId === p.id && e.notes === "Imported from field sheet"; });
+  var ev = imported[0];
+  if (!ev) {
+    var n = String(db.events.filter(function (e) { return e.projectId === p.id; }).length + 1).padStart(3, "0");
+    ev = { id: uid("e"), projectId: p.id, type: "hygiene", code: p.number + "-" + n, stage: "planned", date: Object.keys(groups).length ? groups[Object.keys(groups)[0]].date : "", multiDay: true, notes: "Imported from field sheet", uploadReady: false, operators: [] };
+    db.events.push(ev);
+  }
+  ev.multiDay = true;
+  imported.slice(1).forEach(function (extra) {
+    (db.trains || []).forEach(function (sample) { if (sample.eventId === extra.id) sample.eventId = ev.id; });
+    db.events = db.events.filter(function (e) { return e.id !== extra.id; });
+  });
   Object.keys(groups).forEach(function (key) {
     var g = groups[key], cols = g.cols;
-    if (!byDate[g.date]) {
-      var n = String(db.events.filter(function (e) { return e.projectId === p.id; }).length + 1).padStart(3, "0");
-      var ev = { id: uid("e"), projectId: p.id, type: "hygiene", code: p.number + "-" + n, stage: "planned", date: g.date, multiDay: false, notes: "Imported from field sheet", uploadReady: false, operators: [] };
-      db.events.push(ev);
-      byDate[g.date] = ev;
-    }
-    var ev = byDate[g.date];
     var start = hm(val(cols, "start")), end = hm(val(cols, "end"));
-    var sample = (db.trains || []).find(function (t) { return t.eventId === ev.id && t.mediaId === g.cassette; });
+    var sample = (db.trains || []).find(function (t) { return t.eventId === ev.id && t.mediaId === g.cassette && t.shiftDate === g.date; });
     if (!sample) {
       var sampleNo = (db.trains || []).filter(function (t) { return t.eventId === ev.id; }).length + 1;
       sample = { id: uid("t"), eventId: ev.id, pouch: String(sampleNo), sampleNo: sampleNo, trainKind: "airborne_personal", mode: "personal", status: "prepped", comments: "" };
@@ -206,6 +209,8 @@ function importFieldCsv(text) {
     sample.startFlow = val(cols, "flow_start");
     sample.endFlow = val(cols, "flow_end");
     sample.shiftDate = g.date;
+    sample.shiftKind = val(cols, "shift") || "day";
+    sample.status = (start && end) ? "ended" : "prepped";
     sample.startAt = typeof combineShiftTime === "function" ? combineShiftTime(g.date, start, false) : (start ? g.date + "T" + start + ":00" : "");
     sample.endAt = typeof combineShiftTime === "function" ? combineShiftTime(g.date, end, true, start) : (end ? g.date + "T" + end + ":00" : "");
     sample.location = val(cols, "location");
@@ -216,7 +221,7 @@ function importFieldCsv(text) {
     sample.person = { first: val(cols, "given"), last: val(cols, "surname"), sex: (val(cols, "gender") || "not_stated").toLowerCase(), dob: val(cols, "dob"), occupation: val(cols, "occupation"), company: val(cols, "company"), hours: val(cols, "shift_hours"), daysOn: val(cols, "days_on"), daysOff: val(cols, "days_off") };
   });
   save();
-  alert("Imported " + Object.keys(groups).length + " samples. Start, stop, occupation and location are on the sample. Volume is calculated from the times and flow.");
+  alert("Imported " + Object.keys(groups).length + " samples onto one event. Days and shifts stay on the samples. Finished runs are marked sample stopped.");
   openProject(p.id);
 }
 window.importFieldCsv = importFieldCsv;
