@@ -7,7 +7,7 @@
   <title>ENVSS Field</title>
   
   <link rel="icon" href="logo.svg">
-  <link rel="stylesheet" href="styles.css?v=57">
+  <link rel="stylesheet" href="styles.css?v=58">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -44,30 +44,31 @@
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=57"></script>
+  <script src="config.js?v=58"></script>
   <script src="https://cdn.jsdelivr.net/gh/JohnBreed/envss-field@138a583f7a75f3ba61024ec6c839080d8b46c33a/app.js"></script>
-  <script src="catalogs-srs.js?v=57"></script>
-  <script src="app-fibre.js?v=57"></script>
-  <script src="app-fibre-v38.js?v=57"></script>
-  <script src="app-fibre-v39.js?v=57"></script>
-  <script src="app-fibre-v40.js?v=57"></script>
-  <script src="app-fibre-v41.js?v=57"></script>
-  <script src="app-fibre-v42.js?v=57"></script>
-  <script src="app-fibre-v43.js?v=57"></script>
-  <script src="app-fibre-v44.js?v=57"></script>
-  <script src="app-fibre-v45.js?v=57"></script>
-  <script src="app-fibre-v46.js?v=57"></script>
-  <script src="app-fibre-v47.js?v=57"></script>
-  <script src="app-fibre-v48.js?v=57"></script>
-  <script src="app-fibre-v49.js?v=57"></script>
-  <script src="app-fibre-v50.js?v=57"></script>
-  <script src="app-fibre-v51.js?v=57"></script>
-  <script src="app-fibre-v52.js?v=57"></script>
-  <script src="app-fibre-v53.js?v=57"></script>
-  <script src="app-fibre-v54.js?v=57"></script>
-  <script src="app-fibre-v55.js?v=57"></script>
-  <script src="app-fibre-v56.js?v=57"></script>
-  <script src="app-fibre-v57.js?v=57"></script>
+  <script src="catalogs-srs.js?v=58"></script>
+  <script src="app-fibre.js?v=58"></script>
+  <script src="app-fibre-v38.js?v=58"></script>
+  <script src="app-fibre-v39.js?v=58"></script>
+  <script src="app-fibre-v40.js?v=58"></script>
+  <script src="app-fibre-v41.js?v=58"></script>
+  <script src="app-fibre-v42.js?v=58"></script>
+  <script src="app-fibre-v43.js?v=58"></script>
+  <script src="app-fibre-v44.js?v=58"></script>
+  <script src="app-fibre-v45.js?v=58"></script>
+  <script src="app-fibre-v46.js?v=58"></script>
+  <script src="app-fibre-v47.js?v=58"></script>
+  <script src="app-fibre-v48.js?v=58"></script>
+  <script src="app-fibre-v49.js?v=58"></script>
+  <script src="app-fibre-v50.js?v=58"></script>
+  <script src="app-fibre-v51.js?v=58"></script>
+  <script src="app-fibre-v52.js?v=58"></script>
+  <script src="app-fibre-v53.js?v=58"></script>
+  <script src="app-fibre-v54.js?v=58"></script>
+  <script src="app-fibre-v55.js?v=58"></script>
+  <script src="app-fibre-v56.js?v=58"></script>
+  <script src="app-fibre-v57.js?v=58"></script>
+  <script src="app-fibre-v58.js?v=58"></script>
   
   <script>
     dashHtml = function () {
@@ -99,7 +100,7 @@
         html += "<div class=\"muted\">" + esc(p.controller || "No controller") + "</div></div>";
         html += "<div style=\"font-weight:700;color:var(--navy);text-align:right;max-width:160px\">" + esc(p.status || "No status") + "</div></div></div>";
       });
-      html += "<p class=\"help\">ENVSS Field v57</p></div>";
+      html += "<p class=\"help\">ENVSS Field v58</p></div>";
       return html;
     };
     if (typeof bind === "function") {
@@ -125,7 +126,7 @@
         "<label>Project controller</label><input id=\"ncontroller\" placeholder=\"Name\">" +
         "<label>Controller email</label><input id=\"ncontrollerEmail\" placeholder=\"name@envss.com.au\">" +
         "<label>Job type</label><input id=\"njobType\" value=\"HYG - Occupational Hygiene\">" +
-        "<div class=\"footer-actions\"><button class=\"btn orange\" id=\"btnCreateProj\">Create project</button></div><p class=\"help\">ENVSS Field v57</p></div>";
+        "<div class=\"footer-actions\"><button class=\"btn orange\" id=\"btnCreateProj\">Create project</button></div><p class=\"help\">ENVSS Field v58</p></div>";
     };
     createProject = function () {
       var num = ((document.getElementById("nnum") || {}).value || "").trim();
@@ -156,8 +157,15 @@
         });
       }
       var ae = document.activeElement;
-      if (view && view.page === "newProject" && ae && (ae.tagName === "INPUT" || ae.tagName === "SELECT")) return;
+      var typing = view && view.page === "newProject" && ae && ae.closest && ae.closest("#app") && (ae.tagName === "INPUT" || ae.tagName === "SELECT");
+      if (typing) return;
       _render57();
+    };
+    openNewProject = function () {
+      view.page = "newProject";
+      var ae = document.activeElement;
+      if (ae && ae.blur) ae.blur();
+      render();
     };
     var _pull57 = pullRemote;
     pullRemote = async function () {
@@ -168,11 +176,11 @@
     if (typeof render === "function") render();
   </script>
 
-  <div id="v54banner" style="position:fixed;left:0;right:0;bottom:0;background:#2D3A6A;color:white;padding:8px 12px;z-index:9999;font-weight:700">ENVSS Field v57</div>
+  <div id="v54banner" style="position:fixed;left:0;right:0;bottom:0;background:#2D3A6A;color:white;padding:8px 12px;z-index:9999;font-weight:700">ENVSS Field v58</div>
   <script>
     setInterval(function () {
       var b = document.getElementById("v54banner");
-      if (b) b.textContent = "ENVSS Field v57";
+      if (b) b.textContent = "ENVSS Field v58";
     }, 500);
   </script>
 </body>
