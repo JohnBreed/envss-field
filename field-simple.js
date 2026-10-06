@@ -294,6 +294,10 @@ async function createCoc() {
     if (kind === "blank" || kind === "rejected") { cell("S" + r, "N/A"); cell("T" + r, "N/A"); }
     else { var mins = cocRuntime(s), vol = cocVolume(s); if (mins !== "") cell("S" + r, mins); if (vol !== "") cell("T" + r, vol); }
   });
+  var widths = [14,22,10,12,14,12,10,12,12,16,28,8,8,8,8,8,8,8,12,14,28,8,12];
+  ws["!cols"] = widths.map(function (w) { return { wch: w }; });
+  ws["!rows"] = ws["!rows"] || [];
+  ws["!rows"][16] = { hpt: 48 };
   XLSX.writeFile(book, (p.number || "ENVSS") + "_Laboratory_COC.xlsx");
 }
 window.createCoc = createCoc;
