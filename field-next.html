@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v31 single-file build (field-next.html). Generated from field.html @ 95a1dab. -->
+<!-- ENVSS Field v32 single-file build (field-next.html). Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v31</title>
+  <title>ENVSS Field v32</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -157,6 +157,10 @@ textarea { min-height: 80px; }
 .badge.s-sample_complete { background: #1F7A4D; color: #fff; }
 
 .app-version{font-size:12px;opacity:.75;margin-left:6px;font-weight:400}
+.sync-bar{font-size:12px;padding:6px 14px;background:#eef1f8;color:#2D3A6A;border-bottom:1px solid #d9deea}
+.sync-bar.pending{background:#fff6e5}.sync-bar.warn{background:#fdecea}
+.sync-link{background:none;border:0;color:#2D3A6A;text-decoration:underline;cursor:pointer;font-size:12px;padding:0 4px}
+.sync-err{color:#8a5a00;margin-top:2px}.sync-warn{color:#b3261e;font-weight:700;margin-top:2px}
 </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>.analysis-box{margin:8px 0 12px}.analysis-box input{width:100%;box-sizing:border-box}#sug-analysis button{display:block;width:100%;text-align:left;margin-top:4px}</style>
@@ -165,19 +169,31 @@ textarea { min-height: 80px; }
 </head>
 <body>
   <script>
+    /* v32: offline reload via sw-next.js, scoped to field-next.html only (never controls field.html or index.html).
+       Any other worker on this site (the old sw.js) is removed, as field.html does. Live field.html/index.html
+       unregister ALL workers, including this one; it is re-registered every time field-next.html loads online. */
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register = function () { return Promise.resolve(); };
-      navigator.serviceWorker.getRegistrations().then(function (regs) { regs.forEach(function (r) { r.unregister(); }); });
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) {
+          var w = r.active || r.waiting || r.installing;
+          if (!w || !/\/sw-next\.js$/.test(w.scriptURL)) r.unregister();
+        });
+      });
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw-next.js", { scope: "./field-next.html" }).catch(function (e) { console.warn("[ENVSS] offline worker not registered", e); });
+        if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+      });
     }
   </script>
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v31</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v32</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
   </header>
+  <div id="syncBar" class="sync-bar" role="status" aria-live="polite"></div>
   <div id="loginGate" class="login-gate hidden">
     <div class="login-card">
       <h2>Sign in</h2>
@@ -189,11 +205,11 @@ textarea { min-height: 80px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=31"></script>
+  <script src="config.js?v=32"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
-const KEY = "envss-field-v04";
-const APP_VERSION = "31"; /* single version for field-next.html; bump on every publish */
+const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
+const APP_VERSION = "32"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -248,7 +264,7 @@ function setOperator(name, extra) {
     device: deviceLabel(),
     setAt: nowIso()
   };
-  localStorage.setItem(WHO_KEY, JSON.stringify(rec));
+  safeSetItem(WHO_KEY, JSON.stringify(rec));
   return rec;
 }
 function whoText() {
@@ -261,49 +277,191 @@ function allowedEmail(email) {
   return String(email || "").toLowerCase().endsWith("@" + domain.toLowerCase());
 }
 
-let db = load();
-setTimeout(pullRemote, 400);
-let view = { page: "dash", filter: "all", eventId: null, trainId: null, projectId: null };
-let tickMin = null;
+/* ===== v32 storage + sync engine (field-next.html only) =====
+   - Local data lives under KEY ("envss-field-next-v32"). The live field.html key ("envss-field-v04") is
+     read once for migration and never written, so field.html keeps working unchanged.
+   - Only active projects, projects with local events, field-created projects and pending projects are
+     stored on the device. The full project list stays in memory for the session.
+   - A save sends only the records that changed since the last sync (per-record snapshot diff).
+     Podio project rows are never pushed unless the user edited them; then only the edited fields are
+     merged onto the current Supabase row (PATCH), signed with updated_by.
+   - Failed writes stay queued (persisted) and retry with backoff; status is shown in #syncBar.
+   - Rows are never deleted: a deleted sample is recorded as a tombstone in envss_deletions. */
+const LEGACY_KEY = "envss-field-v04";
+const SYNC_KEY = "envss-field-next-v32-sync";
+const COLLS = ["projects", "events", "trains", "deletions"];
+const TABLE = { projects: "envss_projects", events: "envss_events", trains: "envss_trains", deletions: "envss_deletions" };
+const DEMO_IDS = new Set(["p1900", "e1900-001"]);
+const VOLATILE = { updatedAt: 1, syncedAt: 1 };
+let storageWarning = "";
+let reachable = true;   // false after a failed pull, so the bar says Offline even if navigator.onLine is wrong
+let syncState = loadSyncState();
+let projectsLoaded = false;
+let projectsLoading = false;
+let flushing = false, flushAgain = false, flushTimer = null, retryTimer = null;
 
+function safeSetItem(key, value) {
+  try { localStorage.setItem(key, value); return true; }
+  catch (e) {
+    const quota = e && (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED" || e.code === 22 || e.code === 1014);
+    storageWarning = quota
+      ? "Device storage is full. Changes are kept in memory and still sync to Supabase while online, but will be lost if this page is closed offline."
+      : "Could not save on this device: " + (e && e.message || e);
+    console.warn("[ENVSS] localStorage write failed for " + key, e);
+    paintSyncBar();
+    return false;
+  }
+}
+function stableStringify(v) {
+  if (v === null || typeof v !== "object") return JSON.stringify(v === undefined ? null : v);
+  if (Array.isArray(v)) return "[" + v.map(stableStringify).join(",") + "]";
+  return "{" + Object.keys(v).filter(k => !VOLATILE[k] && v[k] !== undefined).sort().map(k => JSON.stringify(k) + ":" + stableStringify(v[k])).join(",") + "}";
+}
+function fnv(s) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36) + "." + s.length.toString(36);
+}
+function loadSyncState() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(SYNC_KEY) || "null"); } catch (e) { s = null; }
+  s = s || {};
+  s.hash = s.hash || {};               // events/trains/deletions: id -> hash of last synced payload
+  s.base = s.base || {};               // projects: id -> stable JSON of last synced payload (needed for field-level merge)
+  COLLS.forEach(c => { if (!s.hash[c]) s.hash[c] = {}; });
+  s.pending = s.pending || {};         // "coll:id" -> { coll, id, fields?, tries, lastError, since }
+  return s;
+}
+function isActiveProjectRec(p) {
+  if (!p || p.source !== "podio") return true;
+  const s = String(p.status || "").toLowerCase();
+  return !!s && s !== "closed" && s !== "cancelled" && s !== "on hold" && p.active !== false;
+}
+function keepProjectLocally(p, referenced) {
+  return isActiveProjectRec(p) || referenced.has(p.id) || !!syncState.pending["projects:" + p.id];
+}
+function normalizeProjectRow(r) {
+  if (!r || !r.payload) return null;
+  const p = Object.assign({}, r.payload);
+  if (!p.id) p.id = r.id || (p.podioItemId ? "podio-" + p.podioItemId : "") || p.number || "";
+  if (!p.id) return null;
+  p.updatedAt = r.updated_at || p.updatedAt || "";
+  return p;
+}
+function baseLoad(parsed) {
+  const d = { ...structuredClone(DEFAULT), ...parsed };
+  d.catalogs = { ...DEFAULT.catalogs, ...(parsed.catalogs || {}) };
+  if (!d.catalogs.contaminants?.some(c => c.code === "INH")) d.catalogs.contaminants = DEFAULT.catalogs.contaminants;
+  if (!Array.isArray(d.deletions)) d.deletions = [];
+  (d.trains || []).forEach(t => { if (!t.audit) t.audit = []; });
+  return d;
+}
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return structuredClone(DEFAULT);
-    const parsed = JSON.parse(raw);
-    const d = { ...structuredClone(DEFAULT), ...parsed };
-    d.catalogs = { ...DEFAULT.catalogs, ...(parsed.catalogs || {}) };
-    if (!d.catalogs.contaminants?.some(c => c.code === "INH")) d.catalogs.contaminants = DEFAULT.catalogs.contaminants;
-    if (!Array.isArray(d.deletions)) d.deletions = [];
-    (d.trains || []).forEach(t => { if (!t.audit) t.audit = []; });
+    if (raw) return baseLoad(JSON.parse(raw));
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (!legacy) return structuredClone(DEFAULT);
+    /* One-time migration from the live field.html data. LEGACY_KEY is left exactly as it was. */
+    const d = baseLoad(JSON.parse(legacy));
+    const referenced = new Set((d.events || []).map(e => e.projectId));
+    d.projects = (d.projects || []).filter(p => p && p.id && keepProjectLocally(p, referenced));
+    d.migratedFrom = LEGACY_KEY;
+    d.migratedAt = new Date().toISOString();
+    window._envssMigrated = true;
     return d;
-  } catch {
+  } catch (e) {
+    console.warn("[ENVSS] could not read local data", e);
     return structuredClone(DEFAULT);
   }
 }
-function saveQuiet() {
-  localStorage.setItem(KEY, JSON.stringify(db));
-  pushRemote();
+function persist() {
+  const referenced = new Set((db.events || []).map(e => e.projectId));
+  const projects = (db.projects || []).filter(p => keepProjectLocally(p, referenced));
+  const keepIds = new Set(projects.map(p => p.id));
+  const out = Object.assign({}, db, { projects });
+  const ok = safeSetItem(KEY, JSON.stringify(out));
+  const base = {};
+  Object.keys(syncState.base).forEach(id => { if (keepIds.has(id)) base[id] = syncState.base[id]; });
+  const st = Object.assign({}, syncState, { base, hash: Object.assign({}, syncState.hash, { projects: {} }) });
+  const ok2 = safeSetItem(SYNC_KEY, JSON.stringify(st));
+  if (ok && ok2 && storageWarning) { storageWarning = ""; paintSyncBar(); }
+  return ok && ok2;
 }
-function save() {
-  saveQuiet();
-  render();
+function snapOf(coll, rec) {
+  const s = stableStringify(rec);
+  return coll === "projects" ? s : fnv(s);
 }
-function sbCfg() {
-  const c = window.ENVSS_CONFIG || {};
-  if (!c.supabaseUrl || !c.supabaseAnonKey) return null;
-  return c;
+function hasSnap(coll, id) {
+  return coll === "projects" ? syncState.base[id] !== undefined : syncState.hash[coll][id] !== undefined;
 }
-function sbHeaders() {
-  const c = sbCfg();
-  return {
-    apikey: c.supabaseAnonKey,
-    Authorization: "Bearer " + c.supabaseAnonKey,
-    "Content-Type": "application/json",
-    Prefer: "return=minimal"
-  };
+function setSnap(coll, rec) {
+  if (coll === "projects") syncState.base[rec.id] = snapOf(coll, rec);
+  else syncState.hash[coll][rec.id] = snapOf(coll, rec);
 }
-window._envssSync = "off";
+function recId(coll, rec) {
+  if (coll === "deletions" && rec && !rec.id) rec.id = rec.trainId || rec.at;
+  return rec && rec.id;
+}
+/* Mark changed records as pending. Cheap enough to run on every save (string compare per record). */
+function scanDirty() {
+  const now = new Date().toISOString();
+  let marked = 0;
+  COLLS.forEach(coll => {
+    const live = new Set();
+    (db[coll] || []).forEach(rec => {
+      const id = recId(coll, rec);
+      if (!id) return;
+      live.add(id);
+      const key = coll + ":" + id;
+      if (coll === "projects") {
+        const base = syncState.base[id];
+        const cur = snapOf(coll, rec);
+        if (base === undefined) {
+          if (rec.source === "podio") return;            // Podio rows are never created from the device
+          if (!projectsLoaded && !syncState.pending[key]) return;  // wait until we know what exists remotely
+          if (DEMO_IDS.has(id) && !syncState.pending[key]) return;
+          if (!syncState.pending[key]) { syncState.pending[key] = { coll, id, full: true, tries: 0, since: now }; rec.updatedAt = now; marked++; }
+          return;
+        }
+        if (cur === base) return;
+        const before = JSON.parse(base);
+        const fields = Object.keys(Object.assign({}, before, rec)).filter(k => !VOLATILE[k] && stableStringify(before[k]) !== stableStringify(rec[k]));
+        if (!fields.length) return;
+        const p = syncState.pending[key] || { coll, id, tries: 0, since: now, fields: [] };
+        p.fields = Array.from(new Set((p.fields || []).concat(fields)));
+        if (!syncState.pending[key]) marked++;
+        syncState.pending[key] = p;
+        rec.updatedAt = now;
+        return;
+      }
+      const h = snapOf(coll, rec);
+      const known = syncState.hash[coll][id];
+      if (known === h) return;
+      if (known === undefined && DEMO_IDS.has(id)) return;
+      if (known === undefined && !activityLoaded) return;   // unknown until the first pull says whether it exists remotely
+      if (!syncState.pending[key]) { syncState.pending[key] = { coll, id, tries: 0, since: now }; marked++; }
+      rec.updatedAt = now;
+    });
+    Object.keys(syncState.pending).forEach(k => {
+      const p = syncState.pending[k];
+      if (p.coll === coll && !live.has(p.id) && coll !== "projects") delete syncState.pending[k];
+    });
+  });
+  return marked;
+}
+function pendingCount() { return Object.keys(syncState.pending).length; }
+function commit() {
+  scanDirty();
+  persist();
+  scheduleFlush(400);
+  paintSyncBar();
+}
+function saveQuiet() { commit(); }
+function save() { commit(); render(); }
+function pushRemote() { commit(); }
+function touch(rec) { if (rec && typeof rec === "object") rec.updatedAt = new Date().toISOString(); return rec; }
+
 function sbCfg() {
   const c = window.ENVSS_CONFIG || {};
   if (!c.supabaseUrl || !c.supabaseAnonKey) return null;
@@ -311,11 +469,7 @@ function sbCfg() {
 }
 function sbHeaders(prefer) {
   const c = sbCfg();
-  const h = {
-    apikey: c.supabaseAnonKey,
-    Authorization: "Bearer " + c.supabaseAnonKey,
-    "Content-Type": "application/json"
-  };
+  const h = { apikey: c.supabaseAnonKey, Authorization: "Bearer " + c.supabaseAnonKey, "Content-Type": "application/json" };
   if (prefer) h.Prefer = prefer;
   return h;
 }
@@ -334,78 +488,198 @@ async function sbUpsert(table, row) {
   });
   if (!res.ok) throw new Error(table + " upsert " + res.status);
 }
-async function sbDelete(table, id) {
+/* The ONE place that decides where the project list comes from.
+   Today: envss_projects, paged. Later: swap to the Dashboard Bot's read-only view (v_dash_projects) by
+   returning rows shaped as { id, payload: { id, source, number, name, status, ... }, updated_at }. */
+async function fetchProjectRows() {
   const c = sbCfg();
-  await fetch(c.supabaseUrl + "/rest/v1/" + table + "?id=eq." + encodeURIComponent(id), {
-    method: "DELETE",
-    headers: sbHeaders()
-  });
+  const all = [];
+  for (let offset = 0; offset < 50000; offset += 1000) {
+    const res = await fetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&order=id.asc&limit=1000&offset=" + offset, { headers: sbHeaders() });
+    if (!res.ok) throw new Error("envss_projects " + res.status);
+    const rows = await res.json();
+    all.push(...rows);
+    if (rows.length < 1000) break;
+  }
+  return all;
 }
-function mergeById(localArr, remoteRows) {
-  const map = new Map((localArr || []).map(x => [x.id, x]));
-  (remoteRows || []).forEach(r => {
-    if (!r || !r.payload || !r.payload.id) return;
-    const cur = map.get(r.payload.id);
-    const remoteAt = r.updated_at || r.payload.updatedAt || "";
-    const localAt = (cur && (cur.updatedAt || cur.syncedAt)) || "";
-    if (!cur || remoteAt >= localAt) map.set(r.payload.id, Object.assign({}, r.payload, { updatedAt: remoteAt }));
-  });
-  return Array.from(map.values());
+function userIsTyping() {
+  const ae = document.activeElement;
+  return !!(ae && ae.closest && ae.closest("#app") && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
 }
-async function pullRemote() {
-  const c = sbCfg();
-  if (!c) { window._envssSync = "off"; return; }
+/* Merge remote rows: remote wins unless the local record has unsent changes. Returns true if anything changed. */
+function mergeRemote(coll, rows, normalize) {
+  const local = new Map((db[coll] || []).map(x => [recId(coll, x), x]));
+  const seen = new Set();
+  let changed = false;
+  (rows || []).forEach(r => {
+    const rec = normalize ? normalize(r) : (r && r.payload && r.payload.id ? Object.assign({}, r.payload, { updatedAt: r.updated_at || r.payload.updatedAt || "" }) : null);
+    if (!rec) return;
+    const id = recId(coll, rec);
+    seen.add(id);
+    if (syncState.pending[coll + ":" + id]) return;
+    const cur = local.get(id);
+    const snap = snapOf(coll, rec);
+    if (!cur || snapOf(coll, cur) !== snap) { local.set(id, rec); changed = true; }
+    if (coll === "projects") syncState.base[id] = snap; else syncState.hash[coll][id] = snap;
+  });
+  db[coll] = Array.from(local.values());
+  return { changed, seen };
+}
+let activityLoaded = false;
+async function pullActivity() {
+  if (!sbCfg()) { window._envssSync = "off"; return; }
   try {
-    const [projects, events, trains, deletions] = await Promise.all([
-      sbGet("envss_projects"), sbGet("envss_events"), sbGet("envss_trains"), sbGet("envss_deletions")
-    ]);
-    window._envssSync = "ok";
+    const [events, trains, deletions] = await Promise.all([sbGet("envss_events"), sbGet("envss_trains"), sbGet("envss_deletions")]);
     const gone = new Set((deletions || []).map(r => r.payload && r.payload.trainId).filter(Boolean));
-    db.projects = mergeById(db.projects, projects);
-    db.events = mergeById(db.events, events);
-    db.trains = mergeById(db.trains, trains).filter(t => !gone.has(t.id));
-    db.deletions = mergeById(db.deletions, deletions);
-    db.syncedAt = new Date().toISOString();
-    localStorage.setItem(KEY, JSON.stringify(db));
-    render();
+    const a = mergeRemote("events", events);
+    const b = mergeRemote("trains", trains);
+    const d = mergeRemote("deletions", deletions);
+    const before = db.trains.length;
+    db.trains = db.trains.filter(t => !gone.has(t.id));
+    activityLoaded = true;
+    reachable = true;
+    syncState.lastPullAt = new Date().toISOString();
+    window._envssSync = pendingCount() ? "pending" : "ok";
+    scanDirty();   // local records never seen remotely (e.g. migrated, created offline) become pending
+    persist();
+    scheduleFlush(200);
+    if ((a.changed || b.changed || d.changed || before !== db.trains.length) && !userIsTyping()) render();
+    paintSyncBar();
   } catch (e) {
     window._envssSync = "err";
+    reachable = false;
+    syncState.lastError = "Pull failed: " + (e && e.message || e);
+    paintSyncBar();
   }
 }
-let pushTimer = null;
-function touch(rec) {
-  if (rec && typeof rec === "object") rec.updatedAt = new Date().toISOString();
-  return rec;
+async function pullProjects() {
+  if (!sbCfg() || projectsLoading) return;
+  projectsLoading = true; paintSyncBar();
+  try {
+    const rows = await fetchProjectRows();
+    const r = mergeRemote("projects", rows, normalizeProjectRow);
+    projectsLoaded = true;
+    syncState.projectsAt = new Date().toISOString();
+    syncState.projectRowCount = rows.length;
+    scanDirty();
+    persist();
+    scheduleFlush(200);
+    if (r.changed && (view.page === "dash" || !userIsTyping())) render();
+  } catch (e) {
+    syncState.lastError = "Project list failed: " + (e && e.message || e);
+  } finally {
+    projectsLoading = false;
+    paintSyncBar();
+  }
 }
-function pushRemote() {
+async function pullRemote() { await Promise.all([projectsLoaded ? null : pullProjects(), pullActivity()]); }
+function refreshProjects() { projectsLoaded = false; pullProjects(); }
+
+function scheduleFlush(ms) {
+  clearTimeout(flushTimer);
+  flushTimer = setTimeout(flushQueue, ms || 0);
+}
+function findRec(coll, id) { return (db[coll] || []).find(x => recId(coll, x) === id); }
+async function sendOne(p) {
   const c = sbCfg();
-  if (!c) return;
-  db.syncedAt = new Date().toISOString();
-  localStorage.setItem(KEY, JSON.stringify(db));
-  clearTimeout(pushTimer);
-  pushTimer = setTimeout(async () => {
-    try {
-      const who = whoText();
-      const now = new Date().toISOString();
-      for (const rec of db.projects || []) {
-        await sbUpsert("envss_projects", { id: rec.id, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
-      }
-      for (const rec of db.events || []) {
-        await sbUpsert("envss_events", { id: rec.id, project_id: rec.projectId, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
-      }
-      for (const rec of db.trains || []) {
-        await sbUpsert("envss_trains", { id: rec.id, event_id: rec.eventId, payload: rec, updated_at: rec.updatedAt || now, updated_by: who });
-      }
-      for (const rec of db.deletions || []) {
-        if (!rec.id) rec.id = rec.trainId || rec.at;
-        await sbUpsert("envss_deletions", { id: rec.id, event_id: rec.eventId, payload: rec, updated_at: rec.at || now, updated_by: who });
-      }
-      window._envssSync = "ok";
-    } catch (e) {
-      window._envssSync = "err";
-    }
-  }, 400);
+  const who = whoText();
+  const rec = findRec(p.coll, p.id);
+  if (!rec) return null;
+  const now = new Date().toISOString();
+  const sent = JSON.parse(JSON.stringify(rec));
+  delete sent.updatedAt;
+  const at = rec.updatedAt || now;
+  if (p.coll === "projects" && !p.full) {
+    /* Edited existing project (Podio or field): merge only the edited fields onto the current row. */
+    const res = await fetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload&id=eq." + encodeURIComponent(p.id), { headers: sbHeaders() });
+    if (!res.ok) throw new Error("read project " + res.status);
+    const cur = (await res.json())[0];
+    if (!cur) throw new Error("project row " + p.id + " not found");
+    const merged = Object.assign({}, cur.payload || {});
+    (p.fields || []).forEach(f => { if (sent[f] === undefined) delete merged[f]; else merged[f] = sent[f]; });
+    const up = await fetch(c.supabaseUrl + "/rest/v1/envss_projects?id=eq." + encodeURIComponent(p.id), {
+      method: "PATCH", headers: sbHeaders("return=minimal"),
+      body: JSON.stringify({ payload: merged, updated_at: now, updated_by: who })
+    });
+    if (!up.ok) throw new Error("project update " + up.status);
+    return sent;
+  }
+  const row = { id: p.id, payload: sent, updated_at: p.coll === "deletions" ? (rec.at || at) : at, updated_by: who };
+  if (p.coll === "events") row.project_id = rec.projectId;
+  if (p.coll === "trains") row.event_id = rec.eventId;
+  if (p.coll === "deletions") row.event_id = rec.eventId;
+  await sbUpsert(TABLE[p.coll], row);
+  return sent;
 }
+async function flushQueue() {
+  if (!sbCfg()) return;
+  if (flushing) { flushAgain = true; return; }
+  if (!pendingCount()) { paintSyncBar(); return; }
+  flushing = true; paintSyncBar();
+  let failed = 0, maxTries = 0;
+  for (const key of Object.keys(syncState.pending)) {
+    const p = syncState.pending[key];
+    if (!p) continue;
+    try {
+      const sent = await sendOne(p);
+      const cur = findRec(p.coll, p.id);
+      if (sent) setSnap(p.coll, Object.assign({ id: p.id }, sent));
+      delete syncState.pending[key];
+      syncState.lastPushAt = new Date().toISOString();
+      if (cur && snapOf(p.coll, cur) !== snapOf(p.coll, Object.assign({ id: p.id }, sent || {}))) flushAgain = true;
+    } catch (e) {
+      failed++;
+      p.tries = (p.tries || 0) + 1;
+      p.lastError = String(e && e.message || e);
+      maxTries = Math.max(maxTries, p.tries);
+    }
+  }
+  flushing = false;
+  window._envssSync = failed ? "err" : "ok";
+  syncState.lastError = failed ? failed + " change" + (failed === 1 ? "" : "s") + " waiting to retry" : "";
+  if (flushAgain) { flushAgain = false; scanDirty(); }
+  persist();
+  paintSyncBar();
+  clearTimeout(retryTimer);
+  if (pendingCount()) retryTimer = setTimeout(flushQueue, failed ? Math.min(60000, 5000 * Math.pow(2, Math.max(0, maxTries - 1))) : 300);
+}
+function fmtClock(iso) {
+  if (!iso) return "never";
+  const d = new Date(iso);
+  return d.toLocaleString("en-AU", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" });
+}
+function paintSyncBar() {
+  const el = document.getElementById("syncBar");
+  if (!el) return;
+  const n = pendingCount();
+  const parts = [];
+  parts.push(navigator.onLine && reachable ? "Online" : "Offline (working from this device)");
+  parts.push(n ? n + " change" + (n === 1 ? "" : "s") + " pending" : "All changes synced");
+  parts.push("last sync " + fmtClock(syncState.lastPushAt && syncState.lastPushAt > (syncState.lastPullAt || "") ? syncState.lastPushAt : syncState.lastPullAt));
+  if (projectsLoading) parts.push("loading projects…");
+  else parts.push("projects " + fmtClock(syncState.projectsAt));
+  let html = '<span id="syncText">' + esc(parts.join(" · ")) + "</span>";
+  html += ' <button type="button" class="sync-link" id="btnSyncNow">Sync now</button>';
+  html += ' <button type="button" class="sync-link" id="btnRefreshProjects">Refresh projects</button>';
+  if (syncState.lastError && n) html += '<div class="sync-err">' + esc(syncState.lastError) + "</div>";
+  if (storageWarning) html += '<div class="sync-warn" id="storageWarning">' + esc(storageWarning) + "</div>";
+  el.innerHTML = html;
+  el.className = "sync-bar" + (storageWarning ? " warn" : n ? " pending" : "");
+  el.dataset.pending = String(n);
+  const s = document.getElementById("btnSyncNow"); if (s) s.onclick = () => { scanDirty(); flushQueue(); pullActivity(); };
+  const r = document.getElementById("btnRefreshProjects"); if (r) r.onclick = refreshProjects;
+}
+window.addEventListener("online", () => { scheduleFlush(100); pullActivity(); if (!projectsLoaded) pullProjects(); paintSyncBar(); });
+window.addEventListener("offline", paintSyncBar);
+window.envssSync = { state: () => syncState, pendingCount, flushQueue, scanDirty, refreshProjects, fetchProjectRows };
+/* ===== end v32 engine ===== */
+
+let db = load();
+setTimeout(pullRemote, 400);
+let view = { page: "dash", filter: "all", eventId: null, trainId: null, projectId: null };
+let tickMin = null;
+
 function uid(p) { return p + Math.random().toString(36).slice(2, 9); }
 function nowIso() { return new Date().toISOString(); }
 function fmtTime(iso) {
@@ -1554,7 +1828,7 @@ function wireCombo(inputId, items, onPick) {
 
 function leaveSample(trainId, eventId) {
   const t = db.trains.find(x => x.id === trainId);
-  if (t) { collectTrain(t); localStorage.setItem(KEY, JSON.stringify(db)); }
+  if (t) { collectTrain(t); commit(); }
   openEvent(eventId);
 }
 function openEvent(id) { view.page = "event"; view.eventId = id; render(); }
@@ -1720,9 +1994,8 @@ function deleteSample(id) {
     view.trainId = null;
     view.page = "event";
     view.eventId = eventId;
-    localStorage.setItem(KEY, JSON.stringify(db));
-    if (typeof sbDelete === "function") sbDelete("envss_trains", t.id);
-    pushRemote();
+    /* v32: no row DELETE. The tombstone in envss_deletions hides the sample everywhere. */
+    commit();
     render();
   } catch (err) {
     alert("Delete failed: " + err.message);
@@ -1936,12 +2209,10 @@ window.addEventListener("offline", setOnline);
 ensureOperator();
 render();
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js").catch(() => {});
-}
-
-document.addEventListener("visibilitychange", () => { if (!document.hidden) pullRemote(); });
-setInterval(() => { if (!document.hidden) pullRemote(); }, 8000);
+/* v32: sw-next.js is registered in <head>. The old ./sw.js deletes every cache, so it is not registered here. */
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pullActivity(); });
+setInterval(() => { if (!document.hidden) pullActivity(); }, 8000);
+paintSyncBar();
 
 </script>
   <script>document.getElementById("appVersion").textContent = "v" + APP_VERSION;</script>
@@ -1995,7 +2266,7 @@ dashHtml = function () {
 };
 
 newProjectHtml = function () {
-  var statuses = ["New", "ENVSS to propose start date", "In Progress", "Awaiting Start Date/PO/Information from Client", "Lab Results Pending", "Report Pending", "Report in Review", "On Hold", "Closed", "Cancelled"];
+  var statuses = ["New", "ENVSS to propose start date", "In Progress", "Awaiting Start Date/PO/Information from Client", "Lab Results Pending", "Report Pending", "Report in Review"];
   var opts = statuses.map(function (s) { return "<option" + (s === "In Progress" ? " selected" : "") + ">" + esc(s) + "</option>"; }).join("");
   return "<div class=\"wrap\"><button class=\"btn ghost\" id=\"btnBackDash\">← Projects</button><h2 class=\"brand-type\" style=\"color:var(--navy)\">New project</h2>" +
     "<label>Job number</label><input id=\"nnum\">" +
@@ -2090,23 +2361,7 @@ bind = function () {
   });
 };
 
-var _pullSimple = pullRemote;
-pullRemote = async function () {
-  await _pullSimple();
-  var c = typeof sbCfg === "function" ? sbCfg() : null;
-  if (!c) return;
-  var all = [];
-  for (var offset = 0; offset < 6000; offset += 1000) {
-    var res = await fetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&limit=1000&offset=" + offset, { headers: sbHeaders() });
-    if (!res.ok) break;
-    var rows = await res.json();
-    all = all.concat(rows);
-    if (rows.length < 1000) break;
-  }
-  if (typeof mergeById === "function") db.projects = mergeById(db.projects, all);
-  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
-  if (view.page === "dash") render();
-};
+/* v32: the project list is downloaded once by pullProjects()/fetchProjectRows() in the core. */
 
 function importFieldCsv(text) {
   var p = project(view.projectId);
@@ -2264,13 +2519,13 @@ var _eventCoc = eventHtml;
 eventHtml = function () {
   var html = _eventCoc();
   if (html.indexOf("btnEventMenu") >= 0) return html;
-  return html.replace("</h2>", "</h2><div class=\"menu-wrap\"><button class=\"btn ghost\" type=\"button\" id=\"btnEventMenu\">☰</button><div class=\"menu\" id=\"eventMenu\" hidden><button type=\"button\" id=\"btnCoc\">Create COC</button></div></div>");
+  return html.replace("</h2>", "</h2><div class=\"menu-wrap\"><button class=\"btn ghost\" type=\"button\" id=\"btnEventMenu\">☰</button><div class=\"menu\" id=\"cocMenu\" hidden><button type=\"button\" id=\"btnCoc\">Create COC</button></div></div>");
 };
 var _bindEventCoc = bind;
 bind = function () {
   _bindEventCoc();
   var menuBtn = document.getElementById("btnEventMenu");
-  var menu = document.getElementById("eventMenu");
+  var menu = document.getElementById("cocMenu");
   if (menuBtn && menu) menuBtn.onclick = function () { menu.hidden = !menu.hidden; };
   var coc = document.getElementById("btnCoc");
   if (coc) coc.onclick = function () { if (menu) menu.hidden = true; createCoc(); };
@@ -2287,6 +2542,7 @@ bind = function () {
   }
 };
 
+if (typeof render === "function") render();
 </script>
 </body>
 </html>
