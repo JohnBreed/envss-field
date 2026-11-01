@@ -2,7 +2,7 @@
   "name": "ENVSS Field",
   "short_name": "ENVSS Field",
   "description": "Environmental Site Services field capture",
-  "start_url": "./",
+  "start_url": "./field.html",
   "display": "standalone",
   "background_color": "#2D3A6A",
   "theme_color": "#2D3A6A",

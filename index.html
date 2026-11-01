@@ -2,73 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#2D3A6A">
   <title>ENVSS Field</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="logo.svg">
-  <link rel="stylesheet" href="styles.css?v=58">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- The ENVSS Field app lives at field.html. This page only forwards there, keeping any ?query and #hash. -->
+  <script>location.replace("field.html" + location.search + location.hash);</script>
+  <noscript><meta http-equiv="refresh" content="0; url=field.html"></noscript>
 </head>
 <body>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register = function () { return Promise.resolve(); };
-      navigator.serviceWorker.getRegistrations().then(function (regs) {
-        regs.forEach(function (r) { r.unregister(); });
-      });
-      if (window.caches) caches.keys().then(function (keys) { keys.forEach(function (k) { caches.delete(k); }); });
-    }
-  </script>
-
-  <header class="app-header">
-    <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
-    <div class="titles">
-      <h1>ENVSS Field</h1>
-      <p id="whoLabel">Capture · offline first</p>
-    </div>
-    <div id="onlineDot" class="online-dot"></div>
-  </header>
-  <div id="loginGate" class="login-gate hidden">
-    <div class="login-card">
-      <h2>Sign in</h2>
-      <p>Use your ENVSS Google account, or type your name.</p>
-      <div id="googleBtn"></div>
-      <label>Name</label>
-      <input id="manualName">
-      <label>Work email</label>
-      <input id="manualEmail" placeholder="jane@envss.com.au">
-      <div class="footer-actions">
-        <button class="btn orange" onclick="manualLogin()">Continue</button>
-      </div>
-    </div>
-  </div>
-  <div id="app"></div>
-  <script src="config.js?v=58"></script>
-  <script src="https://cdn.jsdelivr.net/gh/JohnBreed/envss-field@138a583f7a75f3ba61024ec6c839080d8b46c33a/app.js"></script>
-  <script src="catalogs-srs.js?v=58"></script>
-  <script src="app-fibre.js?v=58"></script>
-  <script src="app-fibre-v38.js?v=58"></script>
-  <script src="app-fibre-v39.js?v=58"></script>
-  <script src="app-fibre-v40.js?v=58"></script>
-  <script src="app-fibre-v41.js?v=58"></script>
-  <script src="app-fibre-v42.js?v=58"></script>
-  <script src="app-fibre-v43.js?v=58"></script>
-  <script src="app-fibre-v44.js?v=58"></script>
-  <script src="app-fibre-v45.js?v=58"></script>
-  <script src="app-fibre-v46.js?v=58"></script>
-  <script src="app-fibre-v47.js?v=58"></script>
-  <script src="app-fibre-v48.js?v=58"></script>
-  <script src="app-fibre-v49.js?v=58"></script>
-  <script src="app-fibre-v50.js?v=58"></script>
-  <script src="app-fibre-v51.js?v=58"></script>
-  <script src="app-fibre-v52.js?v=58"></script>
-  <script src="app-fibre-v53.js?v=58"></script>
-  <script src="app-fibre-v54.js?v=58"></script>
-  <script src="app-fibre-v55.js?v=58"></script>
-  <script src="app-fibre-v56.js?v=58"></script>
-  <script src="app-fibre-v57.js?v=58"></script>
-  <script src="app-fibre-v58.js?v=58"></script>
-  <script src="app-fibre-v60.js?v=60"></script>
+  <p><a href="field.html">Open ENVSS Field</a></p>
 </body>
 </html>
