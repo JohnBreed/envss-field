@@ -169,14 +169,15 @@ textarea { min-height: 80px; }
 </head>
 <body>
   <script>
-    /* v32: offline reload via sw-next.js, scoped to field-next.html only (never controls field.html or index.html).
-       Any other worker on this site (the old sw.js) is removed, as field.html does. Live field.html/index.html
-       unregister ALL workers, including this one; it is re-registered every time field-next.html loads online. */
+    /* v33: offline reload via sw-next.js, scoped to field-next.html only.
+       ENVSS workers (sw-field.js for field.html, sw-next.js for field-next.html) are kept; any other worker on this
+       site (the old sw.js) is removed. index.html still unregisters every worker and clears caches when opened;
+       this page re-registers its worker every time it loads online. */
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.getRegistrations().then(function (regs) {
         regs.forEach(function (r) {
           var w = r.active || r.waiting || r.installing;
-          if (!w || !/\/sw-next\.js$/.test(w.scriptURL)) r.unregister();
+          if (!w || !/\/sw-(field|next)\.js$/.test(w.scriptURL)) r.unregister();
         });
       });
       window.addEventListener("load", function () {
