@@ -1196,7 +1196,7 @@ function editEventHtml() {
 }
 
 function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&","<":"<",">":">","\"":""","'":"&#39;"}[c]));
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"\x26amp;","<":"\x26lt;",">":"\x26gt;","\"":"\x26quot;","'":"\x26#39;"}[c]));
 }
 
 function audit(t, action, detail) {
