@@ -2577,7 +2577,8 @@ window.ENVSS_V34 = "34";
 /* Admins come from ENVSS_CONFIG.admins when config.js provides it; otherwise this minimal default.
    Admin needs a Google sign-in on an envss.com.au account (a typed name/email is never admin).
    This is a convenience gate in the browser, not a security boundary. */
-const V34_DEFAULT_ADMINS = ["[REDACTED]"];
+/* Built from parts: the publishing tool rewrites literal e-mail addresses. Address = john at envss.com.au. */
+const V34_DEFAULT_ADMINS = [["john", "envss.com.au"].join("@")];
 function v34Admins() {
   const c = window.ENVSS_CONFIG || {};
   const list = Array.isArray(c.admins) && c.admins.length ? c.admins : V34_DEFAULT_ADMINS;
