@@ -187,7 +187,12 @@ a { color: #9CC3FF; }
 .online-dot.off { background: #FF9A3D; box-shadow: 0 0 10px #FF9A3D; }
 .sync-bar { background: #0E1428; color: var(--sub); border-bottom: 1px solid var(--edge); font-size: 13px; }
 .sync-bar.pending { background: #2E2210; color: #FFD9A8; } .sync-bar.warn { background: #3A1616; color: #FFC9C4; }
-.sync-link { color: #9CC3FF; font-size: 13px; min-height: 32px; }
+.sync-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 4px 12px; }
+.sync-link { color: #DDEAFF; font-size: 13px; font-weight: 700; text-decoration: none; min-height: 44px; padding: 0 14px; margin: 0 2px; border: 1.5px solid var(--edge); border-radius: 999px; background: var(--surf); display: inline-flex; align-items: center; }
+.sync-link:active { background: var(--surf2); }
+#syncText { flex: 1 1 220px; line-height: 1.3; }
+.sync-err, .sync-warn { flex-basis: 100%; margin: 0 0 4px; }
+@media (max-width: 599px) { #syncText { flex-basis: 100%; } .sync-bar { padding: 4px 10px 6px; gap: 2px 6px; } .sync-link { padding: 0 14px; margin: 0; } .sync-err, .sync-warn { margin: 2px 0 0; } }
 .sync-err { color: #FFD08A; } .sync-warn { color: #FF9C94; }
 .card, .train { background: var(--surf); border: 1px solid var(--edge); border-radius: 14px; color: var(--text); }
 .card h2 { color: var(--text); }
@@ -213,7 +218,7 @@ input[type=checkbox] { min-height: 0; width: 22px; height: 22px; accent-color: v
 .btn.danger { background: #D64545; color: #fff; }
 .btn.lg { min-height: 88px; font-size: 26px; border-radius: 16px; letter-spacing: .1em; text-transform: uppercase; }
 #btnStart { background: #3DBE8B; color: #06231A; } #btnStop { background: #F28A2E; color: #1A1206; }
-.btn:disabled { opacity: .4; }
+.btn:disabled, .btn.lg:disabled, #btnStart:disabled, #btnStop:disabled { opacity: 1; background: #3A4258; color: #B4BBCC; border: 2px dashed #6B7590; box-shadow: none; cursor: not-allowed; }
 .back { color: var(--text); }
 .badge { font-size: 14px; padding: 8px 14px; border-radius: 10px; font-weight: 700; letter-spacing: .03em; }
 .s-planned { background: #33406B; color: #E4E9F7; }
@@ -300,7 +305,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v38</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v39</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -317,11 +322,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=38"></script>
+  <script src="config.js?v=39"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "38"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "39"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -978,6 +983,8 @@ function kindLabel(t) {
     noise_static: "Noise · static"
   })[t.trainKind || (t.mode === "static" ? "airborne_static" : "airborne_personal")] || t.trainKind || "";
 }
+/* v39: a stopped sample cannot be restarted with START (times stay editable in the time fields). */
+function isStoppedTrain(t) { return !!t && t.status !== "running" && (!!t.endAt || t.status === "ended" || t.status === "sample_stopped"); }
 function isNoise(t) { return (t.trainKind || "").startsWith("noise") || t.contaminantId === "NOISE"; }
 function isBlank(t) { return t.trainKind === "blank"; }
 function isAirbornePersonal(t) { return (t.trainKind || "airborne_personal") === "airborne_personal"; }
@@ -1334,7 +1341,7 @@ function trainHtml() {
         </div>
       </div>
       <div class="startstop">
-        <button class="btn orange lg" id="btnStart" ${running||t.status==="rejected"?"disabled":""}>START</button>
+        <button class="btn orange lg" id="btnStart" ${running||t.status==="rejected"||isStoppedTrain(t)?"disabled":""}>START</button>
         <button class="btn green lg" id="btnStop" ${!running?"disabled":""}>STOP</button>
       </div>
       <p class="help">Accidental START/STOP: edit the times. Leaving the field saves it. Location is stored when START or STOP gets a GPS fix.</p>
@@ -1790,6 +1797,7 @@ function bind() {
     };
     const startBtn = document.getElementById("btnStart");
     if (startBtn) startBtn.onclick = () => {
+      if (isStoppedTrain(t)) { alert("This sample has been stopped. Edit the start/stop times below if they were wrong."); return; }
       collectTrain(t);
       const gaps = startGaps(t);
       if (gaps.length) { alert("Cannot start until these are filled:\n• " + gaps.join("\n• ")); return; }
@@ -3020,7 +3028,7 @@ function fibreTrainHtml(t, ev) {
       <label>Start flow (L/min)</label>
       <input id="startFlow" inputmode="decimal" value="${esc(t.startFlow)}">
       <div class="row" style="margin:12px 0 6px;gap:10px;align-items:end">
-        <button class="btn orange lg" id="btnStart" ${running || rejected ? "disabled" : ""}>START</button>
+        <button class="btn orange lg" id="btnStart" ${running || rejected || isStoppedTrain(t) ? "disabled" : ""}>START</button>
         <div class="grow"><label>Start time</label><input id="startAt" type="time" value="${esc(toLocalInput(t.startAt))}"></div>
       </div>
       <div class="row" style="margin:0 0 12px;gap:10px;align-items:end">
