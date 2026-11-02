@@ -190,6 +190,79 @@ a { color: #9CC3FF; }
 .sync-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 4px 12px; }
 .sync-link { color: #DDEAFF; font-size: 13px; font-weight: 700; text-decoration: none; min-height: 44px; padding: 0 14px; margin: 0 2px; border: 1.5px solid var(--edge); border-radius: 999px; background: var(--surf); display: inline-flex; align-items: center; }
 .sync-link:active { background: var(--surf2); }
+/* v40: SRS fields expander looks like a tappable input bar */
+.srs-box { margin: 12px 0 4px; }
+.srs-box > summary { list-style: none; }
+.srs-box > summary::-webkit-details-marker { display: none; }
+.srs-bar { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px 0 16px; cursor: pointer; user-select: none;
+  background: #0F1630; border: 2px solid var(--edge); border-radius: 12px; color: var(--text); }
+.srs-bar:hover { border-color: #6F86C8; }
+.srs-box[open] > .srs-bar { border-color: var(--hot); border-bottom-left-radius: 0; border-bottom-right-radius: 0; background: var(--surf); }
+.srs-title { font: 700 17px Montserrat, Arial, sans-serif; flex: 1 1 auto; color: var(--text); }
+.srs-count { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #1F4A40; color: #BFF3DC; white-space: nowrap; }
+.srs-hint { font-size: 14px; color: var(--sub); white-space: nowrap; }
+.srs-hint::after { content: "Tap to show"; }
+.srs-box[open] .srs-hint::after { content: "Tap to hide"; }
+.srs-chev { font-size: 22px; line-height: 1; color: var(--hot); transition: transform .2s; }
+.srs-box[open] .srs-chev { transform: rotate(180deg); }
+.srs-box[open] { border: 2px solid var(--hot); border-radius: 12px; background: var(--surf); }
+.srs-box[open] > .srs-bar { border: 0; border-bottom: 1px solid var(--edge); }
+.srs-box[open] > :not(summary) { margin-left: 14px; margin-right: 14px; }
+.srs-box[open] > :last-child { margin-bottom: 14px; }
+/* v40: question cards */
+.q-card { background: var(--surf); border: 1px solid var(--edge); border-left: 4px solid #FFB020; border-radius: 12px; padding: 8px 12px; margin: 8px 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.q-card.q-done { border-left-color: var(--go); }
+.q-card .q-head { display: flex; align-items: center; gap: 8px; flex: 1 1 220px; min-width: 0; }
+.q-card .q-head label { margin: 0; font-size: 16px; color: var(--text); }
+.q-pill { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.q-need .q-pill { background: #4A3500; color: #FFD27A; border: 1px solid #8A6400; }
+.q-done .q-pill { background: #1F4A40; color: #BFF3DC; font-size: 14px; padding: 1px 8px; }
+.q-card > .filters.seg { margin: 2px 0; flex: 0 0 auto; }
+.q-card.q-good .seg .seg-thumb { background: var(--go); }
+.q-card.q-good .seg .chip.on { color: #06231A; }
+.q-card.q-bad .seg .seg-thumb { background: #FFB020; }
+.q-card.q-bad .seg .chip.on { color: #2A1E00; }
+.q-card.q-bad .q-pill { background: #4A3500; color: #FFD27A; border: 1px solid #8A6400; font-size: 12px; }
+.q-card.q-neutral .seg .seg-thumb { background: var(--hot); }
+.q-card.q-neutral .seg .chip.on { color: #1A1206; }
+#rpdBox .rq-q:not(.q-card) { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 6px 0; }
+#rpdBox .rq-q:not(.q-card) label { flex: 1 1 220px; margin: 0; }
+#rpdBox { border-left: 2px solid var(--edge); margin: 4px 0 8px 10px; padding-left: 12px; }
+
+/* v40: pre-START required fields */
+input.pf-need, select.pf-need { border-left: 5px solid #FFB020 !important; }
+input.pf-done, select.pf-done { border-left: 5px solid var(--go) !important; }
+.pf-pill { display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #4A3500; color: #FFD27A; border: 1px solid #8A6400; vertical-align: middle; letter-spacing: 0; }
+.pf-pill.ok { background: #1F4A40; color: #BFF3DC; border-color: #2E7D63; font-size: 12px; }
+.pre-start { display: block; width: 100%; min-height: 48px; margin: 12px 0 4px; padding: 10px 14px; text-align: left; cursor: pointer;
+  font: 700 15px Barlow, Arial, sans-serif; color: #FFD27A; background: #2A2208; border: 2px solid #8A6400; border-radius: 12px; }
+.pre-start.ok { color: #BFF3DC; background: #12302A; border-color: #2E7D63; cursor: default; }
+
+/* v40: audit log (read-only) */
+.au-list { background: var(--surf); border: 1px solid var(--edge); border-radius: 12px; padding: 4px 12px; margin: 6px 0 12px; }
+.au-row { padding: 8px 0; border-bottom: 1px solid var(--edge); }
+.au-row:last-child { border-bottom: 0; }
+.au-meta { font-size: 12px; color: var(--sub); }
+.au-act { font-weight: 700; font-size: 15px; color: var(--text); }
+.au-det, .au-full { font-size: 14px; color: #DDE3F5; word-break: break-word; white-space: pre-wrap; }
+.au-more summary { font-size: 14px; color: #DDE3F5; cursor: pointer; min-height: 32px; list-style: none; }
+.au-tap { color: var(--hot); font-weight: 700; font-size: 12px; }
+.au-all { margin: 8px 0; width: 100%; }
+.ev-audit { margin-top: 22px; }
+.ev-audit > summary { font-size: 18px; min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.clash-warn { margin: 6px 0 4px; padding: 8px 12px; border-left: 4px solid #FFB020; background: #2A2208; border-radius: 8px; color: #FFD27A; }
+.clash-tag { margin-left: 8px; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #4A3500; color: #FFD27A; border: 1px solid #8A6400; }
+.q-flash { box-shadow: 0 0 0 3px #FFB020; transition: box-shadow .3s; }
+.q-summary { display: block; width: 100%; min-height: 48px; margin: 14px 0 6px; padding: 10px 14px; text-align: left; cursor: pointer;
+  font: 700 15px Barlow, Arial, sans-serif; color: #FFD27A; background: #2A2208; border: 2px solid #8A6400; border-radius: 12px; }
+.q-summary.ok { color: #BFF3DC; background: #12302A; border-color: #2E7D63; cursor: default; }
+@media (max-width: 599px) {
+  .q-card { flex-direction: column; align-items: stretch; }
+  .q-card .q-head { flex: 0 0 auto; justify-content: space-between; }
+  .q-card > .filters.seg { align-self: flex-start; }
+}
+
 #syncText { flex: 1 1 220px; line-height: 1.3; }
 .sync-err, .sync-warn { flex-basis: 100%; margin: 0 0 4px; }
 @media (max-width: 599px) { #syncText { flex-basis: 100%; } .sync-bar { padding: 4px 10px 6px; gap: 2px 6px; } .sync-link { padding: 0 14px; margin: 0; } .sync-err, .sync-warn { margin: 2px 0 0; } }
@@ -305,7 +378,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v39</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v40</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -322,11 +395,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=39"></script>
+  <script src="config.js?v=40"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "39"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "40"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -923,7 +996,7 @@ function deriveEventStage(ev) {
   if (ts.some(t => t.status === "running")) return "running";
   if (ts.some(t => t.status === "ended")) return "ended";
   if (ts.some(t => t.status === "prepped")) return "prepped";
-  if (ts.some(t => t.status === "field_blank")) return "field_blank";
+  if (ts.some(t => t.status === "field_blank" && isBlank(t))) return "field_blank";
   return ev.stage || "planned";
 }
 function eventTypeLabel(e) { return e.type === "fibre" ? "Airborne fibre monitoring" : "Hygiene event"; }
@@ -992,6 +1065,7 @@ function isStatic(t) { return (t.trainKind || "").endsWith("static") || t.mode =
 
 function displayStatus(t) {
   if (typeof t === "string") return t;
+  if (!isBlank(t) && t.status === "field_blank") t = Object.assign({}, t, { status: t.endAt ? "ended" : t.startAt ? "running" : "prepped" });
   if (isBlank(t)) {
     return (t.contaminantId && t.headId) ? "sample_complete" : "incomplete_blank";
   }
@@ -1469,7 +1543,8 @@ function modeFields(t) {
     <div><label>Last name</label><input id="last" value="${esc(p.last)}"></div>
     <div><label>Sex</label>
       <select id="sex">
-        <option value="not_stated" ${!p.sex || p.sex==="not_stated"?"selected":""}>Not stated</option>
+        <option value="" ${!p.sex?"selected":""}>Choose…</option>
+        <option value="not_stated" ${p.sex==="not_stated"?"selected":""}>Not stated</option>
         <option value="male" ${p.sex==="male"?"selected":""}>Male</option>
         <option value="female" ${p.sex==="female"?"selected":""}>Female</option>
       </select>
@@ -1497,7 +1572,7 @@ function mineCodesHtml(t) {
   if (isBlank(t)) return "";
   const on = !!(t.mineCodesOn || t.seg || t.occupationCode || t.locationCode || t.irsstCat);
   const p = t.person || {};
-  return `<label class="check-row"><input type="checkbox" id="mineOn" ${on ? "checked" : ""}> Mine / report codes (optional)</label>
+  return `<label class="check-row"><input type="checkbox" id="mineOn" ${on ? "checked" : ""}> SRS fields (optional)</label>
     <p class="help">SEG, occupation code, location code and IRSST. Never required to start, stop or complete.</p>
     <div id="mineBox" style="${on ? "" : "display:none"}">
       <div class="grid2">
@@ -1524,9 +1599,16 @@ function rpdFields(t) {
     <div id="rpdBox" style="${on ? "" : "display:none"}">
       <label>Brand / model</label>
       <input id="rpdModel" value="${esc(r.model)}" placeholder="3M 6000 or Unknown">
-      <label class="check-row"><input type="checkbox" id="rpdShaven" ${r.shaven==="yes"?"checked":""}> Clean-shaven</label>
-      <label class="check-row"><input type="checkbox" id="rpdFit" ${r.fit==="yes"?"checked":""}> Fit-tested</label>
+      ${rqYn("shaven", "Clean-shaven?", r.shaven)}
+      ${rqYn("fit", "Fit-tested?", r.fit)}
     </div>`;
+}
+/* v40: respirator follow-ups as Yes/No (same t.rpd.shaven / t.rpd.fit fields, "yes" / "no"; old true/false read as yes/no). */
+function rqVal(v) { return v === true || v === "yes" ? "yes" : v === false || v === "no" ? "no" : ""; }
+function rqYn(field, label, v) {
+  const cur = rqVal(v);
+  return `<div class="rq-q"><label>${label}</label><div class="filters">${[["yes", "Yes"], ["no", "No"]].map(([val, l]) =>
+    `<button type="button" class="chip ${cur === val ? "on" : ""}" data-rq="${field}" data-val="${val}">${l}</button>`).join("")}</div></div>`;
 }
 function hpdFields(t) {
   const h = t.hpd || {};
@@ -1682,7 +1764,7 @@ function bind() {
       if (field === "comment") t.commentAsked = next;
       if (field === "rpd") { t.rpdAsked = next; t.rpd = t.rpd || {}; t.rpd.worn = next; }
       if (field === "hpd") { t.hpdAsked = next; t.hpd = t.hpd || {}; t.hpd.worn = next; }
-      audit(t, field + " set", (cur || "unset") + " → " + (next || "cleared"));
+      /* v40: the answer change is logged by the audit diff ("Changed <question>: old → new") */
       save();
     });
     document.querySelectorAll("[data-rej]").forEach(b => b.onclick = () => {
@@ -2173,6 +2255,14 @@ function applyTrainKind(t, kind) {
     t.startAt = t.startAt || "";
     t.endAt = t.endAt || "";
   }
+  unstickBlank(t);   // v40: leaving "Field blank" must clear the blank status
+}
+/* v40: status "field_blank" belongs only to real blanks. A sample switched from blank back to personal/static kept it,
+   so the list showed a FIELD BLANK badge instead of its real status. Work the real status out from the times. */
+function unstickBlank(t) {
+  if (!t || isBlank(t) || t.status !== "field_blank") return false;
+  t.status = t.endAt ? "ended" : t.startAt ? "running" : "prepped";
+  return true;
 }
 function applyPlacement(t, placement) {
   applyTrainKind(t, isNoise(t)
@@ -2219,7 +2309,7 @@ function addTrain(eventId, trainKind) {
     contaminantId: noise ? "NOISE" : "", pumpSerial: "", dosimeterSerial: "", headId: "",
     mediaId: "", startFlow: "", endFlow: "", desiredVolumeL: "", minMinutes: "",
     mode: stat ? "static" : "personal",
-    person: { first: "", last: "", sex: "not_stated", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
+    person: { first: "", last: "", sex: "", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
     rpd: { worn: "", model: "", shaven: "", fit: "" },
     hpd: { worn: "", model: "", style: "", classRating: "" },
     location: "", startAt: "", endAt: "", status: "prepped", comments: "",
@@ -2902,7 +2992,7 @@ function fibreTrainRecord(ev, no, kind) {
     monitorType: ev.protocol || "background", rotameter: blank ? "" : (ev.rotameter || ""),
     startFlow: blank ? "" : "2.0", endFlow: "", desiredVolumeL: "", minMinutes: "",
     mode: blank ? "blank" : "static",
-    person: { first: "", last: "", sex: "not_stated", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
+    person: { first: "", last: "", sex: "", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
     rpd: { worn: "", model: "", shaven: "", fit: "" }, hpd: { worn: "", model: "", style: "", classRating: "" },
     location: "", startAt: "", endAt: "", status: "prepped", comments: "",
     shiftDate: ev.date || "", shiftKind: "day", rejectReason: "", rejectCode: "", photo: "",
@@ -3054,7 +3144,7 @@ function fibreTrainHtml(t, ev) {
 }
 window.fibreTrainHtml = fibreTrainHtml;
 
-/* ---------- Mines Act / SRS ---------- */
+/* ---------- Mines Act / SRS fields ---------- */
 function srs() { return window.ENVSS_SRS_CATALOGS || {}; }
 function srsList(kind) { return (srs()[kind] || []).filter(o => o && /^\d+$/.test(String(o.code || "")) && o.active !== "N"); }
 function srsHits(kind, q) {
@@ -3094,7 +3184,7 @@ function multiChips(id, cur) {
 }
 const _mineCodesHtml33 = mineCodesHtml;
 mineCodesHtml = function (t) {
-  if (isBlank(t) || isFibreTrain(t)) return "";
+  if (isBlank(t) || isFibreTrain(t) || isStatic(t)) return "";   // v40: static (area) samples have no SRS fields; saved values are kept, just hidden
   const st = minesState(eventById(t.eventId));
   if (st === "unset") return _mineCodesHtml33(t);   // events from before v34 keep the old optional box
   if (st === "no") return "";                         // occupation name stays in the person fields, once
@@ -3109,7 +3199,8 @@ mineCodesHtml = function (t) {
       <div class="combo"><input id="occSearch" value="${esc(occLabel)}" placeholder="Code or description, e.g. 411000 or plant operator" autocomplete="off"><div class="suggest" id="sug-occSearch"></div></div>
       ${occ ? `<p class="muted" id="occParent">Parent: ${esc(occ.parentCode ? occ.parentCode + " — " + (occ.parentName || "") : "—")} · ${esc(occ.majorGroup || "")}</p>` : ""}`;
   }
-  h += `<details id="mineBox" style="margin-top:8px"${window._v34MineOpen ? " open" : ""}><summary class="brand-type" style="cursor:pointer;color:var(--navy)">Mines Act / SRS fields</summary>
+  const srsFilled = [t.locationCode, t.seg, t.irsstCat].filter(v => v != null && String(v).trim() !== "").length;   /* v40 */
+  h += `<details id="mineBox" class="srs-box"${window._v34MineOpen ? " open" : ""}><summary class="srs-bar" aria-label="SRS fields, tap to show or hide"><span class="srs-title">SRS fields</span>${srsFilled ? `<span class="srs-count">${srsFilled} filled</span>` : ""}<span class="srs-hint"></span><span class="srs-chev" aria-hidden="true">▾</span></summary>
       <p class="help">Mines Reg job. Location code and SEG are for the SRS upload.</p>
       <label>Location code (SRS)</label>
       <div class="combo"><input id="locSearch" value="${esc(locLabel)}" placeholder="Code or description, e.g. 413 or crushing" autocomplete="off"><div class="suggest" id="sug-locSearch"></div></div>
@@ -3483,9 +3574,9 @@ if (typeof render === "function") render();
   let slideFrom = null;   // { key, x, w } of the thumb just before a click, so a re-render can animate from it
   function groupKey(f) {
     if (f.id) return "#" + f.id;
-    const b = f.querySelector("[data-yn],[data-mines],[data-shift],[data-rej]");
+    const b = f.querySelector("[data-yn],[data-rq],[data-mines],[data-shift],[data-rej]");
     if (!b) return "";
-    for (const a of ["yn", "mines", "shift", "rej"]) if (b.dataset[a]) return a + ":" + b.dataset[a];
+    for (const a of ["yn", "rq", "mines", "shift", "rej"]) if (b.dataset[a]) return a + ":" + b.dataset[a];
     return Object.keys(b.dataset)[0] || "";
   }
   function placeThumb(f, animateFrom) {
@@ -3515,10 +3606,11 @@ if (typeof render === "function") render();
     }, true);
   }
   function segSelect(sel) {
-    if (!sel || sel.dataset.seg || sel.options.length < 2 || sel.options.length > 4) return;
+    const realOpts = sel ? [...sel.options].filter(o => o.value !== "") : [];
+    if (!sel || sel.dataset.seg || realOpts.length < 2 || realOpts.length > 4) return;
     sel.dataset.seg = "1"; sel.classList.add("seg-select");
     const f = document.createElement("div"); f.className = "filters"; f.id = "seg-" + sel.id;
-    f.innerHTML = [...sel.options].map(o => '<button type="button" class="chip' + (o.selected ? " on" : "") + '" data-v="' + o.value.replace(/"/g, "") + '">' + o.textContent.replace(/</g, "") + "</button>").join("");
+    f.innerHTML = realOpts.map(o => '<button type="button" class="chip' + (o.selected && sel.value !== "" ? " on" : "") + '" data-v="' + o.value.replace(/"/g, "") + '">' + o.textContent.replace(/</g, "") + "</button>").join("");
     sel.insertAdjacentElement("afterend", f);
     f.addEventListener("click", e => {
       const c = e.target.closest(".chip"); if (!c) return;
@@ -3553,6 +3645,7 @@ if (typeof render === "function") render();
   };
   function chrome() {
     const pg = view.page;
+    if (pg === "train" && !view.eventId) { const tr = db.trains.find(x => x.id === view.trainId); if (tr) view.eventId = tr.eventId; }
     const canAdd = pg === "project" || ((pg === "event" || pg === "train") && !!view.eventId);
     fab.hidden = !(pg === "project" || pg === "event");
     fab.innerHTML = pg === "event" ? "<b>+</b>Add sample" : "<b>+</b>New event";
@@ -3571,6 +3664,329 @@ if (typeof render === "function") render();
   window.addEventListener("resize", () => document.querySelectorAll(".seg").forEach(f => placeThumb(f)));
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll(".seg").forEach(f => placeThumb(f)));
   render();
+})();
+</script>
+<script>
+/* ===== v40: post-stop Yes/No questions as compact cards with answered / needs-answer state and a summary line. Display only. ===== */
+(function () {
+  function decorate() {
+    const app = document.getElementById("app"); if (!app || view.page !== "train") return;
+    const rpdOpen = (db.trains.find(x => x.id === view.trainId) || {}).rpdAsked === "yes";
+    const groups = [...app.querySelectorAll(".filters")].filter(f => f.querySelector("[data-yn]") || (rpdOpen && f.querySelector("[data-rq]")));
+    const cards = [];
+    const tcur = db.trains.find(x => x.id === view.trainId);
+    const sexSeg = document.getElementById("seg-sex");
+    if (sexSeg && tcur && !isBlank(tcur) && !isStatic(tcur)) groups.push(sexSeg);
+    groups.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
+    groups.forEach(f => {
+      const card = f.parentElement; if (!card || card === app) return;
+      card.classList.remove("need-yn"); card.classList.add("q-card");
+      const lab = card.querySelector(":scope > label");
+      if (lab && !lab.parentElement.classList.contains("q-head")) {
+        const head = document.createElement("div"); head.className = "q-head";
+        lab.replaceWith(head); head.appendChild(lab);
+        const pill = document.createElement("span"); pill.className = "q-pill"; head.appendChild(pill);
+      }
+      const answered = !!f.querySelector(".chip.on");
+      card.classList.toggle("q-done", answered); card.classList.toggle("q-need", !answered);
+      const pill = card.querySelector(".q-pill"); if (pill) pill.textContent = answered ? "✓" : "Needs answer";
+      /* selected answer coloured by meaning: good = green, opposite = amber + flag, neutral (comments, unknown, sex) = orange */
+      const onBtn = f.querySelector(".chip.on");
+      const field = onBtn ? (onBtn.dataset.yn || onBtn.dataset.rq || "") : "";
+      const GOOD = { reject: "no", equip: "no", rpd: "yes", hpd: "yes", shaven: "yes", fit: "yes" };
+      const val = onBtn ? onBtn.dataset.val : "";
+      const tone = !onBtn ? "" : (GOOD[field] && (val === "yes" || val === "no")) ? (val === GOOD[field] ? "good" : "bad") : "neutral";
+      card.classList.toggle("q-good", tone === "good"); card.classList.toggle("q-bad", tone === "bad"); card.classList.toggle("q-neutral", tone === "neutral");
+      if (pill && tone === "bad") pill.textContent = "✓ ⚑ " + (onBtn.textContent.trim());
+      cards.push(card);
+    });
+    let sum = document.getElementById("qSummary");
+    if (!cards.length) { if (sum) sum.remove(); return; }
+    if (!sum) {
+      sum = document.createElement("button"); sum.type = "button"; sum.id = "qSummary"; sum.className = "q-summary";
+      sum.onclick = () => { const first = document.querySelector(".q-card.q-need"); if (first) { first.scrollIntoView({ behavior: "smooth", block: "center" }); first.classList.add("q-flash"); setTimeout(() => first.classList.remove("q-flash"), 1200); } };
+      const del = document.getElementById("btnDelete");
+      const anchor = del ? (del.closest(".footer-actions") || del) : null;
+      if (anchor) anchor.insertAdjacentElement("beforebegin", sum);
+      else { const last = cards[cards.length - 1]; let after = last; const nx = last.nextElementSibling; if (nx && /Box$/.test(nx.id || "")) after = nx; after.insertAdjacentElement("afterend", sum); }
+    }
+    const left = cards.filter(c => c.classList.contains("q-need")).length;
+    sum.classList.toggle("ok", !left);
+    sum.textContent = left ? left + " of " + cards.length + " still to answer — tap to go to the first" : "All answered ✓";
+  }
+  const _render39 = render;
+  render = function () { const r = _render39.apply(this, arguments); try { decorate(); } catch (e) { console.warn("v40 questions", e); } return r; };
+  window.render = render;
+  document.addEventListener("click", e => {
+    if (!e.target.closest) return;
+    const rq = e.target.closest("[data-rq]");
+    if (rq) {
+      const t = db.trains.find(x => x.id === view.trainId); if (!t) return;
+      if (typeof collectTrain === "function") collectTrain(t);
+      t.rpd = t.rpd || {};
+      const f = rq.dataset.rq, cur = rqVal(t.rpd[f]);
+      t.rpd[f] = cur === rq.dataset.val ? "" : rq.dataset.val;   // tap the selected answer again to clear it, like the other questions
+      saveQuiet(); render(); return;
+    }
+    if (e.target.closest("[data-yn]") || e.target.closest("#seg-sex")) setTimeout(decorate, 30);
+  });
+  /* SRS bar: keep focus where it is on press, so a field blur (which re-renders) cannot swallow the tap */
+  document.addEventListener("mousedown", e => { if (e.target.closest && e.target.closest(".srs-bar")) e.preventDefault(); });
+  document.addEventListener("click", e => {
+    let bar = e.target.closest && e.target.closest(".srs-bar");
+    if (!bar && e.target.classList && e.target.classList.contains("srs-box")) {   // taps on the open box's border strip next to the bar
+      const sm = e.target.querySelector(":scope > .srs-bar"); const r = sm && sm.getBoundingClientRect();
+      if (r && e.clientY >= r.top - 4 && e.clientY <= r.bottom + 4) bar = sm;
+    }
+    if (!bar) return;
+    e.preventDefault();   // toggle explicitly so the whole bar works the same on touch and mouse
+    const box = bar.parentElement; box.open = !box.open; window._v34MineOpen = box.open;
+  }, true);
+  decorate();
+})();
+</script>
+<script>
+/* ===== v40: pre-START required fields marked (amber "Needs answer" / green ✓) with a count near START. Uses startGaps() as-is. ===== */
+(function () {
+  const FIELD = { "Contaminant": ["contam", "addAnalysis"], "Pump serial": ["pump"], "Sample head": ["head"], "Cassette / filter / tube": ["media"],
+    "Start flow": ["startFlow"], "Location": ["location"], "First name": ["first"], "Last name": ["last"], "Dosimeter serial": ["dosimeter"], "Cowl number": ["cowlNo"] };
+  function curTrain() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function notStarted(t) { return t && t.status !== "running" && !t.startAt && !t.endAt && t.status !== "rejected" && t.status !== "fault"; }
+  function requiredLabels(t) {
+    const c = JSON.parse(JSON.stringify(t));
+    Object.assign(c, { contaminantId: t.contaminantId === "NOISE" ? "NOISE" : "", analyses: [], pumpSerial: "", headId: "", mediaId: "", startFlow: "", location: "", dosimeterSerial: "", cowlNo: "" });
+    c.person = Object.assign({}, c.person, { first: "", last: "" });
+    try { return startGaps(c); } catch (e) { return []; }
+  }
+  function elFor(label) { for (const id of FIELD[label] || []) { const e = document.getElementById(id); if (e) return e; } return null; }
+  function filled(label, t, el) {
+    if (label === "Contaminant") return !!(t.contaminantId || (t.analyses || []).length || (el && el.id === "contam" && el.value.trim()));
+    return !!(el && String(el.value || "").trim());
+  }
+  function labelOf(el) {
+    let n = el.closest(".combo") || el;
+    if (n.parentElement && n.parentElement.classList.contains("row") && n.previousElementSibling == null) n = n.parentElement;
+    let p = n.previousElementSibling;
+    while (p && p.tagName !== "LABEL") p = p.previousElementSibling;
+    if (!p && n.parentElement) p = n.parentElement.querySelector(":scope > label");
+    return p;
+  }
+  function paint() {
+    document.querySelectorAll(".pf-need,.pf-done").forEach(e => e.classList.remove("pf-need", "pf-done"));
+    document.querySelectorAll(".pf-pill").forEach(e => e.remove());
+    const box = document.getElementById("preStart");
+    const t = curTrain(); const start = document.getElementById("btnStart");
+    if (!t || !start || !notStarted(t)) { if (box) box.remove(); return null; }
+    const req = requiredLabels(t); const missing = [];
+    req.forEach(label => {
+      const el = elFor(label); const ok = filled(label, t, el);
+      if (!ok) missing.push({ label, el });
+      if (!el) return;
+      el.classList.add(ok ? "pf-done" : "pf-need");
+      const lab = labelOf(el);
+      if (lab) { const s = document.createElement("span"); s.className = "pf-pill " + (ok ? "ok" : ""); s.textContent = ok ? "✓" : "Needs answer"; lab.appendChild(s); }
+    });
+    let b = box;
+    if (!b) {
+      b = document.createElement("button"); b.type = "button"; b.id = "preStart"; b.className = "pre-start";
+      b.onclick = () => goFirst();
+      const row = start.closest(".row, .startstop") || start;
+      row.insertAdjacentElement("beforebegin", b);
+    }
+    b.classList.toggle("ok", !missing.length);
+    b.textContent = missing.length ? missing.length + " of " + req.length + " needed before START: " + missing.map(m => m.label).join(", ") : "Ready to start ✓";
+    return missing;
+  }
+  /* v40: same-day clash warning for noise dosimeter / meter serials (soft warning only, never blocks) */
+  function dayOf(x) { const d = x.startAt || x.shiftDate || (eventById(x.eventId) || {}).date || ""; return String(d).slice(0, 10); }
+  function clashHits(field, serial, t) {
+    serial = String(serial || "").trim().toUpperCase(); if (!serial || !t) return [];
+    const day = dayOf(t);
+    return db.trains.filter(x => x.id !== t.id && String(x[field] || "").trim().toUpperCase() === serial && dayOf(x) === day
+      && !(db.deletions || []).some(d => d.trainId === x.id) && x.status !== "rejected" && x.status !== "fault");
+  }
+  window.v40ClashHits = clashHits;
+  function clashOne(inputId, field, boxId) {
+    const inp = document.getElementById(inputId); const t = curTrain();
+    let w = document.getElementById(boxId);
+    if (!inp || !t) { if (w) w.remove(); return; }
+    const serial = String(inp.value || "").trim().toUpperCase(); const hits = clashHits(field, serial, t);
+    if (!hits.length) { if (w) w.remove(); return; }
+    if (!w) { w = document.createElement("div"); w.id = boxId; w.className = "pump-warn clash-warn"; (inp.closest(".combo") || inp).insertAdjacentElement("afterend", w); }
+    w.textContent = "⚠ " + serial + " is also on " + hits.map(x => displayNo(x) + " (" + ((eventById(x.eventId) || {}).code || "") + ")").join(", ") + " on " + dayOf(t) + ". Check the serial.";
+  }
+  function markPumpList() {
+    const box = document.getElementById("sug-pump"); const t = curTrain(); if (!box || !t) return;
+    box.querySelectorAll("[data-v]").forEach(d => {
+      const hit = clashHits("pumpSerial", d.dataset.v, t).length > 0;
+      let m = d.querySelector(".clash-tag");
+      if (hit && !m) { m = document.createElement("span"); m.className = "clash-tag"; m.textContent = "in use today"; d.appendChild(m); }
+      if (!hit && m) m.remove();
+    });
+  }
+  function clashPaint() {
+    clashOne("dosimeter", "dosimeterSerial", "dosiClash");
+    clashOne("pump", "pumpSerial", "pumpClash");
+    const box = document.getElementById("sug-pump");
+    if (box && !box._v40obs) { box._v40obs = new MutationObserver(() => { box._v40obs.disconnect(); markPumpList(); box._v40obs.observe(box, { childList: true }); }); box._v40obs.observe(box, { childList: true }); }
+  }
+  function goFirst() {
+    const m = paint(); if (!m || !m.length) return;
+    const el = (m.find(x => x.el) || {}).el; if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => { try { el.focus({ preventScroll: true }); } catch (e) {} }, 350);
+  }
+  const _render40 = render;
+  render = function () { const r = _render40.apply(this, arguments); try { paint(); clashPaint(); } catch (e) { console.warn("v40 prestart", e); } return r; };
+  window.render = render;
+  document.addEventListener("input", e => { if (view.page === "train" && e.target && e.target.id && Object.values(FIELD).some(a => a.includes(e.target.id))) { paint(); if (e.target.id === "dosimeter" || e.target.id === "pump") clashPaint(); } });
+  document.addEventListener("change", e => { if (view.page === "train" && e.target && (e.target.id === "pump" || e.target.id === "dosimeter")) setTimeout(clashPaint, 0); });
+  document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#sug-pump")) setTimeout(clashPaint, 50); });
+  /* after the existing START handler (which still blocks and lists gaps), take the user to the first missing field */
+  document.addEventListener("click", e => {
+    if (!e.target.closest || !e.target.closest("#btnStart")) return;
+    setTimeout(() => { const t = curTrain(); if (t && notStarted(t)) goFirst(); }, 0);
+  });
+  paint();
+})();
+</script>
+<script>
+/* ===== v40: full audit trail. Every committed change to the open sample / event is diffed and appended to that record's
+   own audit array (t.audit / ev.audit), which syncs with the record. Entries: { at, who, action: "Changed <label>",
+   field, from, to, detail }. Existing entries are kept; nothing in the UI can edit or remove them. ===== */
+(function () {
+  const SKIP = new Set(["equipDamaged", "audit", "updatedAt", "updated_at", "_dirty", "dirty", "rev", "syncedAt", "_snap", "id", "eventId", "projectId"]);
+  const LABEL = { pumpSerial: "Pump serial", headId: "Sample head", mediaId: "Cassette / filter / tube", cowlNo: "Cowl number", startFlow: "Start flow",
+    endFlow: "End flow", startAt: "Start time", endAt: "Stop time", status: "Status", location: "Location", contaminantId: "Contaminant", analyses: "Analyses",
+    "person.first": "First name", "person.last": "Last name", "person.occupation": "Occupation", "person.occupationCode": "Occupation code", "person.company": "Company",
+    "person.sex": "Sex", "person.dob": "Date of birth", "person.hours": "Hours / shift", "person.daysOn": "Days on", "person.daysOff": "Days off",
+    rejectAsked: "Sample rejected?", rejectCode: "Reject reason", rejectReason: "Reject detail", equipAsked: "ENVSS equipment damaged?", equipNote: "What was damaged",
+    rpdAsked: "Respirator worn?", "rpd.model": "Respirator brand / model", "rpd.shaven": "Clean-shaven?", "rpd.fit": "Fit-tested?", "rpd.worn": "Respirator worn",
+    hpdAsked: "Hearing protection worn?", commentAsked: "Comments?", comments: "Comments", trainKind: "Sample type", shiftDate: "Shift date", shiftKind: "Shift",
+    seg: "SEG", locationCode: "Location code (SRS)", occupationCode: "Occupation code (SRS)", irsstCat: "IRSST category", dosimeterSerial: "Dosimeter serial",
+    rotameter: "Rotameter", startLoc: "Start location", endLoc: "Stop location", photo: "Filter photo", equipPhoto: "Equipment photo",
+    date: "Event date", notes: "Notes", code: "Event code", minesAct: "Mining job?", multiDay: "Multiple day/shift job?", tat: "Lab turnaround", protocol: "Monitoring type",
+    taskDesc: "Task", stage: "Stage", uploadReady: "Upload ready" };
+  const label = k => LABEL[k] || k.split(".").pop().replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase());
+  function flat(o, pre, out) {
+    out = out || {};
+    for (const k of Object.keys(o || {})) {
+      if (!pre && SKIP.has(k)) continue;
+      const v = o[k], key = pre ? pre + "." + k : k;
+      if (k === "startLoc" || k === "endLoc") out[key] = v ? Number(v.lat).toFixed(5) + ", " + Number(v.lng).toFixed(5) : "";
+      else if (k === "photo" || k === "equipPhoto") out[key] = v ? "[photo " + String(v).length + "]" : "";
+      else if (k === "analyses") out[key] = (v || []).map(a => a && (a.code || a.name) || "").filter(Boolean).join(", ");
+      else if (v && typeof v === "object" && !Array.isArray(v)) flat(v, key, out);
+      else out[key] = v == null ? "" : Array.isArray(v) ? JSON.stringify(v) : String(v);
+    }
+    return out;
+  }
+  const snaps = new Map();
+  function snap(r) { if (r && r.id) snaps.set(r.id, flat(r)); }
+  function show(k, v) {
+    if (v === "") return "(empty)";
+    if ((k === "startAt" || k === "endAt") && /^\d{4}-/.test(v)) return awst(v);
+    return v;
+  }
+  function diff(r) {
+    if (!r || !r.id) return;
+    const before = snaps.get(r.id); const now = flat(r);
+    if (before) {
+      const keys = new Set(Object.keys(before).concat(Object.keys(now)));
+      const who = whoText(), at = nowIso();
+      keys.forEach(k => {
+        const a = before[k] == null ? "" : before[k], b = now[k] == null ? "" : now[k];
+        if (a === b) return;
+        r.audit = r.audit || [];
+        const photo = k === "photo" || k === "equipPhoto";
+        r.audit.push({ at, who, action: "Changed " + label(k), field: k, from: photo ? (a ? "photo" : "") : a, to: photo ? (b ? "photo" : "") : b,
+          detail: photo ? (b ? "photo added/replaced" : "photo removed") : show(k, a) + " → " + show(k, b) });
+      });
+    }
+    snaps.set(r.id, flat(r));
+  }
+  function current() {
+    const list = [];
+    if (view.trainId) { const t = db.trains.find(x => x.id === view.trainId); if (t) list.push(t); }
+    if (view.eventId) { const e = eventById(view.eventId); if (e) list.push(e); }
+    return list;
+  }
+  window.awst = function (iso) {
+    try { return new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Perth", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }).format(new Date(iso)) + " AWST"; }
+    catch (e) { return iso; }
+  };
+  /* diff on every commit (saveQuiet / save / START / STOP / chips all go through commit) */
+  const _commit39 = commit;
+  commit = function () {
+    try { current().forEach(diff); } catch (e) { console.warn("v40 audit", e); }
+    const r = _commit39.apply(this, arguments);
+    try { const box = document.getElementById("auditBox"); const t = view.page === "train" && db.trains.find(x => x.id === view.trainId); if (box && t) box.innerHTML = auditBlock(t, t.id); } catch (e) {}
+    return r;
+  };
+  window.commit = commit;
+  /* remote merges are not user edits: re-baseline after them */
+  const _merge39 = mergeRemote;
+  mergeRemote = function () { const r = _merge39.apply(this, arguments); try { (db.trains || []).forEach(unstickBlank); current().forEach(snap); } catch (e) {} return r; };
+  window.mergeRemote = mergeRemote;
+  /* deletes: note them on the event (the sample itself is tombstoned; tombstones already carry who/at) */
+  const _delS = deleteSample;
+  deleteSample = function (id) {
+    const t = db.trains.find(x => x.id === id); const ev = t && eventById(t.eventId); const label0 = t ? displayNo(t) : "";
+    const r = _delS.apply(this, arguments);
+    if (t && ev && (db.deletions || []).some(d => d.trainId === id)) {
+      ev.audit = ev.audit || []; ev.audit.push({ at: nowIso(), who: whoText(), action: "Deleted " + label0, field: "sample", from: t.mediaId || label0, to: "", detail: "sample deleted (tombstone)" });
+      snap(ev); _commit39();
+    }
+    return r;
+  };
+  window.deleteSample = deleteSample; window.deleteTrain = t => deleteSample(t && t.id);
+  const _delE = deleteEvent;
+  deleteEvent = function (id) {
+    const ev = eventById(id);
+    if (ev && isAdmin()) { ev.audit = ev.audit || []; ev.audit.push({ at: nowIso(), who: whoText(), action: "Deleted event", field: "event", from: ev.code, to: "", detail: "event deleted (tombstone)" }); snap(ev); }
+    return _delE.apply(this, arguments);
+  };
+  window.deleteEvent = deleteEvent;
+  /* display: newest first, 50 at a time, long values truncated with tap to expand; read-only */
+  const CAP = 50;
+  function rows(a, n) {
+    return a.slice().reverse().slice(0, n).map(x => {
+      const d = x.detail || "";
+      const long = d.length > 90;
+      return `<div class="au-row"><div class="au-meta">${esc(awst(x.at))} · ${esc(x.who || "")}</div><div class="au-act">${esc(x.action || "")}</div>` +
+        (d ? (long ? `<details class="au-more"><summary>${esc(d.slice(0, 90))}… <span class="au-tap">tap to expand</span></summary><div class="au-full">${esc(d)}</div></details>` : `<div class="au-det">${esc(d)}</div>`) : "") + `</div>`;
+    }).join("");
+  }
+  function auditBlock(rec, id) {
+    const a = rec.audit || [];
+    return `<div class="au-list" data-au="${id}">${a.length ? rows(a, CAP) + (a.length > CAP ? `<button type="button" class="btn ghost au-all" data-au-all="${id}">Show all ${a.length} entries</button>` : "") : `<p class="muted">No changes recorded yet.</p>`}</div>`;
+  }
+  function decorate() {
+    if (view.page === "train") {
+      const t = db.trains.find(x => x.id === view.trainId); const box = document.getElementById("auditBox");
+      if (t && box) box.innerHTML = auditBlock(t, t.id);
+      if (t && !snaps.has(t.id)) snap(t);
+    }
+    if (view.page === "event" || view.page === "editEvent") {
+      const ev = eventById(view.eventId); const app = document.getElementById("app");
+      if (ev && app && !document.getElementById("evAudit")) {
+        const wrap = app.querySelector(".wrap") || app;
+        const d = document.createElement("details"); d.id = "evAudit"; d.className = "ev-audit";
+        d.innerHTML = `<summary class="brand-type">Event audit log (${(ev.audit || []).length})</summary>` + auditBlock(ev, ev.id);
+        wrap.appendChild(d);
+      }
+      if (ev && !snaps.has(ev.id)) snap(ev);
+    }
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest && e.target.closest("[data-au-all]"); if (!b) return;
+    const id = b.dataset.auAll; const rec = db.trains.find(x => x.id === id) || eventById(id); const list = b.closest(".au-list");
+    if (rec && list) list.innerHTML = rows(rec.audit || [], 1e9);
+  });
+  try { let n = 0; (db.trains || []).forEach(t => { if (unstickBlank(t)) { n++; t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoText(), action: "Changed Status", field: "status", from: "field_blank", to: t.status, detail: "field_blank → " + t.status + " (not a field blank; fixed automatically)" }); } }); if (n) commit(); } catch (e) { console.warn("v40 unstick", e); }
+  const _render40b = render;
+  render = function () { const r = _render40b.apply(this, arguments); try { decorate(); } catch (e) { console.warn("v40 audit view", e); } return r; };
+  window.render = render;
+  decorate();
 })();
 </script>
 </body>
