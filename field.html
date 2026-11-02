@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v36 single-file build v42 (field.html, live; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
+<!-- ENVSS Field v36 single-file build v43 (field.html, live; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v42</title>
+  <title>ENVSS Field v43</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -300,9 +300,10 @@ input[type=checkbox] { min-height: 0; width: 22px; height: 22px; accent-color: v
 .s-flag { background: var(--stop); color: #2A0606; font-size: 12px; padding: 5px 10px; }
 .ev-badges { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
 .back-ctl { margin-bottom: 2px; }
-.card[onclick], .train[onclick] { cursor: pointer; transition: background-color .12s, border-color .12s, box-shadow .12s; }
-@media (hover: hover) and (pointer: fine) { .card[onclick]:hover, .train[onclick]:hover { background: #26335C; border-color: #5A6CA8; box-shadow: 0 0 0 1px #5A6CA8; } }
-.card[onclick]:focus-visible, .train[onclick]:focus-visible { outline: 3px solid #FFB020; outline-offset: 2px; }
+.card[onclick], .train[onclick], .card.open-project { cursor: pointer; transition: background-color .12s, border-color .12s, box-shadow .12s; }
+.chip-n { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: rgba(0,0,0,.28); font-size: 12px; }
+@media (any-hover: hover) { .card[onclick]:hover, .train[onclick]:hover, button.card.open-project:hover { background: #26335C !important; border-color: #5A6CA8 !important; box-shadow: 0 0 0 1px #5A6CA8; } }
+.card[onclick]:focus-visible, .train[onclick]:focus-visible, .card.open-project:focus-visible { outline: 3px solid #FFB020; outline-offset: 2px; }
 .s-prepped { background: #2C4A73; color: #DDEAFF; }
 .s-active, .s-running, .s-running_incomplete { background: #FF9A3D; color: #1A1206; }
 .s-complete, .s-ended, .badge.s-sample_complete, .s-uploaded { background: var(--go); color: #06231A; }
@@ -401,11 +402,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=42"></script>
+  <script src="config.js?v=43"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "42"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "43"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -1224,7 +1225,7 @@ function projectHtml() {
           <div class="muted">${p.number}</div>
           <div class="muted">${esc(p.name || "")} · ${esc(p.site || "")}</div>
         </div>
-        <button class="btn orange" onclick="openNewEvent('${p.id}')">New project event</button>
+        <button class="btn orange" id="btnNewEventTop" onclick="openNewEvent('${p.id}')">New project event</button>
       </div>
       <div class="filters">
         ${EVENT_FILTERS.map(([s, l]) =>
@@ -1316,8 +1317,23 @@ function trainRowHtml(t) {
     ${badge(displayStatus(t))}
   </div>`;
 }
+/* v43: sample filter chips on the event screen, same buckets as the event status (sampleStage / sampleFlag) */
+const SAMPLE_FILTERS = [["all", "All"], ["ev_prepped", "Prepped"], ["ev_running", "Running"], ["ev_needs", "Needs fields"], ["ev_complete", "Complete"], ["flag", "Rejected / fault"]];
+function sampleBucket(t) { return sampleFlag(t) ? "flag" : sampleStage(t); }
+function sampleFilterHtml(all, f) {
+  const n = k => k === "all" ? all.length : all.filter(t => sampleBucket(t) === k).length;
+  return `<div class="filters" id="sampleFilters">${SAMPLE_FILTERS.map(([k, l]) => `<button type="button" class="chip ${f === k ? "on" : ""}" data-sfilter="${k}">${l} <span class="chip-n">${n(k)}</span></button>`).join("")}</div>`;
+}
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-sfilter]"); if (!b) return; view.sFilter = view.sFilter || {}; view.sFilter[view.eventId] = b.dataset.sfilter; render(); });
 function eventListHtml(ts) {
   if (!ts.length) return `<div class="empty">No samples yet.</div>`;
+  const f = (view.sFilter || {})[view.eventId] || "all";
+  const head = sampleFilterHtml(ts, f);
+  if (f !== "all") ts = ts.filter(t => sampleBucket(t) === f);
+  if (!ts.length) return head + `<div class="empty">No samples in this filter.</div>`;
+  return head + eventListGroups(ts);
+}
+function eventListGroups(ts) {
   const groups = {};
   ts.forEach(t => {
     const key = shiftSortKey(t);
@@ -3629,7 +3645,7 @@ if (typeof render === "function") render();
     set(on.offsetLeft, on.offsetWidth);
   }
   function makeSeg(f) {
-    if (f.classList.contains("seg") || f.querySelector("[data-filter]")) return;
+    if (f.classList.contains("seg") || f.querySelector("[data-filter],[data-sfilter]")) return;
     const chips = f.querySelectorAll(":scope > .chip");
     if (chips.length < 2) return;
     f.classList.add("seg");
@@ -4257,10 +4273,10 @@ followUpComplete = function (t) {
   const _render42 = render;
   /* hide the in-page Add sample button when the floating + (wide) or the bottom-bar + (phone) can do it */
   function addDup() {
-    const b = document.getElementById("btnAddSampleTop"); if (!b) return;
     const vis = el => !!el && !el.hidden && !el.disabled && el.getClientRects().length > 0 && getComputedStyle(el).display !== "none" && getComputedStyle(el).visibility !== "hidden";
     const fab = document.querySelector(".fab, #fab"); const nav = document.querySelector('[data-go="add"]');
-    b.style.display = (vis(fab) || vis(nav)) ? "none" : "";
+    const hide = vis(fab) || vis(nav);
+    ["btnAddSampleTop", "btnNewEventTop"].forEach(id => { const b = document.getElementById(id); if (b) b.style.display = hide ? "none" : ""; });
   }
   window.addEventListener("resize", () => { try { addDup(); } catch (e) {} });
   render = function () { const r = _render42.apply(this, arguments); try { setTitle(); keyCards(); addDup(); const sm = document.querySelector("#evAudit summary"); const ev = eventById(view.eventId); if (sm && ev) sm.dataset.n = String((ev.audit || []).length); } catch (e) {} return r; };

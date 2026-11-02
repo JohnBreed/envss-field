@@ -2,7 +2,7 @@
    Registered by field.html with scope "./field.html", so it never controls index.html.
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
-const VERSION = "42";
+const VERSION = "43";
 const CACHE = "envss-field-v" + VERSION;
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
