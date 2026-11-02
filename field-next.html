@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v35 single-file build (field-next.html, test copy). v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
+<!-- ENVSS Field v36 single-file build (field-next.html, test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -189,7 +189,7 @@ textarea { min-height: 80px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v35</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v36</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -206,11 +206,11 @@ textarea { min-height: 80px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=35"></script>
+  <script src="config.js?v=36"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "35"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "36"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -1443,7 +1443,7 @@ function newEventHtml() {
     </select>
     <label>Event date</label>
     <input id="ndate" type="date" value="${new Date().toISOString().slice(0,10)}">
-    <label class="check-row"><input type="checkbox" id="nmulti"> Multiple days / shifts (mine trip)</label>
+    <label class="check-row"><input type="checkbox" id="nmulti"> Multiple days / shifts</label>
     <p class="help">One event, one COC at the end. Tick if sampling spans more than one day or day and night.</p>
     <div class="footer-actions"><button class="btn orange" id="btnCreateEv">Create event</button></div>
   </div>`;
@@ -2889,14 +2889,21 @@ function minesState(ev) {
   if (ev.minesAct === false || ev.minesAct === "no") return "no";
   return "unset";
 }
-function minesChips(id, cur) {
-  return `<label>Mines Act?</label>
+/* v36: plain-word Yes/No questions. Both use the same chips; the hidden input holds "yes" or "no". */
+function yesNoChips(id, question, help, cur) {
+  return `<label>${question}</label>
     <div class="filters" data-mines-group="${id}">
       <button type="button" class="chip ${cur === "yes" ? "on" : ""}" data-mines="${id}" data-val="yes">Yes</button>
       <button type="button" class="chip ${cur !== "yes" ? "on" : ""}" data-mines="${id}" data-val="no">No</button>
     </div>
     <input type="hidden" id="${id}" value="${cur === "yes" ? "yes" : "no"}">
-    <p class="help">Yes: SRS occupation search, location code and SEG on each sample (Mines Reg). No: occupation name only.</p>`;
+    <p class="help">${help}</p>`;
+}
+function minesChips(id, cur) {
+  return yesNoChips(id, "Is this a mining job?", "Yes: SRS occupation search, location code and SEG on each sample. No: occupation name only.", cur);
+}
+function multiChips(id, cur) {
+  return yesNoChips(id, "Is this a multiple day/shift job?", "Yes: one event across several days or shifts, one COC at the end. No: single shift.", cur);
 }
 const _mineCodesHtml33 = mineCodesHtml;
 mineCodesHtml = function (t) {
@@ -3084,8 +3091,7 @@ newEventHtml = function () {
     </div>
     <div id="hygieneEventFields">
       ${minesChips("nmines", "no")}
-      <label class="check-row"><input type="checkbox" id="nmulti" checked> Multiple days / shifts (mine trip)</label>
-      <p class="help">One event, one COC at the end. On by default; untick for a single-shift job.</p>
+      ${multiChips("nmulti", "no")}
     </div>
     <div class="footer-actions"><button class="btn orange" id="btnCreateEv">Create event</button></div>
   </div>`;
@@ -3117,7 +3123,7 @@ createEvent = function () {
     let n = db.events.filter(e => e.projectId === projectId && !isFibreEvent(e)).length + 1;
     while (codes.has(p.number + "-" + String(n).padStart(3, "0"))) n++;
     ev = { id: uid("e"), projectId, type: "hygiene", stage: "planned", date, code: p.number + "-" + String(n).padStart(3, "0"),
-      multiDay: !!(g("nmulti") || {}).checked, minesAct: (g("nmines") || {}).value === "yes",
+      multiDay: (g("nmulti") || {}).value === "yes", minesAct: (g("nmines") || {}).value === "yes",
       notes: "", uploadReady: false, operators: [] };
     db.events.push(ev);
   }
@@ -3135,9 +3141,10 @@ editEventHtml = function () {
        <label>Task being monitored</label><input id="etask" value="${esc(ev.taskDesc || "")}">
        <label>Rotameter serial</label><input id="erota" value="${esc(ev.rotameter || "")}">
        <label>Lab turnaround</label><select id="etat">${optsHtml(TAT_OPTS, ev.tat || "next_0700")}</select>`
-    : minesChips("emines", minesState(ev));
+    : minesChips("emines", minesState(ev)) + multiChips("emulti", ev.multiDay ? "yes" : "no");
   let out = html.replace("<label>Notes</label>", extra + "<label>Notes</label>");
-  if (isFibreEvent(ev)) out = out.replace(/<label class="check-row"><input type="checkbox" id="emulti"[^>]*>[^<]*<\/label>/, "");
+  /* v36: the old multi-day checkbox is replaced by the Yes/No question (hygiene) or dropped (AFM is single shift). */
+  out = out.replace(/<label class="check-row"><input type="checkbox" id="emulti"[^>]*>[^<]*<\/label>/, "");
   return out;
 };
 saveEventEdits = function () {
@@ -3161,7 +3168,7 @@ saveEventEdits = function () {
     trainsOf(ev.id).forEach(t => { if (!isBlank(t)) t.monitorType = ev.protocol; });
     ev.code = fibreEventCode(p, ev.date, seq);
   } else {
-    ev.multiDay = !!(g("emulti") || {}).checked;
+    if (g("emulti")) ev.multiDay = g("emulti").value === "yes";
     if (g("emines")) ev.minesAct = g("emines").value === "yes";
     const parts = ev.code.split("-");
     if (parts.length >= 2) ev.code = p.number + "-" + parts.slice(1).join("-");
