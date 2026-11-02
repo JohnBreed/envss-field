@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v36 single-file build (field.html, live; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
+<!-- ENVSS Field v36 single-file build v41 (field.html, live; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -393,11 +393,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=40"></script>
+  <script src="config.js?v=41"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "40"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "41"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -954,7 +954,7 @@ function shiftSortKey(t) {
 }
 function displayNo(t) {
   const n = sampleNoOf(t) || t.pouch || "";
-  return isNoise(t) ? ("Noise Dosimeter " + n) : ("Sample " + n);
+  return isNoise(t) ? ("Noise Sample " + n) : ("Sample " + n);
 }
 function contam(id) { return db.catalogs.contaminants.find(c => c.id === id || c.code === id); }
 
@@ -1341,7 +1341,7 @@ function trainHtml() {
       <input type="hidden" id="mode" value="${esc(t.mode || "personal")}">
       <div class="grid2">
         <div>
-          <label>${isNoise(t) ? "Noise Dosimeter Number" : "Sample No."}</label>
+          <label>${isNoise(t) ? "Noise Sample Number" : "Sample No."}</label>
           <input id="pouch" value="${esc(String(t.sampleNo || t.pouch || ""))}">
           <label>Contaminant</label>
           ${isNoise(t) ? `<input value="NOISE — Noise dose" disabled>` : `<div class="combo">
@@ -1353,7 +1353,8 @@ function trainHtml() {
           <div class="combo">
             <input id="dosimeter" value="${esc(t.dosimeterSerial)}" placeholder="Badge serial">
             <div class="suggest" id="sug-dosimeter"></div>
-          </div>` : isBlank(t) ? `
+          </div>
+          <p class="help">Serial on the badge (not the noise sample number).</p>` : isBlank(t) ? `
           <label>Sample head</label>
           <div class="combo">
             <input id="head" value="${esc(t.headId)}" placeholder="IESS… / RESS… / DP…">
@@ -1622,7 +1623,7 @@ function hpdFields(t) {
       <label>Style</label>
       <input id="hpdStyle" value="${esc(h.style)}" placeholder="earmuff / earplug">
       <label>Class / attenuation</label>
-      <input id="hpdClass" value="${esc(h.classRating)}" placeholder="if known">
+      <input id="hpdClass" value="${esc(h.classRating)}" placeholder="e.g. Class 4 / SLC80 or Unknown">
     </div>`;
 }
 
@@ -2178,7 +2179,7 @@ function exportWorkbookCsvs(eventId) {
       t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", ""
     ]);
   });
-  const noiseHead = ["event_code","dosimeter_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak"];
+  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak"];
   const noiseRows = [noiseHead];
   noise.forEach(t => {
     const p = t.person || {};
@@ -2728,7 +2729,7 @@ function importFieldCsv(text) {
     sample.occupationCode = String(val(cols, "occupation_code")).replace(/\.0$/, "");
     sample.seg = val(cols, "seg");
     sample.mineCodesOn = true;
-    sample.person = { first: val(cols, "given"), last: val(cols, "surname"), sex: (val(cols, "gender") || "not_stated").toLowerCase(), dob: val(cols, "dob"), occupation: val(cols, "occupation"), company: val(cols, "company"), hours: val(cols, "shift_hours"), daysOn: val(cols, "days_on"), daysOff: val(cols, "days_off") };
+    sample.person = { first: val(cols, "given"), last: val(cols, "surname"), sex: (val(cols, "gender") || "not_stated").toLowerCase(), sexSet: true, dob: val(cols, "dob"), occupation: val(cols, "occupation"), company: val(cols, "company"), hours: val(cols, "shift_hours"), daysOn: val(cols, "days_on"), daysOff: val(cols, "days_off") };
   });
   save();
   alert("Imported " + Object.keys(groups).length + " samples onto one event. Days and shifts stay on the samples. Finished runs are marked sample stopped.");
@@ -3836,6 +3837,7 @@ if (typeof render === "function") render();
   const _render40 = render;
   render = function () { const r = _render40.apply(this, arguments); try { paint(); clashPaint(); } catch (e) { console.warn("v40 prestart", e); } return r; };
   window.render = render;
+  document.addEventListener("change", e => { if (e.target && e.target.id === "irsst") setTimeout(paint, 30); });
   document.addEventListener("input", e => { if (view.page === "train" && e.target && e.target.id && Object.values(FIELD).some(a => a.includes(e.target.id))) { paint(); if (e.target.id === "dosimeter" || e.target.id === "pump") clashPaint(); } });
   document.addEventListener("change", e => { if (view.page === "train" && e.target && (e.target.id === "pump" || e.target.id === "dosimeter")) setTimeout(clashPaint, 0); });
   document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#sug-pump")) setTimeout(clashPaint, 50); });
@@ -3987,5 +3989,149 @@ if (typeof render === "function") render();
   decorate();
 })();
 </script>
+<script>
+/* ===== v41: one rule for "complete". The sample status badge and the "x of y still to answer" line both use answerItems(t),
+   built only from questions and fields that are actually shown for this sample. SRS person fields (DOB, company, hours,
+   days on/off, occupation) no longer hold the status back: they are optional SRS details, not questions. ===== */
+function answerItems(t) {
+  const items = [];
+  if (!t || isBlank(t)) return items;
+  const add = (key, label, ok, sel) => items.push({ key, label, ok: !!ok, sel });
+  const v = (id, fallback) => { const e = view.page === "train" && view.trainId === t.id && document.getElementById(id); return e ? e.value : fallback; };
+  add("reject", isNoise(t) ? "Fault?" : "Sample rejected?", t.rejectAsked === "yes" || t.rejectAsked === "no", '[data-yn="reject"]');
+  if (t.rejectAsked === "yes") add("rejectCode", isNoise(t) ? "Fault reason" : "Reject reason", t.rejectCode, "#rejectChips");
+  add("equip", "ENVSS equipment damaged?", t.equipAsked === "yes" || t.equipAsked === "no", '[data-yn="equip"]');
+  if (t.equipAsked === "yes") add("equipNote", "What was damaged (or photo)", String(v("equipNote", t.equipNote || "")).trim() || t.equipPhoto, "#equipNote");
+  add("comment", "Comments?", t.commentAsked === "yes" || t.commentAsked === "no", '[data-yn="comment"]');
+  if (t.commentAsked === "yes") add("comments", "Comment text", String(v("comments", t.comments || "")).trim(), "#comments");
+  if (isAirbornePersonal(t) && !isNoise(t)) {
+    const w = t.rpdAsked || "";
+    add("rpd", "Respirator worn?", w === "yes" || w === "no" || w === "unknown", '[data-yn="rpd"]');
+    if (w === "yes") {
+      add("rpdModel", "Respirator brand / model", String(v("rpdModel", (t.rpd || {}).model || "")).trim(), "#rpdModel");
+      add("shaven", "Clean-shaven?", rqVal((t.rpd || {}).shaven), '[data-rq="shaven"]');
+      add("fit", "Fit-tested?", rqVal((t.rpd || {}).fit), '[data-rq="fit"]');
+    }
+  }
+  if (isNoise(t) && !isStatic(t)) {
+    const w = t.hpdAsked || "";
+    add("hpd", "Hearing protection worn?", w === "yes" || w === "no" || w === "unknown", '[data-yn="hpd"]');
+    if (w === "yes") {
+      const h = t.hpd || {};
+      add("hpdModel", "Hearing protection brand / model", String(v("hpdModel", h.model || "")).trim(), "#hpdModel");
+      add("hpdStyle", "Hearing protection style", String(v("hpdStyle", h.style || "")).trim(), "#hpdStyle");
+      add("hpdClass", "Class / attenuation", String(v("hpdClass", h.classRating || "")).trim(), "#hpdClass");
+    }
+  }
+  if (!isStatic(t)) { const s = (t.person || {}).sex; add("sex", "Sex", s === "male" || s === "female" || s === "not_stated", "#seg-sex"); }
+  if (!isNoise(t) && t.status === "ended") add("endFlow", "End flow", String(v("endFlow", t.endFlow == null ? "" : t.endFlow)).trim(), "#endFlow");
+  return items;
+}
+/* v41: optional detail fields that are on screen for this sample (the screen already applies the exclusions:
+   static has no names/Sex/SRS, blanks and fibre have none, SRS only on mining jobs). Blank ones are shown, never block. */
+const DETAIL_FIELDS = [["Date of birth", ["dobD", "dobM", "dobY"]], ["Occupation", ["occupation"]], ["Occupation (SRS)", ["occSearch"]],
+  ["Company / contractor", ["company"]], ["Hours / shift", ["hours"]], ["Days on", ["daysOn"]], ["Days off", ["daysOff"]],
+  ["Location code (SRS)", ["locSearch"]], ["SEG", ["seg"]], ["IRSST category", ["irsst"]]];
+function detailItems() {
+  if (view.page !== "train") return [];
+  const out = [];
+  DETAIL_FIELDS.forEach(([label, ids]) => {
+    const els = ids.map(id => document.getElementById(id)).filter(Boolean);
+    if (!els.length || els.some(e => e.closest('[style*="display:none"],[hidden]'))) return;
+    out.push({ label, els, ok: els.every(e => String(e.value || "").trim() !== ""), srs: !!els[0].closest("#mineBox") });
+  });
+  return out;
+}
+function answerGaps(t) { return answerItems(t).filter(i => !i.ok); }
+followUpComplete = function (t) {
+  if (isBlank(t)) return !!(t.contaminantId && t.headId);
+  return answerGaps(t).length === 0;
+};
+(function () {
+  function cur() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function target(sel) { const e = sel && document.querySelector(sel); return e ? (e.closest(".q-card,.rq-q") || e) : null; }
+  function paint() {
+    const t = cur(); const sum = document.getElementById("qSummary");
+    document.querySelectorAll(".a41-need,.a41-done,.a41-dim").forEach(e => e.classList.remove("a41-need", "a41-done", "a41-dim"));
+    document.querySelectorAll(".a41-pill").forEach(e => e.remove());
+    if (!t || !sum || isFibreTrain(t)) return;
+    const items = answerItems(t), gaps = items.filter(i => !i.ok);
+    items.forEach(g => { if (!g.sel || g.sel[0] !== "#") return; const e = document.querySelector(g.sel); if (!e || !/INPUT|TEXTAREA/.test(e.tagName) || e.offsetParent === null) return;
+      e.classList.add(g.ok ? "a41-done" : "a41-need");
+      let lab = e.previousElementSibling; while (lab && lab.tagName !== "LABEL") lab = lab.previousElementSibling;
+      if (!lab && e.parentElement) { lab = e.parentElement.previousElementSibling; while (lab && lab.tagName !== "LABEL") lab = lab.previousElementSibling; }
+      if (lab) { const pl = document.createElement("span"); pl.className = "pf-pill a41-pill" + (g.ok ? " ok" : ""); pl.textContent = g.ok ? "✓" : "Needs answer"; lab.appendChild(pl); } });
+    const det = detailItems(), blanks = det.filter(d => !d.ok);
+    det.forEach(d => d.els.forEach(e => e.classList.add(d.ok ? "a41-done" : "a41-dim")));
+    const bar = document.querySelector("#mineBox > .srs-bar");
+    if (bar) { const nb = blanks.filter(d => d.srs).length; let sp = bar.querySelector(".srs-blank");
+      if (nb) { if (!sp) { sp = document.createElement("span"); sp.className = "srs-blank"; const hint = bar.querySelector(".srs-hint"); bar.insertBefore(sp, hint); } sp.textContent = nb + " blank"; } else if (sp) sp.remove(); }
+    const dTxt = blanks.length + " detail" + (blanks.length === 1 ? "" : "s") + " blank";
+    sum.classList.toggle("ok", !gaps.length && !blanks.length); sum.classList.toggle("dim", !gaps.length && !!blanks.length);
+    sum.textContent = gaps.length && blanks.length ? gaps.length + " to answer: " + gaps.map(g => g.label).join(", ") + " · " + dTxt
+      : gaps.length ? gaps.length + " of " + items.length + " still to answer: " + gaps.map(g => g.label).join(", ")
+      : blanks.length ? "All answered ✓ · " + dTxt + ": " + blanks.map(d => d.label).join(", ") : "All complete ✓";
+    sum.onclick = () => { const g = gaps[0]; let e = g && target(g.sel);
+      if (!e && blanks[0]) { e = blanks[0].els[0]; const box = e.closest("details"); if (box && !box.open) { box.open = true; window._v34MineOpen = true; } }
+      if (e) { e.scrollIntoView({ behavior: "smooth", block: "center" }); e.classList.add("q-flash"); setTimeout(() => e.classList.remove("q-flash"), 1200); if (e.focus && /INPUT|TEXTAREA/.test(e.tagName)) e.focus({ preventScroll: true }); } };
+    const bd = document.querySelector("#app .badge"); if (bd) { const st = displayStatus(t); if (!bd.classList.contains("s-" + st)) { const tmp = document.createElement("div"); tmp.innerHTML = badge(st); bd.replaceWith(tmp.firstChild); } }
+  }
+  const _render41 = render;
+  render = function () { const r = _render41.apply(this, arguments); try { paint(); } catch (e) { console.warn("v41 status", e); } return r; };
+  window.render = render;
+  document.addEventListener("click", e => { if (e.target.closest && e.target.closest("[data-yn],[data-rq],[data-rej],#seg-sex")) setTimeout(paint, 60); });
+  document.addEventListener("input", e => { if (e.target && /^(equipNote|comments|rpdModel|hpdModel|hpdStyle|hpdClass|endFlow|dobD|dobM|dobY|occupation|occSearch|company|hours|daysOn|daysOff|locSearch|seg)$/.test(e.target.id)) paint(); });
+  paint();
+})();
+</script>
+<script>
+/* ===== v41: noise samples have no analyses. The "Add analysis" box is not shown for noise (personal or static);
+   the contaminant stays NOISE (a stray analysis picked on a noise sample earlier is kept on the record, hidden,
+   and never becomes the contaminant). Noise never needs a contaminant for START or the status. ===== */
+(function () {
+  function fixNoise(t) { if (t && isNoise(t) && !isBlank(t) && (t.trainKind || "").startsWith("noise") && t.contaminantId !== "NOISE") { t.contaminantId = "NOISE"; return true; } return false; }
+  const _th41 = trainHtml;
+  trainHtml = function () {
+    let html = _th41.apply(this, arguments);
+    const t = db.trains.find(x => x.id === view.trainId);
+    if (t && isNoise(t)) { fixNoise(t); const tp = document.createElement("template"); tp.innerHTML = html; tp.content.querySelectorAll(".analysis-box").forEach(e => e.remove()); html = tp.innerHTML; }
+    return html;
+  };
+  window.trainHtml = trainHtml;
+  try { let n = 0; (db.trains || []).forEach(t => { if (fixNoise(t)) n++; }); if (n) saveQuiet(); } catch (e) { console.warn("v41 noise", e); }
+  render();
+})();
+</script>
+<script>
+/* ===== v41: Sex counts as answered only when someone picks it. Before v40 the Sex list had no blank choice, so the
+   browser showed "Not stated" and the app saved it the first time any field on the screen was saved. Those silent
+   "not_stated" values (no person.sexSet marker and no "Sex" pick in the audit log) are cleared back to unanswered.
+   Male / Female are kept. A pick on the Sex buttons (or list) sets person.sexSet = true. CSV import marks it too. ===== */
+(function () {
+  function picked(t) { return (t.audit || []).some(a => a && a.field === "person.sex" && a.to === "not_stated"); }
+  function clearSilent(t) {
+    const p = t && t.person; if (!p || isBlank(t) || p.sexSet || p.sex !== "not_stated") return false;
+    if (picked(t)) { p.sexSet = true; return true; }
+    p.sex = ""; t.audit = t.audit || [];
+    t.audit.push({ at: nowIso(), who: whoText(), action: "Changed Sex", field: "person.sex", from: "not_stated", to: "", detail: "Not stated was filled in automatically by an older version; cleared so it can be answered" });
+    return true;
+  }
+  function repairAll() { let n = 0; (db.trains || []).forEach(t => { if (clearSilent(t)) n++; }); return n; }
+  function markPick() {
+    const t = view.page === "train" && db.trains.find(x => x.id === view.trainId); if (!t) return;
+    const sel = document.getElementById("sex"); const v = sel ? sel.value : (t.person || {}).sex;
+    t.person = t.person || {}; if (v) { t.person.sex = v; t.person.sexSet = true; } else { t.person.sex = ""; t.person.sexSet = false; }
+    saveQuiet(); render();
+  }
+  document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#seg-sex .chip,#seg-sex button")) setTimeout(markPick, 40); });
+  document.addEventListener("change", e => { if (e.target && e.target.id === "sex") setTimeout(markPick, 0); });
+  const _merge41 = mergeRemote;
+  mergeRemote = function () { const r = _merge41.apply(this, arguments); try { if (repairAll()) saveQuiet(); } catch (e) { console.warn("v41 sex", e); } return r; };
+  window.mergeRemote = mergeRemote;
+  try { if (repairAll()) saveQuiet(); } catch (e) { console.warn("v41 sex", e); }
+  render();
+})();
+</script>
+<style>input.a41-dim, select.a41-dim { border-left: 5px solid #6B5A2E !important; } .q-summary.dim { background: #2A2412; border-color: #6B5A2E; color: #E8D9A8; } .srs-blank { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #3A3018; color: #E8D9A8; border: 1px solid #6B5A2E; white-space: nowrap; margin-left: 6px; } select.a41-done { border-left: 5px solid var(--go) !important; } input.a41-need, textarea.a41-need { border-left: 5px solid #FFB020 !important; } input.a41-done, textarea.a41-done { border-left: 5px solid var(--go) !important; }</style>
 </body>
 </html>
