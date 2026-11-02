@@ -168,6 +168,115 @@ textarea { min-height: 80px; }
 <style>.analysis-box{margin:8px 0 12px}.analysis-box input{width:100%;box-sizing:border-box}#sug-analysis button{display:block;width:100%;text-align:left;margin-top:4px}</style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<link rel="stylesheet" href="fonts-v38.css">
+<style id="v38-theme">
+/* ===== v38 "Field dark" theme (option B) + sliding segmented choices (option C) + FAB / phone bottom nav ===== */
+:root { --bg: #141B33; --surf: #1E2847; --surf2: #27335A; --text: #F2F4FA; --sub: #C3CAE0; --edge: #3E4C7E;
+  --danger: #FF8A80; --ok: #6BE3AE; --navy-30: #3A4878; --mid-30: #2C4A73; --green-30: #1F4A40; --orange-30: #5A3415;
+  --hot: #FFB066; --go: #3DDC97; --stop: #FF5C5C; }
+html, body { background: var(--bg); color: var(--text); font-family: Barlow, system-ui, Arial, sans-serif; font-size: 17px; color-scheme: dark; }
+h1, h2, h3, .brand-type, .row-title, .pouch, .login-card h2 { font-family: Montserrat, system-ui, Arial, sans-serif; color: var(--text) !important; }
+[style*="color:var(--navy)"] { color: var(--text) !important; }
+[style*="color:var(--danger)"] { color: var(--danger) !important; }
+a { color: #9CC3FF; }
+.app-header { background: #0E1428; box-shadow: 0 1px 0 var(--edge); }
+.app-header img { border-radius: 8px; }
+.app-header h1 { font-size: 17px; font-weight: 700; }
+.app-header p { color: var(--sub); opacity: 1; }
+.online-dot { width: 14px; height: 14px; background: var(--go); box-shadow: 0 0 10px var(--go); }
+.online-dot.off { background: #FF9A3D; box-shadow: 0 0 10px #FF9A3D; }
+.sync-bar { background: #0E1428; color: var(--sub); border-bottom: 1px solid var(--edge); font-size: 13px; }
+.sync-bar.pending { background: #2E2210; color: #FFD9A8; } .sync-bar.warn { background: #3A1616; color: #FFC9C4; }
+.sync-link { color: #9CC3FF; font-size: 13px; min-height: 32px; }
+.sync-err { color: #FFD08A; } .sync-warn { color: #FF9C94; }
+.card, .train { background: var(--surf); border: 1px solid var(--edge); border-radius: 14px; color: var(--text); }
+.card h2 { color: var(--text); }
+.train { grid-template-columns: 56px 1fr auto; min-height: 76px; border-left-width: 8px; }
+.train.tint-green { background: var(--surf); border-left-color: var(--go); }
+.train.tint-amber { background: var(--surf); border-left-color: #FF9A3D; }
+.train.tint-red { background: var(--surf); border-left-color: var(--stop); }
+.train:hover { border-color: #6F86C8; }
+.pouch { font-size: 28px; font-weight: 700; color: var(--hot) !important; }
+.muted, .help { color: var(--sub); }
+.muted { font-size: 15px; }
+label { color: #D5DCF2; font-size: 14px; font-weight: 700; letter-spacing: .02em; }
+input, select, textarea { background: #0F1630; color: var(--text); border: 2px solid var(--edge); border-radius: 12px; min-height: 52px; font-size: 18px; }
+input::placeholder, textarea::placeholder { color: #8E98BA; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--hot); box-shadow: 0 0 0 3px rgba(255,176,102,.3); }
+input[type=file] { min-height: 0; padding: 10px; }
+input[type=checkbox] { min-height: 0; width: 22px; height: 22px; accent-color: var(--hot); }
+.btn { min-height: 52px; border-radius: 12px; font-family: Montserrat, Arial, sans-serif; font-size: 16px; font-weight: 700; letter-spacing: .02em; background: #4C7FC0; color: #fff; }
+.btn.orange { background: #F28A2E; color: #1A1206; }
+.btn.green { background: #3DBE8B; color: #06231A; }
+.btn.mid { background: #4C7FC0; color: #fff; }
+.btn.ghost { background: transparent; color: var(--text); border: 2px solid var(--edge); }
+.btn.danger { background: #D64545; color: #fff; }
+.btn.lg { min-height: 88px; font-size: 26px; border-radius: 16px; letter-spacing: .1em; text-transform: uppercase; }
+#btnStart { background: #3DBE8B; color: #06231A; } #btnStop { background: #F28A2E; color: #1A1206; }
+.btn:disabled { opacity: .4; }
+.back { color: var(--text); }
+.badge { font-size: 14px; padding: 8px 14px; border-radius: 10px; font-weight: 700; letter-spacing: .03em; }
+.s-planned { background: #33406B; color: #E4E9F7; }
+.s-prepped { background: #2C4A73; color: #DDEAFF; }
+.s-active, .s-running, .s-running_incomplete { background: #FF9A3D; color: #1A1206; }
+.s-complete, .s-ended, .badge.s-sample_complete, .s-uploaded { background: var(--go); color: #06231A; }
+.s-rejected, .s-fault { background: var(--stop); color: #2A0606; }
+.s-incomplete, .s-incomplete_blank { background: #FFD166; color: #2A1E00; }
+.menu { background: var(--surf2); border-color: var(--edge); box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+.menu button { color: var(--text); min-height: 48px; font-size: 16px; } .menu button:hover { background: #33406B; }
+.need-yn { background: #2E2210; border: 1px solid #6A4A1A; } .need-yn label { color: #FFD9A8; }
+.suggest { background: var(--surf2); border: 2px solid var(--edge); border-radius: 12px; max-height: 260px; box-shadow: 0 10px 24px rgba(0,0,0,.5); }
+.suggest div, .suggest button { color: var(--text); min-height: 44px; padding: 10px 12px; border-bottom: 1px solid var(--edge); }
+.suggest div:hover, .suggest button:hover { background: #33406B; }
+.suggest small, .suggest .muted { color: var(--sub); }
+#sug-analysis button { background: var(--surf2); color: var(--text); border: 1px solid var(--edge); border-radius: 10px; }
+.pump-note { color: var(--sub); font-size: 14px; }
+.pump-warn { color: #FFC266; font-weight: 700; }
+details summary { min-height: 44px; display: flex; align-items: center; }
+.login-card { background: var(--surf); color: var(--text); }
+.mic-btn { color: var(--text); } .mic-btn.live { color: var(--hot); }
+/* project status filter list: plain chips (too many for a segmented bar) */
+.chip, .filters .chip { background: transparent; color: var(--text); border: 2px solid var(--edge); min-height: 44px; padding: 9px 16px; font-size: 15px; font-weight: 700; border-radius: 999px; }
+.chip.on { background: var(--hot); color: #1A1206; border-color: var(--hot); }
+/* sliding segmented control (Yes/No, Day/Afternoon/Night, personal/static, sex, reject reasons) */
+.seg { position: relative; display: inline-flex !important; flex-wrap: nowrap !important; gap: 0 !important; padding: 4px; margin: 6px 0 12px;
+  background: #0F1630; border: 2px solid var(--edge); border-radius: 999px; max-width: 100%; }
+.seg .chip, .filters.seg .chip { position: relative; z-index: 1; border: 0; background: transparent; color: var(--sub); border-radius: 999px;
+  min-height: 48px; min-width: 84px; padding: 10px 18px; font-size: 16px; flex: 1 1 auto; white-space: nowrap; transition: color .2s; }
+.seg .chip.on { background: transparent; color: #1A1206; }
+.seg .seg-thumb { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 999px; background: var(--hot);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35); transition: transform .22s cubic-bezier(.3,.7,.4,1), width .22s cubic-bezier(.3,.7,.4,1); }
+.seg:not(.has-on) .seg-thumb { opacity: 0; }
+.seg.wrap { flex-wrap: wrap !important; border-radius: 18px; } /* long lists (reject reasons) fall back to wrapping pills */
+.seg.wrap .seg-thumb { display: none; }
+.seg.wrap .chip.on { background: var(--hot); }
+.seg-select { display: none !important; }
+/* floating + (wide screens) and bottom nav (phones) */
+.fab { position: fixed; right: 24px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 30; min-height: 64px; padding: 0 24px 0 18px; border: 0; border-radius: 20px;
+  background: #F28A2E; color: #1A1206; font: 700 17px Montserrat, Arial, sans-serif; display: flex; align-items: center; gap: 10px; cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,.5); }
+.fab b { font-size: 30px; line-height: 1; font-weight: 700; }
+.fab[hidden], .bnav[hidden] { display: none !important; }
+.bnav { display: none; }
+body.has-fab { padding-bottom: 104px; }
+@media (max-width: 799px) {
+  .fab { display: none !important; }
+  .bnav { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: #0E1428; border-top: 1px solid var(--edge); box-shadow: 0 -8px 20px rgba(0,0,0,.4); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
+  .bnav button { border: 0; background: none; min-height: 60px; font: 700 13px Barlow, Arial, sans-serif; color: var(--sub); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px; border-radius: 14px; cursor: pointer; }
+  .bnav button b { font-size: 22px; line-height: 1; }
+  .bnav button.on { color: var(--text); background: var(--surf2); }
+  .bnav button.add b { background: #F28A2E; color: #1A1206; width: 46px; height: 34px; border-radius: 12px; display: grid; place-items: center; font-size: 26px; }
+  .bnav button:disabled { opacity: .35; }
+  body { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .train { grid-template-columns: 52px 1fr; row-gap: 8px; }
+  .train > .badge { grid-column: 2; justify-self: start; }
+  .app-header img { height: 30px; }
+  .app-header p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seg .chip { min-width: 0; padding: 10px 12px; }
+}
+</style>
 </head>
 <body>
   <script>
@@ -191,7 +300,7 @@ textarea { min-height: 80px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v36</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v38</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -208,11 +317,11 @@ textarea { min-height: 80px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=36"></script>
+  <script src="config.js?v=38"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "37"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "38"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -3358,6 +3467,103 @@ const _envssAppVersionEl = document.getElementById("appVersion");
 if (_envssAppVersionEl) _envssAppVersionEl.textContent = "v" + APP_VERSION;
 if (typeof render === "function") render();
 /* ===== end v34 layer ===== */
+</script>
+<script>
+/* ===== v38 UI layer: sliding segmented choices, small selects as segments, FAB (wide) / bottom nav (phone). No data logic. ===== */
+(function () {
+  const SEG_SELECTS = ["trainKind", "sex"];
+  let slideFrom = null;   // { key, x, w } of the thumb just before a click, so a re-render can animate from it
+  function groupKey(f) {
+    if (f.id) return "#" + f.id;
+    const b = f.querySelector("[data-yn],[data-mines],[data-shift],[data-rej]");
+    if (!b) return "";
+    for (const a of ["yn", "mines", "shift", "rej"]) if (b.dataset[a]) return a + ":" + b.dataset[a];
+    return Object.keys(b.dataset)[0] || "";
+  }
+  function placeThumb(f, animateFrom) {
+    const th = f.querySelector(".seg-thumb"), on = f.querySelector(".chip.on");
+    f.classList.toggle("has-on", !!on);
+    if (!th || !on) return;
+    const set = (x, w) => { th.style.transform = "translateX(" + x + "px)"; th.style.width = w + "px"; };
+    if (animateFrom) { th.style.transition = "none"; set(animateFrom.x, animateFrom.w); th.getBoundingClientRect(); th.style.transition = ""; }
+    set(on.offsetLeft, on.offsetWidth);
+  }
+  function makeSeg(f) {
+    if (f.classList.contains("seg") || f.querySelector("[data-filter]")) return;
+    const chips = f.querySelectorAll(":scope > .chip");
+    if (chips.length < 2) return;
+    f.classList.add("seg");
+    const text = [...chips].map(c => c.textContent.trim()).join("");
+    if (chips.length > 4 || text.length > 34) { f.classList.add("wrap"); return; }
+    const th = document.createElement("span"); th.className = "seg-thumb"; f.insertBefore(th, f.firstChild);
+    const key = groupKey(f);
+    placeThumb(f, slideFrom && slideFrom.key === key ? slideFrom : null);
+    f.addEventListener("click", e => {
+      const c = e.target.closest(".chip"); if (!c || !f.contains(c)) return;
+      const t = f.querySelector(".seg-thumb");
+      slideFrom = { key, x: t ? (new DOMMatrixReadOnly(getComputedStyle(t).transform)).m41 : 0, w: t ? t.offsetWidth : 0 };
+      f.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c));
+      placeThumb(f);
+    }, true);
+  }
+  function segSelect(sel) {
+    if (!sel || sel.dataset.seg || sel.options.length < 2 || sel.options.length > 4) return;
+    sel.dataset.seg = "1"; sel.classList.add("seg-select");
+    const f = document.createElement("div"); f.className = "filters"; f.id = "seg-" + sel.id;
+    f.innerHTML = [...sel.options].map(o => '<button type="button" class="chip' + (o.selected ? " on" : "") + '" data-v="' + o.value.replace(/"/g, "") + '">' + o.textContent.replace(/</g, "") + "</button>").join("");
+    sel.insertAdjacentElement("afterend", f);
+    f.addEventListener("click", e => {
+      const c = e.target.closest(".chip"); if (!c) return;
+      if (sel.value === c.dataset.v) return;
+      sel.value = c.dataset.v;
+      sel.dispatchEvent(new Event("input", { bubbles: true })); sel.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    makeSeg(f);
+  }
+  function enhance() {
+    const app = document.getElementById("app"); if (!app) return;
+    SEG_SELECTS.forEach(id => segSelect(document.getElementById(id)));
+    app.querySelectorAll(".filters").forEach(makeSeg);
+    slideFrom = null;
+  }
+  /* FAB + bottom nav */
+  const fab = document.createElement("button"); fab.className = "fab"; fab.type = "button"; fab.hidden = true;
+  const nav = document.createElement("nav"); nav.className = "bnav"; nav.setAttribute("aria-label", "Main");
+  nav.innerHTML = '<button type="button" data-go="dash"><b>⌂</b>Projects</button><button type="button" data-go="event"><b>☰</b>Event</button><button type="button" class="add" data-go="add"><b>+</b><span>Add</span></button><button type="button" data-go="sync"><b>⟳</b>Sync</button>';
+  document.body.appendChild(fab); document.body.appendChild(nav);
+  function addAction() {
+    if (view.page === "project" && view.projectId) openNewEvent(view.projectId);
+    else if ((view.page === "event" || view.page === "train") && view.eventId) openPickType(view.eventId);
+  }
+  fab.onclick = addAction;
+  nav.onclick = e => {
+    const b = e.target.closest("button"); if (!b || b.disabled) return; const g = b.dataset.go;
+    if (g === "dash") goDash();
+    else if (g === "event" && view.eventId && eventById(view.eventId)) openEvent(view.eventId);
+    else if (g === "add") addAction();
+    else if (g === "sync") { const s = document.querySelector("#syncBar .sync-link"); if (s) s.click(); else if (typeof flushQueue === "function") flushQueue(); }
+  };
+  function chrome() {
+    const pg = view.page;
+    const canAdd = pg === "project" || ((pg === "event" || pg === "train") && !!view.eventId);
+    fab.hidden = !(pg === "project" || pg === "event");
+    fab.innerHTML = pg === "event" ? "<b>+</b>Add sample" : "<b>+</b>New event";
+    document.body.classList.toggle("has-fab", !fab.hidden);
+    const addBtn = nav.querySelector('[data-go="add"]');
+    addBtn.disabled = !canAdd; addBtn.querySelector("span").textContent = pg === "project" ? "Event" : (pg === "event" || pg === "train") ? "Sample" : "Add";
+    nav.querySelector('[data-go="event"]').disabled = !(view.eventId && eventById(view.eventId));
+    nav.querySelectorAll("button").forEach(b => b.classList.toggle("on",
+      (b.dataset.go === "dash" && (pg === "dash" || pg === "project")) || (b.dataset.go === "event" && (pg === "event" || pg === "train"))));
+  }
+  const _render37 = render;
+  render = function () { const r = _render37.apply(this, arguments); try { enhance(); chrome(); } catch (e) { console.warn("v38 ui", e); } return r; };
+  window.render = render;
+  /* chip handlers that only toggle classes (no re-render) still get a correct thumb */
+  document.addEventListener("click", e => { const f = e.target.closest && e.target.closest(".seg"); if (f) setTimeout(() => placeThumb(f), 0); });
+  window.addEventListener("resize", () => document.querySelectorAll(".seg").forEach(f => placeThumb(f)));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll(".seg").forEach(f => placeThumb(f)));
+  render();
+})();
 </script>
 </body>
 </html>

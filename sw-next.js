@@ -2,11 +2,11 @@
    Registered by field-next.html with scope "./field-next.html", so it never controls field.html or index.html.
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
-const VERSION = "37";
+const VERSION = "38";
 const CACHE = "envss-field-next-v" + VERSION;
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field-next.html";
-const SAME_ORIGIN_ASSETS = ["field-next.html", "config.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx"].map(p => BASE + p);
+const SAME_ORIGIN_ASSETS = ["field-next.html", "config.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);
 const CDN_ASSETS = [
   "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
   "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js",
