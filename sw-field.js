@@ -1,12 +1,12 @@
-/* ENVSS Field offline worker for field.html ONLY (live app).
-   Registered by field.html with scope "./field.html", so it never controls field-next.html or index.html.
+/* ENVSS Field offline worker for field.html (live app, v40+).
+   Registered by field.html with scope "./field.html", so it never controls index.html.
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
-const VERSION = "33";
-const CACHE = "envss-field-live-v" + VERSION;
+const VERSION = "40";
+const CACHE = "envss-field-v" + VERSION;
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
-const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx"].map(p => BASE + p);
+const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);
 const CDN_ASSETS = [
   "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
   "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js",
@@ -30,7 +30,7 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k.startsWith("envss-field-live-") && k !== CACHE).map(k => caches.delete(k)));
+    await Promise.all(keys.filter(k => k.startsWith("envss-field-") && k !== CACHE).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
