@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v36 single-file build v41 (field.html, live; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
+<!-- ENVSS Field v36 single-file build v42 (field.html, live; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v33</title>
+  <title>ENVSS Field v42</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -295,6 +295,14 @@ input[type=checkbox] { min-height: 0; width: 22px; height: 22px; accent-color: v
 .back { color: var(--text); }
 .badge { font-size: 14px; padding: 8px 14px; border-radius: 10px; font-weight: 700; letter-spacing: .03em; }
 .s-planned { background: #33406B; color: #E4E9F7; }
+.s-ev_prepped { background: #2C4A73; color: #DDEAFF; } .s-ev_running { background: #FF9A3D; color: #1A1206; } .s-ev_needs { background: #FFD166; color: #2A1E00; }
+.s-ev_complete { background: var(--go); color: #06231A; } .s-upload_ready { background: #1E8F6A; color: #EFFFF8; border: 1px solid #3DDC97; }
+.s-flag { background: var(--stop); color: #2A0606; font-size: 12px; padding: 5px 10px; }
+.ev-badges { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+.back-ctl { margin-bottom: 2px; }
+.card[onclick], .train[onclick] { cursor: pointer; transition: background-color .12s, border-color .12s, box-shadow .12s; }
+@media (hover: hover) and (pointer: fine) { .card[onclick]:hover, .train[onclick]:hover { background: #26335C; border-color: #5A6CA8; box-shadow: 0 0 0 1px #5A6CA8; } }
+.card[onclick]:focus-visible, .train[onclick]:focus-visible { outline: 3px solid #FFB020; outline-offset: 2px; }
 .s-prepped { background: #2C4A73; color: #DDEAFF; }
 .s-active, .s-running, .s-running_incomplete { background: #FF9A3D; color: #1A1206; }
 .s-complete, .s-ended, .badge.s-sample_complete, .s-uploaded { background: var(--go); color: #06231A; }
@@ -393,11 +401,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=41"></script>
+  <script src="config.js?v=42"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "41"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "42"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -987,15 +995,49 @@ function flowCheck(t) {
   return { ok: pct <= tol, tol, pct };
 }
 
+/* v42: event status = its least-progressed sample. Prepped < Running < Needs fields < Samples complete < Event complete.
+   Rejected / fault samples are left out of that and shown as a separate red flag. Deleted samples are already gone from db. */
+const EV_RANK = { planned: -1, ev_prepped: 0, ev_running: 1, ev_needs: 2, ev_complete: 3, upload_ready: 4 };
+const EVENT_FILTERS = [["all", "All"], ["ev_prepped", "Prepped"], ["ev_running", "Running"], ["ev_needs", "Needs fields"], ["ev_complete", "Samples complete"], ["upload_ready", "Event complete"], ["flag", "Rejected / fault"]];
+function sampleFlag(t) {
+  const ds = displayStatus(t);
+  if (ds === "rejected" || t.status === "rejected") return "rejected";
+  if (ds === "fault" || t.status === "fault") return "fault";
+  if (!isBlank(t) && t.rejectAsked === "yes") return isNoise(t) ? "fault" : "rejected";
+  return "";
+}
+function sampleStage(t) {
+  const ds = displayStatus(t);
+  if (isBlank(t)) return ds === "sample_complete" ? "ev_complete" : "ev_needs";
+  if (ds === "sample_complete") return "ev_complete";
+  if (t.status === "running" || ds === "running" || ds === "running_incomplete") return "ev_running";
+  if (t.endAt || t.status === "ended" || t.status === "sample_stopped") return ds === "sample_complete" ? "ev_complete" : "ev_needs";
+  if (t.startAt) return "ev_running";
+  return "ev_prepped";
+}
+function eventFlags(ev) {
+  const f = { rejected: 0, fault: 0 };
+  trainsOf(ev.id).forEach(t => { const k = sampleFlag(t); if (k) f[k]++; });
+  return f;
+}
 function deriveEventStage(ev) {
   const ts = trainsOf(ev.id);
-  if (ev.uploadReady) return "upload_ready";
   if (!ts.length) return "planned";
-  if (ts.some(t => t.status === "running")) return "running";
-  if (ts.some(t => t.status === "ended")) return "ended";
-  if (ts.some(t => t.status === "prepped")) return "prepped";
-  if (ts.some(t => t.status === "field_blank" && isBlank(t))) return "field_blank";
-  return ev.stage || "planned";
+  const live = ts.filter(t => !sampleFlag(t));
+  let st = live.length ? live.map(sampleStage).sort((a, b) => EV_RANK[a] - EV_RANK[b])[0] : "ev_complete";
+  if (st === "ev_complete" && ev.uploadReady) st = "upload_ready";
+  return st;
+}
+function eventBadge(ev) {
+  const f = eventFlags(ev);
+  const flags = [f.rejected ? f.rejected + " rejected" : "", f.fault ? f.fault + " fault" : ""].filter(Boolean)
+    .map(x => `<span class="badge s-flag">⚑ ${x}</span>`).join("");
+  return `<span class="ev-badges">${badge(deriveEventStage(ev))}${flags}</span>`;
+}
+function eventMatchesFilter(e, f) {
+  if (!f || f === "all") return true;
+  if (f === "flag") { const x = eventFlags(e); return !!(x.rejected || x.fault); }
+  return deriveEventStage(e) === f;
 }
 function eventTypeLabel(e) { return e.type === "fibre" ? "Airborne fibre monitoring" : "Hygiene event"; }
 function elapsedLabel(startAt) {
@@ -1110,7 +1152,8 @@ function badge(status) {
     incomplete_blank: "Complete fields", running_incomplete: "Running — complete fields",
     sample_complete: "Sample complete — ready for upload",
     rejected: "Rejected",
-    field_blank: "Field blank", fault: "Fault", upload_ready: "Upload event"
+    field_blank: "Field blank", fault: "Fault", upload_ready: "Event complete",
+    ev_prepped: "Prepped", ev_running: "Running", ev_needs: "Needs fields", ev_complete: "Samples complete"
   })[status] || status;
   return `<span class="badge s-${status}">${label}</span>`;
 }
@@ -1151,8 +1194,7 @@ function dashHtml() {
       </div>
       ${db.projects.map(p => {
         const evs = db.events.filter(e => e.projectId === p.id);
-        const stages = evs.map(deriveEventStage);
-        const stage = stages.includes("running") ? "running" : stages.includes("ended") ? "ended" : evs.length ? stages[0] : "planned";
+        const stage = evs.length ? evs.map(deriveEventStage).sort((a, b) => EV_RANK[a] - EV_RANK[b])[0] : "planned";
         return `<div class="card" onclick="openProject('${p.id}')" style="cursor:pointer">
           <div class="row">
             <div class="grow">
@@ -1170,8 +1212,9 @@ function dashHtml() {
 function projectHtml() {
   const p = project(view.projectId);
   if (!p) return `<div class="wrap">Missing project.</div>`;
+  if (!EVENT_FILTERS.some(f => f[0] === view.filter)) view.filter = "all";
   const list = db.events.filter(e => e.projectId === p.id).map(e => ({ ...e, stageNow: deriveEventStage(e) }))
-    .filter(e => view.filter === "all" || e.stageNow === view.filter);
+    .filter(e => eventMatchesFilter(e, view.filter));
   return `
     <div class="wrap">
       <button class="btn ghost" onclick="goDash()">← Projects</button>
@@ -1181,11 +1224,11 @@ function projectHtml() {
           <div class="muted">${p.number}</div>
           <div class="muted">${esc(p.name || "")} · ${esc(p.site || "")}</div>
         </div>
-        <button class="btn orange" onclick="openNewEvent('${p.id}')">New event</button>
+        <button class="btn orange" onclick="openNewEvent('${p.id}')">New project event</button>
       </div>
       <div class="filters">
-        ${["all","running","ended","prepped","field_blank","planned","upload_ready"].map(s =>
-          `<button class="chip ${view.filter===s?"on":""}" data-filter="${s}">${s==="all"?"All":s.replace("_"," ")}</button>`
+        ${EVENT_FILTERS.map(([s, l]) =>
+          `<button class="chip ${view.filter===s?"on":""}" data-filter="${s}">${l}</button>`
         ).join("")}
       </div>
       ${list.length ? list.map(e => {
@@ -1196,7 +1239,7 @@ function projectHtml() {
               <div class="brand-type" style="font-weight:700;color:var(--navy);font-size:18px">${e.code}</div>
               <div class="muted">${eventTypeLabel(e)} · ${e.date || ""} · ${n} sample${n===1?"":"s"}</div>
             </div>
-            ${badge(e.stageNow)}
+            ${eventBadge(e)}
           </div>
         </div>`;
       }).join("") : `<div class="empty">No events in this filter.</div>`}
@@ -1209,23 +1252,24 @@ function eventHtml() {
   const ts = trainsOf(ev.id);
   return `
     <div class="wrap">
-      <div class="row">
+      <button class="btn ghost back-ctl" onclick="openProject('${ev.projectId}')">← Project events</button>
+      <div class="row" style="margin-top:10px">
         <div class="grow">
           <div class="muted" onclick="openEditEvent('${ev.id}')" style="cursor:pointer">${p ? p.number + " · " + p.name : ""} · tap to edit event</div>
           <h2 class="brand-type" style="margin:4px 0;color:var(--navy)">${ev.code}</h2>
           <div class="muted">${eventTypeLabel(ev)}</div>
         </div>
-        ${badge(deriveEventStage(ev))}
+        ${eventBadge(ev)}
       </div>
       <div class="row" style="margin:10px 0">
-        <button class="btn ghost" onclick="openProject('${ev.projectId}')">Dashboard</button>
-        <button class="btn mid" onclick="openPickType('${ev.id}')">Add sample</button>
-        <button class="btn green" onclick="markEventUpload('${ev.id}')">Upload event</button>
+        <button class="btn mid" id="btnAddSampleTop" onclick="openPickType('${ev.id}')">Add sample</button>
+        <button class="btn green" onclick="markEventUpload('${ev.id}')">Mark event complete</button>
         <div class="menu-wrap">
           <button class="btn ghost" type="button" id="btnMenu">☰</button>
           <div class="menu" id="eventMenu" hidden>
             <button type="button" onclick="exportEvent('${ev.id}')">Export JSON</button>
             <button type="button" onclick="exportCsv('${ev.id}')">Export CSV</button>
+            <button type="button" onclick="exportWorkbookCsvs('${ev.id}')">Export workbook CSVs</button>
             <button type="button" onclick="window.print()">Print</button>
           </div>
         </div>
@@ -1312,7 +1356,7 @@ function trainHtml() {
   const audit = t.audit || [];
   return `
     <div class="wrap">
-      <button class="btn ghost" onclick="leaveSample('${t.id}','${t.eventId}')">← ${ev ? ev.code : "Event"}</button>
+      <button class="btn ghost" onclick="leaveSample('${t.id}','${t.eventId}')">← Event ${ev ? ev.code : ""}</button>
       <div class="row" style="margin-top:10px">
         <h2 class="brand-type" style="margin:0;color:var(--navy)">${displayNo(t)}</h2>
         ${badge(displayStatus(t))}
@@ -1649,7 +1693,7 @@ function newEventHtml() {
   const p = project(view.projectId);
   return `<div class="wrap">
     <button class="btn ghost" onclick="openProject('${view.projectId || ""}')">← Project events</button>
-    <h2 class="brand-type" style="color:var(--navy)">New event</h2>
+    <h2 class="brand-type" style="color:var(--navy)">New project event</h2>
     <p class="muted">${p ? p.number + " · " + (p.name || "") : ""}</p>
     <label>Event type</label>
     <select id="ntype">
@@ -2134,14 +2178,13 @@ function markEventUpload(id) {
     return false;
   });
   if (bad.length) {
-    alert("This event cannot be uploaded until all samples are complete.\nIncomplete: " + bad.map(displayNo).join(", "));
+    alert("This event cannot be marked complete until all samples are complete.\nIncomplete: " + bad.map(displayNo).join(", "));
     return;
   }
   ev.uploadReady = true;
   saveQuiet();
-  exportWorkbookCsvs(id);
-  alert("Event complete. Downloaded samples + noise + coc CSVs for the Drive workbook.\nPaste into the matching tabs of a copy of ENVSS-Event-Workbook-Template.\nThe phone cannot write to Drive itself.");
   render();
+  eventCompleteDone(ev);
 }
 function csvEscape(v) {
   return `"${String(v ?? "").replace(/"/g,'""')}"`;
@@ -3096,7 +3139,7 @@ function fibreTrainHtml(t, ev) {
   const chk = flowCheck(t);
   const na = label => `<label>${label}</label><input value="N/A" disabled>`;
   let h = `<div class="wrap">
-    <button class="btn ghost" onclick="leaveSample('${t.id}','${t.eventId}')">← ${ev ? esc(ev.code) : "Event"}</button>
+    <button class="btn ghost" onclick="leaveSample('${t.id}','${t.eventId}')">← Event ${ev ? esc(ev.code) : ""}</button>
     <div class="row" style="margin-top:10px">
       <h2 class="brand-type" style="margin:0;color:var(--navy)">${displayNo(t)}${blank ? " · Field blank" : ""}</h2>
       ${badge(displayStatus(t))}
@@ -3281,7 +3324,7 @@ projectHtml = function () {
     html = html.split(`font-size:18px">${e.code}</div>`).join(`font-size:18px">${e.code}${minesTag(e)}</div>`);
   });
   if (isAdmin() && !isPodioProject(p)) {
-    html = html.replace(`>New event</button>`, `>New event</button></div><div class="row" style="margin:8px 0"><button class="btn danger" type="button" onclick="deleteProject('${p.id}')">Delete project</button>`);
+    html = html.replace(`>New project event</button>`, `>New project event</button></div><div class="row" style="margin:8px 0"><button class="btn danger" type="button" onclick="deleteProject('${p.id}')">Delete project</button>`);
   }
   return html;
 };
@@ -3350,7 +3393,7 @@ newEventHtml = function () {
   const today = new Date().toISOString().slice(0, 10);
   return `<div class="wrap">
     <button class="btn ghost" onclick="openProject('${view.projectId || ""}')">← Project events</button>
-    <h2 class="brand-type" style="color:var(--navy)">New event</h2>
+    <h2 class="brand-type" style="color:var(--navy)">New project event</h2>
     <p class="muted">${p ? esc(p.number + " · " + (p.name || "")) : ""}</p>
     <label>Event type</label>
     <select id="ntype" onchange="toggleEventTypeFields()">
@@ -3459,12 +3502,11 @@ markEventUpload = function (id) {
   const ev = eventById(id);
   if (!isFibreEvent(ev)) return _markEventUpload33(id);
   const bad = trainsOf(id).filter(t => !followUpComplete(t));
-  if (bad.length) { alert("This event cannot be uploaded until all samples are complete.\nIncomplete: " + bad.map(displayNo).join(", ")); return; }
+  if (bad.length) { alert("This event cannot be marked complete until all samples are complete.\nIncomplete: " + bad.map(displayNo).join(", ")); return; }
   ev.uploadReady = true;
   saveQuiet();
-  exportWorkbookCsvs(id);
-  alert("Event complete. Downloaded samples + noise + coc CSVs for the Drive workbook.");
   render();
+  eventCompleteDone(ev);
 };
 window.markEventUpload = markEventUpload;
 
@@ -3647,7 +3689,7 @@ if (typeof render === "function") render();
     if (pg === "train" && !view.eventId) { const tr = db.trains.find(x => x.id === view.trainId); if (tr) view.eventId = tr.eventId; }
     const canAdd = pg === "project" || ((pg === "event" || pg === "train") && !!view.eventId);
     fab.hidden = !(pg === "project" || pg === "event");
-    fab.innerHTML = pg === "event" ? "<b>+</b>Add sample" : "<b>+</b>New event";
+    fab.innerHTML = pg === "event" ? "<b>+</b>Add sample" : "<b>+</b>New project event";
     document.body.classList.toggle("has-fab", !fab.hidden);
     const addBtn = nav.querySelector('[data-go="add"]');
     addBtn.disabled = !canAdd; addBtn.querySelector("span").textContent = pg === "project" ? "Event" : (pg === "event" || pg === "train") ? "Sample" : "Add";
@@ -3858,7 +3900,7 @@ if (typeof render === "function") render();
   const LABEL = { pumpSerial: "Pump serial", headId: "Sample head", mediaId: "Cassette / filter / tube", cowlNo: "Cowl number", startFlow: "Start flow",
     endFlow: "End flow", startAt: "Start time", endAt: "Stop time", status: "Status", location: "Location", contaminantId: "Contaminant", analyses: "Analyses",
     "person.first": "First name", "person.last": "Last name", "person.occupation": "Occupation", "person.occupationCode": "Occupation code", "person.company": "Company",
-    "person.sex": "Sex", "person.dob": "Date of birth", "person.hours": "Hours / shift", "person.daysOn": "Days on", "person.daysOff": "Days off",
+    "person.sex": "Sex", "person.sexSet": "Sex picked", "person.dob": "Date of birth", "person.hours": "Hours / shift", "person.daysOn": "Days on", "person.daysOff": "Days off",
     rejectAsked: "Sample rejected?", rejectCode: "Reject reason", rejectReason: "Reject detail", equipAsked: "ENVSS equipment damaged?", equipNote: "What was damaged",
     rpdAsked: "Respirator worn?", "rpd.model": "Respirator brand / model", "rpd.shaven": "Clean-shaven?", "rpd.fit": "Fit-tested?", "rpd.worn": "Respirator worn",
     hpdAsked: "Hearing protection worn?", commentAsked: "Comments?", comments: "Comments", trainKind: "Sample type", shiftDate: "Shift date", shiftKind: "Shift",
@@ -3893,6 +3935,9 @@ if (typeof render === "function") render();
     if (before) {
       const keys = new Set(Object.keys(before).concat(Object.keys(now)));
       const who = whoText(), at = nowIso();
+      const changed = [];
+      keys.forEach(k => { const a = before[k] == null ? "" : before[k], b = now[k] == null ? "" : now[k]; if (a !== b) changed.push([k, a, b]); });
+      if (changed.length && typeof window.v42SampleToEvent === "function") { try { window.v42SampleToEvent(r, changed, label, show); } catch (e) { console.warn("v42 event audit", e); } }
       keys.forEach(k => {
         const a = before[k] == null ? "" : before[k], b = now[k] == null ? "" : now[k];
         if (a === b) return;
@@ -4043,7 +4088,9 @@ function detailItems() {
   return out;
 }
 function answerGaps(t) { return answerItems(t).filter(i => !i.ok); }
+const _followUpComplete40 = followUpComplete;
 followUpComplete = function (t) {
+  if (isFibreTrain(t)) return _followUpComplete40(t);   // v42: AFM keeps its own rule (end flow / cowl / rejected)
   if (isBlank(t)) return !!(t.contaminantId && t.headId);
   return answerGaps(t).length === 0;
 };
@@ -4133,5 +4180,93 @@ followUpComplete = function (t) {
 })();
 </script>
 <style>input.a41-dim, select.a41-dim { border-left: 5px solid #6B5A2E !important; } .q-summary.dim { background: #2A2412; border-color: #6B5A2E; color: #E8D9A8; } .srs-blank { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #3A3018; color: #E8D9A8; border: 1px solid #6B5A2E; white-space: nowrap; margin-left: 6px; } select.a41-done { border-left: 5px solid var(--go) !important; } input.a41-need, textarea.a41-need { border-left: 5px solid #FFB020 !important; } input.a41-done, textarea.a41-done { border-left: 5px solid var(--go) !important; }</style>
+<script>
+/* ===== v42: tab title from APP_VERSION; Mark event complete -> offer Create COC; keyboard-friendly cards;
+   event audit log of sample-level activity (stored on ev.audit, synced with the event, read-only). ===== */
+(function () {
+  function setTitle() { document.title = "ENVSS Field v" + APP_VERSION; }
+  setTitle();
+  function evLog(ev, action, detail, field) {
+    if (!ev) return;
+    ev.audit = ev.audit || [];
+    ev.audit.push({ at: nowIso(), who: whoText(), action, field: field || "event", from: "", to: "", detail: detail || "" });
+  }
+  window.v42EvLog = evLog;
+  const SHIFT = { day: "Day", afternoon: "Afternoon", night: "Night" };
+  window.v42SampleToEvent = function (t, changed, label, show) {
+    if (!t || !db.trains.includes(t)) return;
+    const ev = eventById(t.eventId); if (!ev) return;
+    const no = displayNo(t), keys = changed.map(c => c[0]), get = k => (changed.find(c => c[0] === k) || [])[2] || "";
+    const was = k => (changed.find(c => c[0] === k) || [])[1] || "";
+    const acts = [];
+    if (keys.includes("startAt") && get("startAt") && !was("startAt")) acts.push(["START", "Started " + show("startAt", get("startAt"))]);
+    if (keys.includes("endAt") && get("endAt") && !was("endAt")) acts.push(["STOP", "Stopped " + show("endAt", get("endAt"))]);
+    if (keys.includes("shiftDate") || keys.includes("shiftKind")) acts.push(["moved", "Moved to " + (t.shiftDate || ev.date || "") + " " + (SHIFT[t.shiftKind] || t.shiftKind || "")]);
+    const rej = (keys.includes("rejectAsked") && get("rejectAsked") === "yes") || (keys.includes("rejectCode") && get("rejectCode")) || (keys.includes("status") && /rejected|fault/.test(get("status")));
+    if (rej) acts.push([isNoise(t) ? "fault" : "rejected / voided", (t.rejectReason || t.rejectCode || "") ]);
+    const special = new Set(["startAt", "endAt", "shiftDate", "shiftKind", "status", "rejectAsked", "rejectCode", "rejectReason", "startLoc", "endLoc"]);
+    const rest = [...new Set(keys.filter(k => !special.has(k)).map(k => label(k)))];
+    if (rest.length) acts.push(["", rest.join(", ")]);
+    if (!acts.length) return;
+    ev.audit = ev.audit || [];
+    ev.audit.push({ at: nowIso(), who: whoText(), action: no + ": " + acts.map(a => a[0] || "changed").join(", "), field: "sample", sample: t.id, from: "", to: "",
+      detail: acts.map(a => (a[0] ? a[0] + (a[1] ? " — " : "") : "") + a[1]).filter(Boolean).join("; ") });
+  };
+  /* sample added */
+  const _add42 = addTrain;
+  addTrain = function (eventId, kind) {
+    const before = new Set(db.trains.map(x => x.id));
+    const r = _add42.apply(this, arguments);
+    try { const ev = eventById(eventId); db.trains.filter(x => !before.has(x.id) && x.eventId === eventId).forEach(t => evLog(ev, displayNo(t) + " added", kindLabel(t), "sample"));
+      if (ev) saveQuiet(); } catch (e) { console.warn("v42 add", e); }
+    return r;
+  };
+  window.addTrain = addTrain;
+  /* workbook export (burger menu) and COC */
+  const _wb42 = exportWorkbookCsvs;
+  exportWorkbookCsvs = function (id) { const r = _wb42.apply(this, arguments); try { evLog(eventById(id), "Workbook CSVs exported", "samples + noise + coc CSVs"); saveQuiet(); } catch (e) {} return r; };
+  window.exportWorkbookCsvs = exportWorkbookCsvs;
+  const _coc42 = createCoc;
+  createCoc = async function () {
+    const ev = eventById(view.eventId);
+    const r = await _coc42.apply(this, arguments);
+    try { if (ev && !isFibreEvent(ev)) { evLog(ev, "Create COC", "Envirolab Form 302 downloaded"); saveQuiet(); } } catch (e) {}
+    return r;
+  };
+  window.createCoc = createCoc;
+  /* Mark event complete: log it, then offer the COC (AFM events have no Envirolab COC) */
+  window.eventCompleteDone = function (ev) {
+    evLog(ev, "Marked event complete", "All samples complete"); saveQuiet(); render();
+    if (isFibreEvent(ev)) { alert("Event marked complete."); return; }
+    if (confirm("Event marked complete.\n\nCreate COC now?")) { view.eventId = ev.id; createCoc(); }
+  };
+  /* cards: keyboard focus + Enter / Space opens, like a tap */
+  function keyCards() {
+    document.querySelectorAll("#app .card[onclick], #app .train[onclick]").forEach(c => { if (!c.hasAttribute("tabindex")) { c.tabIndex = 0; c.setAttribute("role", "button"); } });
+  }
+  document.addEventListener("keydown", e => {
+    const c = e.target && e.target.matches && e.target.matches(".card[onclick], .train[onclick]") ? e.target : null;
+    if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); c.click(); }
+  });
+  /* event audit: refresh the open log after each save so new entries show without leaving the screen */
+  function refreshEvAudit() {
+    const d = document.getElementById("evAudit"); const ev = view.page === "event" && eventById(view.eventId);
+    if (!d || !ev) return; const n = (ev.audit || []).length; const sm = d.querySelector("summary");
+    if (sm && sm.dataset.n !== String(n)) { const open = d.open; d.remove(); render(); const d2 = document.getElementById("evAudit"); if (d2) d2.open = open; }
+  }
+  const _render42 = render;
+  /* hide the in-page Add sample button when the floating + (wide) or the bottom-bar + (phone) can do it */
+  function addDup() {
+    const b = document.getElementById("btnAddSampleTop"); if (!b) return;
+    const vis = el => !!el && !el.hidden && !el.disabled && el.getClientRects().length > 0 && getComputedStyle(el).display !== "none" && getComputedStyle(el).visibility !== "hidden";
+    const fab = document.querySelector(".fab, #fab"); const nav = document.querySelector('[data-go="add"]');
+    b.style.display = (vis(fab) || vis(nav)) ? "none" : "";
+  }
+  window.addEventListener("resize", () => { try { addDup(); } catch (e) {} });
+  render = function () { const r = _render42.apply(this, arguments); try { setTitle(); keyCards(); addDup(); const sm = document.querySelector("#evAudit summary"); const ev = eventById(view.eventId); if (sm && ev) sm.dataset.n = String((ev.audit || []).length); } catch (e) {} return r; };
+  window.render = render;
+  render();
+})();
+</script>
 </body>
 </html>
