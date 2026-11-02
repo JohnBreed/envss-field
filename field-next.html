@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v33 single-file build (field-next.html). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
+<!-- ENVSS Field v34 single-file build (field-next.html, test copy). v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -189,7 +189,7 @@ textarea { min-height: 80px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v33</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v34</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -206,11 +206,11 @@ textarea { min-height: 80px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=33"></script>
+  <script src="config.js?v=34"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "33"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "34"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -2228,7 +2228,7 @@ window.addEventListener("offline", setOnline);
 ensureOperator();
 render();
 
-/* v32: sw-next.js is registered in <head>. The old ./sw.js deletes every cache, so it is not registered here. */
+/* v34: sw-next.js is registered in <head>. The old ./sw.js deletes every cache, so it is not registered here. */
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pullActivity(); });
 setInterval(() => { if (!document.hidden) pullActivity(); }, 8000);
 paintSyncBar();
@@ -2562,6 +2562,723 @@ bind = function () {
 };
 
 if (typeof render === "function") render();
+</script>
+  <script>
+/* ===== v34 layer (field-next.html only) =====
+   Ported from the Grok-era overlays (app-fibre.js, -fix, -v37..-v48) onto the v33 base, as one layer:
+   1. AFM fibre events and samples      2. Mines Act event toggle + SRS search
+   3. Admin-only delete (tombstones)    4. GPS lines on the sample screen
+   5. COC Form 302 fixes (event scope, blank date, sample order, empty comments)
+   The v33 sync engine (dirty-only saves, retry queue, sync bar, storage key, read-only Podio,
+   fetchProjectRows, offline worker) is untouched. Nothing here writes a Podio row or deletes a row. */
+window.ENVSS_V34 = "34";
+
+/* ---------- admin ---------- */
+/* Admins come from ENVSS_CONFIG.admins when config.js provides it; otherwise this minimal default.
+   Admin needs a Google sign-in on an envss.com.au account (a typed name/email is never admin).
+   This is a convenience gate in the browser, not a security boundary. */
+const V34_DEFAULT_ADMINS = ["[REDACTED]"];
+function v34Admins() {
+  const c = window.ENVSS_CONFIG || {};
+  const list = Array.isArray(c.admins) && c.admins.length ? c.admins : V34_DEFAULT_ADMINS;
+  return list.map(s => String(s).trim().toLowerCase()).filter(Boolean);
+}
+function isAdmin() {
+  const o = getOperator();
+  if (!o || o.source !== "google") return false;
+  const email = String(o.email || "").toLowerCase();
+  return allowedEmail(email) && v34Admins().indexOf(email) !== -1;
+}
+window.isAdmin = isAdmin;
+
+/* ---------- tombstones (never a row DELETE) ---------- */
+function v34Tombs() {
+  const ev = new Set(), pr = new Set(), tr = new Set();
+  (db.deletions || []).forEach(d => {
+    if (!d) return;
+    if (d.tombstone === "event" && d.deletedEventId) ev.add(d.deletedEventId);
+    if (d.tombstone === "project" && d.projectId) pr.add(d.projectId);
+    if (d.trainId) tr.add(d.trainId);
+  });
+  return { ev, pr, tr };
+}
+function v34Hidden(coll, rec, g) {
+  if (!rec) return false;
+  if (coll === "projects") return !isPodioProject(rec) && g.pr.has(rec.id);   // Podio rows are never hidden
+  if (coll === "events") return g.ev.has(rec.id) || g.pr.has(rec.projectId);
+  if (coll === "trains") return g.tr.has(rec.id) || g.ev.has(rec.eventId);
+  return false;
+}
+const _mergeRemote33 = mergeRemote;
+mergeRemote = function (coll, rows, normalize) {
+  if (coll === "projects" || coll === "events" || coll === "trains") {
+    const g = v34Tombs();
+    rows = (rows || []).filter(r => {
+      const p = (r && r.payload) || {};
+      const rec = Object.assign({}, p, { id: p.id || (r && r.id) });
+      return !v34Hidden(coll, rec, g);
+    });
+  }
+  return _mergeRemote33(coll, rows, normalize);
+};
+function applyTombstones() {
+  const g = v34Tombs();
+  let n = 0;
+  ["projects", "events", "trains"].forEach(coll => {
+    const before = (db[coll] || []).length;
+    db[coll] = (db[coll] || []).filter(rec => !v34Hidden(coll, rec, g));
+    n += before - db[coll].length;
+  });
+  return n;
+}
+const _pullActivity33 = pullActivity;
+pullActivity = async function () {
+  await _pullActivity33();
+  if (applyTombstones()) { persist(); if (!userIsTyping()) render(); }
+};
+function v34Tomb(rec) {
+  db.deletions = db.deletions || [];
+  db.deletions.push(Object.assign({ at: nowIso(), who: whoText() }, rec));
+}
+
+const _deleteSample33 = deleteSample;
+deleteSample = function (id) {
+  if (!isAdmin()) { alert("Only an admin can delete a sample. Mark it rejected instead."); return; }
+  return _deleteSample33(id);
+};
+deleteTrain = function (t) { deleteSample(t && t.id); };
+window.deleteSample = deleteSample;
+window.deleteTrain = deleteTrain;
+
+function deleteEvent(id) {
+  if (!isAdmin()) { alert("Only an admin can delete an event."); return; }
+  const ev = eventById(id);
+  if (!ev) return;
+  const ts = trainsOf(id);
+  if (!confirm("Delete event " + ev.code + " and its " + ts.length + " sample" + (ts.length === 1 ? "" : "s") + "? It is hidden everywhere; nothing is removed from the database.")) return;
+  ts.forEach(t => v34Tomb({ id: t.id, trainId: t.id, eventId: id, pouch: t.pouch || t.sampleNo, kind: t.trainKind, detail: "event deleted" }));
+  v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: ev.projectId, code: ev.code, type: ev.type || "hygiene", detail: "event deleted" });
+  applyTombstones();
+  view.page = "project"; view.projectId = ev.projectId; view.eventId = null;
+  commit(); render();
+}
+function deleteProject(id) {
+  if (!isAdmin()) { alert("Only an admin can delete a project."); return; }
+  const p = project(id);
+  if (!p) return;
+  if (isPodioProject(p)) { alert("This project comes from Podio. Close it in Podio; it cannot be deleted here."); return; }
+  const evs = db.events.filter(e => e.projectId === id);
+  if (!confirm("Delete project " + p.number + " and its " + evs.length + " event" + (evs.length === 1 ? "" : "s") + "? It is hidden everywhere; nothing is removed from the database.")) return;
+  evs.forEach(ev => {
+    trainsOf(ev.id).forEach(t => v34Tomb({ id: t.id, trainId: t.id, eventId: ev.id, pouch: t.pouch || t.sampleNo, kind: t.trainKind, detail: "project deleted" }));
+    v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: id, code: ev.code, type: ev.type || "hygiene", detail: "project deleted" });
+  });
+  v34Tomb({ id: p.id, tombstone: "project", projectId: p.id, number: p.number, name: p.name || "", detail: "project deleted" });
+  applyTombstones();
+  view.page = "dash"; view.projectId = null;
+  commit(); render();
+}
+window.deleteEvent = deleteEvent;
+window.deleteProject = deleteProject;
+
+/* ---------- AFM fibre ---------- */
+const TAT_OPTS = [["same_day", "Same day"], ["next_0700", "Next day by 07:00"], ["emergency", "Emergency"]];
+const PROTO_OPTS = [["background", "Background"], ["control", "Control"], ["clearance", "Clearance"]];
+function optLabel(list, v) { const x = list.find(o => o[0] === v); return x ? x[1] : (v || ""); }
+function optsHtml(list, cur) { return list.map(([v, l]) => `<option value="${v}" ${cur === v ? "selected" : ""}>${l}</option>`).join(""); }
+function isFibreEvent(ev) { return !!ev && (ev.type === "fibre" || /(^|-)AFM-/.test(String(ev.code || ""))); }
+function isFibreTrain(t) { return !!t && ((t.trainKind || "").startsWith("fibre") || isFibreEvent(eventById(t.eventId))); }
+function cowlDigits(v) { return String(v || "").replace(/^ENVSS/i, "").replace(/\D/g, ""); }
+function cowlDisplay(t) { const d = cowlDigits(t.cowlNo || t.mediaId); return d ? "ENVSS" + d : ""; }
+function ymd(date) { return String(date || "").replace(/-/g, ""); }
+function fibreEventCode(p, date, seq) { const d = ymd(date); return "ENVSS-HYG-AFM-" + ((p && p.number) || "") + "-" + seq + (d ? "-" + d : ""); }
+function fibreSeqOf(code) { const m = String(code || "").match(/-(\d{3,})(?:-\d{8})?$/); return m ? m[1] : ""; }
+function nextFibreSeq(projectId) {
+  const codes = db.events.filter(e => e.projectId === projectId && isFibreEvent(e)).map(e => e.code)
+    .concat((db.deletions || []).filter(d => d.tombstone === "event" && d.projectId === projectId && d.type === "fibre").map(d => d.code));
+  const max = codes.map(c => parseInt(fibreSeqOf(c), 10) || 0).reduce((a, b) => Math.max(a, b), 0);
+  return String(max + 1).padStart(3, "0");
+}
+/* Sample numbers are never reused: the next number is above every live AND deleted sample of the event. */
+function nextFibreSampleNo(eventId) {
+  const nums = trainsOf(eventId).map(sampleNoOf)
+    .concat((db.deletions || []).filter(d => d.eventId === eventId && d.trainId).map(d => Number(d.pouch) || 0));
+  return nums.reduce((a, b) => Math.max(a, b), 0) + 1;
+}
+function round1(n) { return Math.round(n * 10) / 10; }
+function fibreTrainRecord(ev, no, kind) {
+  const blank = kind === "blank";
+  return {
+    id: uid("t"), eventId: ev.id, pouch: String(no), sampleNo: no, trainKind: kind,
+    contaminantId: "ASB", pumpSerial: "", dosimeterSerial: "", headId: "", mediaId: "", cowlNo: "",
+    monitorType: ev.protocol || "background", rotameter: blank ? "" : (ev.rotameter || ""),
+    startFlow: blank ? "" : "2.0", endFlow: "", desiredVolumeL: "", minMinutes: "",
+    mode: blank ? "blank" : "static",
+    person: { first: "", last: "", sex: "not_stated", dob: "", occupation: "", company: "", hours: "", daysOn: "", daysOff: "" },
+    rpd: { worn: "", model: "", shaven: "", fit: "" }, hpd: { worn: "", model: "", style: "", classRating: "" },
+    location: "", startAt: "", endAt: "", status: "prepped", comments: "",
+    shiftDate: ev.date || "", shiftKind: "day", rejectReason: "", rejectCode: "", photo: "",
+    audit: [{ at: nowIso(), action: "Created", detail: blank ? "field blank (sample 0)" : kind, who: whoText() }]
+  };
+}
+
+const _kindLabel33 = kindLabel;
+kindLabel = function (t) { return ({ fibre_static: "AFM · static", fibre_operator: "AFM · operator" })[t.trainKind || ""] || _kindLabel33(t); };
+const _isStatic33 = isStatic;
+isStatic = function (t) { return t && t.trainKind === "fibre_static" ? true : _isStatic33(t); };
+const _startGaps33 = startGaps;
+startGaps = function (t) {
+  if (!isFibreTrain(t)) return _startGaps33(t);
+  const miss = [];
+  if (!cowlDigits(t.cowlNo || t.mediaId)) miss.push("Cowl number");
+  if (isBlank(t)) return miss;
+  if (!t.pumpSerial) miss.push("Pump serial");
+  if (!t.location) miss.push("Location");
+  if (num(t.startFlow) == null) miss.push("Start flow");
+  return miss;
+};
+const _optionalGaps33 = optionalGaps;
+optionalGaps = function (t) {
+  if (!isFibreTrain(t)) return _optionalGaps33(t);
+  return (!isBlank(t) && t.status === "ended" && !t.endFlow) ? ["End flow"] : [];
+};
+const _personComplete33 = personComplete;
+personComplete = function (t) { return isFibreTrain(t) ? true : _personComplete33(t); };
+function fibreRejected(t) { return t.status === "rejected" || !!t.rejectCode; }
+const _followUpComplete33 = followUpComplete;
+followUpComplete = function (t) {
+  if (!isFibreTrain(t)) return _followUpComplete33(t);
+  if (isBlank(t)) return !!cowlDigits(t.cowlNo || t.mediaId);
+  if (fibreRejected(t)) return true;
+  return t.status === "ended" && num(t.endFlow) != null;
+};
+const _displayStatus33 = displayStatus;
+displayStatus = function (t) {
+  if (!t || typeof t === "string" || !isFibreTrain(t)) return _displayStatus33(t);
+  if (isBlank(t)) return cowlDigits(t.cowlNo || t.mediaId) ? "sample_complete" : "incomplete_blank";
+  if (fibreRejected(t)) return "rejected";
+  if (t.status === "running") return "running";
+  if (t.status === "ended") return num(t.endFlow) != null ? "sample_complete" : "incomplete";
+  return t.status;
+};
+const _volumeLitres33 = volumeLitres;
+volumeLitres = function (t) {
+  if (!isFibreTrain(t)) return _volumeLitres33(t);
+  if (isBlank(t)) return null;
+  const mins = runtimeMinutes(t), a = num(t.startFlow), b = num(t.endFlow);
+  if (mins == null || a == null || b == null) return null;
+  return round1(mins * ((a + b) / 2));   // volume = average flow x minutes
+};
+const _rejectList33 = rejectList;
+rejectList = function (t) {
+  if (isFibreTrain(t)) return [{ code: "pump_fault", label: "Pump failure", photo: false }, { code: "damaged_filter", label: "Filter failure", photo: false }];
+  return _rejectList33(t);
+};
+const _summaryLine33 = summaryLine;
+summaryLine = function (t) {
+  if (!isFibreTrain(t)) return _summaryLine33(t);
+  if (isBlank(t)) return (cowlDisplay(t) || "no cowl") + " · field blank";
+  const v = volumeLitres(t);
+  return [dash(t.location), t.startAt ? "start " + fmtTime(t.startAt) : "", t.endAt ? "stop " + fmtTime(t.endAt) : "", runPhrase(t), v != null ? v.toFixed(1) + " L" : ""].filter(Boolean).join(" · ");
+};
+const _titleLine33 = titleLine;
+titleLine = function (t) {
+  if (!isFibreTrain(t)) return _titleLine33(t);
+  return [displayNo(t), isBlank(t) ? "Field blank" : "AFM", cowlDisplay(t) || "no cowl", isBlank(t) ? "" : dash(t.pumpSerial)].filter(Boolean).join(" · ");
+};
+const _trainKindOptions33 = trainKindOptions;
+trainKindOptions = function (t) {
+  if (!isFibreTrain(t)) return _trainKindOptions33(t);
+  return [["fibre_static", "AFM · static"], ["blank", "Field blank"]].map(([id, l]) => `<option value="${id}" ${(t.trainKind || "fibre_static") === id ? "selected" : ""}>${l}</option>`).join("");
+};
+
+function gpsLines(t) {
+  function line(label, loc) {
+    if (!loc || loc.lat == null || loc.lng == null) return `<p class="help">${label}: no GPS fix yet</p>`;
+    const acc = loc.acc != null ? " ±" + Math.round(Number(loc.acc)) + " m" : "";
+    return `<p class="help">${label} ${Number(loc.lat).toFixed(5)}, ${Number(loc.lng).toFixed(5)}${acc}</p>`;
+  }
+  return `<div id="gpsBlock">${line("Start location", t.startLoc)}${line("Stop location", t.endLoc)}</div>`;
+}
+function auditHtml(t) {
+  const a = t.audit || [];
+  return `<h3 class="brand-type" style="color:var(--navy);margin-top:22px;cursor:pointer" id="auditToggle">Audit log ▸</h3>
+    <div id="auditBox" hidden>${a.length ? `<div class="card">${a.slice().reverse().map(x =>
+      `<div class="muted" style="margin-bottom:6px">${fmtTime(x.at)} · ${esc(x.who || "")} · ${esc(x.action)}${x.detail ? " · " + esc(x.detail) : ""}</div>`).join("")}</div>` : `<p class="muted">No edits yet.</p>`}</div>`;
+}
+/* AFM sample screen: cowl -> pump -> location -> start flow -> START -> STOP -> end flow -> avg/volume.
+   No role, shift date or comments. Field blank (sample 0): cowl only, the rest N/A. */
+function fibreTrainHtml(t, ev) {
+  const blank = isBlank(t);
+  const running = t.status === "running";
+  const rejected = fibreRejected(t);
+  const a = num(t.startFlow), b = num(t.endFlow);
+  const avg = a != null && b != null ? (a + b) / 2 : null;
+  const mins = runtimeMinutes(t);
+  const vol = volumeLitres(t);
+  const chk = flowCheck(t);
+  const na = label => `<label>${label}</label><input value="N/A" disabled>`;
+  let h = `<div class="wrap">
+    <button class="btn ghost" onclick="leaveSample('${t.id}','${t.eventId}')">← ${ev ? esc(ev.code) : "Event"}</button>
+    <div class="row" style="margin-top:10px">
+      <h2 class="brand-type" style="margin:0;color:var(--navy)">${displayNo(t)}${blank ? " · Field blank" : ""}</h2>
+      ${badge(displayStatus(t))}
+    </div>
+    <p class="muted">${esc(optLabel(PROTO_OPTS, (ev && ev.protocol) || t.monitorType || "background"))}${ev && ev.rotameter ? " · rotameter " + esc(ev.rotameter) : " · no rotameter set on the event"}</p>
+    <label>Cowl number</label>
+    <div class="row" style="gap:6px"><span class="muted" style="padding-top:10px">ENVSS</span>
+      <input id="cowlNo" class="grow" inputmode="numeric" autocomplete="off" value="${esc(cowlDigits(t.cowlNo || t.mediaId))}" placeholder="11850"></div>
+    <p class="help">Digits only. Stored and printed as ENVSS + number.</p>`;
+  if (blank) {
+    h += `<div class="grid2"><div>${na("Pump serial")}${na("Start / stop")}</div><div>${na("Flow (L/min)")}${na("Volume (L)")}</div></div>
+      <p class="help">Sample 0 is the field blank. Pump, times, flow and volume are N/A.</p>`;
+  } else {
+    h += `<label>Pump serial</label>
+      <div class="combo"><input id="pump" value="${esc(t.pumpSerial)}" placeholder="Type serial" autocomplete="off"><div class="suggest" id="sug-pump"></div></div>
+      <label>Location</label>
+      <input id="location" value="${esc(t.location)}" placeholder="1 - North Eastern Boundary">
+      <label>Start flow (L/min)</label>
+      <input id="startFlow" inputmode="decimal" value="${esc(t.startFlow)}">
+      <div class="row" style="margin:12px 0 6px;gap:10px;align-items:end">
+        <button class="btn orange lg" id="btnStart" ${running || rejected ? "disabled" : ""}>START</button>
+        <div class="grow"><label>Start time</label><input id="startAt" type="time" value="${esc(toLocalInput(t.startAt))}"></div>
+      </div>
+      <div class="row" style="margin:0 0 12px;gap:10px;align-items:end">
+        <button class="btn green lg" id="btnStop" ${!running ? "disabled" : ""}>STOP</button>
+        <div class="grow"><label>Stop time</label><input id="endAt" type="time" value="${esc(toLocalInput(t.endAt))}"></div>
+      </div>
+      <label>End flow (L/min)</label>
+      <input id="endFlow" inputmode="decimal" value="${esc(t.endFlow)}">
+      <div class="grid2">
+        <div><label>Average flow (L/min)</label><input id="avgFlowOut" value="${avg != null ? avg.toFixed(1) : "—"}" disabled></div>
+        <div><label>Volume (L)</label><input id="volumeOut" value="${vol != null ? vol.toFixed(1) : "—"}" disabled></div>
+      </div>
+      <p class="muted" id="runtimeOut">${mins != null ? "Runtime " + Math.round(mins) + " min" : (running ? elapsedLabel(t.startAt) : "")}</p>
+      ${vol != null && vol < 360 ? `<p class="help" id="volWarn" style="color:var(--danger);font-weight:700">Volume ${vol.toFixed(1)} L is under 360 L. The limit of detection rises (0.01 f/mL).</p>` : ""}
+      ${chk.pct != null && !chk.ok ? `<p class="help" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from start (tolerance ±${chk.tol}%).</p>` : ""}
+      <p class="help">Accidental START/STOP: edit the times. Location is stored when START or STOP gets a GPS fix.</p>
+      ${gpsLines(t)}
+      ${rejectBlockHtml(t)}`;
+  }
+  if (isAdmin()) h += `<div class="footer-actions"><button class="btn danger" id="btnDelete" type="button">Delete sample</button></div>`;
+  h += auditHtml(t) + `</div>`;
+  return h;
+}
+window.fibreTrainHtml = fibreTrainHtml;
+
+/* ---------- Mines Act / SRS ---------- */
+function srs() { return window.ENVSS_SRS_CATALOGS || {}; }
+function srsList(kind) { return (srs()[kind] || []).filter(o => o && /^\d+$/.test(String(o.code || "")) && o.active !== "N"); }
+function srsHits(kind, q) {
+  const s = String(q || "").trim().toLowerCase();
+  const list = srsList(kind);
+  if (!s) return list.slice(0, 12);
+  return list.filter(o => String(o.code).indexOf(s) === 0 || (o.name || "").toLowerCase().indexOf(s) !== -1 ||
+    (o.parentName || "").toLowerCase().indexOf(s) !== -1 || (o.majorGroup || o.division || "").toLowerCase().indexOf(s) !== -1).slice(0, 12);
+}
+function srsFind(kind, val) {
+  const s = String(val || "").trim();
+  if (!s) return null;
+  const code = s.split("—")[0].trim();
+  return srsList(kind).find(o => o.code === code || o.name === s || (o.code + " — " + o.name) === s) || null;
+}
+function minesState(ev) {
+  if (!ev) return "unset";
+  if (ev.minesAct === true || ev.minesAct === "yes") return "yes";
+  if (ev.minesAct === false || ev.minesAct === "no") return "no";
+  return "unset";
+}
+function minesChips(id, cur) {
+  return `<label>Mines Act?</label>
+    <div class="filters" data-mines-group="${id}">
+      <button type="button" class="chip ${cur === "yes" ? "on" : ""}" data-mines="${id}" data-val="yes">Yes</button>
+      <button type="button" class="chip ${cur !== "yes" ? "on" : ""}" data-mines="${id}" data-val="no">No</button>
+    </div>
+    <input type="hidden" id="${id}" value="${cur === "yes" ? "yes" : "no"}">
+    <p class="help">Yes: SRS occupation search, location code and SEG on each sample (Mines Reg). No: occupation name only.</p>`;
+}
+const _mineCodesHtml33 = mineCodesHtml;
+mineCodesHtml = function (t) {
+  if (isBlank(t) || isFibreTrain(t)) return "";
+  const st = minesState(eventById(t.eventId));
+  if (st === "unset") return _mineCodesHtml33(t);   // events from before v34 keep the old optional box
+  if (st === "no") return "";                         // occupation name stays in the person fields, once
+  const p = t.person || {};
+  const occ = srsFind("occupations", t.occupationCode || p.occupationCode) || srsFind("occupations", p.occupation);
+  const loc = srsFind("locations", t.locationCode);
+  const occLabel = occ ? occ.code + " — " + occ.name : (p.occupation || t.occupationCode || "");
+  const locLabel = loc ? loc.code + " — " + loc.name : (t.locationCode || "");
+  let h = "";
+  if (!isStatic(t)) {
+    h += `<label>Occupation (SRS)</label>
+      <div class="combo"><input id="occSearch" value="${esc(occLabel)}" placeholder="Code or description, e.g. 411000 or plant operator" autocomplete="off"><div class="suggest" id="sug-occSearch"></div></div>
+      ${occ ? `<p class="muted" id="occParent">Parent: ${esc(occ.parentCode ? occ.parentCode + " — " + (occ.parentName || "") : "—")} · ${esc(occ.majorGroup || "")}</p>` : ""}`;
+  }
+  h += `<details id="mineBox" style="margin-top:8px"${window._v34MineOpen ? " open" : ""}><summary class="brand-type" style="cursor:pointer;color:var(--navy)">Mines Act / SRS fields</summary>
+      <p class="help">Mines Reg job. Location code and SEG are for the SRS upload.</p>
+      <label>Location code (SRS)</label>
+      <div class="combo"><input id="locSearch" value="${esc(locLabel)}" placeholder="Code or description, e.g. 413 or crushing" autocomplete="off"><div class="suggest" id="sug-locSearch"></div></div>
+      <label>SEG</label><input id="seg" value="${esc(t.seg || "")}" placeholder="e.g. 4 - Mobile plant">
+      <label>IRSST category</label>
+      <select id="irsst"><option value="">—</option>${[1, 2, 3, 4].map(n => `<option value="${n}" ${String(t.irsstCat) === String(n) ? "selected" : ""}>${n}</option>`).join("")}</select>
+    </details>`;
+  return h;
+};
+const _modeFields33 = modeFields;
+modeFields = function (t) {
+  const html = _modeFields33(t);
+  if (minesState(eventById(t.eventId)) !== "yes") return html;
+  /* Mines Act: occupation comes from the SRS search instead; remove the plain occupation so it shows once. */
+  return html.replace(/<div><label>Occupation<\/label>\s*<div class="combo">[\s\S]*?id="sug-occupation"><\/div>\s*<\/div>\s*<\/div>/, "");
+};
+function wireSrs(inputId, kind, onPick) {
+  const input = document.getElementById(inputId);
+  const box = document.getElementById("sug-" + inputId);
+  if (!input || !box) return;
+  const show = () => {
+    box.innerHTML = srsHits(kind, input.value).map(o => `<div data-v="${esc(o.code + " — " + o.name)}">${esc(o.code + " — " + o.name)}</div>`).join("");
+    box.classList.add("on");
+    box.querySelectorAll("div").forEach(d => d.onmousedown = e => { e.preventDefault(); input.value = d.dataset.v; box.classList.remove("on"); onPick(d.dataset.v); });
+  };
+  input.addEventListener("input", show);
+  input.addEventListener("focus", show);
+  input.addEventListener("blur", () => setTimeout(() => box.classList.remove("on"), 180));
+}
+
+/* ---------- collect ---------- */
+const _collectTrain33 = collectTrain;
+collectTrain = function (t) {
+  _collectTrain33(t);
+  const g = id => document.getElementById(id);
+  if (isFibreTrain(t)) {
+    if (g("cowlNo")) { t.cowlNo = cowlDigits(g("cowlNo").value); t.mediaId = cowlDisplay(t); }
+    if (g("location")) t.location = g("location").value.trim();
+    t.headId = "";
+    if (isBlank(t)) { t.pumpSerial = ""; t.startFlow = ""; t.endFlow = ""; t.startAt = ""; t.endAt = ""; t.status = "field_blank"; }
+  }
+  if (g("occSearch")) {
+    const v = g("occSearch").value.trim();
+    const o = srsFind("occupations", v);
+    t.person = t.person || {};
+    if (o) { t.occupationCode = o.code; t.person.occupation = o.name; t.person.occupationCode = o.code; }
+    else { t.person.occupation = v; t.occupationCode = /^\d+$/.test(v) ? v : ""; t.person.occupationCode = t.occupationCode; }
+  }
+  if (g("locSearch")) {
+    const v = g("locSearch").value.trim();
+    const l = srsFind("locations", v);
+    t.locationCode = l ? l.code : (/^\d+$/.test(v) ? v : "");
+  }
+  if (g("seg") && g("locSearch")) t.seg = g("seg").value.trim();
+};
+
+/* ---------- screens ---------- */
+const _trainHtml33 = trainHtml;   // simple layer (analyses) over the core sample screen
+trainHtml = function () {
+  const t = db.trains.find(x => x.id === view.trainId);
+  if (!t) return `<div class="wrap">Missing sample.</div>`;
+  const ev = eventById(t.eventId);
+  if (isFibreTrain(t)) return fibreTrainHtml(t, ev);
+  let html = _trainHtml33();
+  /* GPS lines (with accuracy) replace the old one-line locations */
+  html = html.replace(/<p class="help">Start location [^<]*<\/p>/, "").replace(/<p class="help">Stop location [^<]*<\/p>/, "");
+  if (!isBlank(t) && html.indexOf("gpsBlock") === -1) html = html.replace("gets a GPS fix.</p>", "gets a GPS fix.</p>" + gpsLines(t));
+  if (!isAdmin()) html = html.replace(/<div class="footer-actions">\s*<button class="btn danger" id="btnDelete"[\s\S]*?<\/button>\s*<\/div>/, "");
+  return html;
+};
+
+function minesTag(ev) { return minesState(ev) === "yes" ? ` <span class="badge" style="background:var(--orange,#D9782C);color:#fff">Mines Reg</span>` : ""; }
+const _projectHtml33 = projectHtml;
+projectHtml = function () {
+  let html = _projectHtml33();
+  const p = project(view.projectId);
+  if (!p) return html;
+  db.events.filter(e => e.projectId === p.id && minesState(e) === "yes").forEach(e => {
+    html = html.split(`font-size:18px">${e.code}</div>`).join(`font-size:18px">${e.code}${minesTag(e)}</div>`);
+  });
+  if (isAdmin() && !isPodioProject(p)) {
+    html = html.replace(`>New event</button>`, `>New event</button></div><div class="row" style="margin:8px 0"><button class="btn danger" type="button" onclick="deleteProject('${p.id}')">Delete project</button>`);
+  }
+  return html;
+};
+const _eventHtml33 = window._eventCoc || eventHtml;   // core event screen (the simple layer's extra COC menu is merged below)
+eventHtml = function () {
+  const ev = eventById(view.eventId);
+  let html = _eventHtml33();
+  if (!ev) return html;
+  html = html.replace(`color:var(--navy)">${ev.code}</h2>`, `color:var(--navy)">${ev.code}${minesTag(ev)}</h2>`);
+  const extra = `<button type="button" id="btnCoc">Create COC</button>` + (isAdmin() ? `<button type="button" id="btnDeleteEvent" onclick="deleteEvent('${ev.id}')">Delete event</button>` : "");
+  html = html.replace(`<button type="button" onclick="window.print()">Print</button>`, `<button type="button" onclick="window.print()">Print</button>` + extra);
+  if (isFibreEvent(ev)) {
+    const rotas = Array.from(new Set(((db.catalogs && db.catalogs.rotameters) || []).map(r => r.serial || r)
+      .concat(db.events.map(e => e.rotameter)).filter(Boolean)));
+    const block = `<div class="card" id="fibreEventBox" style="margin-top:10px">
+        <div class="grid2">
+          <div><label>Monitoring type</label><select id="eventProto" onchange="setEventProtocol('${ev.id}', this.value)">${optsHtml(PROTO_OPTS, ev.protocol || "background")}</select></div>
+          <div><label>Lab turnaround</label><select id="eventTat" onchange="setEventTat('${ev.id}', this.value)">${optsHtml(TAT_OPTS, ev.tat || "next_0700")}</select></div>
+          <div><label>Rotameter serial</label><input id="eventRota" list="rotaList" value="${esc(ev.rotameter || "")}" placeholder="Type or pick" onchange="setEventRotameter('${ev.id}', this.value)">
+            <datalist id="rotaList">${rotas.map(r => `<option value="${esc(r)}">`).join("")}</datalist></div>
+          <div><label>Task</label><input value="${esc(ev.taskDesc || "")}" disabled></div>
+        </div>
+        <p class="help">One rotameter per event; it is copied onto every sample except the blank.</p>
+      </div>`;
+    html = html.replace(`<div class="row" style="margin:10px 0">`, block + `<div class="row" style="margin:10px 0">`);
+  }
+  return html;
+};
+function setEventRotameter(id, serial) {
+  const ev = eventById(id); if (!ev) return;
+  ev.rotameter = String(serial || "").trim();
+  trainsOf(id).forEach(t => { if (!isBlank(t)) t.rotameter = ev.rotameter; });
+  saveQuiet();
+}
+function setEventProtocol(id, proto) {
+  const ev = eventById(id); if (!ev) return;
+  ev.protocol = proto;
+  trainsOf(id).forEach(t => { if (!isBlank(t)) t.monitorType = proto; });
+  save();
+}
+function setEventTat(id, tat) { const ev = eventById(id); if (!ev) return; ev.tat = tat; saveQuiet(); }
+window.setEventRotameter = setEventRotameter;
+window.setEventProtocol = setEventProtocol;
+window.setEventTat = setEventTat;
+
+const _openPickType33 = openPickType;
+openPickType = function (eventId) {
+  if (isFibreEvent(eventById(eventId))) { addTrain(eventId, "fibre_static"); return; }
+  return _openPickType33(eventId);
+};
+window.openPickType = openPickType;
+const _addTrain33 = addTrain;
+addTrain = function (eventId, kind) {
+  const ev = eventById(eventId);
+  if (!isFibreEvent(ev)) return _addTrain33(eventId, kind);
+  const blank = kind === "blank" && !trainsOf(eventId).some(t => isBlank(t) && sampleNoOf(t) === 0);
+  const t = fibreTrainRecord(ev, blank ? 0 : nextFibreSampleNo(eventId), blank ? "blank" : "fibre_static");
+  db.trains.push(t);
+  save();
+  openTrain(t.id);
+};
+window.addTrain = addTrain;
+
+newEventHtml = function () {
+  const p = project(view.projectId);
+  const today = new Date().toISOString().slice(0, 10);
+  return `<div class="wrap">
+    <button class="btn ghost" onclick="openProject('${view.projectId || ""}')">← Project events</button>
+    <h2 class="brand-type" style="color:var(--navy)">New event</h2>
+    <p class="muted">${p ? esc(p.number + " · " + (p.name || "")) : ""}</p>
+    <label>Event type</label>
+    <select id="ntype" onchange="toggleEventTypeFields()">
+      <option value="hygiene">Hygiene event</option>
+      <option value="fibre">Airborne fibre monitoring (AFM)</option>
+    </select>
+    <label>Event date</label>
+    <input id="ndate" type="date" value="${today}">
+    <div id="fibreEventFields" style="display:none">
+      <label>Monitoring type</label><select id="nprotocol">${optsHtml(PROTO_OPTS, "background")}</select>
+      <label>Task being monitored</label><input id="ntask" placeholder="e.g. Earthworks">
+      <label>Lab turnaround</label><select id="ntat">${optsHtml(TAT_OPTS, "next_0700")}</select>
+      <label>Rotameter serial</label><input id="nrota" placeholder="Optional, can be set later">
+      <p class="help">Code: ENVSS-HYG-AFM-{job}-{seq}-{YYYYMMDD}. Sample 0 (field blank) is created automatically. Flow defaults to 2.0 L/min.</p>
+    </div>
+    <div id="hygieneEventFields">
+      ${minesChips("nmines", "no")}
+      <label class="check-row"><input type="checkbox" id="nmulti" checked> Multiple days / shifts (mine trip)</label>
+      <p class="help">One event, one COC at the end. On by default; untick for a single-shift job.</p>
+    </div>
+    <div class="footer-actions"><button class="btn orange" id="btnCreateEv">Create event</button></div>
+  </div>`;
+};
+function toggleEventTypeFields() {
+  const fibre = (document.getElementById("ntype") || {}).value === "fibre";
+  const f = document.getElementById("fibreEventFields"), h = document.getElementById("hygieneEventFields");
+  if (f) f.style.display = fibre ? "" : "none";
+  if (h) h.style.display = fibre ? "none" : "";
+}
+window.toggleEventTypeFields = toggleEventTypeFields;
+createEvent = function () {
+  const projectId = view.projectId;
+  const p = project(projectId);
+  if (!p) { alert("Open a project first."); return; }
+  const g = id => document.getElementById(id);
+  const type = (g("ntype") || {}).value || "hygiene";
+  const date = (g("ndate") || {}).value || "";
+  let ev;
+  if (type === "fibre") {
+    ev = { id: uid("e"), projectId, type: "fibre", stage: "planned", date, code: fibreEventCode(p, date, nextFibreSeq(projectId)),
+      multiDay: false, notes: "", uploadReady: false, operators: [],
+      protocol: (g("nprotocol") || {}).value || "background", taskDesc: ((g("ntask") || {}).value || "").trim(),
+      tat: (g("ntat") || {}).value || "next_0700", rotameter: ((g("nrota") || {}).value || "").trim() };
+    db.events.push(ev);
+    db.trains.push(fibreTrainRecord(ev, 0, "blank"));   // sample 0 = field blank
+  } else {
+    const codes = new Set(db.events.map(e => e.code));
+    let n = db.events.filter(e => e.projectId === projectId && !isFibreEvent(e)).length + 1;
+    while (codes.has(p.number + "-" + String(n).padStart(3, "0"))) n++;
+    ev = { id: uid("e"), projectId, type: "hygiene", stage: "planned", date, code: p.number + "-" + String(n).padStart(3, "0"),
+      multiDay: !!(g("nmulti") || {}).checked, minesAct: (g("nmines") || {}).value === "yes",
+      notes: "", uploadReady: false, operators: [] };
+    db.events.push(ev);
+  }
+  save();
+  openEvent(ev.id);
+};
+
+const _editEventHtml33 = editEventHtml;
+editEventHtml = function () {
+  const html = _editEventHtml33();
+  const ev = eventById(view.eventId);
+  if (!ev || html.indexOf("<label>Notes</label>") === -1) return html;
+  const extra = isFibreEvent(ev)
+    ? `<label>Monitoring type</label><select id="eprotocol">${optsHtml(PROTO_OPTS, ev.protocol || "background")}</select>
+       <label>Task being monitored</label><input id="etask" value="${esc(ev.taskDesc || "")}">
+       <label>Rotameter serial</label><input id="erota" value="${esc(ev.rotameter || "")}">
+       <label>Lab turnaround</label><select id="etat">${optsHtml(TAT_OPTS, ev.tat || "next_0700")}</select>`
+    : minesChips("emines", minesState(ev));
+  let out = html.replace("<label>Notes</label>", extra + "<label>Notes</label>");
+  if (isFibreEvent(ev)) out = out.replace(/<label class="check-row"><input type="checkbox" id="emulti"[^>]*>[^<]*<\/label>/, "");
+  return out;
+};
+saveEventEdits = function () {
+  const ev = eventById(view.eventId);
+  const p = ev && project(ev.projectId);
+  if (!ev || !p) return;
+  const g = id => document.getElementById(id);
+  if (!isPodioProject(p) && g("enum")) {   // v33: Podio project fields are never edited here
+    p.number = g("enum").value.trim() || p.number;
+    p.name = g("ename").value.trim();
+    p.site = g("esite").value.trim();
+  }
+  ev.date = g("edate").value;
+  ev.notes = g("enotes").value;
+  if (isFibreEvent(ev)) {
+    const seq = fibreSeqOf(ev.code) || nextFibreSeq(ev.projectId);
+    ev.protocol = (g("eprotocol") || {}).value || ev.protocol || "background";
+    ev.taskDesc = ((g("etask") || {}).value || "").trim();
+    ev.tat = (g("etat") || {}).value || ev.tat || "next_0700";
+    setEventRotameter(ev.id, (g("erota") || {}).value || "");
+    trainsOf(ev.id).forEach(t => { if (!isBlank(t)) t.monitorType = ev.protocol; });
+    ev.code = fibreEventCode(p, ev.date, seq);
+  } else {
+    ev.multiDay = !!(g("emulti") || {}).checked;
+    if (g("emines")) ev.minesAct = g("emines").value === "yes";
+    const parts = ev.code.split("-");
+    if (parts.length >= 2) ev.code = p.number + "-" + parts.slice(1).join("-");
+  }
+  save();
+  openEvent(ev.id);
+};
+
+const _markEventUpload33 = markEventUpload;
+markEventUpload = function (id) {
+  const ev = eventById(id);
+  if (!isFibreEvent(ev)) return _markEventUpload33(id);
+  const bad = trainsOf(id).filter(t => !followUpComplete(t));
+  if (bad.length) { alert("This event cannot be uploaded until all samples are complete.\nIncomplete: " + bad.map(displayNo).join(", ")); return; }
+  ev.uploadReady = true;
+  saveQuiet();
+  exportWorkbookCsvs(id);
+  alert("Event complete. Downloaded samples + noise + coc CSVs for the Drive workbook.");
+  render();
+};
+window.markEventUpload = markEventUpload;
+
+/* ---------- COC Form 302 ---------- */
+/* Form 302 template, embedded. It is coc-template.xlsx with its drawing links repaired (absolute part paths made
+   relative, drawing tags given the xdr: prefix): ExcelJS 4.4 could not open the original ("reading 'anchors'"), so
+   Create COC failed in v33. Embedding it also makes Create COC work offline. coc-template.xlsx is left unchanged. */
+const COC_TEMPLATE_V34_B64 = "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";
+function cocTemplateBytes() {
+  const bin = atob(COC_TEMPLATE_V34_B64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8.buffer;
+}
+function cocDate(iso) {
+  const s = String(iso || "");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s.split("-").reverse().join("/");
+  const d = new Date(s);
+  if (!s || isNaN(d)) return "";
+  return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear();
+}
+function cocRejected(t) { return t.status === "rejected" || t.status === "fault" || t.rejectAsked === "yes" || !!t.rejectCode || !!t.rejected; }
+function operatorName(who) { return String(who || "").split(" <")[0].split(" · ")[0].trim(); }
+createCoc = async function () {
+  const ev = eventById(view.eventId);
+  const p = ev && project(ev.projectId);
+  if (!ev || !p) { alert("Open an event, then use Create COC."); return; }
+  if (isFibreEvent(ev)) { alert("AFM samples go to Lifetree, not Envirolab. Form 302 is the Envirolab COC, so it is not made for AFM events yet. Use Export CSV."); return; }
+  if (typeof ExcelJS === "undefined") { alert("The spreadsheet library has not loaded. Go online once, then try again."); return; }
+  const all = trainsOf(ev.id).filter(t => !isNoise(t)).sort((a, b) => sampleNoOf(a) - sampleNoOf(b));
+  const excluded = all.filter(cocRejected);
+  const rows = all.filter(t => !cocRejected(t));
+  if (!rows.length) { alert("No lab samples on this event" + (excluded.length ? " (rejected samples are left off the COC)." : ".")); return; }
+  if (rows.length > 58) { alert("Form 302 holds 58 rows; this event has " + rows.length + ". Split the event first."); return; }
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.load(cocTemplateBytes());
+  const ws = book.getWorksheet("Client") || book.worksheets[0];
+  for (let r = 18; r < 76; r++) [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 19, 20, 21].forEach(c => { ws.getCell(r, c).value = null; });
+  ws.getCell(5, 6).value = p.number + (p.name && p.name !== p.number ? " " + p.name : "");
+  const samplers = [];
+  all.forEach(t => (t.audit || []).forEach(a => { if (/^(START|STOP) pressed/.test(a.action || "")) { const n = operatorName(a.who); if (n && samplers.indexOf(n) === -1) samplers.push(n); } }));
+  if (samplers.length) ws.getCell(7, 2).value = samplers.join(", ");
+  const tests = ["INH", "GYP", "RES", "SIL", "DP", "WLD"];
+  const metal = ["WLD", "CRM", "CUF", "FEO", "MNF", "NI", "ZNF"];
+  rows.forEach((s, n) => {
+    const r = 18 + n;
+    const blank = isBlank(s);
+    let codes = (s.analyses || []).map(a => String(a.code || "").toUpperCase()).filter(Boolean);
+    if (!codes.length) { const c = contam(s.contaminantId); if (c) codes = [String(c.code).toUpperCase()]; }
+    ws.getCell(r, 2).value = s.mediaId || "";
+    ws.getCell(r, 3).value = "N/A";
+    ws.getCell(r, 4).value = blank ? cocDate(ev.date) : (cocDate(s.startAt) || cocDate(s.shiftDate) || cocDate(ev.date));
+    ws.getCell(r, 5).value = typeOfSample(s);
+    tests.forEach((code, i) => {
+      if (codes.indexOf(code) >= 0 || (code === "WLD" && metal.some(m => codes.indexOf(m) >= 0))) ws.getCell(r, 6 + i).value = "x";
+    });
+    if (blank) { ws.getCell(r, 19).value = "N/A"; ws.getCell(r, 20).value = "N/A"; }
+    else {
+      const mins = runtimeMinutes(s), vol = volumeLitres(s);
+      if (mins != null) ws.getCell(r, 19).value = Math.round(mins);
+      if (vol != null) ws.getCell(r, 20).value = round1(vol);
+    }
+    /* column 21 (comments) is left empty */
+  });
+  const blob = new Blob([await book.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  window._v34LastCoc = { event: ev.code, rows: rows.map(s => ({ no: sampleNoOf(s), id: s.mediaId || "" })), excluded: excluded.map(displayNo), size: blob.size };
+  download(blob, ev.code + "_Laboratory_COC.xlsx");
+  if (excluded.length) alert("COC created. Rejected samples left off the COC: " + excluded.map(t => displayNo(t) + (t.rejectReason ? " (" + t.rejectReason + ")" : "")).join(", ") + ".");
+};
+window.createCoc = createCoc;
+
+/* ---------- bind ---------- */
+const _bind33 = bind;
+bind = function () {
+  _bind33();
+  document.querySelectorAll("[data-mines]").forEach(b => b.onclick = () => {
+    const id = b.dataset.mines;
+    const input = document.getElementById(id);
+    if (input) input.value = b.dataset.val;
+    document.querySelectorAll(`[data-mines="${id}"]`).forEach(x => x.classList.toggle("on", x === b));
+  });
+  if (view.page !== "train") return;
+  const t = db.trains.find(x => x.id === view.trainId);
+  if (!t) return;
+  const box = document.getElementById("mineBox");
+  if (box) box.addEventListener("toggle", () => { window._v34MineOpen = box.open; });
+  wireSrs("occSearch", "occupations", () => { collectTrain(t); saveQuiet(); render(); });
+  wireSrs("locSearch", "locations", () => { window._v34MineOpen = true; collectTrain(t); saveQuiet(); render(); });
+  if (isFibreTrain(t)) {
+    const cowl = document.getElementById("cowlNo");
+    if (cowl) cowl.addEventListener("input", () => { const d = cowlDigits(cowl.value); if (d !== cowl.value) cowl.value = d; });
+  }
+};
+
+applyTombstones();
+const _envssAppVersionEl = document.getElementById("appVersion");
+if (_envssAppVersionEl) _envssAppVersionEl.textContent = "v" + APP_VERSION;
+if (typeof render === "function") render();
+/* ===== end v34 layer ===== */
 </script>
 </body>
 </html>
