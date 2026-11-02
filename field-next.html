@@ -102,6 +102,8 @@ textarea { min-height: 80px; }
   max-height: 180px; overflow: auto; display: none;
 }
 .suggest.on { display: block; }
+.pump-note { font-size: 13px; color: #555; margin: 4px 0 0; }
+.pump-warn { color: #a15c00; }
 .suggest div { padding: 8px 10px; cursor: pointer; }
 .suggest div:hover { background: var(--green-30); }
 .footer-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
@@ -210,7 +212,7 @@ textarea { min-height: 80px; }
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "36"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "37"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -230,7 +232,8 @@ const DEFAULT = {
       { id: "WLD", name: "Welding fume", code: "WLD", kind: "airborne", headHint: "IESS", flowTolPct: 10, defaultFlow: "2.0", minMinutes: "", minVolumeL: "", desiredVolumeL: "" },
       { id: "NOISE", name: "Noise dose", code: "NOISE", kind: "noise", headHint: "", flowTolPct: "", defaultFlow: "", minMinutes: "", minVolumeL: "", desiredVolumeL: "" }
     ],
-    pumps: [{ serial: "123456" }, { serial: "234567" }],
+    pumps: [], /* v37: one-off pumps added in the app (local only) */
+    fleetPumps: [], /* v37: cached rows from Supabase view v_field_pumps (Podio Sampling Pumps, read-only) */
     heads: [{ id: "IESS01", kind: "inhalable" }, { id: "RESS001", kind: "respirable" }, { id: "DP01", kind: "diesel" }],
     dosimeters: [{ serial: "N0001" }],
     occupations: ["Plant operator","Maintainer / fitter","Boilermaker / welder","Shotfirer","Supervisor","Labourer","HV driver","Process technician"],
@@ -357,6 +360,8 @@ function normalizeProjectRow(r) {
 function baseLoad(parsed) {
   const d = { ...structuredClone(DEFAULT), ...parsed };
   d.catalogs = { ...DEFAULT.catalogs, ...(parsed.catalogs || {}) };
+  d.catalogs.pumps = (d.catalogs.pumps || []).filter(p => p && p.serial !== "123456" && p.serial !== "234567");
+  if (!Array.isArray(d.catalogs.fleetPumps)) d.catalogs.fleetPumps = [];
   if (!d.catalogs.contaminants?.some(c => c.code === "INH")) d.catalogs.contaminants = DEFAULT.catalogs.contaminants;
   if (!Array.isArray(d.deletions)) d.deletions = [];
   (d.trains || []).forEach(t => { if (!t.audit) t.audit = []; });
@@ -580,7 +585,20 @@ async function pullProjects() {
     paintSyncBar();
   }
 }
-async function pullRemote() { await Promise.all([projectsLoaded ? null : pullProjects(), pullActivity()]); }
+/* v37: pump list from the read-only view v_field_pumps (Podio Sampling Pumps app 21184100 via the Dashboard Bot mirror).
+   Read only: never written back. Cached in db.catalogs.fleetPumps for offline use. */
+let pumpsLoaded = false;
+async function pullPumps() {
+  if (!sbCfg() || pumpsLoaded) return;
+  try {
+    const c = sbCfg();
+    const res = await fetch(c.supabaseUrl + "/rest/v1/v_field_pumps?select=serial,make,model,owner,status,condition,calibration_due,podio_item_id,sort_group&order=sort_group.asc,serial.asc&limit=2000", { headers: sbHeaders() });
+    if (!res.ok) throw new Error("v_field_pumps " + res.status);
+    const rows = await res.json();
+    if (Array.isArray(rows) && rows.length) { db.catalogs.fleetPumps = rows; pumpsLoaded = true; syncState.pumpsAt = new Date().toISOString(); persist(); }
+  } catch (e) { syncState.lastError = "Pump list failed: " + (e && e.message || e); }
+}
+async function pullRemote() { await Promise.all([projectsLoaded ? null : pullProjects(), pullActivity(), pullPumps()]); }
 function refreshProjects() { projectsLoaded = false; pullProjects(); }
 
 function scheduleFlush(ms) {
@@ -1827,6 +1845,7 @@ function collectTrain(t) {
 }
 
 function wireCombo(inputId, items, onPick) {
+  if (inputId === "pump") return wirePumpPicker(onPick);
   const input = document.getElementById(inputId);
   const box = document.getElementById("sug-" + inputId);
   if (!input || !box) return;
@@ -1843,6 +1862,57 @@ function wireCombo(inputId, items, onPick) {
   input.addEventListener("blur", () => setTimeout(() => box.classList.remove("on"), 180));
 }
 
+/* v37 pump picker: type-ahead by serial, ENVSS fleet first, hire pumps after, one-off pumps (local only) last. */
+function allPumps() {
+  const fleet = (db.catalogs.fleetPumps || []).slice().sort((a, b) => (a.sort_group - b.sort_group) || String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true }));
+  const seen = new Set(fleet.map(p => String(p.serial)));
+  const local = (db.catalogs.pumps || []).filter(p => p && p.serial && !seen.has(String(p.serial))).map(p => ({ serial: p.serial, owner: "", local: true }));
+  return fleet.concat(local);
+}
+function pumpInfo(p) {
+  if (!p) return "";
+  if (p.local) return "Added in app (not in Podio)";
+  const mm = [p.make, p.model].filter(Boolean).join(" ");
+  const own = p.owner === "ENVSS" ? "ENVSS" : "Hire - " + (p.owner || "unknown owner");
+  return [own, mm].filter(Boolean).join(" · ");
+}
+function pumpWarn(p) {
+  if (!p || p.local) return "";
+  const w = [];
+  if (/not calibrated/i.test(p.status || "")) w.push("Podio says Not Calibrated");
+  if (p.calibration_due && p.calibration_due < new Date().toISOString().slice(0, 10)) w.push("calibration due " + p.calibration_due + " has passed");
+  return w.length ? "Check pump: " + w.join("; ") + "." : "";
+}
+function wirePumpPicker(onPick) {
+  const input = document.getElementById("pump");
+  const box = document.getElementById("sug-pump");
+  if (!input || !box) return;
+  let note = document.getElementById("pumpNote");
+  if (!note) { note = document.createElement("div"); note.id = "pumpNote"; note.className = "pump-note"; (input.closest(".combo") || input).insertAdjacentElement("afterend", note); }
+  const paint = () => {
+    const p = allPumps().find(x => String(x.serial) === input.value.trim());
+    const w = pumpWarn(p);
+    note.innerHTML = input.value.trim() ? (p ? esc(pumpInfo(p)) : "Not in the pump list") + (w ? `<div class="pump-warn">⚠ ${esc(w)}</div>` : "") : "";
+  };
+  const show = () => {
+    const q = input.value.trim().toLowerCase();
+    const list = allPumps();
+    const hits = list.filter(x => String(x.serial).toLowerCase().includes(q)).slice(0, 12);
+    box.innerHTML = hits.map(h => `<div data-v="${esc(h.serial)}"><b>${esc(h.serial)}</b> <small class="muted">${esc(pumpInfo(h))}${pumpWarn(h) ? " ⚠" : ""}</small></div>`).join("") +
+      (q && !list.some(x => String(x.serial).toLowerCase() === q) ? `<div data-v="${esc(input.value.trim())}" data-new="1"><em>Add “${esc(input.value.trim())}” as a one-off pump</em></div>` : "");
+    box.classList.add("on");
+    box.querySelectorAll("div[data-v]").forEach(d => d.onmousedown = d.onclick = (ev) => {
+      ev.preventDefault();
+      input.value = d.dataset.v;
+      if (d.dataset.new && !(db.catalogs.pumps || []).some(p => p.serial === d.dataset.v)) { db.catalogs.pumps = db.catalogs.pumps || []; db.catalogs.pumps.push({ serial: d.dataset.v }); persist(); }
+      onPick(d.dataset.v); box.classList.remove("on"); paint();
+    });
+  };
+  input.addEventListener("input", () => { show(); paint(); });
+  input.addEventListener("focus", show);
+  input.addEventListener("blur", () => setTimeout(() => { box.classList.remove("on"); onPick(input.value); paint(); }, 180));
+  paint();
+}
 function leaveSample(trainId, eventId) {
   const t = db.trains.find(x => x.id === trainId);
   if (t) { collectTrain(t); commit(); }
