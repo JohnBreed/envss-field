@@ -4311,7 +4311,7 @@ followUpComplete = function (t) {
      written back. IDs typed on other samples on this device are offered too. Calibration warnings are soft and never block.
    - Same data key as v34+ AFM: t.rotameter (event default ev.rotameter). New samples take ev.rotameter when the event has one,
      otherwise the last value used in the same event; noise uses the new key t.fieldCalibrator (last used in the event).
-     Each hygiene airborne sample can override it; setEventRotameter keeps overrides.
+     Each hygiene airborne sample can override it; setEventRotameter keeps overrides. Noise event default: ev.fieldCalibrator.
    - Required (answerItems, so the status badge and the "still to answer" count agree) only on samples created in v44+
      (t.v44Equip); samples created before v44 show the field but it does not hold their status back.
    - Fibre/AFM events keep their event-level rotameter and are not changed here. ===== */
@@ -4390,7 +4390,89 @@ followUpComplete = function (t) {
     input.addEventListener("focus", show);
     input.addEventListener("blur", () => setTimeout(() => box.classList.remove("on"), 180));
     showNote();
+    addAllButton(id, t, input);
   }
+  /* ===== v44b: "Use for all … samples in this event" (John, 3 Nov 2026). Applies the value to the other samples of the
+     same group in this event (rotameter: hygiene airborne; calibrator: noise). Field blanks and AFM samples are never touched.
+     Default: fill blank samples only (samples already on the same value are left as they are). Overwriting a different
+     value needs an explicit choice. Rejected / voided samples are skipped unless ticked. Every change goes in that
+     sample's audit log, one line goes in the event log, and the value becomes the event default for new samples. ===== */
+  const GROUP = { rotameter: "airborne", fieldCal: "noise" };
+  const EVKEY = { rotameter: "rotameter", fieldCal: "fieldCalibrator" };
+  const LBL = { rotameter: "Rotameter", fieldCal: "Field calibrator" };
+  function isVoided(x) { try { return cocRejected(x); } catch (e) { return x.status === "rejected" || x.status === "fault" || x.rejectAsked === "yes"; } }
+  function peers(t, id) { return trainsOf(t.eventId).filter(x => x !== t && wants(x, id)); }
+  function plan(t, id, val) {
+    const key = KEY[id], out = { blank: [], same: [], diff: [], voided: [] };
+    peers(t, id).forEach(x => { const cur = String(x[key] || "").trim();
+      if (isVoided(x)) out.voided.push(x);
+      if (!cur) out.blank.push(x); else if (cur === val) out.same.push(x); else out.diff.push(x); });
+    return out;
+  }
+  function applyAll(t, id, val, overwrite, inclVoided) {
+    const key = KEY[id], ev = eventById(t.eventId), P = plan(t, id, val);
+    const targets = P.blank.concat(overwrite ? P.diff : []).filter(x => inclVoided || !isVoided(x));
+    const at = nowIso(), who = whoText();
+    targets.forEach(x => { const from = x[key] || ""; x[key] = val; x.updatedAt = at; x.audit = x.audit || [];
+      x.audit.push({ at, who, action: "Changed " + LBL[id], field: key, from, to: val, detail: "Use for all samples in this event (from " + displayNo(t) + ")" }); });
+    if (t[key] !== val) { t[key] = val; t.updatedAt = at; }
+    if (ev) { ev[EVKEY[id]] = val; ev.audit = ev.audit || [];
+      ev.audit.push({ at, who, action: LBL[id] + " " + val + " used for all " + GROUP[id] + " samples", field: "sample", from: "", to: val,
+        detail: targets.length ? "Set on " + targets.map(displayNo).join(", ") + (overwrite ? " (overwrite)" : " (blanks only)") : "No other samples changed; event default set" }); }
+    saveQuiet();
+    return targets;
+  }
+  function dialog(t, id, val) {
+    const P = plan(t, id, val), skipV = x => !isVoided(x);
+    const old = document.getElementById("v44AllDlg"); if (old) old.remove();
+    const d = document.createElement("div"); d.id = "v44AllDlg"; d.className = "v44-dlg-wrap";
+    const li = xs => xs.map(x => `<li>${esc(displayNo(x))}: <strong>${esc(x[KEY[id]] || "")}</strong>${isVoided(x) ? " <em>(rejected / voided)</em>" : ""}</li>`).join("");
+    d.innerHTML = `<div class="v44-dlg" role="dialog" aria-modal="true" aria-labelledby="v44AllTitle">
+      <h3 id="v44AllTitle">Use ${esc(LBL[id].toLowerCase())} ${esc(val)} for all ${GROUP[id]} samples?</h3>
+      <p class="v44-count" id="v44AllCount"></p>
+      ${P.same.length ? `<p class="muted">${P.same.length} already on ${esc(val)} (no change).</p>` : ""}
+      ${P.diff.length ? `<p><strong>${P.diff.length} ${P.diff.length === 1 ? "has" : "have"} a different ${esc(LBL[id].toLowerCase())}:</strong></p><ul class="v44-list">${li(P.diff)}</ul>` : ""}
+      <div class="v44-opts">
+        <label class="v44-opt"><input type="radio" name="v44mode" value="fill" checked> Fill blank samples only</label>
+        ${P.diff.length ? `<label class="v44-opt"><input type="radio" name="v44mode" value="over"> Overwrite all, including the ${P.diff.length} with a different value</label>` : ""}
+        ${P.voided.length ? `<label class="v44-opt"><input type="checkbox" id="v44inclV"> Include rejected / voided samples (${P.voided.length})</label>` : ""}
+      </div>
+      <p class="help">Field blanks and AFM samples are not changed. New samples in this event will also start with ${esc(val)}.</p>
+      <div class="v44-btns"><button type="button" class="btn ghost" id="v44AllCancel">Cancel</button><button type="button" class="btn" id="v44AllOk">Apply</button></div>
+    </div>`;
+    document.body.appendChild(d);
+    const mode = () => (d.querySelector('input[name="v44mode"]:checked') || {}).value;
+    const incl = () => !!(d.querySelector("#v44inclV") || {}).checked;
+    const count = () => { const n = P.blank.concat(mode() === "over" ? P.diff : []).filter(x => incl() || skipV(x)).length;
+      d.querySelector("#v44AllCount").textContent = n + " other sample" + (n === 1 ? "" : "s") + " will change."; };
+    d.addEventListener("change", count); count();
+    const close = () => d.remove();
+    d.querySelector("#v44AllCancel").onclick = close;
+    d.addEventListener("click", e => { if (e.target === d) close(); });
+    d.querySelector("#v44AllOk").onclick = () => { const done = applyAll(t, id, val, mode() === "over", incl()); close();
+      const note = document.getElementById(id + "AllNote"); if (note) note.textContent = done.length ? "Set on " + done.length + " other sample" + (done.length === 1 ? "" : "s") + ": " + done.map(displayNo).join(", ") + "." : "No other samples changed. Event default set to " + val + ".";
+      window._v44LastAll = { id, val, changed: done.map(displayNo) }; };
+    setTimeout(() => d.querySelector("#v44AllOk").focus(), 0);
+  }
+  function addAllButton(id, t, input) {
+    if (document.getElementById(id + "All")) return;
+    const after = document.getElementById(id + "Note") || input.closest(".combo") || input;
+    const wrap = document.createElement("div"); wrap.className = "v44-all";
+    wrap.innerHTML = `<button type="button" class="btn ghost" id="${id}All">Use for all ${GROUP[id]} samples in this event</button><div class="pump-note" id="${id}AllNote"></div>`;
+    after.insertAdjacentElement("afterend", wrap);
+    const b = wrap.querySelector("button");
+    const sync = () => { b.disabled = !input.value.trim(); };
+    input.addEventListener("input", sync); sync();
+    b.onclick = () => { const v = input.value.trim(); if (!v) return; if (t[KEY[id]] !== v) { t[KEY[id]] = v; try { collectTrain(t); } catch (e) {} saveQuiet(); } dialog(t, id, v); };
+  }
+  if (!document.getElementById("v44AllCss")) { const st = document.createElement("style"); st.id = "v44AllCss"; st.textContent =
+    ".v44-all{margin:6px 0 4px}.v44-all .btn{min-height:44px;width:100%;font-size:15px;padding:8px 12px}.v44-all .btn:disabled{opacity:.45;cursor:not-allowed}" +
+    ".v44-dlg-wrap{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}" +
+    ".v44-dlg{background:var(--panel,#1B2340);color:var(--text,#fff);border:2px solid var(--edge,#3A4A7A);border-radius:14px;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:18px}" +
+    ".v44-dlg h3{margin:0 0 8px;font-size:18px}.v44-count{font-weight:700;font-size:16px}.v44-list{margin:4px 0 10px 18px;padding:0}" +
+    ".v44-opt{display:flex;gap:10px;align-items:center;min-height:44px;font-size:15px;cursor:pointer}.v44-opt input{width:22px;height:22px;flex:none}" +
+    ".v44-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}.v44-btns .btn{min-height:48px;min-width:110px}";
+    document.head.appendChild(st); }
   /* new samples: mark as v44 (field required) and carry the last value used in this event */
   const _add44 = addTrain;
   addTrain = function (eventId) {
@@ -4404,7 +4486,7 @@ followUpComplete = function (t) {
         const key = isNoise(t) ? "fieldCalibrator" : "rotameter";
         /* rotameter: the event's rotameter (ev.rotameter, as AFM events already use) first, then the last one used in this event */
         const ev = eventById(eventId);
-        if (!t[key]) { const last = (key === "rotameter" && ev && ev.rotameter) || lastInEvent(t, key); if (last) t[key] = last; }
+        if (!t[key]) { const last = (ev && (key === "rotameter" ? ev.rotameter : ev.fieldCalibrator)) || lastInEvent(t, key); if (last) t[key] = last; }
       });
       if (n) { saveQuiet(); if (view.page === "train") render(); }
     } catch (e) { console.warn("v44 add", e); }
