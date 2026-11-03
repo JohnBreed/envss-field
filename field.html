@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v36 single-file build v44 (field.html, live; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples); v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
+<!-- ENVSS Field v36 single-file build v44 (field.html, live; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -2231,7 +2231,7 @@ function exportWorkbookCsvs(eventId) {
   const ev = eventById(eventId);
   const air = trainsOf(eventId).filter(t => !isNoise(t));
   const noise = trainsOf(eventId).filter(isNoise);
-  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id","rotameter_sn"];
+  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id","rotameter_sn","daily_log_status","daily_log_ref"];
   const sampleRows = [sampleHead];
   air.forEach(t => {
     const p = t.person || {};
@@ -2249,10 +2249,10 @@ function exportWorkbookCsvs(eventId) {
       mins ?? "", vol ?? "", (vol != null ? (vol/1000).toFixed(6) : ""),
       t.rpd?.worn || t.rpdAsked || "", t.rpd?.model || "", t.rpd?.shaven || "", t.rpd?.fit || "",
       t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "",
-      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", "", t.rotameter || ""
+      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", "", t.rotameter || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : ""
     ]);
   });
-  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak","field_calibrator_sn"];
+  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak","field_calibrator_sn","daily_log_status","daily_log_ref"];
   const noiseRows = [noiseHead];
   noise.forEach(t => {
     const p = t.person || {};
@@ -2263,7 +2263,7 @@ function exportWorkbookCsvs(eventId) {
       t.seg || "", p.hours || "", p.daysOn || "", p.daysOff || "", t.dosimeterSerial || "",
       t.startAt || "", t.endAt || "", runtimeMinutes(t) ?? "",
       t.hpd?.worn || t.hpdAsked || "", t.hpd?.model || "", t.hpd?.style || "", t.hpd?.classRating || "",
-      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", "", t.fieldCalibrator || ""
+      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", "", t.fieldCalibrator || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : ""
     ]);
   });
   const cocHead = ["include","client_sample_id","depth","date_sampled","type_of_sample","tests_required","runtime_min","volume_L","comments","sample_no","contaminant","envss_sampler"];
@@ -3927,7 +3927,7 @@ if (typeof render === "function") render();
    own audit array (t.audit / ev.audit), which syncs with the record. Entries: { at, who, action: "Changed <label>",
    field, from, to, detail }. Existing entries are kept; nothing in the UI can edit or remove them. ===== */
 (function () {
-  const SKIP = new Set(["v44Equip", "equipDamaged", "audit", "updatedAt", "updated_at", "_dirty", "dirty", "rev", "syncedAt", "_snap", "id", "eventId", "projectId"]);
+  const SKIP = new Set(["dailyLog", "v44Equip", "equipDamaged", "audit", "updatedAt", "updated_at", "_dirty", "dirty", "rev", "syncedAt", "_snap", "id", "eventId", "projectId"]);
   const LABEL = { pumpSerial: "Pump serial", headId: "Sample head", mediaId: "Cassette / filter / tube", cowlNo: "Cowl number", startFlow: "Start flow",
     endFlow: "End flow", startAt: "Start time", endAt: "Stop time", status: "Status", location: "Location", contaminantId: "Contaminant", analyses: "Analyses",
     "person.first": "First name", "person.last": "Last name", "person.occupation": "Occupation", "person.occupationCode": "Occupation code", "person.company": "Company",
@@ -4503,6 +4503,154 @@ followUpComplete = function (t) {
     return r;
   };
   window.render = render;
+  render();
+})();
+</script>
+<script>
+/* ===== v44c: Daily log (worker's paper "Personal Sampling Field Sheet") on PERSONAL samples (airborne + noise; not static,
+   blanks or AFM). Status: attached (photo pages) / not_supplied / to_follow. Purely informational: it is NOT in answerItems,
+   so it never changes the sample status or the "still to answer" count. Photos use the same storage as the existing sample
+   photos (data URL kept on the sample record, synced with the record), but are shrunk first (long edge 1600 px, JPEG 0.7).
+   One log can cover all of a worker's samples that shift: other samples keep a reference (dailyLog.ref) to the sample that
+   holds the pages, so the photos are stored once. Changes go in each sample's audit log. ===== */
+(function () {
+  const ST = { attached: "Photo attached", not_supplied: "Not supplied", to_follow: "To follow" };
+  const MAXPX = 1600, Q = 0.7;
+  function wantsLog(t) { return !!t && !isBlank(t) && !isFibreTrain(t) && !isStatic(t); }
+  function dl(t) { return t.dailyLog || {}; }
+  function src(t) { const d = dl(t); return d.ref ? (db.trains.find(x => x.id === d.ref) || null) : t; }
+  function pages(t) { const s = src(t); return (s && dl(s).photos) || []; }
+  function statusOf(t) { const d = dl(t); if (d.status === "attached" && !pages(t).length) return "to_follow"; return d.status || ""; }
+  function personKey(t) { const p = t.person || {}; const n = [p.first, p.last].map(x => String(x || "").trim().toLowerCase()); return n[0] && n[1] ? n.join(" ") : ""; }
+  function dayKey(t) { return t.shiftDate || (eventById(t.eventId) || {}).date || ""; }
+  function siblings(t) { const k = personKey(t); if (!k) return []; return trainsOf(t.eventId).filter(x => x !== t && wantsLog(x) && personKey(x) === k && dayKey(x) === dayKey(t)); }
+  function log(t, action, from, to, detail) { t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoText(), action, field: "dailyLog", from: from || "", to: to || "", detail: detail || "" }); }
+  function setStatus(t, s, why) {
+    const was = statusOf(t); t.dailyLog = Object.assign({}, dl(t), { status: s, at: nowIso(), who: whoText() });
+    if (s !== "attached") { delete t.dailyLog.ref; }
+    if (was !== s) log(t, "Changed Daily log", ST[was] || "", ST[s], why || "");
+    t.updatedAt = nowIso();
+  }
+  function shrink(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onerror = () => rej(r.error);
+      r.onload = () => { const img = new Image(); img.onerror = () => res({ data: r.result, bytes: r.result.length, w: 0, h: 0 });
+        img.onload = () => { const k = Math.min(1, MAXPX / Math.max(img.width, img.height)); const c = document.createElement("canvas");
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          const data = c.toDataURL("image/jpeg", Q); res({ data, bytes: data.length, w: c.width, h: c.height }); };
+        img.src = r.result; };
+      r.readAsDataURL(file);
+    });
+  }
+  async function addPhotos(t, files) {
+    if (!files || !files.length) return;
+    let s = src(t); if (!s || s !== t) { s = t; }   // adding pages on a sample that referenced another: this sample becomes a holder
+    s.dailyLog = Object.assign({}, dl(s)); delete s.dailyLog.ref; s.dailyLog.photos = (s.dailyLog.photos || []).slice();
+    for (const f of files) { try { const p = await shrink(f); p.at = nowIso(); p.name = f.name || ""; s.dailyLog.photos.push(p); } catch (e) { console.warn("v44c photo", e); } }
+    setStatus(s, "attached");
+    log(s, "Daily log photo added", "", s.dailyLog.photos.length + " page(s)", files.length + " added, " + Math.round(s.dailyLog.photos.reduce((a, p) => a + p.bytes, 0) / 1024) + " KB total");
+    save(); render(); setTimeout(offerSiblings, 50);
+  }
+  function applyToSiblings(t) {
+    const sibs = siblings(t), s = statusOf(t); if (!sibs.length || !s) return 0;
+    sibs.forEach(x => { const was = statusOf(x);
+      x.dailyLog = s === "attached" ? { status: "attached", ref: (src(t) || t).id, at: nowIso(), who: whoText() } : { status: s, at: nowIso(), who: whoText() };
+      log(x, "Changed Daily log", ST[was] || "", ST[s], "Applied from " + displayNo(t) + (s === "attached" ? " (same field sheet, " + pages(t).length + " page(s) held on " + displayNo(src(t) || t) + ")" : ""));
+      x.updatedAt = nowIso(); });
+    save(); return sibs.length;
+  }
+  function chip(t) { const s = statusOf(t); const cls = s === "attached" ? "dl-ok" : "dl-warn";
+    return `<span class="dl-chip ${cls}">Daily log: ${s ? ST[s].toLowerCase().replace("photo attached", "attached" + (pages(t).length ? " (" + pages(t).length + ")" : "")) : "not asked"}</span>`; }
+  function cardHtml(t) {
+    const s = dl(t).status || "", ps = pages(t), holder = src(t), sibs = siblings(t);   /* s = what was picked; statusOf() = effective (attached with no pages counts as to follow) */
+    const opt = (k) => `<button type="button" class="chip dl-opt ${s === k ? "on" : ""}" data-dl="${k}">${ST[k]}</button>`;
+    return `<div class="card dl-card" id="dailyLogCard">
+      <div class="row" style="justify-content:space-between;align-items:center;gap:8px"><h3 class="brand-type" style="margin:0">Daily log</h3>${chip(t)}</div>
+      <p class="help">Worker's Personal Sampling Field Sheet. Optional: it never holds up the sample.</p>
+      <div class="filters">${opt("attached")}${opt("not_supplied")}${opt("to_follow")}</div>
+      <div class="dl-photos">${ps.map((p, i) => `<figure><img alt="Daily log page ${i + 1}" src="${p.data}"><figcaption>p${i + 1}${holder === t ? ` <button type="button" class="dl-del" data-dldel="${i}" aria-label="Remove page ${i + 1}">✕</button>` : ""}</figcaption></figure>`).join("")}</div>
+      ${holder && holder !== t ? `<p class="help">Pages held on ${esc(displayNo(holder))} (same worker, same shift).</p>` : ""}
+      <div class="dl-add" style="${s === "attached" ? "" : "display:none"}">
+        <label class="btn ghost dl-btn">📷 Take photo<input type="file" accept="image/*" capture="environment" id="dlCam" hidden></label>
+        <label class="btn ghost dl-btn">Choose pages<input type="file" accept="image/*" multiple id="dlFiles" hidden></label>
+      </div>
+      ${sibs.length && s ? `<button type="button" class="btn ghost dl-btn" id="dlSibs" style="width:100%;margin-top:8px">Apply to this person's other samples today (${sibs.length})</button>` : ""}
+      <div class="pump-note" id="dlNote"></div>
+    </div>`;
+  }
+  function cur() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function offerSiblings() { const b = document.getElementById("dlSibs"); if (b) { b.classList.add("q-flash"); setTimeout(() => b.classList.remove("q-flash"), 1200); } }
+  function wireCard(t) {
+    const card = document.getElementById("dailyLogCard"); if (!card) return;
+    card.querySelectorAll("[data-dl]").forEach(b => b.onclick = () => {
+      const k = b.dataset.dl; setStatus(t, k); save(); render();
+      if (k === "attached" && !pages(t).length) setTimeout(() => { const i = document.getElementById("dlCam"); if (i) i.click(); }, 50);
+      else setTimeout(offerSiblings, 50);
+    });
+    ["dlCam", "dlFiles"].forEach(id => { const i = document.getElementById(id); if (i) i.onchange = () => addPhotos(t, Array.from(i.files || [])); });
+    card.querySelectorAll("[data-dldel]").forEach(b => b.onclick = () => {
+      if (!confirm("Remove daily log page " + (Number(b.dataset.dldel) + 1) + "?")) return;
+      const ps = dl(t).photos || []; ps.splice(Number(b.dataset.dldel), 1); log(t, "Daily log photo removed", "", ps.length + " page(s)", "");
+      if (!ps.length) setStatus(t, "to_follow", "last page removed"); save(); render(); });
+    const sb = document.getElementById("dlSibs");
+    if (sb) sb.onclick = () => { const n = applyToSiblings(t); render(); const note = document.getElementById("dlNote"); if (note) note.textContent = "Applied to " + n + " other sample" + (n === 1 ? "" : "s") + "."; };
+  }
+  function eventSummary(ev) {
+    const ts = trainsOf(ev.id).filter(wantsLog); if (!ts.length) return "";
+    const c = { attached: 0, not_supplied: 0, to_follow: 0, "": 0 }; ts.forEach(t => c[statusOf(t)]++);
+    const parts = [c.attached + " of " + ts.length + " attached"]; if (c.to_follow) parts.push(c.to_follow + " to follow"); if (c.not_supplied) parts.push(c.not_supplied + " not supplied"); if (c[""]) parts.push(c[""] + " not asked");
+    return `<p class="dl-sum ${c.attached === ts.length ? "ok" : ""}" id="dailyLogSummary">Daily logs: ${parts.join(", ")}</p>`;
+  }
+  /* STOP reminder: gentle, non-blocking bottom sheet */
+  function remind(t) {
+    const old = document.getElementById("dlRemind"); if (old) old.remove();
+    const d = document.createElement("div"); d.id = "dlRemind"; d.className = "dl-remind"; d.setAttribute("role", "status");
+    d.innerHTML = `<div><strong>Collect daily log</strong> from ${esc([(t.person || {}).first, (t.person || {}).last].filter(Boolean).join(" ") || displayNo(t))}</div>
+      <div class="dl-rbtns"><button type="button" class="btn" data-r="photo">📷 Take photo</button><button type="button" class="btn ghost" data-r="not_supplied">Not supplied</button><button type="button" class="btn ghost" data-r="later">Later</button></div>`;
+    document.body.appendChild(d);
+    const close = () => d.remove(); const timer = setTimeout(close, 20000);
+    d.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { clearTimeout(timer); close(); const r = b.dataset.r;
+      if (r === "photo") { setStatus(t, "attached"); save(); render(); setTimeout(() => { const i = document.getElementById("dlCam"); if (i) i.click(); }, 50); }
+      else { setStatus(t, r === "later" ? "to_follow" : "not_supplied", "at STOP"); save(); render(); } });
+  }
+  let pre = null;
+  document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#btnStop")) { const t = cur(); pre = t ? { id: t.id, endAt: t.endAt } : null; } }, true);
+  document.addEventListener("click", e => { if (!(e.target.closest && e.target.closest("#btnStop")) || !pre) return; const p = pre; pre = null;
+    setTimeout(() => { const t = db.trains.find(x => x.id === p.id); if (t && wantsLog(t) && t.endAt && t.endAt !== p.endAt && statusOf(t) !== "attached" && statusOf(t) !== "not_supplied") remind(t); }, 150); });
+  const _render44c = render;
+  render = function () {
+    const r = _render44c.apply(this, arguments);
+    try {
+      const t = cur();
+      if (t && wantsLog(t) && !document.getElementById("dailyLogCard")) {
+        const anchor = document.querySelector("#app .startstop"); const help = anchor && anchor.nextElementSibling;
+        const host = help && help.classList.contains("help") ? help : anchor;
+        if (host) { host.insertAdjacentHTML("afterend", cardHtml(t)); wireCard(t); }
+      }
+      if (view.page === "event") { const ev = eventById(view.eventId);
+        if (ev && !isFibreEvent(ev)) {
+          const f = document.getElementById("sampleFilters"); const old = document.getElementById("dailyLogSummary"); if (old) old.remove();
+          if (f) f.insertAdjacentHTML("beforebegin", eventSummary(ev));
+          document.querySelectorAll("#app .train[onclick]").forEach(row => { const m = /openTrain\('([^']+)'\)/.exec(row.getAttribute("onclick") || ""); const t2 = m && db.trains.find(x => x.id === m[1]);
+            if (t2 && wantsLog(t2) && !row.querySelector(".dl-chip") && statusOf(t2) !== "attached" && (t2.endAt || statusOf(t2))) { const h = row.querySelector(".row-title") || row; h.insertAdjacentHTML("beforeend", " " + chip(t2)); } });
+        } }
+    } catch (e) { console.warn("v44c daily log", e); }
+    return r;
+  };
+  window.render = render;
+  window.v44DailyLog = { statusOf, pages, label: t => (wantsLog(t) ? (statusOf(t) || "not_asked") : ""),
+    ref: t => { if (!wantsLog(t) || statusOf(t) !== "attached") return ""; const s = src(t) || t; return s === t ? pages(t).length + " photo(s) on this sample" : pages(t).length + " photo(s) on " + displayNo(s); } };
+  const st = document.createElement("style"); st.textContent =
+    ".dl-card{margin-top:12px}.dl-chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid #6B5A2E;background:#2A2412;color:#E8D9A8;white-space:nowrap}" +
+    ".dl-chip.dl-ok{border-color:#2F6B55;background:#11281F;color:#9FE0C4}.dl-opt{min-height:44px}.dl-photos{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}" +
+    ".dl-photos figure{margin:0;width:96px}.dl-photos img{width:96px;height:120px;object-fit:cover;border-radius:8px;border:1px solid var(--edge,#3A4A7A)}" +
+    ".dl-photos figcaption{font-size:12px;display:flex;justify-content:space-between;align-items:center}.dl-del{min-width:32px;min-height:32px;background:transparent;color:inherit;border:1px solid var(--edge,#3A4A7A);border-radius:8px}" +
+    ".dl-add{display:flex;gap:8px;flex-wrap:wrap}.dl-btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;flex:1 1 140px;cursor:pointer}" +
+    ".dl-sum{margin:6px 0;font-size:14px;font-weight:700;color:#E8D9A8}.dl-sum.ok{color:#9FE0C4}" +
+    ".dl-remind{position:fixed;left:12px;right:12px;bottom:84px;z-index:9998;max-width:560px;margin:0 auto;background:var(--panel,#1B2340);color:var(--text,#fff);border:2px solid #6B5A2E;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.45)}" +
+    ".dl-rbtns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.dl-rbtns .btn{min-height:44px;flex:1 1 100px;font-size:15px}";
+  document.head.appendChild(st);
   render();
 })();
 </script>
