@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v36 single-file build v43 (field.html, live; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
+<!-- ENVSS Field v36 single-file build v44 (field.html, live; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples); v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v43</title>
+  <title>ENVSS Field v44</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -402,11 +402,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=43"></script>
+  <script src="config.js?v=44"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "43"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "44"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -1414,7 +1414,13 @@ function trainHtml() {
             <input id="dosimeter" value="${esc(t.dosimeterSerial)}" placeholder="Badge serial">
             <div class="suggest" id="sug-dosimeter"></div>
           </div>
-          <p class="help">Serial on the badge (not the noise sample number).</p>` : isBlank(t) ? `
+          <p class="help">Serial on the badge (not the noise sample number).</p>
+          <label>Field calibrator</label>
+          <div class="combo">
+            <input id="fieldCal" value="${esc(t.fieldCalibrator || "")}" placeholder="Acoustic calibrator serial" autocomplete="off">
+            <div class="suggest" id="sug-fieldCal"></div>
+          </div>
+          <p class="help">Acoustic calibrator used for the dosimeter field calibration check.</p>` : isBlank(t) ? `
           <label>Sample head</label>
           <div class="combo">
             <input id="head" value="${esc(t.headId)}" placeholder="IESS… / RESS… / DP…">
@@ -1437,6 +1443,11 @@ function trainHtml() {
         </div>
         <div>
           ${isBlank(t) || isNoise(t) ? "" : `
+          <label>Rotameter</label>
+          <div class="combo">
+            <input id="rotameter" value="${esc(t.rotameter || "")}" placeholder="Flow calibrator / rotameter ID" autocomplete="off">
+            <div class="suggest" id="sug-rotameter"></div>
+          </div>
           <label>Start flow (L/min)</label>
           <input id="startFlow" value="${esc(t.startFlow)}" inputmode="decimal">
           <label>End flow (L/min)</label>
@@ -2015,7 +2026,8 @@ function snapshotTrain(t) {
     pouch: t.pouch, sampleNo: t.sampleNo, contaminantId: t.contaminantId, pumpSerial: t.pumpSerial,
     dosimeterSerial: t.dosimeterSerial, headId: t.headId, mediaId: t.mediaId, startFlow: t.startFlow,
     endFlow: t.endFlow, comments: t.comments, location: t.location, person: t.person, rpd: t.rpd, hpd: t.hpd,
-    rejectCode: t.rejectCode, startAt: t.startAt, endAt: t.endAt, desiredVolumeL: t.desiredVolumeL
+    rejectCode: t.rejectCode, startAt: t.startAt, endAt: t.endAt, desiredVolumeL: t.desiredVolumeL,
+    rotameter: t.rotameter, fieldCalibrator: t.fieldCalibrator
   });
 }
 function bindAutosave(t) {
@@ -2057,6 +2069,8 @@ function collectTrain(t) {
   t.comments = g("comments")?.value || "";
   t.rejectReason = g("rejectReason")?.value || "";
   t.dosimeterSerial = g("dosimeter")?.value.trim() || t.dosimeterSerial || "";
+  if (g("rotameter")) t.rotameter = g("rotameter").value.trim();            /* v44 */
+  if (g("fieldCal")) t.fieldCalibrator = g("fieldCal").value.trim();        /* v44 */
   t.desiredVolumeL = g("desiredVolume")?.value || t.desiredVolumeL || "";
   t.minMinutes = g("minMinutes")?.value || t.minMinutes || "";
   if (g("sex") || g("first")) {
@@ -2217,7 +2231,7 @@ function exportWorkbookCsvs(eventId) {
   const ev = eventById(eventId);
   const air = trainsOf(eventId).filter(t => !isNoise(t));
   const noise = trainsOf(eventId).filter(isNoise);
-  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id"];
+  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id","rotameter_sn"];
   const sampleRows = [sampleHead];
   air.forEach(t => {
     const p = t.person || {};
@@ -2235,10 +2249,10 @@ function exportWorkbookCsvs(eventId) {
       mins ?? "", vol ?? "", (vol != null ? (vol/1000).toFixed(6) : ""),
       t.rpd?.worn || t.rpdAsked || "", t.rpd?.model || "", t.rpd?.shaven || "", t.rpd?.fit || "",
       t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "",
-      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", ""
+      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", "", t.rotameter || ""
     ]);
   });
-  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak"];
+  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak","field_calibrator_sn"];
   const noiseRows = [noiseHead];
   noise.forEach(t => {
     const p = t.person || {};
@@ -2249,7 +2263,7 @@ function exportWorkbookCsvs(eventId) {
       t.seg || "", p.hours || "", p.daysOn || "", p.daysOff || "", t.dosimeterSerial || "",
       t.startAt || "", t.endAt || "", runtimeMinutes(t) ?? "",
       t.hpd?.worn || t.hpdAsked || "", t.hpd?.model || "", t.hpd?.style || "", t.hpd?.classRating || "",
-      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", ""
+      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", "", t.fieldCalibrator || ""
     ]);
   });
   const cocHead = ["include","client_sample_id","depth","date_sampled","type_of_sample","tests_required","runtime_min","volume_L","comments","sample_no","contaminant","envss_sampler"];
@@ -2417,11 +2431,11 @@ function exportEvent(eventId) {
 }
 function exportCsv(eventId) {
   const ev = eventById(eventId);
-  const rows = [["event","sample_no","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","dob","occupation","occupation_code","company","seg","location_code","irsst","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments"]];
+  const rows = [["event","sample_no","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","dob","occupation","occupation_code","company","seg","location_code","irsst","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments","rotameter","field_calibrator"]];
   trainsOf(eventId).forEach(t => {
     const who = isStatic(t) ? t.location : [t.person?.first, t.person?.last].filter(Boolean).join(" ");
     const c = contam(t.contaminantId);
-    rows.push([ev.code, t.sampleNo || t.pouch, t.trainKind || "", displayStatus(t), c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.person?.dob || "", t.person?.occupation || "", t.occupationCode || t.person?.occupationCode || "", t.person?.company || "", t.seg || "", t.locationCode || "", t.irsstCat || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments]);
+    rows.push([ev.code, t.sampleNo || t.pouch, t.trainKind || "", displayStatus(t), c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.person?.dob || "", t.person?.occupation || "", t.occupationCode || t.person?.occupationCode || "", t.person?.company || "", t.seg || "", t.locationCode || "", t.irsstCat || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments, t.rotameter || "", t.fieldCalibrator || ""]);
   });
   const csv = rows.map(r => r.map(x => `"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   download(new Blob([csv], { type: "text/csv" }), ev.code + "-ENVSS-Field.csv");
@@ -3371,8 +3385,9 @@ eventHtml = function () {
 };
 function setEventRotameter(id, serial) {
   const ev = eventById(id); if (!ev) return;
+  const was = ev.rotameter || "";   /* v44: a per-sample rotameter that differs from the old event value is an override and is kept */
   ev.rotameter = String(serial || "").trim();
-  trainsOf(id).forEach(t => { if (!isBlank(t)) t.rotameter = ev.rotameter; });
+  trainsOf(id).forEach(t => { if (!isBlank(t) && (!t.rotameter || t.rotameter === was)) t.rotameter = ev.rotameter; });
   saveQuiet();
 }
 function setEventProtocol(id, proto) {
@@ -3912,7 +3927,7 @@ if (typeof render === "function") render();
    own audit array (t.audit / ev.audit), which syncs with the record. Entries: { at, who, action: "Changed <label>",
    field, from, to, detail }. Existing entries are kept; nothing in the UI can edit or remove them. ===== */
 (function () {
-  const SKIP = new Set(["equipDamaged", "audit", "updatedAt", "updated_at", "_dirty", "dirty", "rev", "syncedAt", "_snap", "id", "eventId", "projectId"]);
+  const SKIP = new Set(["v44Equip", "equipDamaged", "audit", "updatedAt", "updated_at", "_dirty", "dirty", "rev", "syncedAt", "_snap", "id", "eventId", "projectId"]);
   const LABEL = { pumpSerial: "Pump serial", headId: "Sample head", mediaId: "Cassette / filter / tube", cowlNo: "Cowl number", startFlow: "Start flow",
     endFlow: "End flow", startAt: "Start time", endAt: "Stop time", status: "Status", location: "Location", contaminantId: "Contaminant", analyses: "Analyses",
     "person.first": "First name", "person.last": "Last name", "person.occupation": "Occupation", "person.occupationCode": "Occupation code", "person.company": "Company",
@@ -3921,7 +3936,7 @@ if (typeof render === "function") render();
     rpdAsked: "Respirator worn?", "rpd.model": "Respirator brand / model", "rpd.shaven": "Clean-shaven?", "rpd.fit": "Fit-tested?", "rpd.worn": "Respirator worn",
     hpdAsked: "Hearing protection worn?", commentAsked: "Comments?", comments: "Comments", trainKind: "Sample type", shiftDate: "Shift date", shiftKind: "Shift",
     seg: "SEG", locationCode: "Location code (SRS)", occupationCode: "Occupation code (SRS)", irsstCat: "IRSST category", dosimeterSerial: "Dosimeter serial",
-    rotameter: "Rotameter", startLoc: "Start location", endLoc: "Stop location", photo: "Filter photo", equipPhoto: "Equipment photo",
+    rotameter: "Rotameter", fieldCalibrator: "Field calibrator", startLoc: "Start location", endLoc: "Stop location", photo: "Filter photo", equipPhoto: "Equipment photo",
     date: "Event date", notes: "Notes", code: "Event code", minesAct: "Mining job?", multiDay: "Multiple day/shift job?", tat: "Lab turnaround", protocol: "Monitoring type",
     taskDesc: "Task", stage: "Stage", uploadReady: "Upload ready" };
   const label = k => LABEL[k] || k.split(".").pop().replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase());
@@ -4085,6 +4100,11 @@ function answerItems(t) {
     }
   }
   if (!isStatic(t)) { const s = (t.person || {}).sex; add("sex", "Sex", s === "male" || s === "female" || s === "not_stated", "#seg-sex"); }
+  /* v44: flow / acoustic calibrator IDs. Required only on samples created in v44 or later (t.v44Equip), so older records keep their status. */
+  if (t.v44Equip && !isFibreTrain(t)) {
+    if (isNoise(t)) add("fieldCal", "Field calibrator", String(v("fieldCal", t.fieldCalibrator || "")).trim(), "#fieldCal");
+    else add("rotameter", "Rotameter", String(v("rotameter", t.rotameter || "")).trim(), "#rotameter");
+  }
   if (!isNoise(t) && t.status === "ended") add("endFlow", "End flow", String(v("endFlow", t.endFlow == null ? "" : t.endFlow)).trim(), "#endFlow");
   return items;
 }
@@ -4143,7 +4163,7 @@ followUpComplete = function (t) {
   render = function () { const r = _render41.apply(this, arguments); try { paint(); } catch (e) { console.warn("v41 status", e); } return r; };
   window.render = render;
   document.addEventListener("click", e => { if (e.target.closest && e.target.closest("[data-yn],[data-rq],[data-rej],#seg-sex")) setTimeout(paint, 60); });
-  document.addEventListener("input", e => { if (e.target && /^(equipNote|comments|rpdModel|hpdModel|hpdStyle|hpdClass|endFlow|dobD|dobM|dobY|occupation|occSearch|company|hours|daysOn|daysOff|locSearch|seg)$/.test(e.target.id)) paint(); });
+  document.addEventListener("input", e => { if (e.target && /^(equipNote|comments|rpdModel|hpdModel|hpdStyle|hpdClass|endFlow|rotameter|fieldCal|dobD|dobM|dobY|occupation|occSearch|company|hours|daysOn|daysOff|locSearch|seg)$/.test(e.target.id)) paint(); });
   paint();
 })();
 </script>
@@ -4280,6 +4300,126 @@ followUpComplete = function (t) {
   }
   window.addEventListener("resize", () => { try { addDup(); } catch (e) {} });
   render = function () { const r = _render42.apply(this, arguments); try { setTitle(); keyCards(); addDup(); const sm = document.querySelector("#evAudit summary"); const ev = eventById(view.eventId); if (sm && ev) sm.dataset.n = String((ev.audit || []).length); } catch (e) {} return r; };
+  window.render = render;
+  render();
+})();
+</script>
+<script>
+/* ===== v44: Rotameter (airborne) and Field calibrator (noise) on the sample screen.
+   - Picker + free text. The lists are a read-only snapshot of Podio (Rotameter app 21184220; Sound Level Meters app 25038317,
+     type "Acoustic Calibrator") taken from the Dashboard Bot mirror on 2026-11-03, decommissioned items left out. Nothing is
+     written back. IDs typed on other samples on this device are offered too. Calibration warnings are soft and never block.
+   - Same data key as v34+ AFM: t.rotameter (event default ev.rotameter). New samples take ev.rotameter when the event has one,
+     otherwise the last value used in the same event; noise uses the new key t.fieldCalibrator (last used in the event).
+     Each hygiene airborne sample can override it; setEventRotameter keeps overrides.
+   - Required (answerItems, so the status badge and the "still to answer" count agree) only on samples created in v44+
+     (t.v44Equip); samples created before v44 show the field but it does not hold their status back.
+   - Fibre/AFM events keep their event-level rotameter and are not changed here. ===== */
+(function () {
+  const ROTAMETERS = [
+    { serial: "0935", make: "LPM Air", model: "0-5LPM", cal: "At Calibration - Lifetree Environmental", due: "2026-08-18" },
+    { serial: "2510A2A12BNBN-NL230314101 0014 'ENVSS1'", make: "SKC", model: "0-0.5 LPM", cal: "Calibrated", due: "2027-03-23" },
+    { serial: "2510A2A12BNBN-NL230314101 0019 'ENVSS2'", make: "SKC", model: "0-0.5 LPM", cal: "Calibrated", due: "2027-04-09" },
+    { serial: "2520A4A0BNBN-NL-05", make: "LPM Air", model: "0-5LPM", cal: "Calibrated", due: "2027-05-27" },
+    { serial: "2520A4A40BNBN-NL-04", make: "LPM Air", model: "0-5LPM", cal: "Calibrated", due: "2027-01-09" },
+    { serial: "2520A4A40BNBN-NL-06", make: "LPM Air", model: "0-5LPM", cal: "At Calibration - Lifetree Environmental", due: "2027-07-28" },
+    { serial: "3338", make: "LPM Air", model: "0-5LPM", cal: "Calibrated", due: "2027-01-09" },
+    { serial: "4435", make: "LPM Air", model: "0-5LPM", cal: "Calibrated", due: "2026-12-30" },
+    { serial: "FR4A40BNBN-NL-01", make: "LPM Air", model: "0-5LPM", cal: "Calibrated", due: "2027-07-27" },
+    { serial: "FR4A40BNBN-NL-02", make: "LPM Air", model: "0-5LPM", cal: "Calibrated", due: "2027-02-18" },
+    { serial: "HF30LPM-01", make: "LPM Air", model: "0-30LPM", cal: "Calibration Due - Arrange calibration ASAP", due: "2024-04-27" },
+    { serial: "SKC (375-0550) 23556533", make: "SKC", model: "0-5LPM flowmeter", cal: "Calibration Due - Arrange calibration", due: "2026-04-09" },
+    { serial: "SKC-04", make: "SKC", model: "0-0.5 LPM", cal: "Calibration Due - Arrange calibration", due: "2026-10-24" },
+    { serial: "SKC-05", make: "", model: "0-5LPM", cal: "Calibrated", due: "" }
+  ];
+  const ACOUSTIC_CALS = [
+    { serial: "59311", make: "Cirrus", model: "CR:515", cal: "Calibrated", due: "2028-07-14" },
+    { serial: "64825", make: "Cirrus", model: "CR:515", cal: "Not Calibrated", due: "2020-03-20" },
+    { serial: "67340", make: "Cirrus", model: "CR:514", cal: "Calibration due soon", due: "2023-09-10" },
+    { serial: "70328", make: "Cirrus", model: "CR:514", cal: "Calibrated", due: "2027-04-07" }
+  ];
+  window.ENVSS_V44_EQUIP = { snapshot: "2026-11-03", rotameters: ROTAMETERS, acousticCalibrators: ACOUSTIC_CALS };
+  const KEY = { rotameter: "rotameter", fieldCal: "fieldCalibrator" };
+  const SEED = { rotameter: ROTAMETERS, fieldCal: ACOUSTIC_CALS };
+  const NOUN = { rotameter: "rotameter", fieldCal: "calibrator" };
+  function wants(t, id) { if (!t || isBlank(t) || isFibreTrain(t)) return false; return id === "fieldCal" ? isNoise(t) : !isNoise(t); }
+  function lastInEvent(t, key) {
+    const hit = (db.trains || []).filter(x => x !== t && x.eventId === t.eventId && x[key])
+      .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0];
+    return hit ? hit[key] : "";
+  }
+  function listFor(id) {
+    const key = KEY[id], seed = SEED[id];
+    const seen = new Set(seed.map(x => x.serial));
+    const extra = [];
+    const typed = (db.trains || []).map(x => x[key]);
+    if (key === "rotameter") typed.push(...(db.events || []).map(e => e.rotameter), ...((db.catalogs && db.catalogs.rotameters) || []).map(r => r && (r.serial || r)));
+    typed.forEach(v => { if (v && typeof v === "string" && !seen.has(v)) { seen.add(v); extra.push({ serial: v, make: "", model: "", cal: "", due: "", local: true }); } });
+    return seed.concat(extra);
+  }
+  function dayOf(t) { return (t.shiftDate || (eventById(t.eventId) || {}).date || new Date().toISOString()).slice(0, 10); }
+  function warnFor(item, t, id) {
+    if (!item || item.local) return "";
+    const w = [];
+    if (item.due && item.due < dayOf(t)) w.push("calibration due " + item.due.split("-").reverse().join("/"));
+    if (item.cal && !/^calibrated$/i.test(item.cal)) w.push(item.cal);
+    return w.length ? "Check " + NOUN[id] + ": " + w.join("; ") + "." : "";
+  }
+  function info(item) { return item ? [item.make, item.model].filter(Boolean).join(" ") + (item.due ? " · cal due " + item.due.split("-").reverse().join("/") : "") : ""; }
+  function wire(id, t) {
+    const input = document.getElementById(id), box = document.getElementById("sug-" + id);
+    if (!input || !box || input.dataset.v44) return;
+    input.dataset.v44 = "1";
+    let note = document.getElementById(id + "Note");
+    if (!note) { note = document.createElement("div"); note.id = id + "Note"; note.className = "pump-note"; (input.closest(".combo") || input).insertAdjacentElement("afterend", note); }
+    const find = v => listFor(id).find(x => String(x.serial).toLowerCase() === String(v || "").trim().toLowerCase());
+    const showNote = () => {
+      const v = input.value.trim(); const it = find(v); const w = warnFor(it, t, id);
+      note.innerHTML = v ? (it ? (it.local ? "Used before in the app (not in the Podio list)" : esc(info(it))) : "Not in the Podio list (free text kept)") + (w ? `<div class="pump-warn">⚠ ${esc(w)}</div>` : "") : "";
+    };
+    const commitVal = v => { input.value = v; t[KEY[id]] = String(v || "").trim(); t.updatedAt = new Date().toISOString(); try { collectTrain(t); } catch (e) {} saveQuiet(); showNote(); input.dispatchEvent(new Event("input", { bubbles: true })); };
+    const show = () => {
+      const q = input.value.trim().toLowerCase(); const list = listFor(id);
+      const hits = list.filter(x => !q || String(x.serial).toLowerCase().includes(q) || info(x).toLowerCase().includes(q)).slice(0, 10);
+      box.innerHTML = hits.map(x => `<div data-v="${esc(x.serial)}"><strong>${esc(x.serial)}</strong>${info(x) ? ` <span class="muted">${esc(info(x))}</span>` : ""}${warnFor(x, t, id) ? ` <span class="pump-warn">⚠</span>` : ""}</div>`).join("") +
+        (q && !list.some(x => String(x.serial).toLowerCase() === q) ? `<div data-v="${esc(input.value.trim())}"><em>Use “${esc(input.value.trim())}”</em></div>` : "");
+      box.classList.toggle("on", !!box.innerHTML);
+      box.querySelectorAll("div[data-v]").forEach(d => d.onmousedown = ev => { ev.preventDefault(); commitVal(d.dataset.v); box.classList.remove("on"); });
+    };
+    input.addEventListener("input", () => { show(); showNote(); });
+    input.addEventListener("focus", show);
+    input.addEventListener("blur", () => setTimeout(() => box.classList.remove("on"), 180));
+    showNote();
+  }
+  /* new samples: mark as v44 (field required) and carry the last value used in this event */
+  const _add44 = addTrain;
+  addTrain = function (eventId) {
+    const before = new Set((db.trains || []).map(x => x.id));
+    const r = _add44.apply(this, arguments);
+    try {
+      let n = 0;
+      (db.trains || []).filter(x => !before.has(x.id) && x.eventId === eventId).forEach(t => {
+        if (isBlank(t) || isFibreTrain(t)) return;
+        t.v44Equip = true; n++;
+        const key = isNoise(t) ? "fieldCalibrator" : "rotameter";
+        /* rotameter: the event's rotameter (ev.rotameter, as AFM events already use) first, then the last one used in this event */
+        const ev = eventById(eventId);
+        if (!t[key]) { const last = (key === "rotameter" && ev && ev.rotameter) || lastInEvent(t, key); if (last) t[key] = last; }
+      });
+      if (n) { saveQuiet(); if (view.page === "train") render(); }
+    } catch (e) { console.warn("v44 add", e); }
+    return r;
+  };
+  window.addTrain = addTrain;
+  const _render44 = render;
+  render = function () {
+    const r = _render44.apply(this, arguments);
+    try {
+      const t = view.page === "train" && db.trains.find(x => x.id === view.trainId);
+      if (t) ["rotameter", "fieldCal"].forEach(id => { if (wants(t, id)) wire(id, t); });
+    } catch (e) { console.warn("v44 equip", e); }
+    return r;
+  };
   window.render = render;
   render();
 })();
