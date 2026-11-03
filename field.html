@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v36 single-file build v44 (field.html, live; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
+<!-- ENVSS Field v36 single-file build v44 (field.html, live; v44d: photos shrunk, kept in IndexedDB and uploaded to the private field-photos bucket, record keeps references only; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1905,9 +1905,8 @@ function bind() {
     if (equipPhoto) equipPhoto.onchange = () => {
       const f = equipPhoto.files && equipPhoto.files[0];
       if (!f) return;
-      const reader = new FileReader();
-      reader.onload = () => { t.equipPhoto = reader.result; t.equipDamaged = true; audit(t, "Equipment damage photo", nowIso()); save(); };
-      reader.readAsDataURL(f);
+      /* v44d: shrunk, kept in IndexedDB and uploaded to the private field-photos bucket; the record keeps a reference only */
+      envssPhotos.attach(f, t, "equipPhoto").then(v => { t.equipPhoto = v; t.equipDamaged = true; audit(t, "Equipment damage photo", nowIso()); save(); });
     };
     const speak = document.getElementById("btnSpeak");
     if (speak) speak.onclick = () => startSpeech();
@@ -1915,9 +1914,7 @@ function bind() {
     if (photo) photo.onchange = () => {
       const f = photo.files && photo.files[0];
       if (!f) return;
-      const reader = new FileReader();
-      reader.onload = () => { t.photo = reader.result; audit(t, "Photo attached", "damaged filter"); save(); };
-      reader.readAsDataURL(f);
+      envssPhotos.attach(f, t, "photo").then(v => { t.photo = v; audit(t, "Photo attached", "damaged filter"); save(); });   /* v44d */
     };
     const stopBtn = document.getElementById("btnStop");
     if (stopBtn) stopBtn.onclick = () => {
@@ -2231,7 +2228,7 @@ function exportWorkbookCsvs(eventId) {
   const ev = eventById(eventId);
   const air = trainsOf(eventId).filter(t => !isNoise(t));
   const noise = trainsOf(eventId).filter(isNoise);
-  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id","rotameter_sn","daily_log_status","daily_log_ref"];
+  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id","rotameter_sn","daily_log_status","daily_log_ref","photo_paths"];
   const sampleRows = [sampleHead];
   air.forEach(t => {
     const p = t.person || {};
@@ -2249,10 +2246,10 @@ function exportWorkbookCsvs(eventId) {
       mins ?? "", vol ?? "", (vol != null ? (vol/1000).toFixed(6) : ""),
       t.rpd?.worn || t.rpdAsked || "", t.rpd?.model || "", t.rpd?.shaven || "", t.rpd?.fit || "",
       t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "",
-      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", "", t.rotameter || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : ""
+      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", "", t.rotameter || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : "", window.envssPhotoPaths ? envssPhotoPaths(t) : ""
     ]);
   });
-  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak","field_calibrator_sn","daily_log_status","daily_log_ref"];
+  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak","field_calibrator_sn","daily_log_status","daily_log_ref","photo_paths"];
   const noiseRows = [noiseHead];
   noise.forEach(t => {
     const p = t.person || {};
@@ -2263,7 +2260,7 @@ function exportWorkbookCsvs(eventId) {
       t.seg || "", p.hours || "", p.daysOn || "", p.daysOff || "", t.dosimeterSerial || "",
       t.startAt || "", t.endAt || "", runtimeMinutes(t) ?? "",
       t.hpd?.worn || t.hpdAsked || "", t.hpd?.model || "", t.hpd?.style || "", t.hpd?.classRating || "",
-      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", "", t.fieldCalibrator || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : ""
+      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", "", t.fieldCalibrator || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : "", window.envssPhotoPaths ? envssPhotoPaths(t) : ""
     ]);
   });
   const cocHead = ["include","client_sample_id","depth","date_sampled","type_of_sample","tests_required","runtime_min","volume_L","comments","sample_no","contaminant","envss_sampler"];
@@ -3927,7 +3924,7 @@ if (typeof render === "function") render();
    own audit array (t.audit / ev.audit), which syncs with the record. Entries: { at, who, action: "Changed <label>",
    field, from, to, detail }. Existing entries are kept; nothing in the UI can edit or remove them. ===== */
 (function () {
-  const SKIP = new Set(["dailyLog", "v44Equip", "equipDamaged", "audit", "updatedAt", "updated_at", "_dirty", "dirty", "rev", "syncedAt", "_snap", "id", "eventId", "projectId"]);
+  const SKIP = new Set(["photoRefs", "dailyLog", "v44Equip", "equipDamaged", "audit", "updatedAt", "updated_at", "_dirty", "dirty", "rev", "syncedAt", "_snap", "id", "eventId", "projectId"]);
   const LABEL = { pumpSerial: "Pump serial", headId: "Sample head", mediaId: "Cassette / filter / tube", cowlNo: "Cowl number", startFlow: "Start flow",
     endFlow: "End flow", startAt: "Start time", endAt: "Stop time", status: "Status", location: "Location", contaminantId: "Contaminant", analyses: "Analyses",
     "person.first": "First name", "person.last": "Last name", "person.occupation": "Occupation", "person.occupationCode": "Occupation code", "person.company": "Company",
@@ -4507,6 +4504,163 @@ followUpComplete = function (t) {
 })();
 </script>
 <script>
+/* ===== v44d: photos out of the record / localStorage (John, 3 Nov 2026: "Do the photo storage fix now").
+   Every photo (filter photo t.photo, equipment-damage photo t.equipPhoto, daily log pages t.dailyLog.photos) is shrunk
+   (long edge 1600 px, JPEG 0.7), stored as a Blob in IndexedDB ("envss-field-photos"), and uploaded in the background to the
+   PRIVATE Supabase bucket "field-photos" (anon may only INSERT, never read/list/replace/delete).
+   The sample record keeps a small reference only:
+     t.photo / t.equipPhoto = "envss-photo:<pid>", with t.photoRefs[pid] = { pid, path, bytes, w, h, takenAt, uploaded, field }
+     t.dailyLog.photos[i]   = { pid, path, bytes, w, h, takenAt, uploaded }
+   Path: p/<projectId>/e/<eventId>/t/<sampleId>/<pid>.jpg (pid = random uuid v4). Queue: retries with backoff (15 s … 30 min),
+   survives reload/offline, one audit line per photo on the first failure (no spam). Uploaded blobs are pruned 30 days after
+   upload; a blob that is not uploaded is never pruned. Old inline data: photos are moved to IndexedDB on load and the inline
+   data is replaced only after the IndexedDB write succeeds; the normal sync then pushes the slimmer record. ===== */
+(function () {
+  const DBN = "envss-field-photos", ST = "photos", BUCKET = "field-photos", MAXPX = 1600, Q = 0.7, KEEP_DAYS = 30;
+  const PFX = "envss-photo:";
+  let idbP = null, pending = 0, running = false, urls = {};
+  function idb() {
+    if (idbP) return idbP;
+    idbP = new Promise((res, rej) => { if (!window.indexedDB) return rej(new Error("IndexedDB not available"));
+      const r = indexedDB.open(DBN, 1);
+      r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains(ST)) d.createObjectStore(ST, { keyPath: "pid" }); };
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    idbP.catch(() => { idbP = null; });
+    return idbP;
+  }
+  async function tx(mode, fn) { const d = await idb(); return new Promise((res, rej) => { const t = d.transaction(ST, mode); const s = t.objectStore(ST); let out; Promise.resolve(fn(s)).then(v => out = v);
+    t.oncomplete = () => res(out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error("IndexedDB write aborted")); }); }
+  const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const put = rec => tx("readwrite", s => req(s.put(rec)));
+  const get = pid => tx("readonly", s => req(s.get(pid)));
+  const all = () => tx("readonly", s => req(s.getAll()));
+  const del = pid => tx("readwrite", s => req(s.delete(pid)));
+  function uuid() { if (crypto.randomUUID) return crypto.randomUUID(); const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    const h = [...b].map(x => x.toString(16).padStart(2, "0")).join(""); return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20); }
+  const san = v => (String(v || "x").replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 64) || "x");
+  function pathFor(t, pid) { const ev = eventById(t.eventId) || {}; return (window.ENVSS_PHOTO_PREFIX || "") + "p/" + san(ev.projectId) + "/e/" + san(t.eventId) + "/t/" + san(t.id) + "/" + pid + ".jpg"; }
+  function shrinkSrc(src) {
+    return new Promise((res, rej) => { const img = new Image(); img.onerror = () => rej(new Error("not an image"));
+      img.onload = () => { const k = Math.min(1, MAXPX / Math.max(img.width, img.height)); const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k)); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(b => b ? res({ blob: b, w: c.width, h: c.height }) : rej(new Error("compress failed")), "image/jpeg", Q); };
+      img.src = src; });
+  }
+  async function shrinkFile(file) { const u = URL.createObjectURL(file); try { return await shrinkSrc(u); } finally { setTimeout(() => URL.revokeObjectURL(u), 1000); } }
+  /* add a photo: returns the small reference; throws if IndexedDB is unavailable */
+  async function add(fileOrDataUrl, t, field, takenAt) {
+    const sh = typeof fileOrDataUrl === "string" ? await shrinkSrc(fileOrDataUrl) : await shrinkFile(fileOrDataUrl);
+    const pid = uuid(), path = pathFor(t, pid), ev = eventById(t.eventId) || {};
+    const ref = { pid, path, bytes: sh.blob.size, w: sh.w, h: sh.h, takenAt: takenAt || nowIso(), uploaded: false };
+    await put(Object.assign({}, ref, { blob: sh.blob, mime: "image/jpeg", trainId: t.id, eventId: t.eventId, projectId: ev.projectId || "", field, tries: 0, nextAt: 0, createdAt: nowIso() }));
+    await count(); setTimeout(run, 50);
+    return ref;
+  }
+  /* filter / equipment photo: returns the value for the field ("envss-photo:<pid>") and records the reference */
+  async function attach(file, t, field) {
+    try { const ref = await add(file, t, field); t.photoRefs = Object.assign({}, t.photoRefs, { [ref.pid]: Object.assign({ field }, ref) }); return PFX + ref.pid; }
+    catch (e) { console.warn("[ENVSS] photo store failed, keeping a small inline copy", e);
+      const sh = await shrinkFile(file); return await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(sh.blob); }); }
+  }
+  async function discard(pid) { try { const r = await get(pid); if (r && !r.uploaded) await del(pid); else if (r) { r.removed = true; await put(r); } await count(); } catch (e) {} }
+  function metaFor(t, pid) { if (!t) return null; if (t.photoRefs && t.photoRefs[pid]) return t.photoRefs[pid]; const ps = (t.dailyLog && t.dailyLog.photos) || []; return ps.find(p => p && p.pid === pid) || null; }
+  function imgTag(ref, alt) { const pid = typeof ref === "string" ? ref.replace(PFX, "") : (ref && ref.pid); if (!pid) return ref && ref.data ? `<img alt="${esc(alt)}" src="${ref.data}">` : "";
+    return `<img alt="${esc(alt)}" data-envss-pid="${esc(pid)}" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="max-width:220px;border-radius:8px;min-height:60px;background:#2A3350">`; }
+  async function hydrate() {
+    const imgs = [...document.querySelectorAll("img[data-envss-pid]:not([data-h])")]; if (!imgs.length) return;
+    for (const im of imgs) { im.dataset.h = "1"; const pid = im.dataset.envssPid;
+      try { if (!urls[pid]) { const r = await get(pid); if (r && r.blob) urls[pid] = URL.createObjectURL(r.blob); }
+        if (urls[pid]) { im.src = urls[pid]; continue; } } catch (e) {}
+      const t = db.trains.find(x => x.id === view.trainId); const m = metaFor(t, pid) || Object.values((db.trains || []).map(x => metaFor(x, pid)).filter(Boolean))[0];
+      const ph = document.createElement("div"); ph.className = "photo-ph"; ph.textContent = m && m.uploaded ? "Photo stored in Supabase (not on this device)" : "Photo not on this device yet (waiting to upload from the device that took it)";
+      im.replaceWith(ph); }
+  }
+  async function count() { try { pending = (await all()).filter(r => !r.uploaded && !r.removed).length; } catch (e) { pending = 0; } try { paintSyncBar(); } catch (e) {} return pending; }
+  function markOnRecord(rec) {
+    const t = (db.trains || []).find(x => x.id === rec.trainId); if (!t) return;
+    let hit = false;
+    if (t.photoRefs && t.photoRefs[rec.pid]) { t.photoRefs[rec.pid].uploaded = true; hit = true; }
+    ((t.dailyLog && t.dailyLog.photos) || []).forEach(p => { if (p && p.pid === rec.pid) { p.uploaded = true; hit = true; } });
+    if (hit) { t.updatedAt = nowIso(); saveQuiet(); }
+  }
+  async function uploadOne(rec) {
+    const c = sbCfg(); if (!c) throw new Error("Supabase not configured");
+    const h = sbHeaders(); delete h["Content-Type"]; delete h.Prefer;
+    const res = await fetch(c.supabaseUrl + "/storage/v1/object/" + BUCKET + "/" + rec.path.split("/").map(encodeURIComponent).join("/"),
+      { method: "POST", headers: Object.assign(h, { "Content-Type": rec.mime || "image/jpeg", "x-upsert": "false", "cache-control": "31536000" }), body: rec.blob });
+    if (res.ok) return true;
+    const txt = await res.text().catch(() => "");
+    if (res.status === 409 || /already exists|Duplicate/i.test(txt)) return true;   // a retry after a lost reply: the object is there
+    throw new Error("upload " + res.status + " " + txt.slice(0, 120));
+  }
+  async function run() {
+    if (running) return; running = true;
+    try {
+      if (!navigator.onLine) return;
+      const now = Date.now(); const list = (await all()).filter(r => !r.uploaded && !r.removed && (r.nextAt || 0) <= now);
+      for (const rec of list) {
+        try { await uploadOne(rec); rec.uploaded = true; rec.uploadedAt = nowIso(); rec.lastErr = ""; await put(rec); markOnRecord(rec); }
+        catch (e) { rec.tries = (rec.tries || 0) + 1; rec.lastErr = String(e && e.message || e); rec.nextAt = Date.now() + Math.min(30 * 60e3, 15e3 * Math.pow(2, rec.tries - 1)); await put(rec);
+          if (!rec.auditedFail) { const t = (db.trains || []).find(x => x.id === rec.trainId);
+            if (t) { t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoText(), action: "Photo upload failed (will retry)", field: "photo", from: "", to: "", detail: rec.lastErr.slice(0, 120) }); saveQuiet(); }
+            rec.auditedFail = true; await put(rec); }
+          if (!navigator.onLine) break; }
+      }
+    } catch (e) { console.warn("[ENVSS] photo queue", e); }
+    finally { running = false; await count(); }
+  }
+  async function prune() { try { const cut = Date.now() - KEEP_DAYS * 864e5; for (const r of await all()) if (r.uploaded && r.uploadedAt && Date.parse(r.uploadedAt) < cut) await del(r.pid); } catch (e) {} }
+  /* move old inline data: photos into IndexedDB; the record is only changed after the IndexedDB write succeeds */
+  let migrating = false;
+  async function migrate() {
+    if (migrating) return 0; migrating = true; let n = 0;
+    try { await idb();
+      for (const t of (db.trains || []).slice()) {
+        const n0 = n;
+        for (const field of ["photo", "equipPhoto"]) { const v = t[field];
+          if (typeof v === "string" && v.startsWith("data:image")) { try { const ref = await add(v, t, field, t.updatedAt); t.photoRefs = Object.assign({}, t.photoRefs, { [ref.pid]: Object.assign({ field }, ref) }); t[field] = PFX + ref.pid; n++; } catch (e) { console.warn("[ENVSS] migrate", e); } } }
+        const ps = (t.dailyLog && t.dailyLog.photos) || [];
+        for (let i = 0; i < ps.length; i++) { const p = ps[i]; if (p && typeof p.data === "string" && p.data.startsWith("data:image")) {
+          try { const ref = await add(p.data, t, "dailyLog", p.at || p.takenAt); ps[i] = Object.assign({}, ref, { at: p.at || ref.takenAt, name: p.name || "" }); n++; } catch (e) { console.warn("[ENVSS] migrate", e); } } }
+        if (n > n0) { t.updatedAt = nowIso(); t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoText(), action: "Photos moved to device photo storage", field: "photo", from: "", to: "", detail: (n - n0) + " inline photo(s) replaced by references; upload queued" }); }
+      }
+      if (n) { saveQuiet(); console.info("[ENVSS] moved " + n + " inline photo(s) to device photo storage"); window._v44dMigrated = (window._v44dMigrated || 0) + n; try { render(); } catch (e) {} }
+    } catch (e) { console.warn("[ENVSS] photo migration skipped", e); }
+    finally { migrating = false; }
+    return n;
+  }
+  /* sync bar: "Photos: n waiting to upload" */
+  const _psb = paintSyncBar;
+  paintSyncBar = function () { const r = _psb.apply(this, arguments); try { const el = document.getElementById("syncBar"); if (el && pending) { const s = document.createElement("div"); s.className = "photo-q"; s.id = "photoQueue";
+    s.textContent = "Photos: " + pending + " waiting to upload" + (navigator.onLine ? "" : " (offline — kept on this device)"); el.appendChild(s); } } catch (e) {} return r; };
+  window.paintSyncBar = paintSyncBar;
+  /* warn before sign out if photos have not uploaded */
+  const _so = signOut;
+  signOut = function () { if (pending && !confirm(pending + " photo" + (pending === 1 ? " is" : "s are") + " still waiting to upload. They stay on this device and upload when online, but do not clear this browser's site data until they have gone.\n\nSign out anyway?")) return; return _so.apply(this, arguments); };
+  window.signOut = signOut;
+  window.addEventListener("beforeunload", e => { if (pending && !navigator.onLine) { e.preventDefault(); e.returnValue = ""; } });
+  /* a sample screen photo value of "envss-photo:<pid>" renders as a placeholder img that hydrate() fills from IndexedDB */
+  const _th = trainHtml;
+  trainHtml = function () { const html = _th.apply(this, arguments); return typeof html === "string" ? html.replace(/<img alt="(filter|equipment)" src="envss-photo:([0-9a-f-]+)"[^>]*>/g, (m, a, pid) => imgTag(pid, a)) : html; };
+  window.trainHtml = trainHtml;
+  const _render = render;
+  render = function () { const r = _render.apply(this, arguments); queueMicrotask(() => hydrate()); setTimeout(hydrate, 30); return r; };
+  window.render = render;
+  const _merge = mergeRemote;
+  mergeRemote = function () { const r = _merge.apply(this, arguments); setTimeout(migrate, 200); return r; };
+  window.mergeRemote = mergeRemote;
+  window.addEventListener("online", () => { (async () => { for (const r of await all().catch(() => [])) if (!r.uploaded) { r.nextAt = 0; await put(r); } run(); })(); });
+  window.addEventListener("offline", () => count());
+  setInterval(run, 60e3);
+  /* export: storage paths of the filter / equipment photos ("filter: p/…jpg; equipment: p/…jpg") */
+  window.envssPhotoPaths = t => [["photo", "filter"], ["equipPhoto", "equipment"]].map(([k, l]) => { const v = t[k]; if (!v) return ""; if (String(v).startsWith(PFX)) { const m = metaFor(t, String(v).slice(PFX.length)); return l + ": " + (m ? m.path : "local"); } return l + ": inline (not yet moved)"; }).filter(Boolean).join("; ");
+  window.envssPhotos = { add, attach, discard, imgTag, hydrate, run, count, migrate, prune, all, pending: () => pending, pathOf: pid => { for (const t of db.trains || []) { const m = metaFor(t, pid); if (m) return m.path; } return ""; } };
+  const st = document.createElement("style"); st.textContent = ".photo-q{margin-top:4px;font-weight:700;color:#FFC266}.photo-ph{display:inline-block;padding:10px 12px;border:1px dashed #6B7590;border-radius:8px;color:#B4BBCC;font-size:13px;max-width:220px}";
+  document.head.appendChild(st);
+  (async () => { await migrate(); await prune(); await count(); run(); })();
+})();
+</script>
+<script>
 /* ===== v44c: Daily log (worker's paper "Personal Sampling Field Sheet") on PERSONAL samples (airborne + noise; not static,
    blanks or AFM). Status: attached (photo pages) / not_supplied / to_follow. Purely informational: it is NOT in answerItems,
    so it never changes the sample status or the "still to answer" count. Photos use the same storage as the existing sample
@@ -4515,8 +4669,7 @@ followUpComplete = function (t) {
    holds the pages, so the photos are stored once. Changes go in each sample's audit log. ===== */
 (function () {
   const ST = { attached: "Photo attached", not_supplied: "Not supplied", to_follow: "To follow" };
-  const MAXPX = 1600, Q = 0.7;
-  function wantsLog(t) { return !!t && !isBlank(t) && !isFibreTrain(t) && !isStatic(t); }
+    function wantsLog(t) { return !!t && !isBlank(t) && !isFibreTrain(t) && !isStatic(t); }
   function dl(t) { return t.dailyLog || {}; }
   function src(t) { const d = dl(t); return d.ref ? (db.trains.find(x => x.id === d.ref) || null) : t; }
   function pages(t) { const s = src(t); return (s && dl(s).photos) || []; }
@@ -4531,23 +4684,11 @@ followUpComplete = function (t) {
     if (was !== s) log(t, "Changed Daily log", ST[was] || "", ST[s], why || "");
     t.updatedAt = nowIso();
   }
-  function shrink(file) {
-    return new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onerror = () => rej(r.error);
-      r.onload = () => { const img = new Image(); img.onerror = () => res({ data: r.result, bytes: r.result.length, w: 0, h: 0 });
-        img.onload = () => { const k = Math.min(1, MAXPX / Math.max(img.width, img.height)); const c = document.createElement("canvas");
-          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-          const data = c.toDataURL("image/jpeg", Q); res({ data, bytes: data.length, w: c.width, h: c.height }); };
-        img.src = r.result; };
-      r.readAsDataURL(file);
-    });
-  }
   async function addPhotos(t, files) {
     if (!files || !files.length) return;
     let s = src(t); if (!s || s !== t) { s = t; }   // adding pages on a sample that referenced another: this sample becomes a holder
     s.dailyLog = Object.assign({}, dl(s)); delete s.dailyLog.ref; s.dailyLog.photos = (s.dailyLog.photos || []).slice();
-    for (const f of files) { try { const p = await shrink(f); p.at = nowIso(); p.name = f.name || ""; s.dailyLog.photos.push(p); } catch (e) { console.warn("v44c photo", e); } }
+    for (const f of files) { try { const p = await envssPhotos.add(f, s, "dailyLog"); p.at = p.takenAt; s.dailyLog.photos.push(p); } catch (e) { console.warn("v44c photo", e); } }   /* v44d: reference only, blob in IndexedDB */
     setStatus(s, "attached");
     log(s, "Daily log photo added", "", s.dailyLog.photos.length + " page(s)", files.length + " added, " + Math.round(s.dailyLog.photos.reduce((a, p) => a + p.bytes, 0) / 1024) + " KB total");
     save(); render(); setTimeout(offerSiblings, 50);
@@ -4569,7 +4710,7 @@ followUpComplete = function (t) {
       <div class="row" style="justify-content:space-between;align-items:center;gap:8px"><h3 class="brand-type" style="margin:0">Daily log</h3>${chip(t)}</div>
       <p class="help">Worker's Personal Sampling Field Sheet. Optional: it never holds up the sample.</p>
       <div class="filters">${opt("attached")}${opt("not_supplied")}${opt("to_follow")}</div>
-      <div class="dl-photos">${ps.map((p, i) => `<figure><img alt="Daily log page ${i + 1}" src="${p.data}"><figcaption>p${i + 1}${holder === t ? ` <button type="button" class="dl-del" data-dldel="${i}" aria-label="Remove page ${i + 1}">✕</button>` : ""}</figcaption></figure>`).join("")}</div>
+      <div class="dl-photos">${ps.map((p, i) => `<figure>${envssPhotos.imgTag(p, "Daily log page " + (i + 1))}<figcaption>p${i + 1}${holder === t ? ` <button type="button" class="dl-del" data-dldel="${i}" aria-label="Remove page ${i + 1}">✕</button>` : ""}</figcaption></figure>`).join("")}</div>
       ${holder && holder !== t ? `<p class="help">Pages held on ${esc(displayNo(holder))} (same worker, same shift).</p>` : ""}
       <div class="dl-add" style="${s === "attached" ? "" : "display:none"}">
         <label class="btn ghost dl-btn">📷 Take photo<input type="file" accept="image/*" capture="environment" id="dlCam" hidden></label>
@@ -4591,7 +4732,7 @@ followUpComplete = function (t) {
     ["dlCam", "dlFiles"].forEach(id => { const i = document.getElementById(id); if (i) i.onchange = () => addPhotos(t, Array.from(i.files || [])); });
     card.querySelectorAll("[data-dldel]").forEach(b => b.onclick = () => {
       if (!confirm("Remove daily log page " + (Number(b.dataset.dldel) + 1) + "?")) return;
-      const ps = dl(t).photos || []; ps.splice(Number(b.dataset.dldel), 1); log(t, "Daily log photo removed", "", ps.length + " page(s)", "");
+      const ps = dl(t).photos || []; const gone = ps.splice(Number(b.dataset.dldel), 1)[0]; if (gone && gone.pid) envssPhotos.discard(gone.pid); log(t, "Daily log photo removed", "", ps.length + " page(s)", "");
       if (!ps.length) setStatus(t, "to_follow", "last page removed"); save(); render(); });
     const sb = document.getElementById("dlSibs");
     if (sb) sb.onclick = () => { const n = applyToSiblings(t); render(); const note = document.getElementById("dlNote"); if (note) note.textContent = "Applied to " + n + " other sample" + (n === 1 ? "" : "s") + "."; };
@@ -4624,9 +4765,11 @@ followUpComplete = function (t) {
     try {
       const t = cur();
       if (t && wantsLog(t) && !document.getElementById("dailyLogCard")) {
-        const anchor = document.querySelector("#app .startstop"); const help = anchor && anchor.nextElementSibling;
-        const host = help && help.classList.contains("help") ? help : anchor;
-        if (host) { host.insertAdjacentHTML("afterend", cardHtml(t)); wireCard(t); }
+        /* v44d (John): at the bottom of the sample screen, after all fields/sections, above Delete sample / the audit log */
+        const before = document.querySelector("#app .footer-actions #btnDelete") ? document.querySelector("#app .footer-actions #btnDelete").closest(".footer-actions") : document.getElementById("auditToggle");
+        if (before) before.insertAdjacentHTML("beforebegin", cardHtml(t));
+        else { const w = document.querySelector("#app .wrap") || document.getElementById("app"); if (w) w.insertAdjacentHTML("beforeend", cardHtml(t)); }
+        wireCard(t);
       }
       if (view.page === "event") { const ev = eventById(view.eventId);
         if (ev && !isFibreEvent(ev)) {
@@ -4640,7 +4783,7 @@ followUpComplete = function (t) {
   };
   window.render = render;
   window.v44DailyLog = { statusOf, pages, label: t => (wantsLog(t) ? (statusOf(t) || "not_asked") : ""),
-    ref: t => { if (!wantsLog(t) || statusOf(t) !== "attached") return ""; const s = src(t) || t; return s === t ? pages(t).length + " photo(s) on this sample" : pages(t).length + " photo(s) on " + displayNo(s); } };
+    ref: t => { if (!wantsLog(t) || statusOf(t) !== "attached") return ""; const s = src(t) || t; return pages(t).map(p => p.path || ("local:" + p.pid)).join("; ") + (s === t ? "" : " (held on " + displayNo(s) + ")"); } };
   const st = document.createElement("style"); st.textContent =
     ".dl-card{margin-top:12px}.dl-chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid #6B5A2E;background:#2A2412;color:#E8D9A8;white-space:nowrap}" +
     ".dl-chip.dl-ok{border-color:#2F6B55;background:#11281F;color:#9FE0C4}.dl-opt{min-height:44px}.dl-photos{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}" +
