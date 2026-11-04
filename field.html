@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v44</title>
+  <title>ENVSS Field v45</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -117,6 +117,11 @@ textarea { min-height: 80px; }
   background: #fff; border-radius: 16px; padding: 22px; max-width: 420px; width: 100%;
 }
 .login-card h2 { margin: 0 0 8px; color: var(--navy); font-family: Montserrat, Arial, sans-serif; }
+.google-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 320px; min-height: 48px; margin: 12px 0 6px; padding: 0 16px; background: #fff !important; color: #1f1f1f !important; border: 1px solid #747775; border-radius: 24px; font-family: Roboto, Arial, sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; }
+.google-btn:hover { background: #f2f6fc !important; }
+.google-btn:disabled { opacity: .6; cursor: progress; }
+.login-msg { color: #b3261e; font-weight: 600; margin: 8px 0 0; }
+.login-msg.hidden { display: none; }
 .check-row { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-weight: 600; }
 .check-row input { width: auto; }
 .comment-wrap { position: relative; }
@@ -164,7 +169,6 @@ textarea { min-height: 80px; }
 .sync-link{background:none;border:0;color:#2D3A6A;text-decoration:underline;cursor:pointer;font-size:12px;padding:0 4px}
 .sync-err{color:#8a5a00;margin-top:2px}.sync-warn{color:#b3261e;font-weight:700;margin-top:2px}
 </style>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>.analysis-box{margin:8px 0 12px}.analysis-box input{width:100%;box-sizing:border-box}#sug-analysis button{display:block;width:100%;text-align:left;margin-top:4px}</style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -385,7 +389,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v40</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v45</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -394,19 +398,18 @@ body.has-fab { padding-bottom: 104px; }
   <div id="loginGate" class="login-gate hidden">
     <div class="login-card">
       <h2>Sign in</h2>
-      <p>Use your ENVSS Google account, or type your name.</p>
-      <div id="googleBtn"></div>
-      <label>Name</label><input id="manualName">
-      <label>Work email</label><input id="manualEmail" placeholder="jane@envss.com.au">
-      <div class="footer-actions"><button class="btn orange" onclick="manualLogin()">Continue</button></div>
+      <p>Sign in with your ENVSS Google account (@envss.com.au).</p>
+      <button type="button" class="google-btn" id="btnGoogleSignIn" onclick="startGoogleSignIn()"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span id="googleBtnLabel">Sign in with Google</span></button>
+      <p id="loginMsg" class="login-msg hidden" role="alert"></p>
+      <p class="help">You stay signed in on this device, including offline. The first sign-in on a device needs internet.</p>
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=44"></script>
+  <script src="config.js?v=45"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "44"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "45"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -474,6 +477,226 @@ function allowedEmail(email) {
   const domain = (window.ENVSS_CONFIG && window.ENVSS_CONFIG.allowedDomain) || "envss.com.au";
   return String(email || "").toLowerCase().endsWith("@" + domain.toLowerCase());
 }
+
+/* ===== v45 sign-in: Google only, through Supabase Auth (PKCE redirect, no library) =====
+   - The only way in is "Sign in with Google" -> Supabase /auth/v1/authorize?provider=google (hd=envss.com.au).
+     Supabase's Before User Created hook refuses non-envss.com.au accounts; the Google OAuth client is Internal.
+   - The Supabase session (access + refresh token) is kept in localStorage, so a device stays signed in,
+     including offline. An expired access token never signs anyone out and never blocks capture: requests
+     fall back to the public key during the dual-key period and the token refreshes when back online.
+   - If Supabase refuses the refresh (user removed, sessions revoked) the sync bar asks to sign in again;
+     queued changes and photos stay on the device.
+   - "who" in audit entries comes from the Google account (user_metadata.full_name / email). */
+const AUTH_KEY = "envss-field-auth-v45";
+const PKCE_KEY = "envss-field-pkce-v45";
+let authMsg = "";
+let authBusy = false;
+let refreshing = null;
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); } catch (e) { return null; }
+}
+function saveSession(sess) {
+  if (sess) safeSetItem(AUTH_KEY, JSON.stringify(sess));
+  else { try { localStorage.removeItem(AUTH_KEY); } catch (e) {} }
+}
+function hasSession() {
+  const sess = getSession();
+  return !!(sess && sess.refresh_token && sess.user && allowedEmail(sess.user.email));
+}
+function sessionInvalid() {
+  const sess = getSession();
+  return !!(sess && sess.invalid);
+}
+/* the current access token, or "" when there is none, it was refused, or it expires within 30 s */
+function accessToken() {
+  const sess = getSession();
+  if (!sess || sess.invalid || !sess.access_token) return "";
+  if ((Number(sess.expires_at) || 0) * 1000 <= Date.now() + 30e3) return "";
+  return sess.access_token;
+}
+function userFromAuth(u) {
+  if (!u) return null;
+  const m = u.user_metadata || {};
+  return { id: u.id || "", email: String(u.email || m.email || "").toLowerCase(), name: m.full_name || m.name || "" };
+}
+function sessionFrom(j, prevUser) {
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    access_token: j.access_token,
+    refresh_token: j.refresh_token,
+    expires_at: Number(j.expires_at) || (now + (Number(j.expires_in) || 3600)),
+    user: userFromAuth(j.user) || prevUser || null,
+    invalid: false,
+    savedAt: nowIso()
+  };
+}
+function authHeaders(extra) {
+  const c = sbCfg();
+  return Object.assign({ apikey: c.supabaseAnonKey, "Content-Type": "application/json" }, extra || {});
+}
+async function doRefresh(force) {
+  const c = sbCfg();
+  const cur = getSession();
+  if (!c || !cur || !cur.refresh_token || cur.invalid) return false;
+  /* another tab may have refreshed already (the refresh token rotates) */
+  if (!force && (Number(cur.expires_at) || 0) * 1000 > Date.now() + 5 * 60e3) return true;
+  let res;
+  try {
+    res = await fetch(c.supabaseUrl + "/auth/v1/token?grant_type=refresh_token", {
+      method: "POST", headers: authHeaders(), body: JSON.stringify({ refresh_token: cur.refresh_token })
+    });
+  } catch (e) { return false; }                     // offline / network: keep the session, try later
+  if (res.ok) {
+    const j = await res.json().catch(() => null);
+    if (j && j.access_token && j.refresh_token) { saveSession(sessionFrom(j, cur.user)); return true; }
+    return false;
+  }
+  if (res.status === 400 || res.status === 401 || res.status === 403) {
+    /* a rotated token can lose a race with another tab: only give up if the stored token is still the one we sent */
+    const now = getSession();
+    if (now && now.refresh_token === cur.refresh_token) {
+      now.invalid = true; now.invalidAt = nowIso(); saveSession(now);
+      console.warn("[ENVSS] sign-in ended by the server (" + res.status + ")");
+      try { paintSyncBar(); } catch (e) {}
+      return false;
+    }
+    return !!(now && !now.invalid);
+  }
+  return false;                                       // 5xx etc: try again later
+}
+function refreshSession(force) {
+  if (refreshing) return refreshing;
+  const run = () => doRefresh(force);
+  refreshing = (navigator.locks && navigator.locks.request
+    ? navigator.locks.request("envss-field-auth-refresh", run)
+    : run()).catch(() => false).finally(() => { refreshing = null; });
+  return refreshing;
+}
+/* refresh when the access token is within 5 minutes of expiry (only when online) */
+async function ensureFreshSession() {
+  const sess = getSession();
+  if (!sess || sess.invalid || !sess.refresh_token || !navigator.onLine) return;
+  if ((Number(sess.expires_at) || 0) * 1000 > Date.now() + 5 * 60e3) return;
+  await refreshSession(false);
+}
+/* Every Supabase data / storage call goes through here: signed-in session token when there is one,
+   the public key otherwise (dual-key period). A 401 on a session token refreshes once and retries. */
+async function sbFetch(url, init) {
+  const c = sbCfg();
+  const opts = Object.assign({}, init || {});
+  const withAuth = () => {
+    const h = Object.assign({}, opts.headers || {});
+    const tok = accessToken();
+    h.apikey = c.supabaseAnonKey;
+    h.Authorization = "Bearer " + (tok || c.supabaseAnonKey);
+    return { h, usedSession: !!tok };
+  };
+  try { await ensureFreshSession(); } catch (e) {}
+  let a = withAuth();
+  let res = await fetch(url, Object.assign({}, opts, { headers: a.h }));
+  if (res.status === 401 && a.usedSession) {
+    const ok = await refreshSession(true);
+    if (ok) { a = withAuth(); res = await fetch(url, Object.assign({}, opts, { headers: a.h })); }
+  }
+  return res;
+}
+function b64url(bytes) {
+  let str = "";
+  bytes.forEach(b => { str += String.fromCharCode(b); });
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+async function startGoogleSignIn() {
+  const c = sbCfg();
+  if (!c) { alert("Supabase is not configured on this page."); return; }
+  if (!navigator.onLine) { authMsg = "You're offline. Connect to the internet to sign in."; paintLogin(); return; }
+  try { persist(); } catch (e) {}
+  authBusy = true; authMsg = ""; paintLogin();
+  try {
+    const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
+    const challenge = b64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
+    safeSetItem(PKCE_KEY, JSON.stringify({ verifier, at: Date.now() }));
+    const domain = (window.ENVSS_CONFIG && window.ENVSS_CONFIG.allowedDomain) || "envss.com.au";
+    const q = new URLSearchParams({
+      provider: "google",
+      redirect_to: location.origin + location.pathname,
+      code_challenge: challenge,
+      code_challenge_method: "s256",
+      hd: domain,
+      prompt: "select_account"
+    });
+    location.assign(c.supabaseUrl + "/auth/v1/authorize?" + q.toString());
+  } catch (e) {
+    authBusy = false; authMsg = "Could not start Google sign-in: " + (e && e.message || e); paintLogin();
+  }
+}
+async function acceptSession(j) {
+  const c = sbCfg();
+  let sess = sessionFrom(j, null);
+  if (!sess.user || !sess.user.email) {
+    const r = await fetch(c.supabaseUrl + "/auth/v1/user", { headers: authHeaders({ Authorization: "Bearer " + sess.access_token }) });
+    if (!r.ok) throw new Error("could not read the signed-in account (" + r.status + ")");
+    sess.user = userFromAuth(await r.json());
+  }
+  if (!sess.user || !allowedEmail(sess.user.email)) {
+    fetch(c.supabaseUrl + "/auth/v1/logout?scope=local", { method: "POST", headers: authHeaders({ Authorization: "Bearer " + sess.access_token }) }).catch(() => {});
+    throw new Error("use your @" + ((window.ENVSS_CONFIG && window.ENVSS_CONFIG.allowedDomain) || "envss.com.au") + " Google account");
+  }
+  saveSession(sess);
+  setOperator(sess.user.name || sess.user.email, { email: sess.user.email, source: "google" });
+}
+/* runs once at start-up: picks up ?code= (PKCE) or #access_token= (implicit) or an error from the Google round trip */
+async function handleAuthRedirect() {
+  const u = new URL(location.href);
+  const hash = new URLSearchParams(u.hash.replace(/^#/, ""));
+  const err = u.searchParams.get("error_description") || hash.get("error_description") || u.searchParams.get("error") || hash.get("error");
+  const code = u.searchParams.get("code");
+  const hashTok = hash.get("access_token");
+  if (!err && !code && !hashTok) return;
+  try { history.replaceState(null, "", u.pathname); } catch (e) {}   // tokens / code never stay in the address bar
+  if (err) {
+    try { localStorage.removeItem(PKCE_KEY); } catch (e) {}
+    authMsg = "Sign-in was refused: " + String(err).replace(/\+/g, " ") + ". Use your @envss.com.au Google account.";
+    paintLogin();
+    return;
+  }
+  const c = sbCfg();
+  authBusy = true; paintLogin();
+  try {
+    let j;
+    if (code) {
+      let pk = null;
+      try { pk = JSON.parse(localStorage.getItem(PKCE_KEY) || "null"); } catch (e) {}
+      try { localStorage.removeItem(PKCE_KEY); } catch (e) {}
+      if (!pk || !pk.verifier) throw new Error("this sign-in was started in another browser or tab. Please try again");
+      const res = await fetch(c.supabaseUrl + "/auth/v1/token?grant_type=pkce", {
+        method: "POST", headers: authHeaders(), body: JSON.stringify({ auth_code: code, code_verifier: pk.verifier })
+      });
+      j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.access_token) throw new Error(j.error_description || j.msg || j.message || ("token " + res.status));
+    } else {
+      j = { access_token: hashTok, refresh_token: hash.get("refresh_token"), expires_in: hash.get("expires_in"), expires_at: hash.get("expires_at") };
+      if (!j.refresh_token) throw new Error("no refresh token returned");
+    }
+    await acceptSession(j);
+    authMsg = "";
+  } catch (e) {
+    authMsg = "Sign-in failed: " + (e && e.message || e) + ".";
+  } finally {
+    authBusy = false;
+  }
+  try { paintLogin(); render(); } catch (e) {}
+  if (hasSession()) {
+    try { scheduleFlush(100); } catch (e) {}
+    try { pullRemote(); } catch (e) {}
+  }
+}
+window.addEventListener("online", () => { ensureFreshSession(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) ensureFreshSession(); });
+setInterval(() => { ensureFreshSession(); }, 10 * 60e3);
+window.addEventListener("storage", e => { if (e.key === AUTH_KEY || e.key === WHO_KEY) { try { paintLogin(); paintSyncBar(); } catch (er) {} } });
+window.envssAuth = { session: () => { const x = getSession(); return x ? { email: x.user && x.user.email, expires_at: x.expires_at, invalid: !!x.invalid } : null; }, refresh: () => refreshSession(true), hasSession };
+/* ===== end v45 sign-in ===== */
 
 /* ===== v32 storage + sync engine (field-next.html only) =====
    - Local data lives under KEY ("envss-field-next-v32"). The live field.html key ("envss-field-v04") is
@@ -675,19 +898,19 @@ function sbCfg() {
 }
 function sbHeaders(prefer) {
   const c = sbCfg();
-  const h = { apikey: c.supabaseAnonKey, Authorization: "Bearer " + c.supabaseAnonKey, "Content-Type": "application/json" };
+  const h = { apikey: c.supabaseAnonKey, Authorization: "Bearer " + (accessToken() || c.supabaseAnonKey), "Content-Type": "application/json" };
   if (prefer) h.Prefer = prefer;
   return h;
 }
 async function sbGet(table) {
   const c = sbCfg();
-  const res = await fetch(c.supabaseUrl + "/rest/v1/" + table + "?select=id,payload,updated_at", { headers: sbHeaders() });
+  const res = await sbFetch(c.supabaseUrl + "/rest/v1/" + table + "?select=id,payload,updated_at", { headers: sbHeaders() });
   if (!res.ok) throw new Error(table + " " + res.status);
   return res.json();
 }
 async function sbUpsert(table, row) {
   const c = sbCfg();
-  const res = await fetch(c.supabaseUrl + "/rest/v1/" + table + "?on_conflict=id", {
+  const res = await sbFetch(c.supabaseUrl + "/rest/v1/" + table + "?on_conflict=id", {
     method: "POST",
     headers: sbHeaders("resolution=merge-duplicates,return=minimal"),
     body: JSON.stringify(row)
@@ -701,7 +924,7 @@ async function fetchProjectRows() {
   const c = sbCfg();
   const all = [];
   for (let offset = 0; offset < 50000; offset += 1000) {
-    const res = await fetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&order=id.asc&limit=1000&offset=" + offset, { headers: sbHeaders() });
+    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&order=id.asc&limit=1000&offset=" + offset, { headers: sbHeaders() });
     if (!res.ok) throw new Error("envss_projects " + res.status);
     const rows = await res.json();
     all.push(...rows);
@@ -786,7 +1009,7 @@ async function pullPumps() {
   if (!sbCfg() || pumpsLoaded) return;
   try {
     const c = sbCfg();
-    const res = await fetch(c.supabaseUrl + "/rest/v1/v_field_pumps?select=serial,make,model,owner,status,condition,calibration_due,podio_item_id,sort_group&order=sort_group.asc,serial.asc&limit=2000", { headers: sbHeaders() });
+    const res = await sbFetch(c.supabaseUrl + "/rest/v1/v_field_pumps?select=serial,make,model,owner,status,condition,calibration_due,podio_item_id,sort_group&order=sort_group.asc,serial.asc&limit=2000", { headers: sbHeaders() });
     if (!res.ok) throw new Error("v_field_pumps " + res.status);
     const rows = await res.json();
     if (Array.isArray(rows) && rows.length) { db.catalogs.fleetPumps = rows; pumpsLoaded = true; syncState.pumpsAt = new Date().toISOString(); persist(); }
@@ -812,14 +1035,14 @@ async function sendOne(p) {
   if (p.coll === "projects" && isPodioProject(rec)) return null;   // v33: hard stop, never write a Podio row
   if (p.coll === "projects" && !p.full) {
     /* Edited field-created project: merge only the edited fields onto the current row (never a Podio row). */
-    const res = await fetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload&id=eq." + encodeURIComponent(p.id), { headers: sbHeaders() });
+    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload&id=eq." + encodeURIComponent(p.id), { headers: sbHeaders() });
     if (!res.ok) throw new Error("read project " + res.status);
     const cur = (await res.json())[0];
     if (!cur) throw new Error("project row " + p.id + " not found");
     if (isPodioProject(Object.assign({ id: cur.id }, cur.payload || {}))) return null;   // v33: row is Podio-sourced, do not write
     const merged = Object.assign({}, cur.payload || {});
     (p.fields || []).forEach(f => { if (sent[f] === undefined) delete merged[f]; else merged[f] = sent[f]; });
-    const up = await fetch(c.supabaseUrl + "/rest/v1/envss_projects?id=eq." + encodeURIComponent(p.id), {
+    const up = await sbFetch(c.supabaseUrl + "/rest/v1/envss_projects?id=eq." + encodeURIComponent(p.id), {
       method: "PATCH", headers: sbHeaders("return=minimal"),
       body: JSON.stringify({ payload: merged, updated_at: now, updated_by: who })
     });
@@ -885,11 +1108,13 @@ function paintSyncBar() {
   html += ' <button type="button" class="sync-link" id="btnRefreshProjects">Refresh projects</button>';
   if (syncState.lastError && n) html += '<div class="sync-err">' + esc(syncState.lastError) + "</div>";
   if (storageWarning) html += '<div class="sync-warn" id="storageWarning">' + esc(storageWarning) + "</div>";
+  if (sessionInvalid()) html += '<div class="sync-warn" id="authWarning">Your sign-in has ended. <button type="button" class="sync-link" id="btnSignInAgain">Sign in again</button>' + esc(n ? " to send " + n + " change" + (n === 1 ? "" : "s") + ". They are kept on this device." : ".") + "</div>";
   el.innerHTML = html;
   el.className = "sync-bar" + (storageWarning ? " warn" : n ? " pending" : "");
   el.dataset.pending = String(n);
   const s = document.getElementById("btnSyncNow"); if (s) s.onclick = () => { scanDirty(); flushQueue(); pullActivity(); };
   const r = document.getElementById("btnRefreshProjects"); if (r) r.onclick = refreshProjects;
+  const a = document.getElementById("btnSignInAgain"); if (a) a.onclick = startGoogleSignIn;
 }
 window.addEventListener("online", () => { scheduleFlush(100); pullActivity(); if (!projectsLoaded) pullProjects(); paintSyncBar(); });
 window.addEventListener("offline", paintSyncBar);
@@ -1206,7 +1431,7 @@ function dashHtml() {
           </div>
         </div>`;
       }).join("") || `<div class="empty">No projects yet.</div>`}
-      <p class="muted">Signed in as ${esc(whoText())} — <button class="btn ghost" onclick="changeOperator()">Change operator</button></p>
+      <p class="muted">Signed in as ${esc(whoText())} — <button class="btn ghost" onclick="signOut()">Sign out</button></p>
       <p class="help">ENVSS Field v${APP_VERSION} · sync ${window._envssSync || "…"}</p>
     </div>`;
 }
@@ -2510,64 +2735,56 @@ function changeOperator() {
 function ensureOperator() {
   paintLogin();
 }
+/* v45: Google sign-in only. Ends the Supabase session on this device; data and queues stay on the device.
+   (The photo queue wraps this further down with its own "photos still waiting" warning.) */
 function signOut() {
+  const n = pendingCount();
+  if (n && !confirm(n + " change" + (n === 1 ? " is" : "s are") + " still waiting to send. They stay on this device and send after the next sign-in.\n\nSign out anyway?")) return;
+  const c = sbCfg();
+  const sess = getSession();
+  if (c && sess && sess.access_token && navigator.onLine) {
+    fetch(c.supabaseUrl + "/auth/v1/logout?scope=local", { method: "POST", headers: authHeaders({ Authorization: "Bearer " + sess.access_token }) }).catch(() => {});
+  }
+  saveSession(null);
   localStorage.removeItem(WHO_KEY);
+  authMsg = "";
   paintLogin();
   render();
 }
-function hasGoogle() {
-  return !!(window.ENVSS_CONFIG && window.ENVSS_CONFIG.googleClientId);
+/* Sign-in is needed when there is no Supabase Google session on this device.
+   Exception: a device last signed in with the pre-v45 Google button that is offline right now keeps working
+   (never signed out offline); it is asked to sign in once it is back online. */
+function needsSignIn() {
+  if (hasSession()) return false;
+  const o = getOperator();
+  if (o && o.source === "google" && allowedEmail(o.email) && !navigator.onLine) return false;
+  if (o) { try { localStorage.removeItem(WHO_KEY); } catch (e) {} }   // typed-name and pre-v45 operators are retired
+  return true;
 }
 function paintLogin() {
   const gate = document.getElementById("loginGate");
   if (!gate) return;
-  if (getOperator()) {
+  if (!authBusy && !needsSignIn()) {
     gate.classList.add("hidden");
     return;
   }
   gate.classList.remove("hidden");
-  const slot = document.getElementById("googleBtn");
-  if (hasGoogle() && window.google && window.google.accounts && slot && !slot.dataset.ready) {
-    slot.dataset.ready = "1";
-    window.google.accounts.id.initialize({
-      client_id: window.ENVSS_CONFIG.googleClientId,
-      callback: onGoogleCredential,
-      hd: window.ENVSS_CONFIG.allowedDomain,
-      auto_select: true
-    });
-    window.google.accounts.id.renderButton(slot, { theme: "outline", size: "large", width: 280, text: "signin_with" });
+  const msg = document.getElementById("loginMsg");
+  if (msg) {
+    msg.textContent = authMsg || (navigator.onLine ? "" : "You're offline. The first sign-in on this device needs internet.");
+    msg.classList.toggle("hidden", !msg.textContent);
   }
+  const btn = document.getElementById("btnGoogleSignIn");
+  if (btn) btn.disabled = authBusy;
+  const lab = document.getElementById("googleBtnLabel");
+  if (lab) lab.textContent = authBusy ? "Signing in…" : "Sign in with Google";
 }
-function onGoogleCredential(resp) {
-  try {
-    const payload = JSON.parse(atob(resp.credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    if (!allowedEmail(payload.email)) {
-      alert("Use your @" + window.ENVSS_CONFIG.allowedDomain + " Google account.");
-      return;
-    }
-    setOperator(payload.name || payload.email, { email: payload.email, source: "google" });
-    paintLogin();
-    render();
-  } catch (e) {
-    alert("Sign-in failed. Try again.");
-  }
-}
-function manualLogin() {
-  const name = document.getElementById("manualName")?.value.trim();
-  const email = document.getElementById("manualEmail")?.value.trim();
-  if (!name) { alert("Enter your name."); return; }
-  if (hasGoogle() && email && !allowedEmail(email)) {
-    alert("Use an @" + window.ENVSS_CONFIG.allowedDomain + " address.");
-    return;
-  }
-  setOperator(name, { email, source: "manual" });
-  paintLogin();
-  render();
-}
-window.onGoogleCredential = onGoogleCredential;
-window.manualLogin = manualLogin;
+window.startGoogleSignIn = startGoogleSignIn;
 window.signOut = signOut;
 window.changeOperator = changeOperator;
+handleAuthRedirect();
+window.addEventListener("online", paintLogin);
+window.addEventListener("offline", paintLogin);
 
 window.addEventListener("online", setOnline);
 window.addEventListener("offline", setOnline);
@@ -2626,6 +2843,7 @@ dashHtml = function () {
     html += "<div class=\"muted\">" + esc(p.controller || "No controller") + "</div></div>";
     html += "<div style=\"font-weight:700;color:var(--navy);text-align:right;max-width:160px\">" + esc(p.status || "") + "</div></div></button>";
   });
+  html += "<p class=\"muted\">Signed in as " + esc(whoText()) + " <button class=\"btn ghost\" type=\"button\" id=\"btnSignOut\" onclick=\"signOut()\">Sign out</button></p>";   /* v45 */
   html += "<p class=\"help\">ENVSS Field v" + APP_VERSION + "</p></div>";
   return html;
 };
@@ -2921,7 +3139,7 @@ window.ENVSS_V34 = "34";
 
 /* ---------- admin ---------- */
 /* Admins come from ENVSS_CONFIG.admins when config.js provides it; otherwise this minimal default.
-   Admin needs a Google sign-in on an envss.com.au account (a typed name/email is never admin).
+   Admin needs a v45 Google sign-in (Supabase session) on an envss.com.au account listed here.
    This is a convenience gate in the browser, not a security boundary. */
 /* Built from parts: the publishing tool rewrites literal e-mail addresses. Address = john at envss.com.au. */
 const V34_DEFAULT_ADMINS = [["john", "envss.com.au"].join("@")];
@@ -2932,7 +3150,7 @@ function v34Admins() {
 }
 function isAdmin() {
   const o = getOperator();
-  if (!o || o.source !== "google") return false;
+  if (!o || o.source !== "google" || !hasSession()) return false;   /* v45: Supabase Google session required */
   const email = String(o.email || "").toLowerCase();
   return allowedEmail(email) && v34Admins().indexOf(email) !== -1;
 }
@@ -4586,7 +4804,7 @@ followUpComplete = function (t) {
   async function uploadOne(rec) {
     const c = sbCfg(); if (!c) throw new Error("Supabase not configured");
     const h = sbHeaders(); delete h["Content-Type"]; delete h.Prefer;
-    const res = await fetch(c.supabaseUrl + "/storage/v1/object/" + BUCKET + "/" + rec.path.split("/").map(encodeURIComponent).join("/"),
+    const res = await sbFetch(c.supabaseUrl + "/storage/v1/object/" + BUCKET + "/" + rec.path.split("/").map(encodeURIComponent).join("/"),
       { method: "POST", headers: Object.assign(h, { "Content-Type": rec.mime || "image/jpeg", "x-upsert": "false", "cache-control": "31536000" }), body: rec.blob });
     if (res.ok) return true;
     const txt = await res.text().catch(() => "");

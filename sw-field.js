@@ -2,15 +2,14 @@
    Registered by field.html with scope "./field.html", so it never controls index.html.
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
-const VERSION = "44";
+const VERSION = "45";
 const CACHE = "envss-field-v" + VERSION;
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
 const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);
 const CDN_ASSETS = [
   "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
-  "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js",
-  "https://accounts.google.com/gsi/client"
+  "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"
 ];
 const CACHEABLE = new Set(SAME_ORIGIN_ASSETS.concat(CDN_ASSETS));
 
