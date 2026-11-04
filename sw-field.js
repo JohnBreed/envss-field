@@ -3,7 +3,7 @@
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
 const VERSION = "45";
-const CACHE = "envss-field-v" + VERSION;
+const CACHE = "envss-field-v45a"; /* v45a: cache name bumped; VERSION stays "45" because it is also the config.js?v= query field.html loads */
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
 const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);
