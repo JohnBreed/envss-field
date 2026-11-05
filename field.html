@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v45a</title>
+  <title>ENVSS Field v45b</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -389,7 +389,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v45a</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v45b</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -409,7 +409,7 @@ body.has-fab { padding-bottom: 104px; }
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "45a"; /* single version for field-next.html; bump on every publish */
+const APP_VERSION = "45b"; /* single version for field-next.html; bump on every publish */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -1326,6 +1326,18 @@ function kindLabel(t) {
 function isStoppedTrain(t) { return !!t && t.status !== "running" && (!!t.endAt || t.status === "ended" || t.status === "sample_stopped"); }
 function isNoise(t) { return (t.trainKind || "").startsWith("noise") || t.contaminantId === "NOISE"; }
 function isBlank(t) { return t.trainKind === "blank"; }
+/* v45b: one rule for a Field blank. Only what the blank screen shows is required: analyses (or contaminant),
+   cassette / filter / tube ID, sample number and shift date (falls back to the event date). Pump, sample head, flows,
+   start/stop times, person, rotameter and daily log are not asked on a blank, so they never hold it back. */
+function blankComplete(t) {
+  if (!t) return false;
+  const ev = (typeof eventById === "function" && eventById(t.eventId)) || {};
+  const hasAnalysis = ((t.analyses || []).some(a => a && a.code)) || !!t.contaminantId;
+  const hasMedia = !!String(t.mediaId || "").trim();
+  const hasNo = !!String(t.sampleNo || t.pouch || "").trim();
+  const hasDate = !!(t.shiftDate || ev.date);
+  return hasAnalysis && hasMedia && hasNo && hasDate;
+}
 function isAirbornePersonal(t) { return (t.trainKind || "airborne_personal") === "airborne_personal"; }
 function isStatic(t) { return (t.trainKind || "").endsWith("static") || t.mode === "static"; }
 
@@ -1333,7 +1345,7 @@ function displayStatus(t) {
   if (typeof t === "string") return t;
   if (!isBlank(t) && t.status === "field_blank") t = Object.assign({}, t, { status: t.endAt ? "ended" : t.startAt ? "running" : "prepped" });
   if (isBlank(t)) {
-    return (t.contaminantId && t.headId) ? "sample_complete" : "incomplete_blank";
+    return blankComplete(t) ? "sample_complete" : "incomplete_blank";
   }
   if (t.status === "running") return followUpComplete(t) ? "running" : "running_incomplete";
   if (t.status === "ended" || t.status === "sample_stopped") {
@@ -1349,7 +1361,7 @@ function personComplete(t) {
   return !!(sexOk && p.dob && p.occupation && p.company && p.hours && p.daysOn && p.daysOff);
 }
 function followUpComplete(t) {
-  if (isBlank(t)) return !!(t.contaminantId && t.headId);
+  if (isBlank(t)) return blankComplete(t);
   if (t.rejectAsked !== "yes" && t.rejectAsked !== "no") return false;
   if (t.rejectAsked === "yes" && !t.rejectCode) return false;
   if (t.equipAsked !== "yes" && t.equipAsked !== "no") return false;
@@ -1524,7 +1536,7 @@ function titleLine(t) {
   const c = contam(t.contaminantId);
   const parts = [displayNo(t), kindLabel(t)];
   if (c && !isNoise(t)) parts.push(c.code);
-  if (isBlank(t)) { parts.push(dash(t.headId)); return parts.join(" · "); }
+  if (isBlank(t)) { parts.push(dash(t.mediaId)); return parts.join(" · "); }   /* v45b: blanks show the cassette, not the (hidden) head */
   if (isNoise(t)) { parts.push(dash(t.dosimeterSerial)); return parts.join(" · "); }
   parts.push(dash(t.pumpSerial), dash(t.headId), dash(t.mediaId));
   return parts.join(" · ");
@@ -2423,7 +2435,7 @@ function markEventUpload(id) {
   const ev = eventById(id);
   if (!ev) return;
   const bad = trainsOf(id).filter(t => {
-    if (isBlank(t)) return !(t.contaminantId && t.headId);
+    if (isBlank(t)) return !blankComplete(t);
     if (t.status === "running") return true;
     if (t.status === "prepped") return true;
     if ((t.status === "ended" || t.status === "rejected" || t.status === "fault") && !followUpComplete(t)) return true;
@@ -4361,7 +4373,7 @@ function answerGaps(t) { return answerItems(t).filter(i => !i.ok); }
 const _followUpComplete40 = followUpComplete;
 followUpComplete = function (t) {
   if (isFibreTrain(t)) return _followUpComplete40(t);   // v42: AFM keeps its own rule (end flow / cowl / rejected)
-  if (isBlank(t)) return !!(t.contaminantId && t.headId);
+  if (isBlank(t)) return blankComplete(t);
   return answerGaps(t).length === 0;
 };
 (function () {
