@@ -3969,7 +3969,10 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     ws.getColumn(LASTCOL).width = 20;
 
     const lastRow = F0 + foot.length - 1;
-    ws.pageSetup.printArea = "A1:" + colL(LASTCOL) + lastRow;
+    /* A4 landscape, one page wide, as many pages tall as needed; the table header (rows 16-17) repeats on every page */
+    Object.assign(ws.pageSetup, { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, scale: 100,
+      horizontalCentered: true, printTitlesRow: "16:17", printArea: "A1:" + colL(LASTCOL) + lastRow,
+      margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.6, header: 0.2, footer: 0.25 } });
     /* drop the now-empty rows below the footer from the file */
     for (let r = lastRow + 1; r <= OLD_LAST + 5; r++) { const row = ws.getRow(r); row.height = undefined; }
     if (Array.isArray(ws._rows)) ws._rows.length = lastRow;
