@@ -3738,7 +3738,8 @@ editEventHtml = function () {
        <label>Task being monitored</label><input id="etask" value="${esc(ev.taskDesc || "")}">
        <label>Rotameter serial</label><input id="erota" value="${esc(ev.rotameter || "")}">
        <label>Lab turnaround</label><select id="etat">${optsHtml(TAT_OPTS, ev.tat || "next_0700")}</select>`
-    : minesChips("emines", minesState(ev)) + multiChips("emulti", ev.multiDay ? "yes" : "no");
+    : minesChips("emines", minesState(ev)) + multiChips("emulti", ev.multiDay ? "yes" : "no")
+      + `<label>Lab turnaround (COC)</label><select id="eturn">${optsHtml(window.COC_TAT_OPTS || [["standard", "Standard"]], ev.turnaround || "standard")}</select>`;   /* v45b */
   let out = html.replace("<label>Notes</label>", extra + "<label>Notes</label>");
   /* v36: the old multi-day checkbox is replaced by the Yes/No question (hygiene) or dropped (AFM is single shift). */
   out = out.replace(/<label class="check-row"><input type="checkbox" id="emulti"[^>]*>[^<]*<\/label>/, "");
@@ -3767,6 +3768,7 @@ saveEventEdits = function () {
   } else {
     if (g("emulti")) ev.multiDay = g("emulti").value === "yes";
     if (g("emines")) ev.minesAct = g("emines").value === "yes";
+    if (g("eturn")) ev.turnaround = g("eturn").value || "standard";   /* v45b: Form 302 turnaround */
     const parts = ev.code.split("-");
     if (parts.length >= 2) ev.code = p.number + "-" + parts.slice(1).join("-");
   }
@@ -3807,52 +3809,212 @@ function cocDate(iso) {
 }
 function cocRejected(t) { return t.status === "rejected" || t.status === "fault" || t.rejectAsked === "yes" || !!t.rejectCode || !!t.rejected; }
 function operatorName(who) { return String(who || "").split(" <")[0].split(" · ")[0].trim(); }
+/* ===== COC Form 302 v45c layout (preview; to be ported into field.html createCoc) =====
+   John's changes, 5 Nov 2026 (t214u/t215u):
+   - F5 = job number only. Contact Person, Project Mgr, Sampler = sampler(s) from START/STOP audit. Mobile (D11) blank.
+   - Email Results to = lab@envss.com.au (no "&"). Email Invoice to unchanged.
+   - Relinquished by: Print Name = sampler, Date & Time = when the COC is created, Signature = sampler initials.
+   - Phantom yellow merged row (template row 75, F75:W75) removed.
+   - Only as many sample rows as samples; footer follows straight after.
+   - One column per analyte actually requested in the event (no unused standard test columns).
+   - Run Time (min) / Volume (L) headers horizontal and readable; thin borders on table and footer.
+   Needs from field.html: ExcelJS, cocTemplateBytes, eventById, project, trainsOf, isNoise, isBlank, sampleNoOf, typeOfSample,
+   contam, cocDate, cocRejected, operatorName, runtimeMinutes, volumeLitres, round1, download, isFibreEvent. */
+(function () {
+  const ORDER = ["INH", "RES", "SIL", "GYP", "DP", "WLD", "CRM", "CUF", "FEO", "MNF", "NI", "ZNF"];
+  const SHORT = { INH: "Inhalable dust", RES: "Respirable dust", SIL: "Crystalline silica", GYP: "Gypsum", DP: "Diesel particulate matter",
+    WLD: "Welding fume", CRM: "Cr", CUF: "Cu", FEO: "FeO", MNF: "Mn", NI: "Ni", ZNF: "ZnO" };
+  const COC_TAT_CELL = { standard: "H9", same_day: "J9", "1_day": "L9", "2_day": "N9", "3_day": "P9" };
+  window.COC_TAT_OPTS = [["standard", "Standard"], ["same_day", "Same Day"], ["1_day", "1 day"], ["2_day", "2 day"], ["3_day", "3 day"]];
+  const THIN = { style: "thin", color: { argb: "FF000000" } };
+  const BOX = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+  const clone = o => JSON.parse(JSON.stringify(o || {}));
+  const colL = n => { let s = ""; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+  const initials = name => String(name || "").split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join("");
+  const pad2 = n => String(n).padStart(2, "0");
+  function nowStamp(d) { return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear() + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
+  function codesOf(s) {
+    let codes = (s.analyses || []).map(a => String(a.code || "").toUpperCase()).filter(Boolean);
+    if (!codes.length) { const c = contam(s.contaminantId); if (c) codes = [String(c.code).toUpperCase()]; }
+    return Array.from(new Set(codes));
+  }
+  function analyteName(code, rows) {
+    if (SHORT[code]) return SHORT[code];
+    const c = contam(code); if (c && c.name) return c.name;
+    for (const s of rows) { const a = (s.analyses || []).find(x => String(x.code).toUpperCase() === code); if (a && a.name) return a.name; }
+    return code;
+  }
+
+  window.buildCocV45c = async function (ev, opts) {
+    opts = opts || {};
+    const p = ev && project(ev.projectId);
+    if (!ev || !p) throw new Error("Open an event, then use Create COC.");
+    const rows = trainsOf(ev.id).filter(t => !isNoise(t)).sort((a, b) => sampleNoOf(a) - sampleNoOf(b));
+    if (!rows.length) throw new Error("No lab samples on this event.");
+    /* analytes actually requested, in a sensible order (standard dusts, welding fume then its metals, then the rest as first seen) */
+    const seen = [];
+    rows.forEach(s => codesOf(s).forEach(c => { if (seen.indexOf(c) === -1) seen.push(c); }));
+    const analytes = seen.filter(c => ORDER.indexOf(c) >= 0).sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)).concat(seen.filter(c => ORDER.indexOf(c) < 0));
+    const FIRST = 6, LASTCOL = 23;                       /* F .. W */
+    const k = analytes.length;
+    if (k > LASTCOL - FIRST - 2) throw new Error("Form 302 has room for " + (LASTCOL - FIRST - 2) + " analytes; this event has " + k + ".");
+    const cRun = FIRST + k, cVol = FIRST + k + 1, cCom = FIRST + k + 2;
+
+    const book = new ExcelJS.Workbook();
+    await book.xlsx.load(opts.templateBytes || cocTemplateBytes());
+    const ws = book.getWorksheet("Client") || book.worksheets[0];
+
+    /* --- header block --- */
+    const samplers = [];
+    rows.forEach(t => (t.audit || []).forEach(a => { if (/^(START|STOP) pressed/.test(a.action || "")) { const n = operatorName(a.who); if (n && samplers.indexOf(n) === -1) samplers.push(n); } }));
+    const who = samplers.join(", ");
+    ws.getCell("F5").value = String(p.number || "");
+    ["B5", "B6", "B7"].forEach(a => { ws.getCell(a).value = who; });
+    ws.getCell("D11").value = null;
+    ws.getCell("B12").value = "lab@envss.com.au";
+    /* lab turnaround: one "x" in the "Or choose" row (H9 Standard, J9 Same Day, L9 1 day, N9 2 day, P9 3 day) */
+    const tat = opts.turnaround || ev.turnaround || "standard";
+    Object.keys(COC_TAT_CELL).forEach(k => { ws.getCell(COC_TAT_CELL[k]).value = null; });
+    ws.getCell(COC_TAT_CELL[tat] || COC_TAT_CELL.standard).value = "x";
+    if (!ws.getCell("F4").isMerged) ws.mergeCells("F4:Q4");   /* "Client Project Name/Number/Site…" label was cut by a cell border */
+
+    /* --- snapshot the footer (template rows 76-80; row 75 is the phantom yellow row, 81 is empty) --- */
+    const FOOT_FROM = 76, FOOT_TO = 80;
+    const foot = [];
+    for (let r = FOOT_FROM; r <= FOOT_TO; r++) {
+      const row = ws.getRow(r), cells = [];
+      for (let c = 1; c <= LASTCOL; c++) { const cell = row.getCell(c); cells.push({ v: cell.isMerged && cell.master !== cell ? undefined : cell.value, s: clone(cell.style) }); }
+      foot.push({ h: row.height, cells });
+    }
+    const footMerges = ws.model.merges.filter(m => { const r = +m.match(/\d+/)[0]; return r >= FOOT_FROM && r <= FOOT_TO; });
+    const hdrStyle = clone(ws.getCell("B17").style), rotStyle = clone(ws.getCell("F17").style), labStyle = clone(ws.getCell("A17").style);
+    const dataStyle = clone(ws.getCell("B18").style), bandStyle = clone(ws.getCell("A16").style);
+
+    /* --- remove everything from row 16 down (merges first), then rebuild --- */
+    ws.model.merges.filter(m => +m.match(/\d+/)[0] >= 16).forEach(m => ws.unMergeCells(m));
+    const OLD_LAST = Math.max(ws.rowCount, 81);
+    for (let r = 16; r <= OLD_LAST + 5; r++) { const row = ws.getRow(r); for (let c = 1; c <= LASTCOL + 3; c++) { const cell = row.getCell(c); cell.value = null; cell.style = {}; } row.height = undefined; }
+
+    const put = (r, c, v, style) => { const cell = ws.getCell(r, c); cell.style = clone(style); if (v !== undefined) cell.value = v; return cell; };
+    const box = (r1, c1, r2, c2) => { for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) ws.getCell(r, c).border = clone(BOX); };
+
+    /* row 16: section bands */
+    const R16 = 16, R17 = 17;
+    for (let c = 1; c <= LASTCOL; c++) put(R16, c, null, bandStyle);
+    ws.getCell(R16, 1).value = "Sample information"; ws.mergeCells(R16, 1, R16, 5);
+    ws.getCell(R16, FIRST).value = "Tests Required"; if (k > 1) ws.mergeCells(R16, FIRST, R16, FIRST + k - 1);
+    ws.mergeCells(R16, cRun, R16, cVol);
+    ws.getCell(R16, cCom).value = "Comments"; if (cCom < LASTCOL) ws.mergeCells(R16, cCom, R16, LASTCOL);
+    ws.getRow(R16).height = 15;
+
+    /* row 17: column headers */
+    put(R17, 1, "Envirolab \nSample ID\n(Lab use only)", labStyle);
+    put(R17, 2, "Client Sample ID  or Information", hdrStyle);
+    put(R17, 3, "Depth", hdrStyle); put(R17, 4, "Date Sampled", hdrStyle); put(R17, 5, "Type of Sample", hdrStyle);
+    analytes.forEach((code, i) => put(R17, FIRST + i, analyteName(code, rows), rotStyle));
+    put(R17, cRun, "Run Time (min)", hdrStyle); put(R17, cVol, "Volume (L)", hdrStyle);
+    put(R17, cCom, "Provide as much information about the sample as you can", hdrStyle);
+    for (let c = cCom + 1; c <= LASTCOL; c++) put(R17, c, null, hdrStyle);
+    if (cCom < LASTCOL) ws.mergeCells(R17, cCom, R17, LASTCOL);
+    ws.getRow(R17).height = 80.25;
+
+    /* sample rows */
+    rows.forEach((s, n) => {
+      const r = 18 + n, blank = isBlank(s), codes = codesOf(s);
+      for (let c = 1; c <= LASTCOL; c++) put(r, c, null, dataStyle);
+      ws.getCell(r, 2).value = s.mediaId || "";
+      ws.getCell(r, 3).value = "N/A";
+      ws.getCell(r, 4).value = blank ? (cocDate(s.shiftDate) || cocDate(ev.date)) : (cocDate(s.startAt) || cocDate(s.shiftDate) || cocDate(ev.date));
+      ws.getCell(r, 5).value = typeOfSample(s);
+      analytes.forEach((code, i) => { if (codes.indexOf(code) >= 0) ws.getCell(r, FIRST + i).value = "x"; });
+      if (blank) { ws.getCell(r, cRun).value = "N/A"; ws.getCell(r, cVol).value = "N/A"; }
+      else {
+        const mins = runtimeMinutes(s), vol = volumeLitres(s);
+        if (mins != null && isFinite(mins) && mins > 0) ws.getCell(r, cRun).value = Math.round(mins);
+        if (vol != null && isFinite(vol) && vol > 0) { ws.getCell(r, cVol).value = round1(vol); ws.getCell(r, cVol).numFmt = "0.0"; }
+      }
+      if (cocRejected(s)) ws.getCell(r, cCom).value = "voided needs clean and return";
+      if (cCom < LASTCOL) ws.mergeCells(r, cCom, r, LASTCOL);
+      ws.getRow(r).height = 15.75;
+    });
+    const lastSample = 17 + rows.length;
+    box(R16, 1, lastSample, LASTCOL);
+
+    /* footer, straight after the last sample */
+    const F0 = lastSample + 1, shift = F0 - FOOT_FROM;
+    foot.forEach((fr, i) => {
+      const r = F0 + i;
+      fr.cells.forEach((fc, j) => { const cell = ws.getCell(r, j + 1); cell.style = clone(fc.s); if (fc.v !== undefined) cell.value = fc.v; });
+      ws.getRow(r).height = fr.h || 15.75;
+    });
+    footMerges.forEach(m => {
+      const [a, b] = m.split(":"); const rr = x => x.replace(/\d+/, d => String(+d + shift));
+      ws.mergeCells(rr(a) + ":" + rr(b));
+    });
+    /* labels that run across several cells get one merged cell, so the thin grid does not cut through the text */
+    [[F0 + 1, 5, 7], [F0 + 2, 20, 23], [F0 + 3, 20, 23], [F0 + 4, 13, 23]].forEach(([r, c1, c2]) => {
+      for (let c = c1 + 1; c <= c2; c++) ws.getCell(r, c).value = null;
+      ws.mergeCells(r, c1, r, c2);
+    });
+    ws.getCell(F0 + 2, 2).value = who;                                  /* Print Name (B78) */
+    ws.getCell(F0 + 3, 2).value = nowStamp(opts.now || new Date());     /* Date & Time (B79) = COC created */
+    ws.getCell(F0 + 3, 2).numFmt = "@";
+    ws.getCell(F0 + 4, 2).value = samplers.map(initials).join(", ");    /* Signature (B80) = initials */
+    box(F0, 1, F0 + foot.length - 1, LASTCOL);
+
+    /* column widths: analytes narrow, run time / volume readable, comments take the rest */
+    for (let c = FIRST; c < cRun; c++) ws.getColumn(c).width = 5.5;
+    ws.getColumn(cRun).width = 8; ws.getColumn(cVol).width = 8.5;
+    for (let c = cCom; c < LASTCOL; c++) ws.getColumn(c).width = 4.63;
+    ws.getColumn(LASTCOL).width = 20;
+
+    const lastRow = F0 + foot.length - 1;
+    ws.pageSetup.printArea = "A1:" + colL(LASTCOL) + lastRow;
+    /* drop the now-empty rows below the footer from the file */
+    for (let r = lastRow + 1; r <= OLD_LAST + 5; r++) { const row = ws.getRow(r); row.height = undefined; }
+    if (Array.isArray(ws._rows)) ws._rows.length = lastRow;
+    const buf = await book.xlsx.writeBuffer();
+    return { buf, name: ev.code + "_Laboratory_COC.xlsx", analytes, samplers, rows: rows.length, lastRow, turnaround: tat };
+  };
+})();
+
+/* v45b: lab turnaround picker shown before the COC is made. Resolves to the chosen code, or null on Cancel. */
+function askCocTurnaround(ev) {
+  return new Promise(resolve => {
+    const cur = ev.turnaround || "standard";
+    const wrap = document.createElement("div");
+    wrap.id = "cocTatModal";
+    wrap.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";
+    wrap.innerHTML = `<div class="card" style="max-width:420px;width:100%;background:var(--surf2,#1c2233);color:var(--text,#fff);border-radius:14px;padding:16px">
+      <h3 style="margin:0 0 8px">Create COC — lab turnaround</h3>
+      <p class="help" style="margin:0 0 10px">Envirolab Form 302 "Date results required". Saved on the event.</p>
+      ${COC_TAT_OPTS.map(([v, l]) => `<label class="check-row" style="display:flex;gap:8px;align-items:center;min-height:40px"><input type="radio" name="cocTat" value="${v}" ${v === cur ? "checked" : ""}> ${l}</label>`).join("")}
+      <div class="row" style="display:flex;gap:8px;margin-top:12px"><button type="button" class="btn ghost" id="cocTatCancel">Cancel</button><button type="button" class="btn green" id="cocTatOk">Create COC</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const done = v => { wrap.remove(); resolve(v); };
+    wrap.querySelector("#cocTatCancel").onclick = () => done(null);
+    wrap.querySelector("#cocTatOk").onclick = () => { const r = wrap.querySelector('input[name="cocTat"]:checked'); done(r ? r.value : "standard"); };
+  });
+}
 createCoc = async function () {
   const ev = eventById(view.eventId);
   const p = ev && project(ev.projectId);
-  if (!ev || !p) { alert("Open an event, then use Create COC."); return; }
-  if (isFibreEvent(ev)) { alert("AFM samples go to Lifetree, not Envirolab. Form 302 is the Envirolab COC, so it is not made for AFM events yet. Use Export CSV."); return; }
-  if (typeof ExcelJS === "undefined") { alert("The spreadsheet library has not loaded. Go online once, then try again."); return; }
-  const all = trainsOf(ev.id).filter(t => !isNoise(t)).sort((a, b) => sampleNoOf(a) - sampleNoOf(b));
-  /* v35: rejected/voided samples go on the COC in sample order, marked for clean and return (John, 2 Nov 2026). */
-  const voided = all.filter(cocRejected);
-  const rows = all;
-  if (!rows.length) { alert("No lab samples on this event."); return; }
-  if (rows.length > 58) { alert("Form 302 holds 58 rows; this event has " + rows.length + ". Split the event first."); return; }
-  const book = new ExcelJS.Workbook();
-  await book.xlsx.load(cocTemplateBytes());
-  const ws = book.getWorksheet("Client") || book.worksheets[0];
-  for (let r = 18; r < 76; r++) [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 19, 20, 21].forEach(c => { ws.getCell(r, c).value = null; });
-  ws.getCell(5, 6).value = p.number + (p.name && p.name !== p.number ? " " + p.name : "");
-  const samplers = [];
-  all.forEach(t => (t.audit || []).forEach(a => { if (/^(START|STOP) pressed/.test(a.action || "")) { const n = operatorName(a.who); if (n && samplers.indexOf(n) === -1) samplers.push(n); } }));
-  if (samplers.length) ws.getCell(7, 2).value = samplers.join(", ");
-  const tests = ["INH", "GYP", "RES", "SIL", "DP", "WLD"];
-  const metal = ["WLD", "CRM", "CUF", "FEO", "MNF", "NI", "ZNF"];
-  rows.forEach((s, n) => {
-    const r = 18 + n;
-    const blank = isBlank(s);
-    let codes = (s.analyses || []).map(a => String(a.code || "").toUpperCase()).filter(Boolean);
-    if (!codes.length) { const c = contam(s.contaminantId); if (c) codes = [String(c.code).toUpperCase()]; }
-    ws.getCell(r, 2).value = s.mediaId || "";
-    ws.getCell(r, 3).value = "N/A";
-    ws.getCell(r, 4).value = blank ? cocDate(ev.date) : (cocDate(s.startAt) || cocDate(s.shiftDate) || cocDate(ev.date));
-    ws.getCell(r, 5).value = typeOfSample(s);
-    tests.forEach((code, i) => {
-      if (codes.indexOf(code) >= 0 || (code === "WLD" && metal.some(m => codes.indexOf(m) >= 0))) ws.getCell(r, 6 + i).value = "x";
-    });
-    if (blank) { ws.getCell(r, 19).value = "N/A"; ws.getCell(r, 20).value = "N/A"; }
-    else {
-      const mins = runtimeMinutes(s), vol = volumeLitres(s);
-      if (mins != null && isFinite(mins) && mins > 0) ws.getCell(r, 19).value = Math.round(mins);
-      if (vol != null && isFinite(vol) && vol > 0) ws.getCell(r, 20).value = round1(vol);
-    }
-    /* column 21 (comments): only rejected/voided samples get a note; all others stay empty */
-    if (cocRejected(s)) ws.getCell(r, 21).value = "voided needs clean and return";
-  });
-  const blob = new Blob([await book.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  window._v34LastCoc = { event: ev.code, rows: rows.map(s => ({ no: sampleNoOf(s), id: s.mediaId || "" })), voided: voided.map(displayNo), excluded: [], size: blob.size };
-  download(blob, ev.code + "_Laboratory_COC.xlsx");
+  if (!ev || !p) { alert("Open an event, then use Create COC."); return false; }
+  if (isFibreEvent(ev)) { alert("AFM samples go to Lifetree, not Envirolab. Form 302 is the Envirolab COC, so it is not made for AFM events yet. Use Export CSV."); return false; }
+  if (typeof ExcelJS === "undefined") { alert("The spreadsheet library has not loaded. Go online once, then try again."); return false; }
+  const rows = trainsOf(ev.id).filter(t => !isNoise(t));
+  if (!rows.length) { alert("No lab samples on this event."); return false; }
+  if (rows.length > 58) { alert("Form 302 holds 58 rows; this event has " + rows.length + ". Split the event first."); return false; }
+  const tat = await askCocTurnaround(ev);
+  if (!tat) return false;
+  if (ev.turnaround !== tat) { ev.turnaround = tat; saveQuiet(); }
+  let out;
+  try { out = await buildCocV45c(ev, { turnaround: tat }); } catch (e) { alert(e.message || String(e)); return false; }
+  const blob = new Blob([out.buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  window._v34LastCoc = { event: ev.code, rows: rows.length, analytes: out.analytes, turnaround: tat, size: blob.size };
+  download(blob, out.name);
+  return true;
 };
 window.createCoc = createCoc;
 
@@ -4512,6 +4674,7 @@ followUpComplete = function (t) {
   createCoc = async function () {
     const ev = eventById(view.eventId);
     const r = await _coc42.apply(this, arguments);
+    if (r === false) return r;   /* v45b: cancelled or refused, nothing downloaded, nothing logged */
     try { if (ev && !isFibreEvent(ev)) { evLog(ev, "Create COC", "Envirolab Form 302 downloaded"); saveQuiet(); } } catch (e) {}
     return r;
   };
