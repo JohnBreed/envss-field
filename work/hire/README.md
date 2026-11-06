@@ -5,11 +5,11 @@ Built 2026-11-06 AWST on local branch `v45b`. **Not pushed. Not on GitHub Pages.
 ## Catalog
 
 Embedded snapshot: `work/hire/catalog-2026-11-06.snapshot.json`  
-Source: `envss-invoicing/hire-catalog/supplier-rates.json` (`catalog_version` **2026-11-06**).
+Source: `envss-invoicing/hire-catalog/supplier-rates.json` (`catalog_version` **2026-11-06-airmet-pricelist**).
 
 | Supplier | Selectable in v1 | Items |
 |---|---|---|
-| Air-Met Scientific | yes | 48 (all provisional_from_invoices) |
+| Air-Met Scientific | yes | 152 (123 official pricelist + 29 supplementary/provisional invoice-only names) |
 | NVMS | yes | 7 (official 4448 – Dosi / 2250 – SLM + booking/invoice aliases + $0 accessories) |
 | Environmental Test Solutions (ETS) | yes | 3 (Little Pip, QED MP50 kit, YSI ProQuatro; provisional from invoices) |
 | Mérieux NutriSciences | yes | 2 (AIR SAMPLER MERCK / ALS102, MicroBIO Air Impacter alias; provisional from invoices) |

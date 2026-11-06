@@ -1,0 +1,1674 @@
+{
+  "catalog_version": "2026-11-06-airmet-pricelist",
+  "embedded_from": "envss-invoicing/hire-catalog/supplier-rates.json",
+  "currency_default": "AUD",
+  "note": "Snapshot embedded 2026-11-06 AWST from catalog_version 2026-11-06-airmet-pricelist (official Air-Met PDF plus 29 supplementary invoice-only names). Labels are exact item_name. Rates are reference only — v1 never calculates billing.",
+  "suppliers": [
+    {
+      "id": "air-met",
+      "name": "Air-Met Scientific",
+      "enabled": true
+    },
+    {
+      "id": "nvms",
+      "name": "NVMS",
+      "enabled": true
+    },
+    {
+      "id": "ets",
+      "name": "Environmental Test Solutions (ETS)",
+      "enabled": true
+    },
+    {
+      "id": "merieux",
+      "name": "Mérieux NutriSciences",
+      "enabled": true
+    }
+  ],
+  "items": {
+    "air-met": [
+      {
+        "key": "air-met-industrial-scientific-4-gas-monitor-mx4-standard",
+        "label": "Industrial Scientific 4-Gas Monitor - MX4 (Standard Sensors O2, LEL, CO, H2S)",
+        "rates": {
+          "day": 60.0,
+          "week": 220.0,
+          "month": 474.0
+        },
+        "rateNote": "ref ex-GST day $60 / week $220 / month $474 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-industrial-scientific-5-gas-monitor-mx6-ventis-p",
+        "label": "Industrial Scientific 5-Gas Monitor - MX6, Ventis Pro5 ( Standard Sensors O2, LEL, CO, H2S)",
+        "rates": {
+          "day": 70.0,
+          "week": 266.0,
+          "month": 593.0
+        },
+        "rateNote": "ref ex-GST day $70 / week $266 / month $593 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-sensor-surcharge-so2",
+        "label": "Sensor Surcharge - SO2",
+        "rates": {
+          "day": 20.0,
+          "week": 52.0,
+          "month": 135.0
+        },
+        "rateNote": "ref ex-GST day $20 / week $52 / month $135 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17124975-q-r",
+        "label": "Sensor Surcharge - CO2 IR , PID (VOC)",
+        "catalog_code": "17124975-Q-R",
+        "rates": {
+          "day": 20.0,
+          "week": 52.0,
+          "month": 135.0
+        },
+        "rateNote": "ref ex-GST day $20 / week $52 / month $135 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-sensor-surcharge-methane-ir-0-5-vol-or-0-100-vol",
+        "label": "Sensor Surcharge - Methane IR (0-5% Vol or 0-100% Vol), LEL IR (0-100%)",
+        "rates": {
+          "day": 20.0,
+          "week": 52.0,
+          "month": 135.0
+        },
+        "rateNote": "ref ex-GST day $20 / week $52 / month $135 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-sensor-surcharge-no-no2",
+        "label": "Sensor Surcharge - NO, NO2",
+        "rates": {
+          "day": 25.0,
+          "week": 65.0,
+          "month": 169.0
+        },
+        "rateNote": "ref ex-GST day $25 / week $65 / month $169 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-sensor-surcharge-nh3-hcn-cl2-hcl",
+        "label": "Sensor Surcharge - NH3, HCN, CL2, HCl",
+        "rates": {
+          "day": 35.0,
+          "week": 91.0,
+          "month": 237.0
+        },
+        "rateNote": "ref ex-GST day $35 / week $91 / month $237 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-dsx-docking-station-for-industrial-scientific-mx",
+        "label": "DSX Docking Station for Industrial Scientific MX6/Ventis/BZ1",
+        "rates": {
+          "day": 120.0,
+          "week": 360.0,
+          "month": 936.0
+        },
+        "rateNote": "ref ex-GST day $120 / week $360 / month $936 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-extendable-gas-sampling-probes-6ft",
+        "label": "Extendable Gas Sampling Probes - 6ft",
+        "rates": {
+          "day": 15.0,
+          "week": 40.0,
+          "month": 80.0
+        },
+        "rateNote": "ref ex-GST day $15 / week $40 / month $80 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-aeroqual-ranger-dust-module-pm1-pm2-5-pm4-pm10-a",
+        "label": "Aeroqual Ranger - Dust Module (PM1, PM2.5, PM4, PM10 and TSP)",
+        "rates": {
+          "day": 85.0,
+          "week": 235.0,
+          "month": 584.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $235 / month $584 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-o3-ultra-low-0-0-15ppm",
+        "label": "O3 Ultra Low 0-0.15ppm",
+        "rates": {
+          "day": 28.0,
+          "week": 97.0,
+          "month": 264.0
+        },
+        "rateNote": "ref ex-GST day $28 / week $97 / month $264 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-s500o3",
+        "label": "O3 0-10ppm Range",
+        "catalog_code": "S500O3",
+        "rates": {
+          "day": 28.0,
+          "week": 97.0,
+          "month": 264.0
+        },
+        "rateNote": "ref ex-GST day $28 / week $97 / month $264 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-aeroqual-s500-ozone-monitor",
+        "label": "Aeroqual S500 - Ozone monitor",
+        "rates": {
+          "day": 65.0,
+          "week": 218.0,
+          "month": 542.0
+        },
+        "rateNote": "ref ex-GST day $65 / week $218 / month $542 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-o3-ultra-low-0-0-15ppm-2",
+        "label": "O3 Ultra Low 0-0.15ppm",
+        "rates": {
+          "day": 28.0,
+          "week": 97.0,
+          "month": 264.0
+        },
+        "rateNote": "ref ex-GST day $28 / week $97 / month $264 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-o3-0-10ppm-range",
+        "label": "O3 0-10ppm Range",
+        "rates": {
+          "day": 28.0,
+          "week": 97.0,
+          "month": 264.0
+        },
+        "rateNote": "ref ex-GST day $28 / week $97 / month $264 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-kitagawa-hand-pump",
+        "label": "Kitagawa Hand Pump",
+        "rates": {
+          "day": 26.0,
+          "week": 92.0,
+          "month": 225.0
+        },
+        "rateNote": "ref ex-GST day $26 / week $92 / month $225 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-bz1",
+        "label": "Industrial Scientific Radius BZ1 Area Gas Detector Diffused/Pumped (Standard Sensors O2, LEL, CO,",
+        "catalog_code": "BZ1",
+        "rates": {
+          "day": 240.0,
+          "week": 580.0,
+          "month": 1500.0
+        },
+        "rateNote": "ref ex-GST day $240 / week $580 / month $1500 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-sensor-surcharge-so2-2",
+        "label": "Sensor Surcharge - SO2",
+        "rates": {
+          "day": 20.0,
+          "week": 48.0,
+          "month": 120.0
+        },
+        "rateNote": "ref ex-GST day $20 / week $48 / month $120 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-sensor-surcharge-co2-ir-pid-voc",
+        "label": "Sensor Surcharge - CO2 IR, PID (VOC)",
+        "rates": {
+          "day": 25.0,
+          "week": 60.0,
+          "month": 150.0
+        },
+        "rateNote": "ref ex-GST day $25 / week $60 / month $150 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-sensor-surcharge-no-no2-2",
+        "label": "Sensor Surcharge - NO, NO2",
+        "rates": {
+          "day": 30.0,
+          "week": 70.0,
+          "month": 170.0
+        },
+        "rateNote": "ref ex-GST day $30 / week $70 / month $170 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-sensor-surcharge-nh3-hcn-cl2-hcl-2",
+        "label": "Sensor Surcharge - NH3, HCN, Cl2, HCl",
+        "rates": {
+          "day": 35.0,
+          "week": 90.0,
+          "month": 240.0
+        },
+        "rateNote": "ref ex-GST day $35 / week $90 / month $240 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ion-science-phocheck-tiger-pid-datalogging-ppm",
+        "label": "ION Science PhoCheck Tiger PID Datalogging - PPM",
+        "rates": {
+          "day": 80.0,
+          "week": 293.0,
+          "month": 703.0
+        },
+        "rateNote": "ref ex-GST day $80 / week $293 / month $703 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ion-science-phocheck-tiger-pid-datalogging-ppb",
+        "label": "ION Science PhoCheck Tiger PID Datalogging - PPB",
+        "rates": {
+          "day": 105.0,
+          "week": 404.0,
+          "month": 1060.0
+        },
+        "rateNote": "ref ex-GST day $105 / week $404 / month $1060 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ion-science-tiger-xt-datalogging-ppm",
+        "label": "ION Science Tiger XT Datalogging - PPM",
+        "rates": {
+          "day": 80.0,
+          "week": 293.0,
+          "month": 703.0
+        },
+        "rateNote": "ref ex-GST day $80 / week $293 / month $703 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ion-science-tiger-xt-select-datalogging-ppb-for-",
+        "label": "ION Science Tiger XT Select Datalogging - PPB (for BTEX monitoring)",
+        "rates": {
+          "day": 120.0,
+          "week": 440.0,
+          "month": 1055.0
+        },
+        "rateNote": "ref ex-GST day $120 / week $440 / month $1055 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-geotech-ga5000-landfill-gas-meter-co2-ch4-h2s-o2",
+        "label": "Geotech GA5000 Landfill Gas Meter CO2, CH4, H2S, O2, CO, Barometer & Flow",
+        "rates": {
+          "day": 146.0,
+          "week": 633.0,
+          "month": 1625.0
+        },
+        "rateNote": "ref ex-GST day $146 / week $633 / month $1625 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-huberg-laser-one-leak-detector-ch4",
+        "label": "Huberg LASER One Leak Detector - CH4",
+        "rates": {
+          "day": 315.0,
+          "week": 1171.0,
+          "month": 2993.0
+        },
+        "rateNote": "ref ex-GST day $315 / week $1171 / month $2993 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-mgd-2002-multi-gas-leak-detector-helium-hydrogen",
+        "label": "MGD-2002 Multi-Gas Leak Detector (Helium/Hydrogen)",
+        "rates": {
+          "day": 135.0,
+          "week": 508.0,
+          "month": 1189.0
+        },
+        "rateNote": "ref ex-GST day $135 / week $508 / month $1189 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-panther",
+        "label": "ION Science Panther PRO Helium Leak Detector Datalogging",
+        "catalog_code": "PANTHER",
+        "rates": {
+          "day": 115.0,
+          "week": 350.0,
+          "month": 888.0
+        },
+        "rateNote": "ref ex-GST day $115 / week $350 / month $888 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ion-science-mvi-mercury-vapour-indicator",
+        "label": "ION Science MVI Mercury Vapour Indicator",
+        "rates": {
+          "day": 180.0,
+          "week": 614.0,
+          "month": 1535.0
+        },
+        "rateNote": "ref ex-GST day $180 / week $614 / month $1535 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-fixed-flow-regulator",
+        "label": "Fixed Flow Regulator",
+        "rates": {
+          "day": 5.0,
+          "week": 20.0,
+          "month": 60.0
+        },
+        "rateNote": "ref ex-GST day $5 / week $20 / month $60 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-service-station-kit-includes-pid-lel-o2-monitor-",
+        "label": "Service Station Kit - Includes PID, LEL/O2 Monitor, Interface Meter, Spill Kit, & 2 x Fire Extinguishers",
+        "rates": {
+          "day": 220.0,
+          "week": 610.0,
+          "month": 1325.0
+        },
+        "rateNote": "ref ex-GST day $220 / week $610 / month $1325 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-spill-kit-for-oil-and-fuel",
+        "label": "Spill Kit for Oil & Fuel",
+        "rates": {
+          "day": 15.0,
+          "week": 41.0,
+          "month": 82.0
+        },
+        "rateNote": "ref ex-GST day $15 / week $41 / month $82 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-fire-extinguisher-dcp-9kg",
+        "label": "Fire Extinguisher DCP (9kg)",
+        "rates": {
+          "day": 15.0,
+          "week": 41.0,
+          "month": 82.0
+        },
+        "rateNote": "ref ex-GST day $15 / week $41 / month $82 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tsi-edge-8-noise-dosimeter-with-tsi-noise-calibr",
+        "label": "TSI Edge 8 Noise Dosimeter with TSI Noise Calibrators QC10 114dB",
+        "rates": {
+          "day": 72.0,
+          "week": 267.0,
+          "month": 715.0
+        },
+        "rateNote": "ref ex-GST day $72 / week $267 / month $715 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tsi-soundpro-sp-dl-type-1-1-and-1-3-octave-with-",
+        "label": "TSI SoundPro SP DL Type 1, 1 and 1/3 Octave with TSI Noise Calibrators QC10 114dB",
+        "rates": {
+          "day": 115.0,
+          "week": 445.0,
+          "month": 1280.0
+        },
+        "rateNote": "ref ex-GST day $115 / week $445 / month $1280 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tsi-noise-calibrators-qc10-114db",
+        "label": "TSI Noise Calibrators QC10 114dB",
+        "rates": {
+          "day": 20.0,
+          "week": 61.0,
+          "month": 155.0
+        },
+        "rateNote": "ref ex-GST day $20 / week $61 / month $155 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-svantek-sv-307a-class-1-noise-monitoring-station",
+        "label": "Svantek SV-307A Class 1 Noise Monitoring Station",
+        "rates": {
+          "day": 300.0,
+          "week": 700.0,
+          "month": 1500.0
+        },
+        "rateNote": "ref ex-GST day $300 / week $700 / month $1500 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-svantek-sv100a-whole-body-vibration-meter",
+        "label": "Svantek SV100A Whole Body Vibration Meter",
+        "rates": {
+          "day": 140.0,
+          "week": 549.0,
+          "month": 1373.0
+        },
+        "rateNote": "ref ex-GST day $140 / week $549 / month $1373 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-svantek-sv103-hand-arm-vibration-personal-exposu",
+        "label": "Svantek SV103 Hand-Arm Vibration Personal Exposure Meter",
+        "rates": {
+          "day": 140.0,
+          "week": 549.0,
+          "month": 1373.0
+        },
+        "rateNote": "ref ex-GST day $140 / week $549 / month $1373 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ams-hand-auger-kit-quick-connect-sand-gravel-and",
+        "label": "AMS Hand Auger Kit - Quick Connect Sand, Gravel, and Clay Heads",
+        "rates": {
+          "day": 60.0,
+          "week": 208.0,
+          "month": 462.0
+        },
+        "rateNote": "ref ex-GST day $60 / week $208 / month $462 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ams-multi-stage-sludge-and-sediment-sampler",
+        "label": "AMS Multi-Stage Sludge & Sediment Sampler",
+        "rates": {
+          "day": 90.0,
+          "week": 304.0,
+          "month": 766.0
+        },
+        "rateNote": "ref ex-GST day $90 / week $304 / month $766 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ams-gas-vapour-probe-kit",
+        "label": "AMS Gas Vapour Probe Kit",
+        "rates": {
+          "day": 85.0,
+          "week": 271.0,
+          "month": 547.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $271 / month $547 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ams-soil-gas-vapour-probe",
+        "label": "AMS Soil Gas Vapour Probe",
+        "rates": {
+          "day": 65.0,
+          "week": 217.0,
+          "month": 488.0
+        },
+        "rateNote": "ref ex-GST day $65 / week $217 / month $488 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-qedkit3",
+        "label": "QED Low Flow Kit (PFAS Free) - QED Sample Pump, MP10 or MP50 Controller, 103 Tag Line,",
+        "catalog_code": "QEDKIT3",
+        "rates": {
+          "day": 335.0,
+          "week": 1081.0,
+          "month": 2270.0
+        },
+        "rateNote": "ref ex-GST day $335 / week $1081 / month $2270 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-deep-well-low-flow-sampling-kit-pfas-free-option",
+        "label": "Deep Well Low Flow Sampling Kit (PFAS Free Option Available) - Sample Pump, Controller, Hanging",
+        "rates": {
+          "day": 300.0,
+          "week": 825.0,
+          "month": 1754.0
+        },
+        "rateNote": "ref ex-GST day $300 / week $825 / month $1754 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tubing-stand",
+        "label": "Tubing Stand",
+        "rates": {
+          "day": 10.0,
+          "week": 31.0,
+          "month": 61.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $31 / month $61 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-fieldsink-environmental-sampling-station",
+        "label": "FieldSink Environmental Sampling Station",
+        "rates": {
+          "day": 10.0,
+          "week": 30.0,
+          "month": 60.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $30 / month $60 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-solinst-103-tag-line-laser-marked-30m-100m-with-",
+        "label": "Solinst 103 Tag Line (Laser Marked) 30m/100m with Tape Guide",
+        "rates": {
+          "day": 40.0,
+          "week": 97.0,
+          "month": 245.0
+        },
+        "rateNote": "ref ex-GST day $40 / week $97 / month $245 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-qed-mp100-peristaltic-pump",
+        "label": "QED MP100 Peristaltic Pump",
+        "rates": {
+          "day": 75.0,
+          "week": 263.0,
+          "month": 626.0
+        },
+        "rateNote": "ref ex-GST day $75 / week $263 / month $626 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-proactive-super-twister-12v-pump",
+        "label": "Proactive Super Twister 12V Pump",
+        "rates": {
+          "day": 80.0,
+          "week": 225.0,
+          "month": 574.0
+        },
+        "rateNote": "ref ex-GST day $80 / week $225 / month $574 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-proactive-low-flow-sampling-controller",
+        "label": "Proactive Low Flow Sampling Controller",
+        "rates": {
+          "day": 45.0,
+          "week": 112.0,
+          "month": 280.0
+        },
+        "rateNote": "ref ex-GST day $45 / week $112 / month $280 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-qed-ap2-autopump-kit-top-or-bottom-loading-ap2-p",
+        "label": "QED AP2 AutoPump Kit - Top or Bottom Loading AP2 Pump, Compressor, 103 TagLine",
+        "rates": {
+          "day": 250.0,
+          "week": 620.0,
+          "month": 1530.0
+        },
+        "rateNote": "ref ex-GST day $250 / week $620 / month $1530 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-waterra-powerpack-pp1-petrol-engine-inertial-pum",
+        "label": "Waterra PowerPack-PP1 Petrol Engine Inertial Pump",
+        "rates": {
+          "day": 115.0,
+          "week": 397.0,
+          "month": 763.0
+        },
+        "rateNote": "ref ex-GST day $115 / week $397 / month $763 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ysi-water-quality-meter-temp-ph-orp-ec-tds-do-se",
+        "label": "YSI Water Quality Meter - Temp, pH, ORP, EC, TDS, DO Sensors, Flowcell, 1m Cable",
+        "rates": {
+          "day": 115.0,
+          "week": 460.0,
+          "month": 1093.0
+        },
+        "rateNote": "ref ex-GST day $115 / week $460 / month $1093 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-above-with-30m-cable",
+        "label": "Above with 30m Cable",
+        "rates": {
+          "day": 150.0,
+          "week": 600.0,
+          "month": 1385.0
+        },
+        "rateNote": "ref ex-GST day $150 / week $600 / month $1385 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ysi-prodss-water-quality-meter-temp-ph-orp-ec-td",
+        "label": "YSI ProDSS Water Quality Meter - Temp, pH, ORP, EC, TDS, DO, Turbidity Sensors, Flowcell, 1m Cable",
+        "rates": {
+          "day": 145.0,
+          "week": 537.0,
+          "month": 1450.0
+        },
+        "rateNote": "ref ex-GST day $145 / week $537 / month $1450 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-above-with-30m-cable-depth-capability",
+        "label": "Above with 30m Cable (Depth Capability)",
+        "rates": {
+          "day": 200.0,
+          "week": 669.0,
+          "month": 1727.0
+        },
+        "rateNote": "ref ex-GST day $200 / week $669 / month $1727 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ysi-calibration-solution-rig",
+        "label": "YSI Calibration Solution Rig",
+        "rates": {
+          "day": 20.0,
+          "week": 40.0,
+          "month": 70.0
+        },
+        "rateNote": "ref ex-GST day $20 / week $40 / month $70 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-30m-interface-meter",
+        "label": "30m Interface Meter",
+        "rates": {
+          "day": 55.0,
+          "week": 220.0,
+          "month": 451.0
+        },
+        "rateNote": "ref ex-GST day $55 / week $220 / month $451 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-50m-interface-meter",
+        "label": "50m Interface Meter",
+        "rates": {
+          "day": 55.0,
+          "week": 220.0,
+          "month": 451.0
+        },
+        "rateNote": "ref ex-GST day $55 / week $220 / month $451 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-60m-interface-meter",
+        "label": "60m Interface Meter",
+        "rates": {
+          "day": 55.0,
+          "week": 220.0,
+          "month": 451.0
+        },
+        "rateNote": "ref ex-GST day $55 / week $220 / month $451 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-100m-interface-meter",
+        "label": "100m Interface Meter",
+        "rates": {
+          "day": 60.0,
+          "week": 251.0,
+          "month": 502.0
+        },
+        "rateNote": "ref ex-GST day $60 / week $251 / month $502 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-150m-water-level-meter",
+        "label": "150m Water Level Meter",
+        "rates": {
+          "day": 85.0,
+          "week": 312.0,
+          "month": 567.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $312 / month $567 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-seametrics-levelscout",
+        "label": "Seametrics LevelSCOUT",
+        "rates": {
+          "day": 80.0,
+          "week": 213.0,
+          "month": 530.0
+        },
+        "rateNote": "ref ex-GST day $80 / week $213 / month $530 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-seametrics-baroscout",
+        "label": "Seametrics BaroSCOUT",
+        "rates": {
+          "day": 45.0,
+          "week": 158.0,
+          "month": 361.0
+        },
+        "rateNote": "ref ex-GST day $45 / week $158 / month $361 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-nasco-swing-sampler-3-66m",
+        "label": "Nasco Swing Sampler 3.66m",
+        "rates": {
+          "day": 55.0,
+          "week": 167.0,
+          "month": 339.0
+        },
+        "rateNote": "ref ex-GST day $55 / week $167 / month $339 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-alpha-horizontal-van-dorn-water-sampler-2-2-litr",
+        "label": "Alpha Horizontal Van Dorn Water Sampler (2.2 Litre)",
+        "rates": {
+          "day": 41.0,
+          "week": 165.0,
+          "month": 315.0
+        },
+        "rateNote": "ref ex-GST day $41 / week $165 / month $315 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ams-bottom-dredge-7kg",
+        "label": "AMS Bottom Dredge (7kg)",
+        "rates": {
+          "day": 65.0,
+          "week": 218.0,
+          "month": 388.0
+        },
+        "rateNote": "ref ex-GST day $65 / week $218 / month $388 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-mityvac-silverline-elite-hand-pump",
+        "label": "Mityvac Silverline Elite Hand Pump",
+        "rates": {
+          "day": 15.0,
+          "week": 46.0,
+          "month": 102.0
+        },
+        "rateNote": "ref ex-GST day $15 / week $46 / month $102 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ohd-aerofit-respirator-fit-tester",
+        "label": "OHD AeroFit Respirator Fit Tester",
+        "rates": {
+          "day": 400.0,
+          "week": 1020.0,
+          "month": 2050.0
+        },
+        "rateNote": "ref ex-GST day $400 / week $1020 / month $2050 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ohd-quantifit2-respirator-fit-tester",
+        "label": "OHD QuantiFit2 Respirator Fit Tester",
+        "rates": {
+          "day": 400.0,
+          "week": 1020.0,
+          "month": 2050.0
+        },
+        "rateNote": "ref ex-GST day $400 / week $1020 / month $2050 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-portacount-pro-8038-and-8048-respirator-fit-test",
+        "label": "PortaCount Pro+ 8038 & 8048 Respirator Fit Tester",
+        "rates": {
+          "day": 400.0,
+          "week": 1020.0,
+          "month": 2050.0
+        },
+        "rateNote": "ref ex-GST day $400 / week $1020 / month $2050 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-3m-e-a-rfit-dual-ear-validation-system",
+        "label": "3M E-A-Rfit Dual-Ear Validation System",
+        "rates": {
+          "day": 100.0,
+          "week": 344.0,
+          "month": 777.0
+        },
+        "rateNote": "ref ex-GST day $100 / week $344 / month $777 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-scarlet-tech-twl-1s-heat-stress-monitor",
+        "label": "Scarlet Tech TWL-1S Heat Stress Monitor",
+        "rates": {
+          "day": 85.0,
+          "week": 296.0,
+          "month": 845.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $296 / month $845 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-questemp-34-area-heat-stress-monitor",
+        "label": "QUESTemp 34 Area Heat Stress Monitor",
+        "rates": {
+          "day": 85.0,
+          "week": 296.0,
+          "month": 845.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $296 / month $845 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-questemp-36-area-heat-stress-monitor",
+        "label": "QUESTemp 36 Area Heat Stress Monitor",
+        "rates": {
+          "day": 85.0,
+          "week": 296.0,
+          "month": 845.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $296 / month $845 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-questemp-46-area-heat-stress-monitor",
+        "label": "QUESTemp 46 Area Heat Stress Monitor",
+        "rates": {
+          "day": 85.0,
+          "week": 296.0,
+          "month": 845.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $296 / month $845 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-narda-radman-2-non-ionising-radiation-meter",
+        "label": "NARDA RadMan 2 (Non-Ionising) Radiation Meter",
+        "rates": {
+          "day": 90.0,
+          "week": 340.0,
+          "month": 850.0
+        },
+        "rateNote": "ref ex-GST day $90 / week $340 / month $850 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-narda-srm-3006-selective-radiation-meter",
+        "label": "NARDA SRM-3006 Selective Radiation Meter",
+        "rates": {
+          "day": 750.0,
+          "week": 2942.0,
+          "month": 7761.0
+        },
+        "rateNote": "ref ex-GST day $750 / week $2942 / month $7761 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-narda-fieldman-with-e-field-probe-100khz-to-3ghz",
+        "label": "NARDA FieldMan with E-Field Probe (100kHz to 3GHz and 100khz to 6GHz)",
+        "rates": {
+          "day": 320.0,
+          "week": 1120.0,
+          "month": 2800.0
+        },
+        "rateNote": "ref ex-GST day $320 / week $1120 / month $2800 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-airmeter-dx-pm1-pm2-5-pm4-25-pm10-environmental-",
+        "label": "AirMetER-DX PM1/PM2.5/PM4.25/PM10 Environmental Dust Monitor",
+        "rates": {
+          "day": 210.0,
+          "week": 510.0,
+          "month": 1250.0
+        },
+        "rateNote": "ref ex-GST day $210 / week $510 / month $1250 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-dustsola",
+        "label": "250W Solar Panel & 170Ah Battery Kit",
+        "catalog_code": "DUSTSOLA",
+        "rates": {
+          "day": 85.0,
+          "week": 210.0,
+          "month": 465.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $210 / month $465 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-additional-250w-solar-panel-y-splitter-and-cable",
+        "label": "Additional 250W Solar Panel, Y-Splitter & Cables",
+        "rates": {
+          "day": 20.0,
+          "week": 41.0,
+          "month": 102.0
+        },
+        "rateNote": "ref ex-GST day $20 / week $41 / month $102 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-rika-weather-station-wind-speed-and-direction-te",
+        "label": "Rika Weather Station (Wind Speed & Direction, Temperature, Humidity & Pressure)",
+        "rates": {
+          "day": 95.0,
+          "week": 225.0,
+          "month": 510.0
+        },
+        "rateNote": "ref ex-GST day $95 / week $225 / month $510 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-svantek-sv-307a-class-1-noise-monitoring-station-2",
+        "label": "Svantek SV-307A Class 1 Noise Monitoring Station",
+        "rates": {
+          "day": 300.0,
+          "week": 700.0,
+          "month": 1500.0
+        },
+        "rateNote": "ref ex-GST day $300 / week $700 / month $1500 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-svantek-sv-803-vibration-monitoring-station",
+        "label": "Svantek SV-803 Vibration Monitoring Station",
+        "rates": {
+          "day": 300.0,
+          "week": 700.0,
+          "month": 1500.0
+        },
+        "rateNote": "ref ex-GST day $300 / week $700 / month $1500 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-airmeter-ax-pm1-pm2-5-pm4-25-pm10-environmental-",
+        "label": "AirMetER-AX PM1/PM2.5/PM4.25/PM10 Environmental Dust Monitor Base (Add Options Below)",
+        "rates": {
+          "day": 265.0,
+          "week": 620.0,
+          "month": 1550.0
+        },
+        "rateNote": "ref ex-GST day $265 / week $620 / month $1550 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-250w-solar-panel-and-170ah-battery-kit",
+        "label": "250W Solar Panel & 170Ah Battery Kit",
+        "rates": {
+          "day": 85.0,
+          "week": 210.0,
+          "month": 465.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $210 / month $465 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-additional-250w-solar-panel-y-splitter-and-cable-2",
+        "label": "Additional 250W Solar Panel, Y-Splitter & Cables",
+        "rates": {
+          "day": 20.0,
+          "week": 41.0,
+          "month": 102.0
+        },
+        "rateNote": "ref ex-GST day $20 / week $41 / month $102 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-rika-weather-station-wind-speed-and-direction-te-2",
+        "label": "Rika Weather Station (Wind Speed & Direction, Temperature, Humidity & Pressure)",
+        "rates": {
+          "day": 95.0,
+          "week": 225.0,
+          "month": 510.0
+        },
+        "rateNote": "ref ex-GST day $95 / week $225 / month $510 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-svantek-sv-307a-class-1-noise-monitoring-station-3",
+        "label": "Svantek SV-307A Class 1 Noise Monitoring Station",
+        "rates": {
+          "day": 300.0,
+          "week": 700.0,
+          "month": 1500.0
+        },
+        "rateNote": "ref ex-GST day $300 / week $700 / month $1500 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-svantek-sv-803-vibration-monitoring-station-2",
+        "label": "Svantek SV-803 Vibration Monitoring Station",
+        "rates": {
+          "day": 300.0,
+          "week": 700.0,
+          "month": 1500.0
+        },
+        "rateNote": "ref ex-GST day $300 / week $700 / month $1500 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-co-sensor-0-10ppm",
+        "label": "ί CO Sensor (0-10ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-co-sensor-0-300ppm",
+        "label": "ί CO Sensor (0-300ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-h2s-sensor-0-2ppm",
+        "label": "ί H2S Sensor (0-2ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-o3-sensor-0-1ppm",
+        "label": "ί O3 Sensor (0-1ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-o2-sensor-0-25-vol",
+        "label": "ί O2 Sensor (0-25%vol)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-no2-sensor-0-1ppm",
+        "label": "ί NO2 Sensor (0-1ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-no2-sensor-0-20ppm",
+        "label": "ί NO2 Sensor (0-20ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-so2-sensor-0-10ppm",
+        "label": "ί SO2 Sensor (0-10ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-no-sensor-0-5ppm",
+        "label": "ί NO Sensor (0-5ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-co2-sensor-0-2000ppm",
+        "label": "ί CO2 Sensor (0-2000ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-voc-sensor-0-20ppm",
+        "label": "ί VOC Sensor (0-20ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-voc-sensor-0-200ppm",
+        "label": "ί VOC Sensor (0-200ppm)",
+        "rates": {
+          "day": 50.0,
+          "week": 114.0,
+          "month": 277.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $114 / month $277 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-dustcanary-trend-420-personal-real-time-respirab",
+        "label": "DustCanary TREND 420 Personal Real-Time Respirable Dust Monitor",
+        "rates": {
+          "day": 100.0,
+          "week": 360.0,
+          "month": 800.0
+        },
+        "rateNote": "ref ex-GST day $100 / week $360 / month $800 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-nanozen-dustcount-9000-personal-dust-monitor",
+        "label": "Nanozen DustCount 9000 Personal Dust Monitor",
+        "rates": {
+          "day": 115.0,
+          "week": 314.0,
+          "month": 942.0
+        },
+        "rateNote": "ref ex-GST day $115 / week $314 / month $942 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-dtii",
+        "label": "TSI DustTrak II 8530 Real-Time Dust Monitor",
+        "catalog_code": "DTII",
+        "rates": {
+          "day": 115.0,
+          "week": 436.0,
+          "month": 927.0
+        },
+        "rateNote": "ref ex-GST day $115 / week $436 / month $927 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tsi-dusttrak-8533-drx-dust-monitor",
+        "label": "TSI DustTrak 8533 DRX Dust Monitor",
+        "rates": {
+          "day": 200.0,
+          "week": 789.0,
+          "month": 1578.0
+        },
+        "rateNote": "ref ex-GST day $200 / week $789 / month $1578 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skc-flow-compensated-personal-sampling-pumps-nat",
+        "label": "SKC Flow Compensated Personal Sampling Pumps - NATA Calibrated",
+        "rates": {
+          "day": 40.0,
+          "week": 122.0,
+          "month": 305.0
+        },
+        "rateNote": "ref ex-GST day $40 / week $122 / month $305 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tecknosys-ms-can-bioaerosol-cassette-sampler-tec",
+        "label": "Tecknosys MS-CAN Bioaerosol Cassette Sampler - Tecknosys TARDIS 0-40L/min Flowmeter Included",
+        "rates": {
+          "day": 80.0,
+          "week": 270.0,
+          "month": 622.0
+        },
+        "rateNote": "ref ex-GST day $80 / week $270 / month $622 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skc-chek-mate-flow-meter-0-5-5l-min",
+        "label": "SKC Chek-Mate Flow Meter - 0.5-5L/min",
+        "rates": {
+          "day": 55.0,
+          "week": 226.0,
+          "month": 491.0
+        },
+        "rateNote": "ref ex-GST day $55 / week $226 / month $491 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-iomkit",
+        "label": "SKC IOM Inhalable Samplers and Cassettes Kit",
+        "catalog_code": "IOMKIT",
+        "rates": {
+          "day": 10.0,
+          "week": 38.0,
+          "month": 75.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $38 / month $75 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-gs1kit",
+        "label": "SKC Plastic Cyclone Kit 225-69",
+        "catalog_code": "GS1KIT",
+        "rates": {
+          "day": 10.0,
+          "week": 38.0,
+          "month": 75.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $38 / month $75 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skc-diesel-particulate-matter-dpm-cyclone-kit",
+        "label": "SKC Diesel Particulate Matter (DPM) Cyclone Kit",
+        "rates": {
+          "day": 10.0,
+          "week": 38.0,
+          "month": 75.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $38 / month $75 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skc-filter-cassette-holder-kit",
+        "label": "SKC Filter Cassette Holder Kit",
+        "rates": {
+          "day": 10.0,
+          "week": 38.0,
+          "month": 75.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $38 / month $75 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skc-gs-1-respirable-dust-cyclone-kit",
+        "label": "SKC GS-1 Respirable Dust Cyclone Kit",
+        "rates": {
+          "day": 10.0,
+          "week": 38.0,
+          "month": 75.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $38 / month $75 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skc-gs-3-respirable-dust-cyclone-kit",
+        "label": "SKC GS-3 Respirable Dust Cyclone Kit",
+        "rates": {
+          "day": 10.0,
+          "week": 38.0,
+          "month": 75.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $38 / month $75 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skc-low-flow-adaptor-kit",
+        "label": "SKC Low Flow Adaptor Kit",
+        "rates": {
+          "day": 10.0,
+          "week": 38.0,
+          "month": 75.0
+        },
+        "rateNote": "ref ex-GST day $10 / week $38 / month $75 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tsi-9600-velocicalc-multi-function-ventilation-m",
+        "label": "TSI 9600 VelociCalc Multi-Function Ventilation Meter - Hot Wire, Rotating Vane, and IAQ Probes",
+        "rates": {
+          "day": 120.0,
+          "week": 454.0,
+          "month": 1046.0
+        },
+        "rateNote": "ref ex-GST day $120 / week $454 / month $1046 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tsi-q-trak-7575-and-7565-co-co2-temp-rh",
+        "label": "TSI Q-Trak 7575 & 7565 (CO, CO2, Temp, RH)",
+        "rates": {
+          "day": 85.0,
+          "week": 321.0,
+          "month": 739.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $321 / month $739 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ers-co2-iaq-monitor",
+        "label": "ERS CO2 IAQ Monitor",
+        "rates": {
+          "day": 75.0,
+          "week": 284.0,
+          "month": 654.0
+        },
+        "rateNote": "ref ex-GST day $75 / week $284 / month $654 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-testo-440-multifunction-handset",
+        "label": "Testo 440 Multifunction Handset",
+        "rates": {
+          "day": 70.0,
+          "week": 268.0,
+          "month": 612.0
+        },
+        "rateNote": "ref ex-GST day $70 / week $268 / month $612 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17156650-6-r",
+        "label": "BZ1 Sensor, SafeCore, Ammonia (NH3)",
+        "catalog_code": "17156650-6-R",
+        "pending": true,
+        "rates": {
+          "day": 35.0
+        },
+        "rateNote": "ref ex-GST day $35 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17156650-2-r",
+        "label": "BZ1 Sensor, SafeCore, Hydrogen Sulfide (H2S)",
+        "catalog_code": "17156650-2-R",
+        "pending": true,
+        "rates": {
+          "day": 0.0
+        },
+        "rateNote": "ref ex-GST day $0 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17156650-l-r",
+        "label": "BZ1 Sensor, SafeCore, LEL, Methane",
+        "catalog_code": "17156650-L-R",
+        "pending": true,
+        "rates": {
+          "day": 0.0
+        },
+        "rateNote": "ref ex-GST day $0 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17156650-q-r",
+        "label": "BZ1 Sensor, Safecore. Carbon Dioxide (CO2)",
+        "catalog_code": "17156650-Q-R",
+        "pending": true,
+        "rates": {
+          "day": 25.0,
+          "week": 56.0
+        },
+        "rateNote": "ref ex-GST day $25 / week $56 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-data",
+        "label": "Data Downloading Charge",
+        "catalog_code": "DATA",
+        "pending": true
+      },
+      {
+        "key": "air-met-320-100",
+        "label": "Field Rotameter, 3 to 30 l/min, 4\" scale with fittings adapted for use with QuickTake pump. (ea)",
+        "catalog_code": "320-100",
+        "pending": true,
+        "rates": {
+          "day": 10.0
+        },
+        "rateNote": "ref ex-GST day $10 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-mx6-ibrid-gas-detector",
+        "label": "MX6 iBrid Gas Detector",
+        "pending": true,
+        "rates": {
+          "day": 70.0
+        },
+        "rateNote": "ref ex-GST day $70 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17124975-6-r",
+        "label": "MX6 Sensor Ammonia (NH3)",
+        "catalog_code": "17124975-6-R",
+        "pending": true,
+        "rates": {
+          "day": 30.0
+        },
+        "rateNote": "ref ex-GST day $30 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17124975-d-r",
+        "label": "MX6 Sensor Nitric Oxide (NO)",
+        "catalog_code": "17124975-D-R",
+        "pending": true,
+        "rates": {
+          "day": 25.0
+        },
+        "rateNote": "ref ex-GST day $25 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17124975-4-r",
+        "label": "MX6 Sensor Nitrogen Dioxide (NO2)",
+        "catalog_code": "17124975-4-R",
+        "pending": true,
+        "rates": {
+          "day": 25.0
+        },
+        "rateNote": "ref ex-GST day $25 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ac3000190",
+        "label": "Noise, Sound and Vibration Spares and Accessories",
+        "catalog_code": "AC3000190",
+        "pending": true,
+        "rates": {
+          "day": 20.0
+        },
+        "rateNote": "ref ex-GST day $20 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-safecore",
+        "label": "Radius BZ1 SafeCore Sensor Cartridge",
+        "catalog_code": "SAFECORE",
+        "pending": true,
+        "rates": {
+          "day": 0.0
+        },
+        "rateNote": "ref ex-GST day $0 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-delwa",
+        "label": "Rental Freight Delivery - WA",
+        "catalog_code": "DELWA",
+        "pending": true
+      },
+      {
+        "key": "air-met-xr5000",
+        "label": "SKC AirChek XR5000 Sampling Pump",
+        "catalog_code": "XR5000",
+        "pending": true,
+        "rates": {
+          "day": 40.0,
+          "week": 122.0
+        },
+        "rateNote": "ref ex-GST day $40 / week $122 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-chekmate-mf",
+        "label": "SKC Chek-Mate Medium Flow Calibrator 500mL - 5L/Min",
+        "catalog_code": "CHEKMATE MF",
+        "pending": true,
+        "rates": {
+          "week": 226.0
+        },
+        "rateNote": "ref ex-GST week $226 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skck1",
+        "label": "SKC Sampling Pumps Kit (1 to 5 unit)",
+        "catalog_code": "SKCK1",
+        "pending": true,
+        "rates": {
+          "day": 51.0
+        },
+        "rateNote": "ref ex-GST day $51 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skck3",
+        "label": "SKC Sampling Pumps Kit (11 and above)",
+        "catalog_code": "SKCK3",
+        "pending": true,
+        "rates": {
+          "day": 30.0,
+          "week": 114.0
+        },
+        "rateNote": "ref ex-GST day $30 / week $114 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-skck2",
+        "label": "SKC Sampling Pumps Kit (6 to 10 unit)",
+        "catalog_code": "SKCK2",
+        "pending": true,
+        "rates": {
+          "day": 38.0,
+          "week": 134.0
+        },
+        "rateNote": "ref ex-GST day $38 / week $134 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tiger-phocheck-voc-detector-data-logging-ppm",
+        "label": "Tiger PhoCheck VOC Detector - Data Logging PPM",
+        "pending": true,
+        "rates": {
+          "day": 80.0
+        },
+        "rateNote": "ref ex-GST day $80 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tiger-xt-select-voc-detector-data-logging-ppb",
+        "label": "Tiger XT Select VOC Detector - Data Logging PPB",
+        "pending": true,
+        "rates": {
+          "day": 80.0
+        },
+        "rateNote": "ref ex-GST day $80 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tiger-xt-voc-detector-data-logging-ppm",
+        "label": "Tiger XT VOC Detector - Data Logging PPM",
+        "pending": true,
+        "rates": {
+          "day": 75.0
+        },
+        "rateNote": "ref ex-GST day $75 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tsi-hot-wire-anemometer",
+        "label": "TSI Hot Wire Anemometer",
+        "pending": true,
+        "rates": {
+          "day": 75.0,
+          "week": 255.0
+        },
+        "rateNote": "ref ex-GST day $75 / week $255 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-qtrak",
+        "label": "TSI Q-Trak Indoor Air Quality Monitor",
+        "catalog_code": "QTRAK",
+        "pending": true,
+        "rates": {
+          "day": 85.0,
+          "week": 321.0
+        },
+        "rateNote": "ref ex-GST day $85 / week $321 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-tsi-soundpro-type-1-sound-level-meter-1-1-3-octa",
+        "label": "TSI SoundPro Type 1 Sound Level Meter - 1-1/3 Octave",
+        "pending": true,
+        "rates": {
+          "day": 115.0
+        },
+        "rateNote": "ref ex-GST day $115 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ventis-pro5-series-gas-detector",
+        "label": "Ventis - Pro5 Series Gas Detector",
+        "pending": true,
+        "rates": {
+          "day": 70.0
+        },
+        "rateNote": "ref ex-GST day $70 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-17155304-u-r",
+        "label": "Ventis Pro 5 Sensor, Carbon Dioxide (CO2)",
+        "catalog_code": "17155304-U-R",
+        "pending": true,
+        "rates": {
+          "day": 20.0
+        },
+        "rateNote": "ref ex-GST day $20 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-605790-30",
+        "label": "YSI - 30 meter Dual ISE/Cond/DO/Temp Cable Assy",
+        "catalog_code": "605790-30",
+        "pending": true,
+        "rates": {
+          "day": 30.0
+        },
+        "rateNote": "ref ex-GST day $30 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ysi-proplus-water-quality-meter",
+        "label": "YSI ProPlus Water Quality Meter",
+        "pending": true,
+        "rates": {
+          "day": 100.0,
+          "month": 1093.0
+        },
+        "rateNote": "ref ex-GST day $100 / month $1093 (not calculated in v1)"
+      },
+      {
+        "key": "air-met-ysi-proquatro-water-quality-meter",
+        "label": "YSI ProQuatro Water Quality Meter",
+        "pending": true,
+        "rates": {
+          "day": 115.0,
+          "week": 400.0
+        },
+        "rateNote": "ref ex-GST day $115 / week $400 (not calculated in v1)"
+      }
+    ],
+    "nvms": [
+      {
+        "key": "nvms-2250",
+        "label": "2250 – SLM",
+        "catalog_code": "2250",
+        "rates": {
+          "day": 215.0,
+          "week": 1290.0,
+          "month": 4515.0
+        },
+        "rateNote": "ref ex-GST day $215 / week $1290 / month $4515 (not calculated in v1)"
+      },
+      {
+        "key": "nvms-4448",
+        "label": "4448 – Dosi",
+        "catalog_code": "4448",
+        "rates": {
+          "day": 50.0,
+          "week": 300.0,
+          "month": 1050.0
+        },
+        "rateNote": "ref ex-GST day $50 / week $300 / month $1050 (not calculated in v1)"
+      },
+      {
+        "key": "nvms-2250-2",
+        "label": "B&K - 2250 Sound Level Meter G4",
+        "catalog_code": "2250",
+        "pending": true,
+        "rates": {
+          "day": 215.0
+        },
+        "rateNote": "ref ex-GST day $215 (not calculated in v1)"
+      },
+      {
+        "key": "nvms-b-and-k-2nd-charging-dock-and-daisy-cable",
+        "label": "B&K - 2nd Charging Dock and Daisy Cable",
+        "pending": true
+      },
+      {
+        "key": "nvms-b-and-k-calibrator",
+        "label": "B&K - Calibrator",
+        "pending": true,
+        "rates": {
+          "day": 0.0
+        },
+        "rateNote": "ref ex-GST day $0 (not calculated in v1)"
+      },
+      {
+        "key": "nvms-4448-2",
+        "label": "B&K - Dosimeters",
+        "catalog_code": "4448",
+        "pending": true,
+        "rates": {
+          "day": 50.0
+        },
+        "rateNote": "ref ex-GST day $50 (not calculated in v1)"
+      },
+      {
+        "key": "nvms-4448-3",
+        "label": "B&K - Dosimeters IS",
+        "catalog_code": "4448",
+        "pending": true,
+        "rates": {
+          "day": 50.0
+        },
+        "rateNote": "ref ex-GST day $50 (not calculated in v1)"
+      }
+    ],
+    "ets": [
+      {
+        "key": "ets-pump-little-pip",
+        "label": "Little Pip 12V Peristaltic Pump",
+        "catalog_code": "PUMP LITTLE PIP",
+        "pending": true,
+        "rates": {
+          "day": 50.0
+        },
+        "rateNote": "ref ex-GST day $50 (not calculated in v1)"
+      },
+      {
+        "key": "ets-kit-mp50-low-flow",
+        "label": "QED MP50 Micropurge Low Flow Bladder Pump Kit",
+        "catalog_code": "KIT-MP50 LOW FLOW",
+        "pending": true,
+        "rates": {
+          "day": 200.0
+        },
+        "rateNote": "ref ex-GST day $200 (not calculated in v1)"
+      },
+      {
+        "key": "ets-ysi-proquatro",
+        "label": "YSI ProQuatro Water Quality Meter",
+        "catalog_code": "YSI PROQUATRO",
+        "pending": true,
+        "rates": {
+          "day": 80.0
+        },
+        "rateNote": "ref ex-GST day $80 (not calculated in v1)"
+      }
+    ],
+    "merieux": [
+      {
+        "key": "merieux-als102",
+        "label": "AIR SAMPLER MERCK",
+        "catalog_code": "ALS102",
+        "pending": true,
+        "rates": {
+          "day": 266.83,
+          "also_seen_day": 274.57
+        },
+        "rateNote": "ref ex-GST day $266.83 (not calculated in v1). Also seen $274.57 on invoice 24371 dated 01/07/2025."
+      },
+      {
+        "key": "merieux-microbio-air-impacter",
+        "label": "MicroBIO Air Impacter",
+        "pending": true,
+        "rates": {
+          "day": 100.0
+        },
+        "rateNote": "ref ex-GST day $100 (not calculated in v1)"
+      }
+    ]
+  }
+}
