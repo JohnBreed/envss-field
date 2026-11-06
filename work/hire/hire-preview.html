@@ -1916,7 +1916,7 @@ function blankDraft(src) {
     on_hire_date: src.on_hire_date || "",
     off_hire_date: src.off_hire_date || "",
     logistics: src.logistics || "delivery",
-    delivery_site: src.delivery_site || "",
+    delivery_site: src.delivery_site || "10 Bawanzi Street, West Leederville, Perth, WA, 6007",
     requested_by: src.requested_by || "Preview user (demo)",
     lines: (src.lines && src.lines.length) ? src.lines.map(function (l) { return Object.assign({}, l); }) : [blankLine()]
   };
@@ -2030,8 +2030,8 @@ function hireFormHtml() {
     html += "<option value=\"" + pair[0] + "\"" + (d.logistics === pair[0] ? " selected" : "") + ">" + pair[1] + "</option>";
   });
   html += "</select>";
-  html += "<label>Delivery site (internal only)</label><input id=\"hireSite\" value=\"" + esc(d.delivery_site || "") + "\" placeholder=\"Internal site / depot — never on hire-company emails or Xero PO\">";
-  html += "<p class=\"help\">Stored for staff only. This preview does not send hire emails or create Xero POs.</p>";
+  html += "<label>Delivery address</label><input id=\"hireSite\" value=\"" + esc(d.delivery_site || "") + "\" placeholder=\"Never shown on hire-company emails or Xero POs\">";
+  html += "<p class=\"help\">Internal only — stored for staff. Never put this address on hire-company emails or Xero POs. This preview does not send hire emails or create Xero POs.</p>";
   html += "<label>Who requested it</label><input id=\"hireWho\" value=\"" + esc(d.requested_by || "") + "\">";
   html += "<h3 class=\"brand-type\" style=\"color:var(--navy);font-size:16px;margin:18px 0 8px\">Equipment lines</h3>";
   html += "<div id=\"hireLines\">";

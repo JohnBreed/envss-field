@@ -37,3 +37,5 @@ Helpers: `window.envssHire.openList()`, `.openNew()`, `.openEdit(id)`, `.catalog
 Push / Pages / apply SQL / write Podio / email Air-Met or NVMS / Google Sheet dual-entry.
 
 ALS102 (AIR SAMPLER MERCK) reference day rate is $266.83 ex GST (primary invoiced). $274.57 is stored only as a variant seen on invoice 24371 dated 01/07/2025.
+
+Delivery address (stored as `delivery_site`): labelled **Delivery address**; internal only (never on hire-company emails or Xero POs). Default for new requests: 10 Bawanzi Street, West Leederville, Perth, WA, 6007. Held unpublished so live v45b is unchanged until a later form update.

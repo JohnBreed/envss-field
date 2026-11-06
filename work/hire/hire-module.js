@@ -1762,7 +1762,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       on_hire_date: "",
       off_hire_date: "",
       logistics: "delivery",
-      delivery_site: "",
+      delivery_site: "10 Bawanzi Street, West Leederville, Perth, WA, 6007",
       requested_by: defaultRequester(),
       lines: [blankLine()],
       createdAt: "",
@@ -1901,8 +1901,8 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     });
     html += "</select>";
 
-    html += "<label>Delivery site (internal only)</label><input id=\"hireSite\" value=\"" + esc(d.delivery_site || "") + "\" placeholder=\"Internal site / depot — never on hire-company emails or Xero PO\">";
-    html += "<p class=\"help\">Stored in-app only for staff. v1 does not send hire emails or create Xero POs.</p>";
+    html += "<label>Delivery address</label><input id=\"hireSite\" value=\"" + esc(d.delivery_site || "") + "\" placeholder=\"Never shown on hire-company emails or Xero POs\">";
+    html += "<p class=\"help\">Internal only — stored for staff. Never put this address on hire-company emails or Xero POs.</p>";
 
     html += "<label>Who requested it</label><input id=\"hireWho\" value=\"" + esc(d.requested_by || "") + "\">";
 
