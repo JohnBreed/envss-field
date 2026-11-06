@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENVSS hire request preview (not live)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+
+/* styles.css inlined (main @ 95a1dab) */
+:root {
+  --navy: #2D3A6A;
+  --mid: #376396;
+  --green: #4F8A7A;
+  --orange: #D9782C;
+  --ink: #4D4D4F;
+  --line: #BBBCBE;
+  --navy-30: #9A9CB9;
+  --mid-30: #A2B4D1;
+  --green-30: #C1D2CC;
+  --orange-30: #F1D1B0;
+  --bg: #F4F6F8;
+  --card: #FFFFFF;
+  --danger: #9B2C2C;
+  --ok: #2F6F5E;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+  font-family: Barlow, Arial, sans-serif; font-size: 16px; }
+h1, h2, h3, .brand-type { font-family: Montserrat, Arial, sans-serif; }
+button, input, select, textarea { font: inherit; }
+.app-header {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--navy); color: #fff;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 8px rgba(45,58,106,.25);
+}
+.app-header img { height: 36px; background: #fff; border-radius: 4px; padding: 4px 6px; }
+.app-header .titles { flex: 1; min-width: 0; }
+.app-header h1 { margin: 0; font-size: 15px; letter-spacing: .02em; }
+.app-header p { margin: 0; font-size: 11px; opacity: .8; }
+.online-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green-30); }
+.online-dot.off { background: var(--orange); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 14px; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 14px; }
+.chip {
+  border: 1px solid var(--line); background: #fff; color: var(--navy);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer;
+}
+.chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.card {
+  background: var(--card); border: 1px solid #e4e7ec; border-radius: 12px;
+  padding: 14px; margin-bottom: 10px;
+}
+.card h2 { margin: 0 0 8px; font-size: 16px; color: var(--navy); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.grow { flex: 1; min-width: 160px; }
+label { display: block; font-size: 12px; font-weight: 600; color: var(--navy); margin: 8px 0 4px; }
+input, select, textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: #fff;
+}
+textarea { min-height: 80px; }
+.btn {
+  border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer;
+  font-weight: 700; color: #fff; background: var(--navy);
+}
+.btn.mid { background: var(--mid); }
+.btn.green { background: var(--green); }
+.btn.orange { background: var(--orange); }
+.btn.ghost { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+.btn.danger { background: var(--danger); }
+.btn.lg { min-height: 52px; font-size: 18px; flex: 1; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 999px;
+}
+.s-planned { background: #eef0f6; color: var(--navy); }
+.s-prepped { background: var(--mid-30); color: var(--navy); }
+.s-active, .s-running { background: var(--orange-30); color: #7a3e10; }
+.s-complete, .s-ended { background: var(--green-30); color: var(--ok); }
+.s-uploaded { background: var(--green); color: #fff; }
+.s-rejected { background: #f8d7da; color: var(--danger); }
+.train {
+  display: grid; grid-template-columns: 64px 1fr auto;
+  gap: 10px; align-items: center;
+  border: 1px solid #e4e7ec; border-radius: 10px; padding: 10px; margin-top: 8px;
+  cursor: pointer; background: #fff;
+}
+.train:hover { border-color: var(--mid); }
+.pouch { font-family: Montserrat, Arial, sans-serif; font-weight: 700; color: var(--navy); font-size: 20px; }
+.muted { color: #6b7280; font-size: 13px; }
+.times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.startstop { display: flex; gap: 10px; margin-top: 12px; }
+.combo { position: relative; }
+.suggest {
+  position: absolute; left: 0; right: 0; top: 100%; background: #fff;
+  border: 1px solid var(--line); border-radius: 8px; z-index: 8;
+  max-height: 180px; overflow: auto; display: none;
+}
+.suggest.on { display: block; }
+.pump-note { font-size: 13px; color: #555; margin: 4px 0 0; }
+.pump-warn { color: #a15c00; }
+.suggest div { padding: 8px 10px; cursor: pointer; }
+.suggest div:hover { background: var(--green-30); }
+.footer-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.empty { text-align: center; padding: 28px 10px; color: #6b7280; }
+.login-gate {
+  position: fixed; inset: 0; background: rgba(45,58,106,.88); z-index: 40;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.login-gate.hidden { display: none; }
+.login-card {
+  background: #fff; border-radius: 16px; padding: 22px; max-width: 420px; width: 100%;
+}
+.login-card h2 { margin: 0 0 8px; color: var(--navy); font-family: Montserrat, Arial, sans-serif; }
+.google-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 320px; min-height: 48px; margin: 12px 0 6px; padding: 0 16px; background: #fff !important; color: #1f1f1f !important; border: 1px solid #747775; border-radius: 24px; font-family: Roboto, Arial, sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; }
+.google-btn:hover { background: #f2f6fc !important; }
+.google-btn:disabled { opacity: .6; cursor: progress; }
+.login-msg { color: #b3261e; font-weight: 600; margin: 8px 0 0; }
+.login-msg.hidden { display: none; }
+.check-row { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-weight: 600; }
+.check-row input { width: auto; }
+.comment-wrap { position: relative; }
+.comment-wrap textarea { padding-right: 44px; }
+.mic-btn {
+  position: absolute; right: 8px; top: 8px; border: 0; background: transparent;
+  width: 32px; height: 32px; padding: 0; cursor: pointer; color: var(--navy);
+}
+.mic-btn.live { color: var(--orange); }
+.mic-bars { display: flex; gap: 2px; align-items: flex-end; height: 22px; margin: 4px 0 8px; }
+.mic-bars span { width: 3px; background: var(--orange); display: inline-block; min-height: 2px; }
+.help { color: #6b7280; font-size: 12px; margin: 4px 0 10px; }
+
+.train.tint-red { background: #fde8e8; }
+.train.tint-amber { background: #fff4e0; }
+.menu-wrap { position: relative; margin-left: auto; }
+.menu {
+  position: absolute; right: 0; top: 40px; background: #fff; border: 1px solid #d1d5db;
+  border-radius: 10px; min-width: 180px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+.menu button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 10px 12px; cursor: pointer; }
+.menu button:hover { background: #e8f0ee; }
+
+.back { background: transparent; color: #fff; border: 0; cursor: pointer; font-weight: 700; }
+@media (min-width: 800px) {
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+}
+
+.need-yn label { color: #b45309; }
+.need-yn { background: #fff7ed; padding: 8px; border-radius: 10px; margin: 8px 0; }
+
+.row-title { font-weight: 700; color: var(--navy); font-size: 16px; font-family: Montserrat, Arial, sans-serif; }
+
+.dob-row { display: flex; gap: 6px; }
+.dob-row input { width: 4.2em; text-align: center; }
+.filters .chip { font-size: 12px; padding: 5px 9px; min-height: 0; }
+.row-title { font-weight: 700; color: var(--navy) !important; font-size: 17px; font-family: Montserrat, Arial, sans-serif; }
+
+.train.tint-green { background: #e7f6ee; }
+.badge.s-sample_complete { background: #1F7A4D; color: #fff; }
+
+.app-version{font-size:12px;opacity:.75;margin-left:6px;font-weight:400}
+.sync-bar{font-size:12px;padding:6px 14px;background:#eef1f8;color:#2D3A6A;border-bottom:1px solid #d9deea}
+.sync-bar.pending{background:#fff6e5}.sync-bar.warn{background:#fdecea}
+.sync-link{background:none;border:0;color:#2D3A6A;text-decoration:underline;cursor:pointer;font-size:12px;padding:0 4px}
+.sync-err{color:#8a5a00;margin-top:2px}.sync-warn{color:#b3261e;font-weight:700;margin-top:2px}
+
+
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:640px){ .grid2 { grid-template-columns:1fr; } }
+.help { font-size:13px; color:#6b6d73; margin:6px 0 10px; }
+.muted { color:#6b6d73; font-size:13px; margin-top:2px; }
+.footer-actions { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 8px; }
+.preview-banner {
+  background:#9B2C2C; color:#fff; text-align:center; padding:10px 14px; font-weight:700;
+  position:sticky; top:0; z-index:30;
+}
+.preview-banner small { display:block; font-weight:500; opacity:.95; margin-top:4px; }
+#whoLabel { font-size:12px; opacity:.85; }
+
+</style>
+</head>
+<body>
+<div class="preview-banner">PREVIEW ONLY — not the live field app
+<small>This is not https://field.envss.com.au. Nothing here is published, and nothing is saved to Supabase or Podio.</small>
+</div>
+<header class="app-header">
+  <div class="titles">
+    <h1>ENVSS Field · hire preview</h1>
+    <p>Unpublished v45b form · catalog 2026-11-06 · Air-Met, NVMS, ETS, Mérieux</p>
+  </div>
+  <div id="whoLabel">Demo session</div>
+</header>
+<div id="app"></div>
+<script>
+  var HIRE_CATALOG = {
+    catalog_version: "2026-11-06",
+    embedded_from: "envss-invoicing/hire-catalog/supplier-rates.json",
+    currency_default: "AUD",
+    note: "Snapshot embedded 2026-11-06 AWST. Labels are exact item_name from the catalog. Rates are reference only — v1 never calculates billing.",
+    suppliers: [
+      { id: "air-met", name: "Air-Met Scientific", enabled: true },
+      { id: "nvms", name: "NVMS", enabled: true },
+      { id: "ets", name: "Environmental Test Solutions (ETS)", enabled: true },
+      { id: "merieux", name: "Mérieux NutriSciences", enabled: true }
+    ],
+    items: {
+      "nvms": [
+        { key: "nvms-2250", label: "2250 – SLM", catalog_code: "2250", rates: {day: 215.0, week: 1290.0, month: 4515.0}, rateNote: "ref ex-GST day $215 / week $1290 / month $4515 (not calculated in v1)" },
+        { key: "nvms-4448", label: "4448 – Dosi", catalog_code: "4448", rates: {day: 50.0, week: 300.0, month: 1050.0}, rateNote: "ref ex-GST day $50 / week $300 / month $1050 (not calculated in v1)" },
+        { key: "nvms-2250-2", label: "B&K - 2250 Sound Level Meter G4", catalog_code: "2250", pending: true, rates: {day: 215.0}, rateNote: "ref ex-GST day $215 (not calculated in v1)" },
+        { key: "nvms-b-k-2nd-charging-dock-and-daisy-cable", label: "B&K - 2nd Charging Dock and Daisy Cable", pending: true },
+        { key: "nvms-b-k-calibrator", label: "B&K - Calibrator", pending: true, rates: {day: 0.0}, rateNote: "ref ex-GST day $0 (not calculated in v1)" },
+        { key: "nvms-4448-2", label: "B&K - Dosimeters", catalog_code: "4448", pending: true, rates: {day: 50.0}, rateNote: "ref ex-GST day $50 (not calculated in v1)" },
+        { key: "nvms-4448-3", label: "B&K - Dosimeters IS", catalog_code: "4448", pending: true, rates: {day: 50.0}, rateNote: "ref ex-GST day $50 (not calculated in v1)" },
+      ],
+      "air-met": [
+        { key: "air-met-dustsola", label: "250W Solar Panel and Lithium Battery System", catalog_code: "DUSTSOLA", pending: true, rates: {month: 465.0}, rateNote: "ref ex-GST month $465 (not calculated in v1)" },
+        { key: "air-met-aeroqual-s500-handset", label: "Aeroqual S500 Handset", pending: true, rates: {day: 61.0}, rateNote: "ref ex-GST day $61 (not calculated in v1)" },
+        { key: "air-met-air-meter-dx-pm1-2-5-4-25-10-tsp-dust-monitor-bu", label: "Air-MetER-DX PM1/2.5/4.25/10 & TSP Dust Monitor: Build 4.0", pending: true, rates: {day: 210.0, week: 510.0}, rateNote: "ref ex-GST day $210 / week $510 (not calculated in v1)" },
+        { key: "air-met-17156650-6-r", label: "BZ1 Sensor, SafeCore, Ammonia (NH3)", catalog_code: "17156650-6-R", pending: true, rates: {day: 35.0}, rateNote: "ref ex-GST day $35 (not calculated in v1)" },
+        { key: "air-met-17156650-2-r", label: "BZ1 Sensor, SafeCore, Hydrogen Sulfide (H2S)", catalog_code: "17156650-2-R", pending: true, rates: {day: 0.0}, rateNote: "ref ex-GST day $0 (not calculated in v1)" },
+        { key: "air-met-17156650-l-r", label: "BZ1 Sensor, SafeCore, LEL, Methane", catalog_code: "17156650-L-R", pending: true, rates: {day: 0.0}, rateNote: "ref ex-GST day $0 (not calculated in v1)" },
+        { key: "air-met-17156650-q-r", label: "BZ1 Sensor, Safecore. Carbon Dioxide (CO2)", catalog_code: "17156650-Q-R", pending: true, rates: {day: 25.0, week: 56.0}, rateNote: "ref ex-GST day $25 / week $56 (not calculated in v1)" },
+        { key: "air-met-data", label: "Data Downloading Charge", catalog_code: "DATA", pending: true },
+        { key: "air-met-320-100", label: "Field Rotameter, 3 to 30 l/min, 4\" scale with fittings adapted for use with QuickTake pump. (ea)", catalog_code: "320-100", pending: true, rates: {day: 10.0}, rateNote: "ref ex-GST day $10 (not calculated in v1)" },
+        { key: "air-met-geotech-interface-meter-60m", label: "Geotech Interface Meter 60m", pending: true, rates: {day: 50.0, week: 200.0}, rateNote: "ref ex-GST day $50 / week $200 (not calculated in v1)" },
+        { key: "air-met-geotech-series-2-peristaltic-pump", label: "Geotech Series 2 Peristaltic Pump", pending: true, rates: {day: 75.0}, rateNote: "ref ex-GST day $75 (not calculated in v1)" },
+        { key: "air-met-geotech-water-level-meter-60m", label: "Geotech Water Level Meter 60m", pending: true, rates: {day: 50.0, week: 200.0}, rateNote: "ref ex-GST day $50 / week $200 (not calculated in v1)" },
+        { key: "air-met-qedkit3", label: "Kit #3 - (PFAS Free/Standard) Low Flow Sampling: YSI, IFM, Controller, Pump, Tag line, compressor", catalog_code: "QEDKIT3", pending: true, rates: {day: 335.0}, rateNote: "ref ex-GST day $335 (not calculated in v1)" },
+        { key: "air-met-mx6-ibrid-gas-detector", label: "MX6 iBrid Gas Detector", pending: true, rates: {day: 70.0}, rateNote: "ref ex-GST day $70 (not calculated in v1)" },
+        { key: "air-met-17124975-6-r", label: "MX6 Sensor Ammonia (NH3)", catalog_code: "17124975-6-R", pending: true, rates: {day: 30.0}, rateNote: "ref ex-GST day $30 (not calculated in v1)" },
+        { key: "air-met-17124975-d-r", label: "MX6 Sensor Nitric Oxide (NO)", catalog_code: "17124975-D-R", pending: true, rates: {day: 25.0}, rateNote: "ref ex-GST day $25 (not calculated in v1)" },
+        { key: "air-met-17124975-4-r", label: "MX6 Sensor Nitrogen Dioxide (NO2)", catalog_code: "17124975-4-R", pending: true, rates: {day: 25.0}, rateNote: "ref ex-GST day $25 (not calculated in v1)" },
+        { key: "air-met-17124975-q-r", label: "MX6 Sensor, Carbon Dioxide (CO2), IR", catalog_code: "17124975-Q-R", pending: true, rates: {day: 20.0}, rateNote: "ref ex-GST day $20 (not calculated in v1)" },
+        { key: "air-met-ac3000190", label: "Noise, Sound and Vibration Spares and Accessories", catalog_code: "AC3000190", pending: true, rates: {day: 20.0}, rateNote: "ref ex-GST day $20 (not calculated in v1)" },
+        { key: "air-met-panther", label: "Panther Pro Leak Helium Leak Detector", catalog_code: "PANTHER", pending: true, rates: {day: 115.0}, rateNote: "ref ex-GST day $115 (not calculated in v1)" },
+        { key: "air-met-bz1", label: "Radius BZ1 Area Gas Detector", catalog_code: "BZ1", pending: true, rates: {day: 240.0, week: 555.0}, rateNote: "ref ex-GST day $240 / week $555 (not calculated in v1)" },
+        { key: "air-met-safecore", label: "Radius BZ1 SafeCore Sensor Cartridge", catalog_code: "SAFECORE", pending: true, rates: {day: 0.0}, rateNote: "ref ex-GST day $0 (not calculated in v1)" },
+        { key: "air-met-delwa", label: "Rental Freight Delivery - WA", catalog_code: "DELWA", pending: true },
+        { key: "air-met-s500o3", label: "S500 Aeroqual O3 0-10ppm Range", catalog_code: "S500O3", pending: true, rates: {day: 26.0}, rateNote: "ref ex-GST day $26 (not calculated in v1)" },
+        { key: "air-met-xr5000", label: "SKC AirChek XR5000 Sampling Pump", catalog_code: "XR5000", pending: true, rates: {day: 40.0, week: 122.0}, rateNote: "ref ex-GST day $40 / week $122 (not calculated in v1)" },
+        { key: "air-met-skc-chek-mate-flow-calibrator-500ml-5l-min", label: "SKC Chek-Mate Flow Calibrator 500mL - 5L/Min", pending: true, rates: {day: 55.0}, rateNote: "ref ex-GST day $55 (not calculated in v1)" },
+        { key: "air-met-chekmate-mf", label: "SKC Chek-Mate Medium Flow Calibrator 500mL - 5L/Min", catalog_code: "CHEKMATE MF", pending: true, rates: {week: 226.0}, rateNote: "ref ex-GST week $226 (not calculated in v1)" },
+        { key: "air-met-gs1kit", label: "SKC GS-1 Respirable Dust Cyclone Kit", catalog_code: "GS1KIT", pending: true, rates: {day: 15.0}, rateNote: "ref ex-GST day $15 (not calculated in v1)" },
+        { key: "air-met-iomkit", label: "SKC IOM Inhalable Samplers and Cassettes Kit", catalog_code: "IOMKIT", pending: true, rates: {day: 15.0}, rateNote: "ref ex-GST day $15 (not calculated in v1)" },
+        { key: "air-met-skck1", label: "SKC Sampling Pumps Kit (1 to 5 unit)", catalog_code: "SKCK1", pending: true, rates: {day: 51.0}, rateNote: "ref ex-GST day $51 (not calculated in v1)" },
+        { key: "air-met-skck3", label: "SKC Sampling Pumps Kit (11 and above)", catalog_code: "SKCK3", pending: true, rates: {day: 30.0, week: 114.0}, rateNote: "ref ex-GST day $30 / week $114 (not calculated in v1)" },
+        { key: "air-met-skck2", label: "SKC Sampling Pumps Kit (6 to 10 unit)", catalog_code: "SKCK2", pending: true, rates: {day: 38.0, week: 134.0}, rateNote: "ref ex-GST day $38 / week $134 (not calculated in v1)" },
+        { key: "air-met-solinst-122-interface-meter-60m", label: "Solinst 122 Interface Meter 60m", pending: true, rates: {day: 55.0, week: 220.0}, rateNote: "ref ex-GST day $55 / week $220 (not calculated in v1)" },
+        { key: "air-met-svantek-sv-100a-whole-body-vibration-exposure-me", label: "Svantek SV-100A Whole-Body Vibration Exposure Meter", pending: true, rates: {day: 140.0}, rateNote: "ref ex-GST day $140 (not calculated in v1)" },
+        { key: "air-met-svantek-sv-103-hand-arm-vibration-meter", label: "Svantek SV-103 Hand-Arm Vibration Meter", pending: true, rates: {day: 140.0}, rateNote: "ref ex-GST day $140 (not calculated in v1)" },
+        { key: "air-met-tiger-phocheck-voc-detector-data-logging-ppm", label: "Tiger PhoCheck VOC Detector - Data Logging PPM", pending: true, rates: {day: 80.0}, rateNote: "ref ex-GST day $80 (not calculated in v1)" },
+        { key: "air-met-tiger-xt-select-voc-detector-data-logging-ppb", label: "Tiger XT Select VOC Detector - Data Logging PPB", pending: true, rates: {day: 80.0}, rateNote: "ref ex-GST day $80 (not calculated in v1)" },
+        { key: "air-met-tiger-xt-voc-detector-data-logging-ppm", label: "Tiger XT VOC Detector - Data Logging PPM", pending: true, rates: {day: 75.0}, rateNote: "ref ex-GST day $75 (not calculated in v1)" },
+        { key: "air-met-dtii", label: "TSI DustTrak II 8530 Dust Monitor", catalog_code: "DTII", pending: true, rates: {day: 115.0, week: 436.0}, rateNote: "ref ex-GST day $115 / week $436 (not calculated in v1)" },
+        { key: "air-met-tsi-edge-5-noise-dosimeter", label: "TSI Edge 5 Noise Dosimeter", pending: true, rates: {day: 72.0}, rateNote: "ref ex-GST day $72 (not calculated in v1)" },
+        { key: "air-met-tsi-hot-wire-anemometer", label: "TSI Hot Wire Anemometer", pending: true, rates: {day: 75.0, week: 255.0}, rateNote: "ref ex-GST day $75 / week $255 (not calculated in v1)" },
+        { key: "air-met-qtrak", label: "TSI Q-Trak Indoor Air Quality Monitor", catalog_code: "QTRAK", pending: true, rates: {day: 85.0, week: 321.0}, rateNote: "ref ex-GST day $85 / week $321 (not calculated in v1)" },
+        { key: "air-met-tsi-soundpro-type-1-sound-level-meter-1-1-3-octa", label: "TSI SoundPro Type 1 Sound Level Meter - 1-1/3 Octave", pending: true, rates: {day: 115.0}, rateNote: "ref ex-GST day $115 (not calculated in v1)" },
+        { key: "air-met-ventis-pro5-series-gas-detector", label: "Ventis - Pro5 Series Gas Detector", pending: true, rates: {day: 70.0}, rateNote: "ref ex-GST day $70 (not calculated in v1)" },
+        { key: "air-met-17155304-u-r", label: "Ventis Pro 5 Sensor, Carbon Dioxide (CO2)", catalog_code: "17155304-U-R", pending: true, rates: {day: 20.0}, rateNote: "ref ex-GST day $20 (not calculated in v1)" },
+        { key: "air-met-605790-30", label: "YSI - 30 meter Dual ISE/Cond/DO/Temp Cable Assy", catalog_code: "605790-30", pending: true, rates: {day: 30.0}, rateNote: "ref ex-GST day $30 (not calculated in v1)" },
+        { key: "air-met-ysi-proplus-water-quality-meter", label: "YSI ProPlus Water Quality Meter", pending: true, rates: {day: 100.0, month: 1093.0}, rateNote: "ref ex-GST day $100 / month $1093 (not calculated in v1)" },
+        { key: "air-met-ysi-proquatro-water-quality-meter", label: "YSI ProQuatro Water Quality Meter", pending: true, rates: {day: 115.0, week: 400.0}, rateNote: "ref ex-GST day $115 / week $400 (not calculated in v1)" },
+      ],
+      "ets": [
+        { key: "ets-pump-little-pip", label: "Little Pip 12V Peristaltic Pump", catalog_code: "PUMP LITTLE PIP", pending: true, rates: {day: 50.0}, rateNote: "ref ex-GST day $50 (not calculated in v1)" },
+        { key: "ets-kit-mp50-low-flow", label: "QED MP50 Micropurge Low Flow Bladder Pump Kit", catalog_code: "KIT-MP50 LOW FLOW", pending: true, rates: {day: 200.0}, rateNote: "ref ex-GST day $200 (not calculated in v1)" },
+        { key: "ets-ysi-proquatro", label: "YSI ProQuatro Water Quality Meter", catalog_code: "YSI PROQUATRO", pending: true, rates: {day: 80.0}, rateNote: "ref ex-GST day $80 (not calculated in v1)" },
+      ],
+      "merieux": [
+        { key: "merieux-als102", label: "AIR SAMPLER MERCK", catalog_code: "ALS102", pending: true, rates: {day: 266.83, also_seen_day: 274.57}, rateNote: "ref ex-GST day $266.83 (not calculated in v1). Also seen $274.57 on invoice 24371 dated 01/07/2025." },
+        { key: "merieux-microbio-air-impacter", label: "MicroBIO Air Impacter", pending: true, rates: {day: 100.0}, rateNote: "ref ex-GST day $100 (not calculated in v1)" },
+      ],
+    }
+  };
+
+window.HIRE_CATALOG = HIRE_CATALOG;
+
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+function uid(prefix) {
+  return (prefix || "id") + "-" + Math.random().toString(36).slice(2, 10);
+}
+var SAMPLE_JOBS = [
+  { id: "demo-0019032", number: "0019032", name: "DEMO — sample job (not live data)" },
+  { id: "demo-0019185", number: "0019185", name: "DEMO — sample job (not live data)" }
+];
+var view = { page: "dash", hireDraft: null, hireMode: "new", hireId: "" };
+var db = { hires: [] };
+
+function supplierName(id) {
+  var s = (HIRE_CATALOG.suppliers || []).find(function (x) { return x.id === id; });
+  return s ? s.name : id;
+}
+function itemsFor(id) { return (HIRE_CATALOG.items[id] || []).slice(); }
+function logisticsLabel(v) {
+  if (v === "delivery") return "Delivery";
+  if (v === "pickup") return "Pickup";
+  if (v === "already_holding") return "Already holding (kit kept between same-week jobs)";
+  return v || "";
+}
+function blankLine() { return { catalog_key: "", label: "", quantity: 1, is_free_text: false, flagged: false }; }
+function blankDraft(src) {
+  src = src || {};
+  return {
+    id: src.id || "",
+    request_group_id: src.request_group_id || "",
+    version: src.version || 1,
+    is_latest: src.is_latest !== false,
+    supplier: src.supplier || "air-met",
+    ref_type: src.ref_type || "job",
+    job_number: src.job_number || "",
+    project_id: src.project_id || "",
+    lead_number: src.lead_number || "",
+    on_hire_date: src.on_hire_date || "",
+    off_hire_date: src.off_hire_date || "",
+    logistics: src.logistics || "delivery",
+    delivery_site: src.delivery_site || "",
+    requested_by: src.requested_by || "Preview user (demo)",
+    lines: (src.lines && src.lines.length) ? src.lines.map(function (l) { return Object.assign({}, l); }) : [blankLine()]
+  };
+}
+
+function dashHtml() {
+  return "<div class=\"wrap\">"
+    + "<div class=\"row\"><h2 class=\"brand-type\" style=\"color:var(--navy)\">Active projects</h2>"
+    + "<button class=\"btn orange\" type=\"button\" disabled>New project</button></div>"
+    + "<div class=\"row\" style=\"margin:10px 0 4px;gap:8px;flex-wrap:wrap\">"
+    + "<button type=\"button\" class=\"btn mid\" id=\"btnHireRequests\">Hire requests</button>"
+    + "<span class=\"help\" style=\"margin:0;align-self:center\">Jobs and leads — no project required to start.</span></div>"
+    + "<p class=\"help\">This dashboard strip is a preview mock so you can see where the Hire requests button sits. It is not connected to live projects.</p>"
+    + "</div>";
+}
+
+function listHtml() {
+  var html = "<div class=\"wrap\">";
+  html += "<button class=\"btn ghost\" type=\"button\" id=\"btnHireBackDash\">← Dashboard</button>";
+  html += "<div class=\"row\"><h2 class=\"brand-type\" style=\"color:var(--navy)\">Hire requests</h2>";
+  html += "<button class=\"btn orange\" type=\"button\" id=\"btnHireNew\">New hire request</button></div>";
+  html += "<p class=\"help\">Reopening a request and saving creates a new linked version. Only the latest version counts. Saves in this preview stay in this browser tab only.</p>";
+  var list = db.hires.filter(function (h) { return h && h.is_latest !== false; });
+  if (!list.length) {
+    html += "<p class=\"help\">No hire requests yet in this preview.</p>";
+  } else {
+    list.slice().reverse().forEach(function (h) {
+      var ref = h.ref_type === "lead" ? ("Lead " + (h.lead_number || "")) : (h.job_number || "");
+      var lines = (h.lines || []).map(function (ln) { return (ln.quantity || 1) + " × " + (ln.label || ""); }).join("; ");
+      var flag = (h.lines || []).some(function (ln) { return ln.flagged || ln.is_free_text; });
+      html += "<button type=\"button\" class=\"card open-hire\" data-hire=\"" + esc(h.id) + "\" style=\"display:block;width:100%;text-align:left\">";
+      html += "<div class=\"brand-type\" style=\"font-weight:700;color:var(--navy);font-size:17px\">" + esc(supplierName(h.supplier)) + " · " + esc(ref) + "</div>";
+      html += "<div class=\"muted\">v" + (h.version || 1) + (flag ? " · free-text flagged" : "") + " · " + esc(logisticsLabel(h.logistics)) + "</div>";
+      html += "<div class=\"muted\">" + esc(lines || "No lines") + "</div>";
+      html += "<div class=\"muted\">" + esc(h.on_hire_date || "?") + " → " + esc(h.off_hire_date || "?") + " · " + esc(h.requested_by || "") + "</div>";
+      html += "</button>";
+    });
+  }
+  html += "<p class=\"help\">Preview of unpublished field app v45b hire screen. Opening a request and saving creates a new version.</p></div>";
+  return html;
+}
+
+function lineHtml(ln, i, items) {
+  var free = !!ln.is_free_text || (!ln.catalog_key && !!ln.label);
+  var html = "<div class=\"card hire-line\" data-line=\"" + i + "\" style=\"margin:8px 0\">";
+  html += "<div class=\"row\"><div class=\"grow brand-type\" style=\"font-weight:700;color:var(--navy)\">Line " + (i + 1) + "</div>";
+  html += "<button type=\"button\" class=\"btn ghost hire-remove-line\" data-line=\"" + i + "\">Remove</button></div>";
+  html += "<label>Equipment</label><select class=\"hire-equip\" data-line=\"" + i + "\">";
+  html += "<option value=\"\">Select…</option>";
+  items.forEach(function (it) {
+    html += "<option value=\"" + esc(it.key) + "\"" + (ln.catalog_key === it.key ? " selected" : "") + ">"
+      + esc(it.label) + (it.pending ? " *" : "") + "</option>";
+  });
+  html += "<option value=\"__free__\"" + (free && !ln.catalog_key ? " selected" : "") + ">Free text (not in catalog — flagged)</option>";
+  html += "</select>";
+  html += "<label>Label (exact invoice/quote wording)</label>";
+  html += "<input class=\"hire-label\" data-line=\"" + i + "\" value=\"" + esc(ln.label || "") + "\" " + (ln.catalog_key && !free ? "readonly" : "") + " placeholder=\"Required\">";
+  html += "<label>Quantity</label><input type=\"number\" min=\"1\" step=\"1\" class=\"hire-qty\" data-line=\"" + i + "\" value=\"" + esc(String(ln.quantity || 1)) + "\">";
+  if (ln.rateNote && !free) html += "<p class=\"help\">" + esc(ln.rateNote) + "</p>";
+  if (ln.flagged || free) html += "<p class=\"help\" style=\"color:var(--orange)\">Flagged for later catalog update.</p>";
+  html += "</div>";
+  return html;
+}
+
+function hireFormHtml() {
+  var d = view.hireDraft || blankDraft();
+  var mode = view.hireMode === "version" ? "version" : "new";
+  var items = itemsFor(d.supplier);
+  var html = "<div class=\"wrap\">";
+  html += "<button class=\"btn ghost\" type=\"button\" id=\"btnHireBackList\">← Hire requests</button>";
+  html += "<h2 class=\"brand-type\" style=\"color:var(--navy)\">" + (mode === "version" ? "Resubmit hire request (new version)" : "New hire request") + "</h2>";
+  if (mode === "version") {
+    html += "<p class=\"help\">Editing version " + (d.version || 1) + " of group " + esc(d.request_group_id) + ". Save creates version " + ((d.version || 1) + 1) + ". Latest version counts.</p>";
+  }
+  html += "<p class=\"help\"><strong>Holding kit:</strong> a separate quote/request is still needed for each job even when physically holding the same kit. Chargeable days follow use, not idle hold days. (No billing calculation in this screen.)</p>";
+  html += "<label>Supplier</label><select id=\"hireSupplier\">";
+  HIRE_CATALOG.suppliers.forEach(function (s) {
+    html += "<option value=\"" + esc(s.id) + "\"" + (d.supplier === s.id ? " selected" : "") + (s.enabled ? "" : " disabled") + ">"
+      + esc(s.name) + (s.enabled ? "" : " (coming soon)") + "</option>";
+  });
+  html += "</select>";
+  var nItems = items.length;
+  if (nItems) {
+    html += "<p class=\"help\">Catalog " + esc(HIRE_CATALOG.catalog_version || "") + ": " + nItems + " item" + (nItems === 1 ? "" : "s") + " for this supplier (exact invoice/quote wording). Free text still available and flagged. Rates shown as reference only — no billing calculation in v1.</p>";
+  }
+  html += "<label>Reference type</label><div class=\"filters\" id=\"hireRefType\">";
+  [["job", "Job (seven-digit)"], ["lead", "Lead (no project yet)"]].forEach(function (pair) {
+    html += "<button type=\"button\" class=\"chip" + (d.ref_type === pair[0] ? " on" : "") + "\" data-hire-ref=\"" + pair[0] + "\">" + pair[1] + "</button>";
+  });
+  html += "</div>";
+  if (d.ref_type === "job") {
+    html += "<label>Job number</label><select id=\"hireJob\">";
+    html += "<option value=\"\">Select an active project…</option>";
+    SAMPLE_JOBS.forEach(function (p) {
+      var sel = String(p.number) === String(d.job_number || "") ? " selected" : "";
+      html += "<option value=\"" + esc(p.number) + "\" data-pid=\"" + esc(p.id) + "\"" + sel + ">"
+        + esc(p.number) + " — " + esc(p.name) + "</option>";
+    });
+    html += "</select>";
+    html += "<p class=\"help\">In the real app this list is active Podio-synced jobs. These two numbers are demo placeholders only.</p>";
+  } else {
+    html += "<label>Lead number</label><input id=\"hireLead\" value=\"" + esc(d.lead_number || "") + "\" placeholder=\"Unique lead number\" autocomplete=\"off\">";
+    html += "<p class=\"help\"><strong>Lead lookup:</strong> leads are not on the project list yet. Enter the unique lead number. This preview will not create a fake job.</p>";
+  }
+  html += "<div class=\"grid2\">";
+  html += "<div><label>On-hire date</label><input type=\"date\" id=\"hireOn\" value=\"" + esc(d.on_hire_date || "") + "\"></div>";
+  html += "<div><label>Off-hire date</label><input type=\"date\" id=\"hireOff\" value=\"" + esc(d.off_hire_date || "") + "\"></div>";
+  html += "</div>";
+  html += "<label>Logistics (shared by all lines)</label><select id=\"hireLogistics\">";
+  [["delivery", "Delivery"], ["pickup", "Pickup"], ["already_holding", "Already holding (kit kept between same-week jobs)"]].forEach(function (pair) {
+    html += "<option value=\"" + pair[0] + "\"" + (d.logistics === pair[0] ? " selected" : "") + ">" + pair[1] + "</option>";
+  });
+  html += "</select>";
+  html += "<label>Delivery site (internal only)</label><input id=\"hireSite\" value=\"" + esc(d.delivery_site || "") + "\" placeholder=\"Internal site / depot — never on hire-company emails or Xero PO\">";
+  html += "<p class=\"help\">Stored for staff only. This preview does not send hire emails or create Xero POs.</p>";
+  html += "<label>Who requested it</label><input id=\"hireWho\" value=\"" + esc(d.requested_by || "") + "\">";
+  html += "<h3 class=\"brand-type\" style=\"color:var(--navy);font-size:16px;margin:18px 0 8px\">Equipment lines</h3>";
+  html += "<div id=\"hireLines\">";
+  (d.lines || [blankLine()]).forEach(function (ln, i) { html += lineHtml(ln, i, items); });
+  html += "</div>";
+  html += "<button type=\"button\" class=\"btn mid\" id=\"btnHireAddLine\">Add equipment line</button>";
+  html += "<div class=\"footer-actions\">";
+  html += "<button type=\"button\" class=\"btn orange\" id=\"btnHireSave\">" + (mode === "version" ? "Save as new version" : "Submit hire request") + "</button>";
+  html += "<button type=\"button\" class=\"btn ghost\" id=\"btnHireCancel\">Cancel</button>";
+  html += "</div></div>";
+  return html;
+}
+
+function readDraftFromDom() {
+  var d = view.hireDraft || blankDraft();
+  var sup = document.getElementById("hireSupplier");
+  if (sup) d.supplier = sup.value;
+  var on = document.getElementById("hireOn");
+  if (on) d.on_hire_date = on.value;
+  var off = document.getElementById("hireOff");
+  if (off) d.off_hire_date = off.value;
+  var log = document.getElementById("hireLogistics");
+  if (log) d.logistics = log.value;
+  var site = document.getElementById("hireSite");
+  if (site) d.delivery_site = site.value.trim();
+  var who = document.getElementById("hireWho");
+  if (who) d.requested_by = who.value.trim();
+  if (d.ref_type === "job") {
+    var job = document.getElementById("hireJob");
+    if (job) {
+      d.job_number = (job.value || "").trim();
+      var opt = job.options[job.selectedIndex];
+      d.project_id = opt && opt.getAttribute("data-pid") || "";
+      d.lead_number = "";
+    }
+  } else {
+    var lead = document.getElementById("hireLead");
+    if (lead) d.lead_number = lead.value.trim();
+    d.job_number = "";
+    d.project_id = "";
+  }
+  var lines = [];
+  document.querySelectorAll("#hireLines .hire-line").forEach(function (card) {
+    var eq = card.querySelector(".hire-equip");
+    var lab = card.querySelector(".hire-label");
+    var qty = card.querySelector(".hire-qty");
+    var key = eq ? eq.value : "";
+    var label = lab ? lab.value.trim() : "";
+    var isFree = key === "__free__" || (!key && !!label);
+    var catalogKey = isFree ? "" : key;
+    var catIt = (!isFree && catalogKey) ? itemsFor(d.supplier).find(function (x) { return x.key === catalogKey; }) : null;
+    if (!isFree && catIt && !label) label = catIt.label;
+    lines.push({
+      catalog_key: catalogKey,
+      label: label,
+      quantity: Math.max(1, parseInt(qty && qty.value, 10) || 1),
+      is_free_text: isFree,
+      flagged: isFree || !!(catIt && catIt.pending),
+      catalog_code: catIt && catIt.catalog_code ? catIt.catalog_code : "",
+      rates: catIt && catIt.rates ? catIt.rates : null,
+      rateNote: catIt && catIt.rateNote ? catIt.rateNote : ""
+    });
+  });
+  if (lines.length) d.lines = lines;
+  view.hireDraft = d;
+  return d;
+}
+
+function validate(d) {
+  if (!d.supplier || !HIRE_CATALOG.suppliers.some(function (s) { return s.id === s.id && s.enabled && s.id === d.supplier; })) {
+    return "Choose an enabled supplier (Air-Met, NVMS, ETS, or Mérieux).";
+  }
+  if (d.ref_type === "job") {
+    if (!String(d.job_number || "").trim()) return "Pick a job from the demo project list.";
+  } else if (d.ref_type === "lead") {
+    if (!String(d.lead_number || "").trim()) return "Enter the unique lead number.";
+  } else return "Choose Job or Lead.";
+  if (!d.on_hire_date) return "Enter the on-hire date.";
+  if (!d.off_hire_date) return "Enter the off-hire date.";
+  if (d.off_hire_date < d.on_hire_date) return "Off-hire date must be on or after on-hire date.";
+  if (!d.logistics) return "Choose logistics.";
+  if (!d.requested_by) return "Who requested it is required.";
+  if (!d.lines || !d.lines.length) return "Add at least one equipment line.";
+  for (var i = 0; i < d.lines.length; i++) {
+    if (!d.lines[i].label) return "Line " + (i + 1) + " needs a label.";
+  }
+  return "";
+}
+
+function paint() {
+  var root = document.getElementById("app");
+  if (view.page === "hireForm") root.innerHTML = hireFormHtml();
+  else if (view.page === "hireList") root.innerHTML = listHtml();
+  else root.innerHTML = dashHtml();
+  bind();
+}
+
+function bind() {
+  var b = document.getElementById("btnHireRequests");
+  if (b) b.onclick = function () { view.page = "hireList"; paint(); };
+  var back = document.getElementById("btnHireBackDash");
+  if (back) back.onclick = function () { view.page = "dash"; paint(); };
+  var neu = document.getElementById("btnHireNew");
+  if (neu) neu.onclick = function () {
+    view.hireMode = "new"; view.hireId = ""; view.hireDraft = blankDraft(); view.page = "hireForm"; paint();
+  };
+  var backL = document.getElementById("btnHireBackList");
+  if (backL) backL.onclick = function () { view.page = "hireList"; paint(); };
+  var cancel = document.getElementById("btnHireCancel");
+  if (cancel) cancel.onclick = function () { view.page = "hireList"; paint(); };
+  document.querySelectorAll(".open-hire").forEach(function (btn) {
+    btn.onclick = function () {
+      var id = btn.getAttribute("data-hire");
+      var prev = db.hires.find(function (h) { return h.id === id; });
+      if (!prev) return;
+      view.hireMode = "version"; view.hireId = id; view.hireDraft = blankDraft(prev); view.page = "hireForm"; paint();
+    };
+  });
+  document.querySelectorAll("[data-hire-ref]").forEach(function (chip) {
+    chip.onclick = function () {
+      readDraftFromDom();
+      view.hireDraft.ref_type = chip.getAttribute("data-hire-ref");
+      paint();
+    };
+  });
+  var sup = document.getElementById("hireSupplier");
+  if (sup) sup.onchange = function () {
+    readDraftFromDom();
+    (view.hireDraft.lines || []).forEach(function (ln) {
+      ln.catalog_key = ""; ln.label = ""; ln.is_free_text = false; ln.flagged = false; ln.rateNote = "";
+    });
+    paint();
+  };
+  document.getElementById("btnHireAddLine") && (document.getElementById("btnHireAddLine").onclick = function () {
+    readDraftFromDom();
+    view.hireDraft.lines.push(blankLine());
+    paint();
+  });
+  document.querySelectorAll(".hire-remove-line").forEach(function (btn) {
+    btn.onclick = function () {
+      readDraftFromDom();
+      var i = parseInt(btn.getAttribute("data-line"), 10);
+      view.hireDraft.lines.splice(i, 1);
+      if (!view.hireDraft.lines.length) view.hireDraft.lines.push(blankLine());
+      paint();
+    };
+  });
+  document.querySelectorAll(".hire-equip").forEach(function (sel) {
+    sel.onchange = function () {
+      readDraftFromDom();
+      paint();
+    };
+  });
+  var save = document.getElementById("btnHireSave");
+  if (save) save.onclick = function () {
+    var d = readDraftFromDom();
+    var err = validate(d);
+    if (err) { alert(err); return; }
+    if (view.hireMode === "version") {
+      var prev = db.hires.find(function (h) { return h.id === view.hireId; });
+      if (!prev) { alert("Original request missing."); return; }
+      db.hires.forEach(function (h) {
+        if (h.request_group_id === prev.request_group_id) h.is_latest = false;
+      });
+      var next = blankDraft(d);
+      next.id = uid("hr");
+      next.request_group_id = prev.request_group_id;
+      next.version = (prev.version || 1) + 1;
+      next.is_latest = true;
+      db.hires.push(next);
+    } else {
+      var rec = blankDraft(d);
+      rec.id = uid("hr");
+      rec.request_group_id = uid("hg");
+      rec.version = 1;
+      rec.is_latest = true;
+      db.hires.push(rec);
+    }
+    view.page = "hireList";
+    paint();
+  };
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  var q = (location.search || "").replace(/^\?/, "");
+  if (q.indexOf("page=form") >= 0) {
+    view.page = "hireForm"; view.hireMode = "new"; view.hireDraft = blankDraft();
+  } else if (q.indexOf("page=list") >= 0) {
+    view.page = "hireList";
+  }
+  paint();
+});
+
+</script>
+</body>
+</html>

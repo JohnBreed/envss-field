@@ -502,7 +502,7 @@
     "nvms": [
       {
         "key": "nvms-2250",
-        "label": "2250 – SLM",
+        "label": "2250 \u2013 SLM",
         "catalog_code": "2250",
         "pending": false,
         "rates": {
@@ -514,7 +514,7 @@
       },
       {
         "key": "nvms-4448",
-        "label": "4448 – Dosi",
+        "label": "4448 \u2013 Dosi",
         "catalog_code": "4448",
         "pending": false,
         "rates": {
@@ -611,9 +611,10 @@
         "catalog_code": "ALS102",
         "pending": true,
         "rates": {
-          "day": 274.57
+          "day": 266.83,
+          "also_seen_day": 274.57
         },
-        "rateNote": "ref ex-GST day $274.57 (not calculated in v1)"
+        "rateNote": "ref ex-GST day $266.83 (not calculated in v1). Also seen $274.57 on invoice 24371 dated 01/07/2025."
       },
       {
         "key": "merieux-microbio-air-impacter",

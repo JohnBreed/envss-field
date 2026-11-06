@@ -91,7 +91,7 @@
         { key: "ets-ysi-proquatro", label: "YSI ProQuatro Water Quality Meter", catalog_code: "YSI PROQUATRO", pending: true, rates: {day: 80.0}, rateNote: "ref ex-GST day $80 (not calculated in v1)" },
       ],
       "merieux": [
-        { key: "merieux-als102", label: "AIR SAMPLER MERCK", catalog_code: "ALS102", pending: true, rates: {day: 274.57}, rateNote: "ref ex-GST day $274.57 (not calculated in v1)" },
+        { key: "merieux-als102", label: "AIR SAMPLER MERCK", catalog_code: "ALS102", pending: true, rates: {day: 266.83, also_seen_day: 274.57}, rateNote: "ref ex-GST day $266.83 (not calculated in v1). Also seen $274.57 on invoice 24371 dated 01/07/2025." },
         { key: "merieux-microbio-air-impacter", label: "MicroBIO Air Impacter", pending: true, rates: {day: 100.0}, rateNote: "ref ex-GST day $100 (not calculated in v1)" },
       ],
     }
