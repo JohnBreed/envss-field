@@ -11,8 +11,8 @@ Source: `envss-invoicing/hire-catalog/supplier-rates.json` (`catalog_version` **
 |---|---|---|
 | Air-Met Scientific | yes | 48 (all provisional_from_invoices) |
 | NVMS | yes | 7 (official 4448 – Dosi / 2250 – SLM + booking/invoice aliases + $0 accessories) |
-| Environmental Test Solutions (ETS) | no | 3 (embedded for later) |
-| Mérieux NutriSciences | no | 2 (embedded for later) |
+| Environmental Test Solutions (ETS) | yes | 3 (Little Pip, QED MP50 kit, YSI ProQuatro; provisional from invoices) |
+| Mérieux NutriSciences | yes | 2 (AIR SAMPLER MERCK / ALS102, MicroBIO Air Impacter alias; provisional from invoices) |
 
 Drop-down labels are exact `item_name` strings. Free-text fallback remains and is flagged. Rates (AUD ex GST) are stored as reference on each line — **no billing maths in v1**.
 

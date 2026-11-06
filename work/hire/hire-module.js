@@ -4,8 +4,8 @@
    - Leads: enter/search a unique lead number; do NOT create a fake job/project.
    - Offline queue + sync via COLLS "hires" -> envss_hires (SQL draft only until John applies it).
    - Versioned resubmit: same request_group_id, incremented version, previous is_latest=false.
-   - Suppliers enabled: Air-Met, NVMS. ETS / Mérieux listed as coming soon (disabled).
-   - Catalog embedded from supplier-rates.json catalog_version 2026-11-06 (Air-Met 48 + NVMS 7 selectable; ETS/Mérieux embedded but disabled).
+   - Suppliers enabled: Air-Met, NVMS, Environmental Test Solutions (ETS), Mérieux NutriSciences.
+   - Catalog embedded from supplier-rates.json catalog_version 2026-11-06 (Air-Met 48 + NVMS 7 + ETS 3 + Mérieux 2, all selectable).
    - Never emails hire companies. Never writes Podio. Never touches Google Sheets.
    Live rollback target remains a710ca9 / v45a. This layer is local-only until John publishes. */
 (function () {
@@ -22,8 +22,8 @@
     suppliers: [
       { id: "air-met", name: "Air-Met Scientific", enabled: true },
       { id: "nvms", name: "NVMS", enabled: true },
-      { id: "ets", name: "Environmental Test Solutions (ETS)", enabled: false, note: "In catalog for later — not selectable in v1" },
-      { id: "merieux", name: "Mérieux NutriSciences", enabled: false, note: "In catalog for later — not selectable in v1" }
+      { id: "ets", name: "Environmental Test Solutions (ETS)", enabled: true },
+      { id: "merieux", name: "Mérieux NutriSciences", enabled: true }
     ],
     items: {
       "nvms": [
@@ -415,7 +415,7 @@
 
   function validate(d) {
     if (!d.supplier || !HIRE_CATALOG.suppliers.some(function (s) { return s.id === d.supplier && s.enabled; })) {
-      return "Choose an enabled supplier (Air-Met or NVMS).";
+      return "Choose an enabled supplier (Air-Met, NVMS, ETS, or Mérieux).";
     }
     if (d.ref_type === "job") {
       if (!String(d.job_number || "").trim()) return "Pick a job from the active project list.";
