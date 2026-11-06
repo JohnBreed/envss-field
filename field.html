@@ -5250,7 +5250,7 @@ followUpComplete = function (t) {
    - Offline queue + sync via COLLS "hires" -> envss_hires (SQL draft only until John applies it).
    - Versioned resubmit: same request_group_id, incremented version, previous is_latest=false.
    - Suppliers enabled: Air-Met, NVMS. ETS / Mérieux listed as coming soon (disabled).
-   - Catalog stub until /workspace/envss-invoicing/hire-catalog/ is filled.
+   - Catalog embedded from supplier-rates.json catalog_version 2026-11-06 (Air-Met 48 + NVMS 7 selectable; ETS/Mérieux embedded but disabled).
    - Never emails hire companies. Never writes Podio. Never touches Google Sheets.
    Live rollback target remains a710ca9 / v45a. This layer is local-only until John publishes. */
 (function () {
@@ -5260,20 +5260,85 @@ followUpComplete = function (t) {
      key: stable id for a line; label: exact supplier invoice/quote wording when known;
      rateNote: reference only — v1 never calculates billing. */
   var HIRE_CATALOG = {
+    catalog_version: "2026-11-06",
+    embedded_from: "envss-invoicing/hire-catalog/supplier-rates.json",
+    currency_default: "AUD",
+    note: "Snapshot embedded 2026-11-06 AWST. Labels are exact item_name from the catalog. Rates are reference only — v1 never calculates billing.",
     suppliers: [
-      { id: "air-met", name: "Air-Met", enabled: true },
+      { id: "air-met", name: "Air-Met Scientific", enabled: true },
       { id: "nvms", name: "NVMS", enabled: true },
-      { id: "ets", name: "ETS", enabled: false, note: "Rates being catalogued" },
-      { id: "merieux", name: "Mérieux", enabled: false, note: "Rates being catalogued" }
+      { id: "ets", name: "Environmental Test Solutions (ETS)", enabled: false, note: "In catalog for later — not selectable in v1" },
+      { id: "merieux", name: "Mérieux NutriSciences", enabled: false, note: "In catalog for later — not selectable in v1" }
     ],
     items: {
-      /* Pending full catalog wording/rates from the 6 Nov 2026 NVMS pricelist. */
       "nvms": [
-        { key: "nvms-4448-dosi", label: "4448 Dosi (pending full catalog wording)", pending: true },
-        { key: "nvms-2250-slm", label: "2250 SLM (pending full catalog wording)", pending: true }
+        { key: "nvms-2250", label: "2250 – SLM", catalog_code: "2250", rates: {day: 215.0, week: 1290.0, month: 4515.0}, rateNote: "ref ex-GST day $215 / week $1290 / month $4515 (not calculated in v1)" },
+        { key: "nvms-4448", label: "4448 – Dosi", catalog_code: "4448", rates: {day: 50.0, week: 300.0, month: 1050.0}, rateNote: "ref ex-GST day $50 / week $300 / month $1050 (not calculated in v1)" },
+        { key: "nvms-2250-2", label: "B&K - 2250 Sound Level Meter G4", catalog_code: "2250", pending: true, rates: {day: 215.0}, rateNote: "ref ex-GST day $215 (not calculated in v1)" },
+        { key: "nvms-b-k-2nd-charging-dock-and-daisy-cable", label: "B&K - 2nd Charging Dock and Daisy Cable", pending: true },
+        { key: "nvms-b-k-calibrator", label: "B&K - Calibrator", pending: true, rates: {day: 0.0}, rateNote: "ref ex-GST day $0 (not calculated in v1)" },
+        { key: "nvms-4448-2", label: "B&K - Dosimeters", catalog_code: "4448", pending: true, rates: {day: 50.0}, rateNote: "ref ex-GST day $50 (not calculated in v1)" },
+        { key: "nvms-4448-3", label: "B&K - Dosimeters IS", catalog_code: "4448", pending: true, rates: {day: 50.0}, rateNote: "ref ex-GST day $50 (not calculated in v1)" },
       ],
-      /* Air-Met: drop-down empty until real invoice wording exists; free-text always available. */
-      "air-met": []
+      "air-met": [
+        { key: "air-met-dustsola", label: "250W Solar Panel and Lithium Battery System", catalog_code: "DUSTSOLA", pending: true, rates: {month: 465.0}, rateNote: "ref ex-GST month $465 (not calculated in v1)" },
+        { key: "air-met-aeroqual-s500-handset", label: "Aeroqual S500 Handset", pending: true, rates: {day: 61.0}, rateNote: "ref ex-GST day $61 (not calculated in v1)" },
+        { key: "air-met-air-meter-dx-pm1-2-5-4-25-10-tsp-dust-monitor-bu", label: "Air-MetER-DX PM1/2.5/4.25/10 & TSP Dust Monitor: Build 4.0", pending: true, rates: {day: 210.0, week: 510.0}, rateNote: "ref ex-GST day $210 / week $510 (not calculated in v1)" },
+        { key: "air-met-17156650-6-r", label: "BZ1 Sensor, SafeCore, Ammonia (NH3)", catalog_code: "17156650-6-R", pending: true, rates: {day: 35.0}, rateNote: "ref ex-GST day $35 (not calculated in v1)" },
+        { key: "air-met-17156650-2-r", label: "BZ1 Sensor, SafeCore, Hydrogen Sulfide (H2S)", catalog_code: "17156650-2-R", pending: true, rates: {day: 0.0}, rateNote: "ref ex-GST day $0 (not calculated in v1)" },
+        { key: "air-met-17156650-l-r", label: "BZ1 Sensor, SafeCore, LEL, Methane", catalog_code: "17156650-L-R", pending: true, rates: {day: 0.0}, rateNote: "ref ex-GST day $0 (not calculated in v1)" },
+        { key: "air-met-17156650-q-r", label: "BZ1 Sensor, Safecore. Carbon Dioxide (CO2)", catalog_code: "17156650-Q-R", pending: true, rates: {day: 25.0, week: 56.0}, rateNote: "ref ex-GST day $25 / week $56 (not calculated in v1)" },
+        { key: "air-met-data", label: "Data Downloading Charge", catalog_code: "DATA", pending: true },
+        { key: "air-met-320-100", label: "Field Rotameter, 3 to 30 l/min, 4\" scale with fittings adapted for use with QuickTake pump. (ea)", catalog_code: "320-100", pending: true, rates: {day: 10.0}, rateNote: "ref ex-GST day $10 (not calculated in v1)" },
+        { key: "air-met-geotech-interface-meter-60m", label: "Geotech Interface Meter 60m", pending: true, rates: {day: 50.0, week: 200.0}, rateNote: "ref ex-GST day $50 / week $200 (not calculated in v1)" },
+        { key: "air-met-geotech-series-2-peristaltic-pump", label: "Geotech Series 2 Peristaltic Pump", pending: true, rates: {day: 75.0}, rateNote: "ref ex-GST day $75 (not calculated in v1)" },
+        { key: "air-met-geotech-water-level-meter-60m", label: "Geotech Water Level Meter 60m", pending: true, rates: {day: 50.0, week: 200.0}, rateNote: "ref ex-GST day $50 / week $200 (not calculated in v1)" },
+        { key: "air-met-qedkit3", label: "Kit #3 - (PFAS Free/Standard) Low Flow Sampling: YSI, IFM, Controller, Pump, Tag line, compressor", catalog_code: "QEDKIT3", pending: true, rates: {day: 335.0}, rateNote: "ref ex-GST day $335 (not calculated in v1)" },
+        { key: "air-met-mx6-ibrid-gas-detector", label: "MX6 iBrid Gas Detector", pending: true, rates: {day: 70.0}, rateNote: "ref ex-GST day $70 (not calculated in v1)" },
+        { key: "air-met-17124975-6-r", label: "MX6 Sensor Ammonia (NH3)", catalog_code: "17124975-6-R", pending: true, rates: {day: 30.0}, rateNote: "ref ex-GST day $30 (not calculated in v1)" },
+        { key: "air-met-17124975-d-r", label: "MX6 Sensor Nitric Oxide (NO)", catalog_code: "17124975-D-R", pending: true, rates: {day: 25.0}, rateNote: "ref ex-GST day $25 (not calculated in v1)" },
+        { key: "air-met-17124975-4-r", label: "MX6 Sensor Nitrogen Dioxide (NO2)", catalog_code: "17124975-4-R", pending: true, rates: {day: 25.0}, rateNote: "ref ex-GST day $25 (not calculated in v1)" },
+        { key: "air-met-17124975-q-r", label: "MX6 Sensor, Carbon Dioxide (CO2), IR", catalog_code: "17124975-Q-R", pending: true, rates: {day: 20.0}, rateNote: "ref ex-GST day $20 (not calculated in v1)" },
+        { key: "air-met-ac3000190", label: "Noise, Sound and Vibration Spares and Accessories", catalog_code: "AC3000190", pending: true, rates: {day: 20.0}, rateNote: "ref ex-GST day $20 (not calculated in v1)" },
+        { key: "air-met-panther", label: "Panther Pro Leak Helium Leak Detector", catalog_code: "PANTHER", pending: true, rates: {day: 115.0}, rateNote: "ref ex-GST day $115 (not calculated in v1)" },
+        { key: "air-met-bz1", label: "Radius BZ1 Area Gas Detector", catalog_code: "BZ1", pending: true, rates: {day: 240.0, week: 555.0}, rateNote: "ref ex-GST day $240 / week $555 (not calculated in v1)" },
+        { key: "air-met-safecore", label: "Radius BZ1 SafeCore Sensor Cartridge", catalog_code: "SAFECORE", pending: true, rates: {day: 0.0}, rateNote: "ref ex-GST day $0 (not calculated in v1)" },
+        { key: "air-met-delwa", label: "Rental Freight Delivery - WA", catalog_code: "DELWA", pending: true },
+        { key: "air-met-s500o3", label: "S500 Aeroqual O3 0-10ppm Range", catalog_code: "S500O3", pending: true, rates: {day: 26.0}, rateNote: "ref ex-GST day $26 (not calculated in v1)" },
+        { key: "air-met-xr5000", label: "SKC AirChek XR5000 Sampling Pump", catalog_code: "XR5000", pending: true, rates: {day: 40.0, week: 122.0}, rateNote: "ref ex-GST day $40 / week $122 (not calculated in v1)" },
+        { key: "air-met-skc-chek-mate-flow-calibrator-500ml-5l-min", label: "SKC Chek-Mate Flow Calibrator 500mL - 5L/Min", pending: true, rates: {day: 55.0}, rateNote: "ref ex-GST day $55 (not calculated in v1)" },
+        { key: "air-met-chekmate-mf", label: "SKC Chek-Mate Medium Flow Calibrator 500mL - 5L/Min", catalog_code: "CHEKMATE MF", pending: true, rates: {week: 226.0}, rateNote: "ref ex-GST week $226 (not calculated in v1)" },
+        { key: "air-met-gs1kit", label: "SKC GS-1 Respirable Dust Cyclone Kit", catalog_code: "GS1KIT", pending: true, rates: {day: 15.0}, rateNote: "ref ex-GST day $15 (not calculated in v1)" },
+        { key: "air-met-iomkit", label: "SKC IOM Inhalable Samplers and Cassettes Kit", catalog_code: "IOMKIT", pending: true, rates: {day: 15.0}, rateNote: "ref ex-GST day $15 (not calculated in v1)" },
+        { key: "air-met-skck1", label: "SKC Sampling Pumps Kit (1 to 5 unit)", catalog_code: "SKCK1", pending: true, rates: {day: 51.0}, rateNote: "ref ex-GST day $51 (not calculated in v1)" },
+        { key: "air-met-skck3", label: "SKC Sampling Pumps Kit (11 and above)", catalog_code: "SKCK3", pending: true, rates: {day: 30.0, week: 114.0}, rateNote: "ref ex-GST day $30 / week $114 (not calculated in v1)" },
+        { key: "air-met-skck2", label: "SKC Sampling Pumps Kit (6 to 10 unit)", catalog_code: "SKCK2", pending: true, rates: {day: 38.0, week: 134.0}, rateNote: "ref ex-GST day $38 / week $134 (not calculated in v1)" },
+        { key: "air-met-solinst-122-interface-meter-60m", label: "Solinst 122 Interface Meter 60m", pending: true, rates: {day: 55.0, week: 220.0}, rateNote: "ref ex-GST day $55 / week $220 (not calculated in v1)" },
+        { key: "air-met-svantek-sv-100a-whole-body-vibration-exposure-me", label: "Svantek SV-100A Whole-Body Vibration Exposure Meter", pending: true, rates: {day: 140.0}, rateNote: "ref ex-GST day $140 (not calculated in v1)" },
+        { key: "air-met-svantek-sv-103-hand-arm-vibration-meter", label: "Svantek SV-103 Hand-Arm Vibration Meter", pending: true, rates: {day: 140.0}, rateNote: "ref ex-GST day $140 (not calculated in v1)" },
+        { key: "air-met-tiger-phocheck-voc-detector-data-logging-ppm", label: "Tiger PhoCheck VOC Detector - Data Logging PPM", pending: true, rates: {day: 80.0}, rateNote: "ref ex-GST day $80 (not calculated in v1)" },
+        { key: "air-met-tiger-xt-select-voc-detector-data-logging-ppb", label: "Tiger XT Select VOC Detector - Data Logging PPB", pending: true, rates: {day: 80.0}, rateNote: "ref ex-GST day $80 (not calculated in v1)" },
+        { key: "air-met-tiger-xt-voc-detector-data-logging-ppm", label: "Tiger XT VOC Detector - Data Logging PPM", pending: true, rates: {day: 75.0}, rateNote: "ref ex-GST day $75 (not calculated in v1)" },
+        { key: "air-met-dtii", label: "TSI DustTrak II 8530 Dust Monitor", catalog_code: "DTII", pending: true, rates: {day: 115.0, week: 436.0}, rateNote: "ref ex-GST day $115 / week $436 (not calculated in v1)" },
+        { key: "air-met-tsi-edge-5-noise-dosimeter", label: "TSI Edge 5 Noise Dosimeter", pending: true, rates: {day: 72.0}, rateNote: "ref ex-GST day $72 (not calculated in v1)" },
+        { key: "air-met-tsi-hot-wire-anemometer", label: "TSI Hot Wire Anemometer", pending: true, rates: {day: 75.0, week: 255.0}, rateNote: "ref ex-GST day $75 / week $255 (not calculated in v1)" },
+        { key: "air-met-qtrak", label: "TSI Q-Trak Indoor Air Quality Monitor", catalog_code: "QTRAK", pending: true, rates: {day: 85.0, week: 321.0}, rateNote: "ref ex-GST day $85 / week $321 (not calculated in v1)" },
+        { key: "air-met-tsi-soundpro-type-1-sound-level-meter-1-1-3-octa", label: "TSI SoundPro Type 1 Sound Level Meter - 1-1/3 Octave", pending: true, rates: {day: 115.0}, rateNote: "ref ex-GST day $115 (not calculated in v1)" },
+        { key: "air-met-ventis-pro5-series-gas-detector", label: "Ventis - Pro5 Series Gas Detector", pending: true, rates: {day: 70.0}, rateNote: "ref ex-GST day $70 (not calculated in v1)" },
+        { key: "air-met-17155304-u-r", label: "Ventis Pro 5 Sensor, Carbon Dioxide (CO2)", catalog_code: "17155304-U-R", pending: true, rates: {day: 20.0}, rateNote: "ref ex-GST day $20 (not calculated in v1)" },
+        { key: "air-met-605790-30", label: "YSI - 30 meter Dual ISE/Cond/DO/Temp Cable Assy", catalog_code: "605790-30", pending: true, rates: {day: 30.0}, rateNote: "ref ex-GST day $30 (not calculated in v1)" },
+        { key: "air-met-ysi-proplus-water-quality-meter", label: "YSI ProPlus Water Quality Meter", pending: true, rates: {day: 100.0, month: 1093.0}, rateNote: "ref ex-GST day $100 / month $1093 (not calculated in v1)" },
+        { key: "air-met-ysi-proquatro-water-quality-meter", label: "YSI ProQuatro Water Quality Meter", pending: true, rates: {day: 115.0, week: 400.0}, rateNote: "ref ex-GST day $115 / week $400 (not calculated in v1)" },
+      ],
+      "ets": [
+        { key: "ets-pump-little-pip", label: "Little Pip 12V Peristaltic Pump", catalog_code: "PUMP LITTLE PIP", pending: true, rates: {day: 50.0}, rateNote: "ref ex-GST day $50 (not calculated in v1)" },
+        { key: "ets-kit-mp50-low-flow", label: "QED MP50 Micropurge Low Flow Bladder Pump Kit", catalog_code: "KIT-MP50 LOW FLOW", pending: true, rates: {day: 200.0}, rateNote: "ref ex-GST day $200 (not calculated in v1)" },
+        { key: "ets-ysi-proquatro", label: "YSI ProQuatro Water Quality Meter", catalog_code: "YSI PROQUATRO", pending: true, rates: {day: 80.0}, rateNote: "ref ex-GST day $80 (not calculated in v1)" },
+      ],
+      "merieux": [
+        { key: "merieux-als102", label: "AIR SAMPLER MERCK", catalog_code: "ALS102", pending: true, rates: {day: 274.57}, rateNote: "ref ex-GST day $274.57 (not calculated in v1)" },
+        { key: "merieux-microbio-air-impacter", label: "MicroBIO Air Impacter", pending: true, rates: {day: 100.0}, rateNote: "ref ex-GST day $100 (not calculated in v1)" },
+      ],
     }
   };
   window.HIRE_CATALOG = HIRE_CATALOG;
@@ -5452,11 +5517,9 @@ followUpComplete = function (t) {
         + esc(s.name) + (s.enabled ? "" : " (coming soon)") + "</option>";
     });
     html += "</select>";
-    if (!(HIRE_CATALOG.items[d.supplier] || []).length && d.supplier === "air-met") {
-      html += "<p class=\"help\">Air-Met catalog wording is not loaded yet — pick Free text on each line, or wait for the supplier catalog drop-in.</p>";
-    }
-    if (d.supplier === "nvms") {
-      html += "<p class=\"help\">NVMS list is a stub from the 6 Nov 2026 pricelist (4448 Dosi, 2250 SLM) pending full catalog wording/rates.</p>";
+    var nItems = (HIRE_CATALOG.items[d.supplier] || []).length;
+    if (nItems) {
+      html += "<p class=\"help\">Catalog " + esc(HIRE_CATALOG.catalog_version || "") + ": " + nItems + " item" + (nItems === 1 ? "" : "s") + " for this supplier (exact invoice/quote wording). Free text still available and flagged. Rates shown as reference only — no billing calculation in v1.</p>";
     }
 
     html += "<label>Reference type</label><div class=\"filters\" id=\"hireRefType\">";
@@ -5529,6 +5592,7 @@ followUpComplete = function (t) {
     html += "<label>Label (exact invoice/quote wording)</label>";
     html += "<input class=\"hire-label\" data-line=\"" + i + "\" value=\"" + esc(ln.label || "") + "\" " + (ln.catalog_key && !free ? "readonly" : "") + " placeholder=\"Required\">";
     html += "<label>Quantity</label><input type=\"number\" min=\"1\" step=\"1\" class=\"hire-qty\" data-line=\"" + i + "\" value=\"" + esc(String(ln.quantity || 1)) + "\">";
+    if (ln.rateNote && !free) html += "<p class=\"help\">" + esc(ln.rateNote) + "</p>";
     if (ln.flagged || free) html += "<p class=\"help\" style=\"color:var(--hot,#FFB066)\">Flagged for later catalog update.</p>";
     html += "</div>";
     return html;
@@ -5576,12 +5640,17 @@ followUpComplete = function (t) {
         var it = itemsFor(d.supplier).find(function (x) { return x.key === catalogKey; });
         if (it && !label) label = it.label;
       }
+      var prev = (d.lines || [])[lines.length] || {};
+      var catIt = (!isFree && catalogKey) ? itemsFor(d.supplier).find(function (x) { return x.key === catalogKey; }) : null;
       lines.push({
         catalog_key: catalogKey,
         label: label,
         quantity: Math.max(1, parseInt(qty && qty.value, 10) || 1),
         is_free_text: isFree,
-        flagged: isFree
+        flagged: isFree || !!(catIt && catIt.pending),
+        catalog_code: catIt && catIt.catalog_code ? catIt.catalog_code : (prev.catalog_code || ""),
+        rates: catIt && catIt.rates ? catIt.rates : (isFree ? null : (prev.rates || null)),
+        rateNote: catIt && catIt.rateNote ? catIt.rateNote : (isFree ? "" : (prev.rateNote || ""))
       });
     });
     if (lines.length) d.lines = lines;
@@ -5772,12 +5841,18 @@ followUpComplete = function (t) {
           ln.catalog_key = "";
           ln.is_free_text = true;
           ln.flagged = true;
+          ln.catalog_code = "";
+          ln.rates = null;
+          ln.rateNote = "";
         } else {
           var it = itemsFor(d.supplier).find(function (x) { return x.key === sel.value; });
           ln.catalog_key = sel.value;
-          ln.label = it ? it.label : ln.label;
+          ln.label = it ? it.label : ln.label;   /* exact item_name — never rewrite */
           ln.is_free_text = false;
           ln.flagged = !!(it && it.pending);
+          ln.catalog_code = it && it.catalog_code ? it.catalog_code : "";
+          ln.rates = it && it.rates ? it.rates : null;   /* reference only; no billing maths in v1 */
+          ln.rateNote = it && it.rateNote ? it.rateNote : "";
         }
         view.hireDraft = d;
         render();

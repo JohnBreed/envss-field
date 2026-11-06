@@ -2,21 +2,36 @@
 
 Built 2026-11-06 AWST on local branch `v45b`. **Not pushed. Not on GitHub Pages. SQL not applied.**
 
+## Catalog
+
+Embedded snapshot: `work/hire/catalog-2026-11-06.snapshot.json`  
+Source: `envss-invoicing/hire-catalog/supplier-rates.json` (`catalog_version` **2026-11-06**).
+
+| Supplier | Selectable in v1 | Items |
+|---|---|---|
+| Air-Met Scientific | yes | 48 (all provisional_from_invoices) |
+| NVMS | yes | 7 (official 4448 – Dosi / 2250 – SLM + booking/invoice aliases + $0 accessories) |
+| Environmental Test Solutions (ETS) | no | 3 (embedded for later) |
+| Mérieux NutriSciences | no | 2 (embedded for later) |
+
+Drop-down labels are exact `item_name` strings. Free-text fallback remains and is flagged. Rates (AUD ex GST) are stored as reference on each line — **no billing maths in v1**.
+
+Official NVMS reference: 4448 Dosi day 50 / week 300 / month 1050; 2250 SLM day 215 / week 1290 / month 4515.
+
 ## Try locally
 
-1. Open `field.html` from this checkout (static server or `file:` may work; Google sign-in needs the real host / HTTPS redirect).
-2. Sign in with an `@envss.com.au` Google account (same as today).
-3. On the Active projects dashboard, tap **Hire requests**.
-4. **New hire request** → choose supplier (Air-Met / NVMS), Job or Lead, dates, logistics, equipment lines → Submit.
-5. Reopen a listed request and **Save as new version** (same `request_group_id`, version++).
+1. Open `field.html` from this checkout.
+2. Sign in with `@envss.com.au` Google (same as today).
+3. Dashboard → **Hire requests** → **New hire request**.
+4. Reopen a request and **Save as new version**.
 
-Helpers on `window.envssHire`: `openList()`, `openNew()`, `openEdit(id)`, `catalog`, `list()`.
+Helpers: `window.envssHire.openList()`, `.openNew()`, `.openEdit(id)`, `.catalog`, `.list()`.
 
-## Sync
+## Sync / SQL
 
-- Collection `hires` → table `envss_hires` (see `work/hire_v45b_01_envss_hires.sql`).
-- Until John applies that SQL, local saves still work; remote upserts stay in the pending queue and the hire pull error is non-fatal.
+- Collection `hires` → `envss_hires` (`work/hire_v45b_01_envss_hires.sql` — draft only).
+- Until SQL is applied, local saves work; remote upserts stay pending; hire pull failure is non-fatal.
 
 ## Do not
 
-- Push / Pages publish / apply SQL / write Podio / email Air-Met or NVMS / Google Sheet dual-entry.
+Push / Pages / apply SQL / write Podio / email Air-Met or NVMS / Google Sheet dual-entry.
