@@ -2,8 +2,9 @@
 -- DRAFT ONLY. DO NOT APPLY until John approves. Apply before merge, after is_envss_staff() exists.
 -- Project luyprcmjyruznluboyms. Written 2026-11-08 (Australia/Perth).
 -- Purpose: queue of NEW files for the Apps Script worker (developer@envss.com.au) to create
--- inside {job}_Field-App. The worker uses the service-role key stored as Script Property "drive-worker".
--- Staff may insert and read. Staff may not update or delete. The service role bypasses RLS and is the only updater.
+-- inside {job}_Field-App. The worker uses a dedicated Supabase secret API key named drive-worker
+-- (Project Settings → API Keys), stored only in Apps Script Properties. Not the service-role key.
+-- Staff may insert and read. Staff may not update or delete. That secret key bypasses RLS and is the only updater.
 -- Photos stay in the existing private bucket field-photos. Generated files go to the new private bucket field-exports.
 
 begin;
@@ -58,7 +59,7 @@ create policy envss_drive_copies_staff_insert on public.envss_drive_copies
     and drive_file_id is null
   );
 
--- Staff inserts only. A later update (status, drive_file_id) is the worker's, via the service role.
+-- Staff inserts only. A later update (status, drive_file_id) is the worker's, via the drive-worker secret key.
 create or replace function public.envss_drive_copies_staff_insert()
 returns trigger
 language plpgsql

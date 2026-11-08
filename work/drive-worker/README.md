@@ -4,13 +4,13 @@ The field app keeps the local download. It also queues a copy. This Apps Script,
 
 It does **not** edit, move, rename, or delete existing files in a job folder. The only file it updates is `manifest.csv` inside `{job}_Field-App`, and only the copy it created itself. If a name is already taken it uploads `name_2`, `name_3`, and so on. Each queued item is copied once (`drive_file_id` is stored).
 
-The Supabase key is the Script Property **`drive-worker`**. It is not in the app and not in git.
+The Supabase key is the Script Property **`drive-worker`**. It is a dedicated secret API key with that same name, not the service-role key. It is not in the app and not in git.
 
 ## Before you start
 
 1. Apply `work/drive_v45d_01_drive_copy_queue.sql` in the Supabase SQL editor (project `luyprcmjyruznluboyms`). Do that before relying on the queue. Rollback is the matching `_rollback.sql` file.
 2. The developer@ account needs to be able to **add files** on the Current Projects shared drives (Contributor or Content manager). It does not need permission to edit existing job files.
-3. Have the Supabase **service_role** key ready. You will paste it into Script Properties only.
+3. In the Supabase dashboard for `luyprcmjyruznluboyms`: **Project Settings → API Keys → Create new secret key**. Name it **`drive-worker`**. Copy that key once. It can be revoked on its own without rotating any other key. Do not use the service-role key.
 
 ## Install on the Chromebook
 
@@ -22,8 +22,8 @@ The Supabase key is the Script Property **`drive-worker`**. It is not in the app
 6. In the associated Google Cloud project (the script shows a link under Project settings), enable the **Google Drive API** as well. Apps Script’s advanced service and the Cloud API both have to be on.
 7. Project settings → **Script properties** → **Add script property**:
    - Property: `drive-worker`
-   - Value: the Supabase service_role key for `luyprcmjyruznluboyms`
-   Save. Do not email the key or put it in the sheet.
+   - Value: the dedicated Supabase secret API key you just created and named `drive-worker`
+   Save. Do not email the key, do not put it in the sheet, and do not paste the service-role key here.
 8. In the editor, choose the function **`testFolderMatch`** and **Run**. The log should show one folder for `0019333` (`12U0YFSi3_yhY9ItrsGt0G2t67OW7bayx`) and one for `0019032` (`18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4`) when those names are the fixtures in the function — that run does not call Drive. Then choose **`processDriveQueue`** and **Run**.
 9. Google will ask you to authorise. Review the scopes (Drive, and external requests to Supabase). Approve as developer@envss.com.au.
 10. Left menu → **Triggers** → **Add trigger**:
@@ -44,7 +44,7 @@ The Supabase key is the Script Property **`drive-worker`**. It is not in the app
 
 `0019032_Admin` and `0019032_Lab` are ignored. They are not the project folder.
 
-A stopped row stays stopped. After the folder situation is fixed, set that row’s `status` back to `queued` and `next_at` to now with the service role (SQL editor). The app cannot update the row.
+A stopped row stays stopped. After the folder situation is fixed, set that row’s `status` back to `queued` and `next_at` to now in the Supabase SQL editor (the table is not writable by the field app). The app cannot update the row.
 
 ## Names
 

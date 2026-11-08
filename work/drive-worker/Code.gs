@@ -2,7 +2,9 @@
  * ENVSS Field — copy queued photos and generated files into Google Drive.
  *
  * Runs as developer@envss.com.au every 5 minutes.
- * Script property "drive-worker" is the Supabase service-role key. Never put that key in git or in the field app.
+ * Script property "drive-worker" is a dedicated Supabase secret API key, also named drive-worker
+ * (Project Settings → API Keys → Create new secret key). It is not the service-role key.
+ * Create that secret so it can be revoked on its own. Never put it in git or in the field app.
  *
  * HARD RULE: this script never edits, moves, renames, or deletes an existing file in a job folder.
  * The only Drive.Files.update call is appendManifest_(), and only for manifest.csv that this script created
@@ -59,8 +61,10 @@ function envssVersionedName_(base, used) {
 // === drive-match:end ===
 
 function serviceKey_() {
+  // Dedicated Supabase secret API key named drive-worker, stored only in Script Properties.
+  // Project Settings → API Keys → Create new secret key, name it drive-worker. Not the service-role key.
   var key = PropertiesService.getScriptProperties().getProperty("drive-worker");
-  if (!key) throw new Error("Script property drive-worker is not set");
+  if (!key) throw new Error("Script property drive-worker is not set. Create a Supabase secret API key named drive-worker and paste it here.");
   return key;
 }
 
