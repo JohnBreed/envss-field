@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v45c</title>
+  <title>ENVSS Field v45d</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -389,7 +389,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v45c</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v45d</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -405,11 +405,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=45"></script>
+  <script src="config.js?v=45d"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "45c"; /* published 2026-11-06 (AWST): hire delivery address, project-then-event picker, Air-Met list updates. */
+const APP_VERSION = "45d"; /* 2026-11-08 (AWST): COC analyte headers readable; Drive copy queue; planned HYG events read from Podio. */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -3875,6 +3875,57 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     for (const s of rows) { const a = (s.analyses || []).find(x => String(x.code).toUpperCase() === code); if (a && a.name) return a.name; }
     return code;
   }
+  /* v45d: horizontal wrapped names. A 90° header in a narrow column is clipped to nothing in Google Sheets
+     (the 0019333-001 one-analyte file showed "s Requ" and a blank Lead column). The Tests Required band is at
+     least BAND_MIN wide so the label fits on one line; each analyte column is wide enough to wrap its name. */
+  const BAND_MIN = 20, COL_FLOOR = 8, COL_CAP = 22;
+  function analyteColWidths(names) {
+    const widths = (names || []).map(name => {
+      const n = String(name || "").length;
+      const twoLine = Math.ceil(n / 2 / 1.25);
+      return Math.max(COL_FLOOR, Math.min(COL_CAP, twoLine || COL_FLOOR));
+    });
+    if (!widths.length) return widths;
+    const sum = widths.reduce((a, b) => a + b, 0);
+    if (sum < BAND_MIN) {
+      if (widths.length === 1) widths[0] = BAND_MIN;
+      else {
+        const i = widths.indexOf(Math.max.apply(null, widths));
+        widths[i] += BAND_MIN - sum;
+      }
+    }
+    return widths;
+  }
+  function analyteHeaderLines(name, width) {
+    const chars = Math.max(8, Math.floor(Number(width) * 1.15));
+    const words = String(name || "").split(/\s+/).filter(Boolean);
+    if (!words.length) return 1;
+    let lines = 1, col = 0;
+    words.forEach(w => {
+      const extra = Math.max(0, Math.ceil(w.length / chars) - 1);
+      if (!col) { col = Math.min(chars, w.length); lines += extra; }
+      else if (col + 1 + w.length <= chars) col += 1 + w.length;
+      else { lines += 1 + extra; col = Math.min(chars, w.length); }
+    });
+    return lines;
+  }
+  function cocSampleComment(s) {
+    const parts = [];
+    if (isBlank(s)) parts.push("Field blank");
+    if (cocRejected(s)) parts.push("voided needs clean and return");
+    return parts.join("; ");
+  }
+  function analyteHeaderStyle(rotStyle) {
+    const s = clone(rotStyle);
+    const al = Object.assign({}, (s && s.alignment) || {});
+    delete al.textRotation;
+    al.horizontal = "center";
+    al.vertical = "center";
+    al.wrapText = true;
+    s.alignment = al;
+    s.font = Object.assign({}, s.font || {}, { name: "Arial", size: 10, bold: true, color: (s.font && s.font.color) || { argb: "FF000000" } });
+    return s;
+  }
 
   window.buildCocV45c = async function (ev, opts) {
     opts = opts || {};
@@ -3934,20 +3985,26 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     for (let c = 1; c <= LASTCOL; c++) put(R16, c, null, bandStyle);
     ws.getCell(R16, 1).value = "Sample information"; ws.mergeCells(R16, 1, R16, 5);
     ws.getCell(R16, FIRST).value = "Tests Required"; if (k > 1) ws.mergeCells(R16, FIRST, R16, FIRST + k - 1);
+    const testsCell = ws.getCell(R16, FIRST);
+    testsCell.alignment = Object.assign({}, testsCell.alignment || {}, { horizontal: "center", vertical: "center", wrapText: false, textRotation: 0 });
     ws.mergeCells(R16, cRun, R16, cVol);
     ws.getCell(R16, cCom).value = "Comments"; if (cCom < LASTCOL) ws.mergeCells(R16, cCom, R16, LASTCOL);
-    ws.getRow(R16).height = 15;
+    ws.getRow(R16).height = 18;
 
     /* row 17: column headers */
     put(R17, 1, "Envirolab \nSample ID\n(Lab use only)", labStyle);
     put(R17, 2, "Client Sample ID  or Information", hdrStyle);
     put(R17, 3, "Depth", hdrStyle); put(R17, 4, "Date Sampled", hdrStyle); put(R17, 5, "Type of Sample", hdrStyle);
-    analytes.forEach((code, i) => put(R17, FIRST + i, analyteName(code, rows), rotStyle));
+    const analyteNames = analytes.map(code => analyteName(code, rows));
+    const analyteWidths = analyteColWidths(analyteNames);
+    const headStyle = analyteHeaderStyle(rotStyle);
+    analyteNames.forEach((name, i) => put(R17, FIRST + i, name, headStyle));
     put(R17, cRun, "Run Time (min)", hdrStyle); put(R17, cVol, "Volume (L)", hdrStyle);
     put(R17, cCom, "Provide as much information about the sample as you can", hdrStyle);
     for (let c = cCom + 1; c <= LASTCOL; c++) put(R17, c, null, hdrStyle);
     if (cCom < LASTCOL) ws.mergeCells(R17, cCom, R17, LASTCOL);
-    ws.getRow(R17).height = 80.25;
+    const nameLines = Math.max.apply(null, analyteNames.map((name, i) => analyteHeaderLines(name, analyteWidths[i])).concat([2]));
+    ws.getRow(R17).height = Math.min(78, Math.max(36, nameLines * 15 + 8));
 
     /* sample rows */
     rows.forEach((s, n) => {
@@ -3964,7 +4021,8 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
         if (mins != null && isFinite(mins) && mins > 0) ws.getCell(r, cRun).value = Math.round(mins);
         if (vol != null && isFinite(vol) && vol > 0) { ws.getCell(r, cVol).value = round1(vol); ws.getCell(r, cVol).numFmt = "0.0"; }
       }
-      if (cocRejected(s)) ws.getCell(r, cCom).value = "voided needs clean and return";
+      const sampleNote = cocSampleComment(s);
+      if (sampleNote) ws.getCell(r, cCom).value = sampleNote;
       if (cCom < LASTCOL) ws.mergeCells(r, cCom, r, LASTCOL);
       ws.getRow(r).height = 15.75;
     });
@@ -3993,9 +4051,10 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     ws.getCell(F0 + 4, 2).value = samplers.map(initials).join(", ");    /* Signature (B80) = initials */
     box(F0, 1, F0 + foot.length - 1, LASTCOL);
 
-    /* column widths: analytes narrow, run time / volume readable, comments take the rest */
-    for (let c = FIRST; c < cRun; c++) ws.getColumn(c).width = 5.5;
-    ws.getColumn(cRun).width = 8; ws.getColumn(cVol).width = 8.5;
+    /* column widths: each analyte name wraps inside its own column; the Tests Required band is never
+       narrower than the label. Run time / volume stay wide enough to read. Sample-info columns are untouched. */
+    analyteWidths.forEach((w, i) => { ws.getColumn(FIRST + i).width = w; });
+    ws.getColumn(cRun).width = 13; ws.getColumn(cVol).width = 11;
     for (let c = cCom; c < LASTCOL; c++) ws.getColumn(c).width = 4.63;
     ws.getColumn(LASTCOL).width = 20;
 
@@ -4008,7 +4067,7 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     for (let r = lastRow + 1; r <= OLD_LAST + 5; r++) { const row = ws.getRow(r); row.height = undefined; }
     if (Array.isArray(ws._rows)) ws._rows.length = lastRow;
     const buf = await book.xlsx.writeBuffer();
-    return { buf, name: ev.code + "_Laboratory_COC.xlsx", analytes, samplers, rows: rows.length, lastRow, turnaround: tat };
+    return { buf, name: ev.code + "_Laboratory_COC.xlsx", analytes, analyteNames, analyteWidths, samplers, rows: rows.length, lastRow, turnaround: tat };
   };
 })();
 
@@ -4952,7 +5011,7 @@ followUpComplete = function (t) {
 <script>
 /* ===== v44d: photos out of the record / localStorage (John, 3 Nov 2026: "Do the photo storage fix now").
    Every photo (filter photo t.photo, equipment-damage photo t.equipPhoto, daily log pages t.dailyLog.photos) is shrunk
-   (long edge 1600 px, JPEG 0.7), stored as a Blob in IndexedDB ("envss-field-photos"), and uploaded in the background to the
+   (long edge 2000 px, JPEG 0.8 — filter IDs and handwritten logs stay readable), stored as a Blob in IndexedDB ("envss-field-photos"), and uploaded in the background to the
    PRIVATE Supabase bucket "field-photos" (anon may only INSERT, never read/list/replace/delete).
    The sample record keeps a small reference only:
      t.photo / t.equipPhoto = "envss-photo:<pid>", with t.photoRefs[pid] = { pid, path, bytes, w, h, takenAt, uploaded, field }
@@ -4962,7 +5021,7 @@ followUpComplete = function (t) {
    upload; a blob that is not uploaded is never pruned. Old inline data: photos are moved to IndexedDB on load and the inline
    data is replaced only after the IndexedDB write succeeds; the normal sync then pushes the slimmer record. ===== */
 (function () {
-  const DBN = "envss-field-photos", ST = "photos", BUCKET = "field-photos", MAXPX = 1600, Q = 0.7, KEEP_DAYS = 30;
+  const DBN = "envss-field-photos", ST = "photos", BUCKET = "field-photos", MAXPX = 2000, Q = 0.8, KEEP_DAYS = 30;
   const PFX = "envss-photo:";
   let idbP = null, pending = 0, running = false, urls = {};
   function idb() {
@@ -4992,12 +5051,17 @@ followUpComplete = function (t) {
         c.toBlob(b => b ? res({ blob: b, w: c.width, h: c.height }) : rej(new Error("compress failed")), "image/jpeg", Q); };
       img.src = src; });
   }
-  async function shrinkFile(file) { const u = URL.createObjectURL(file); try { return await shrinkSrc(u); } finally { setTimeout(() => URL.revokeObjectURL(u), 1000); } }
+  async function shrinkFile(file) {
+    const before = file && file.size || 0;
+    const u = URL.createObjectURL(file);
+    try { const sh = await shrinkSrc(u); sh.before = before; return sh; }
+    finally { setTimeout(() => URL.revokeObjectURL(u), 1000); }
+  }
   /* add a photo: returns the small reference; throws if IndexedDB is unavailable */
   async function add(fileOrDataUrl, t, field, takenAt) {
     const sh = typeof fileOrDataUrl === "string" ? await shrinkSrc(fileOrDataUrl) : await shrinkFile(fileOrDataUrl);
     const pid = uuid(), path = pathFor(t, pid), ev = eventById(t.eventId) || {};
-    const ref = { pid, path, bytes: sh.blob.size, w: sh.w, h: sh.h, takenAt: takenAt || nowIso(), uploaded: false };
+    const ref = { pid, path, bytes: sh.blob.size, bytesBefore: sh.before || 0, w: sh.w, h: sh.h, takenAt: takenAt || nowIso(), uploaded: false };
     await put(Object.assign({}, ref, { blob: sh.blob, mime: "image/jpeg", trainId: t.id, eventId: t.eventId, projectId: ev.projectId || "", field, tries: 0, nextAt: 0, createdAt: nowIso() }));
     await count(); setTimeout(run, 50);
     return ref;
@@ -5045,7 +5109,8 @@ followUpComplete = function (t) {
       if (!navigator.onLine) return;
       const now = Date.now(); const list = (await all()).filter(r => !r.uploaded && !r.removed && (r.nextAt || 0) <= now);
       for (const rec of list) {
-        try { await uploadOne(rec); rec.uploaded = true; rec.uploadedAt = nowIso(); rec.lastErr = ""; await put(rec); markOnRecord(rec); }
+        try { await uploadOne(rec); rec.uploaded = true; rec.uploadedAt = nowIso(); rec.lastErr = ""; await put(rec); markOnRecord(rec);
+          try { if (window.envssDrive && envssDrive.onPhotoUploaded) envssDrive.onPhotoUploaded(rec); } catch (de) { console.warn("[ENVSS] drive enqueue", de); } }
         catch (e) { rec.tries = (rec.tries || 0) + 1; rec.lastErr = String(e && e.message || e); rec.nextAt = Date.now() + Math.min(30 * 60e3, 15e3 * Math.pow(2, rec.tries - 1)); await put(rec);
           if (!rec.auditedFail) { const t = (db.trains || []).find(x => x.id === rec.trainId);
             if (t) { t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoText(), action: "Photo upload failed (will retry)", field: "photo", from: "", to: "", detail: rec.lastErr.slice(0, 120) }); saveQuiet(); }
@@ -5100,7 +5165,7 @@ followUpComplete = function (t) {
   setInterval(run, 60e3);
   /* export: storage paths of the filter / equipment photos ("filter: p/…jpg; equipment: p/…jpg") */
   window.envssPhotoPaths = t => [["photo", "filter"], ["equipPhoto", "equipment"]].map(([k, l]) => { const v = t[k]; if (!v) return ""; if (String(v).startsWith(PFX)) { const m = metaFor(t, String(v).slice(PFX.length)); return l + ": " + (m ? m.path : "local"); } return l + ": inline (not yet moved)"; }).filter(Boolean).join("; ");
-  window.envssPhotos = { add, attach, discard, imgTag, hydrate, run, count, migrate, prune, all, pending: () => pending, pathOf: pid => { for (const t of db.trains || []) { const m = metaFor(t, pid); if (m) return m.path; } return ""; } };
+  window.envssPhotos = { add, attach, discard, imgTag, hydrate, run, count, migrate, prune, all, pending: () => pending, shrinkSrc, maxPx: MAXPX, quality: Q, pathOf: pid => { for (const t of db.trains || []) { const m = metaFor(t, pid); if (m) return m.path; } return ""; } };
   const st = document.createElement("style"); st.textContent = ".photo-q{margin-top:4px;font-weight:700;color:#FFC266}.photo-ph{display:inline-block;padding:10px 12px;border:1px dashed #6B7590;border-radius:8px;color:#B4BBCC;font-size:13px;max-width:220px}";
   document.head.appendChild(st);
   (async () => { await migrate(); await prune(); await count(); run(); })();
@@ -5110,7 +5175,7 @@ followUpComplete = function (t) {
 /* ===== v44c: Daily log (worker's paper "Personal Sampling Field Sheet") on PERSONAL samples (airborne + noise; not static,
    blanks or AFM). Status: attached (photo pages) / not_supplied / to_follow. Purely informational: it is NOT in answerItems,
    so it never changes the sample status or the "still to answer" count. Photos use the same storage as the existing sample
-   photos (data URL kept on the sample record, synced with the record), but are shrunk first (long edge 1600 px, JPEG 0.7).
+   photos (data URL kept on the sample record, synced with the record), but are shrunk first (long edge 2000 px, JPEG 0.8, via the shared photo store).
    One log can cover all of a worker's samples that shift: other samples keep a reference (dailyLog.ref) to the sample that
    holds the pages, so the photos are stored once. Changes go in each sample's audit log. ===== */
 (function () {
@@ -7901,5 +7966,532 @@ window.HIRE_CATALOG = HIRE_CATALOG;
 })();
 
 </script>
+<script>
+/* ===== v45d: Drive copies (new files only) and planned Podio HYG events (read only). No Podio writes, no emails. ===== */
+(function () {
+  "use strict";
+
+  // === drive-match:start ===
+  function envssIsSideFolder_(name, job) {
+    var rest = String(name || "").slice(String(job || "").length);
+    return /^_(admin|lab)(\b|_|\s|$)/i.test(rest);
+  }
+  function envssIsProjectRoot_(name, job) {
+    job = String(job || "");
+    name = String(name || "");
+    if (!/^\d{7}$/.test(job)) return false;
+    if (name.slice(0, job.length) !== job) return false;
+    var rest = name.slice(job.length);
+    if (!rest || !/\D/.test(rest.charAt(0))) return false;
+    if (envssIsSideFolder_(name, job)) return false;
+    return true;
+  }
+  function envssMatchJobFolders_(job, folders) {
+    var hits = (folders || []).filter(function (f) { return f && envssIsProjectRoot_(f.name, job); });
+    if (hits.length === 1) return { ok: true, folder: hits[0] };
+    if (!hits.length) return { ok: false, status: "stopped", message: "job folder not found" };
+    return { ok: false, status: "stopped", message: "job folder not unique" };
+  }
+  function envssUniqueDriveName_(existing, desired) {
+    var set = {};
+    (existing || []).forEach(function (n) { set[String(n).toLowerCase()] = 1; });
+    var want = String(desired || "file");
+    if (!set[want.toLowerCase()]) return want;
+    var m = want.match(/^(.*?)(\.[^.]+)?$/);
+    var stem = m[1], ext = m[2] || "", n = 2, cand = "";
+    do { cand = stem + "_" + n + ext; n++; } while (set[cand.toLowerCase()]);
+    return cand;
+  }
+  function envssPhotoFileName_(eventCode, noise, sampleNo, type, n) {
+    var code = String(eventCode || "event").replace(/[^\w.-]+/g, "_");
+    var nn = String(sampleNo == null || sampleNo === "" ? 0 : sampleNo);
+    while (nn.length < 2) nn = "0" + nn;
+    var kind = noise ? "N" : "S";
+    var t = String(type || "photo").replace(/[^\w]+/g, "") || "photo";
+    var i = Math.max(1, Number(n) || 1);
+    return code + "_" + kind + nn + "_" + t + "_" + i + ".jpg";
+  }
+  function envssVersionedName_(base, used) {
+    return envssUniqueDriveName_(used, base);
+  }
+  // === drive-match:end ===
+
+  const DBN = "envss-field-drive", ST = "items";
+  const EXPORT_BUCKET = "field-exports";
+  let idbP = null, items = [], running = false;
+  const remote = {}; /* sourceKey -> server row */
+
+  function idb() {
+    if (idbP) return idbP;
+    idbP = new Promise((res, rej) => {
+      if (!window.indexedDB) return rej(new Error("IndexedDB not available"));
+      const r = indexedDB.open(DBN, 1);
+      r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains(ST)) d.createObjectStore(ST, { keyPath: "id" }); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    idbP.catch(() => { idbP = null; });
+    return idbP;
+  }
+  function tx(mode, fn) {
+    return idb().then(d => new Promise((res, rej) => {
+      const t = d.transaction(ST, mode), s = t.objectStore(ST); let out;
+      Promise.resolve(fn(s)).then(v => { out = v; });
+      t.oncomplete = () => res(out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error("aborted"));
+    }));
+  }
+  const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const putItem = rec => tx("readwrite", s => req(s.put(rec)));
+  const allItems = () => tx("readonly", s => req(s.getAll()));
+  function uuid() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    const h = [...b].map(x => x.toString(16).padStart(2, "0")).join("");
+    return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
+  }
+  function jobNumberOf(p) {
+    const m = String(p && p.number || "").trim().match(/^(\d{7})(?!\d)/);
+    return m ? m[1] : "";
+  }
+  function eventOf(eventId) { try { return eventById(eventId); } catch (e) { return null; } }
+  function remember(item) {
+    const i = items.findIndex(x => x.id === item.id || (item.sourceKey && x.sourceKey === item.sourceKey));
+    if (i >= 0) items[i] = Object.assign(items[i], item);
+    else items.push(item);
+  }
+  function statusPhrase(row) {
+    if (!row) return "";
+    if (row.status === "copied" && (row.driveFileId || row.drive_file_id)) return "in";
+    const msg = String(row.message || "");
+    if (row.status === "stopped" && /job folder not found/i.test(msg)) return "missing";
+    if (row.status === "stopped" && /job folder not unique/i.test(msg)) return "many";
+    if (row.status === "stopped") return "stopped";
+    return "wait";
+  }
+  function statusHtml(row) {
+    const kind = statusPhrase(row);
+    if (!kind) return "";
+    if (kind === "in") {
+      const id = row.driveFileId || row.drive_file_id;
+      const url = row.driveUrl || row.drive_url || ("https://drive.google.com/file/d/" + id + "/view");
+      return '<span class="drive-st drive-ok">In Drive</span> <a href="' + esc(url) + '" target="_blank" rel="noopener">Open in Drive</a>';
+    }
+    if (kind === "missing") return '<span class="drive-st drive-wait">Drive copy waiting: job folder not found</span>';
+    if (kind === "many") return '<span class="drive-st drive-wait">Drive copy waiting: job folder not unique</span>';
+    if (kind === "stopped") return '<span class="drive-st drive-wait">Drive copy stopped' + (row.message ? ": " + esc(row.message) : "") + "</span>";
+    return '<span class="drive-st drive-wait">Waiting for Drive</span>';
+  }
+  function merged(sourceKey) {
+    const local = items.find(x => x.sourceKey === sourceKey);
+    const srv = remote[sourceKey];
+    if (!local && !srv) return null;
+    return Object.assign({}, local || {}, srv ? {
+      status: srv.status, message: srv.message, driveFileId: srv.drive_file_id, driveUrl: srv.drive_url, fileName: srv.file_name || (local && local.fileName)
+    } : {});
+  }
+
+  function enqueueExport(blob, name) {
+    if (!blob || !name) return;
+    let ev = null;
+    try { ev = eventOf(view.eventId); } catch (e) { ev = null; }
+    if (!ev) ev = (db.events || []).find(e => name.indexOf(e.code) === 0) || null;
+    const p = ev && project(ev.projectId);
+    const job = jobNumberOf(p);
+    const eventCode = ev ? ev.code : "";
+    const used = items.filter(it => it.eventCode === eventCode && it.baseName === name).map(it => it.fileName);
+    const fileName = envssVersionedName_(name, used);
+    const id = "drv_" + uuid();
+    const item = {
+      id, sourceKey: "file:" + id, kind: "file", baseName: name, fileName,
+      jobNumber: job, eventCode, projectId: ev ? ev.projectId : "", sampleId: "",
+      bucket: EXPORT_BUCKET, storagePath: "g/" + (job || "nojob") + "/" + String(eventCode || "event").replace(/[^\w.-]+/g, "_") + "/" + id + "/" + fileName,
+      mime: blob.type || "application/octet-stream", bytes: blob.size || 0, blob,
+      storageUploaded: false, rowInserted: false,
+      status: job ? "queued" : "stopped",
+      message: job ? "" : "job folder not found",
+      tries: 0, nextAt: 0, createdAt: new Date().toISOString()
+    };
+    remember(item);
+    putItem(item).catch(e => console.warn("[ENVSS] drive store", e));
+    setTimeout(runDrive, 30);
+    return item;
+  }
+
+  function photoTypeOf(field) {
+    if (field === "equipPhoto") return "equip";
+    if (field === "dailyLog") return "log";
+    return "filter";
+  }
+  function onPhotoUploaded(rec) {
+    if (!rec || !rec.pid || !rec.path || rec.removed) return;
+    const sourceKey = "photo:" + rec.pid;
+    if (items.some(x => x.sourceKey === sourceKey)) return;
+    const t = (db.trains || []).find(x => x.id === rec.trainId);
+    const ev = t && eventOf(t.eventId);
+    const p = ev && project(ev.projectId);
+    const job = jobNumberOf(p);
+    const type = photoTypeOf(rec.field);
+    const n = items.filter(x => x.sampleId === rec.trainId && x.photoType === type).length + 1;
+    const noise = t ? isNoise(t) : false;
+    const sampleNo = t ? sampleNoOf(t) : 0;
+    const fileName = envssPhotoFileName_(ev ? ev.code : "event", noise, sampleNo, type, n);
+    const item = {
+      id: "drv_" + rec.pid, sourceKey, kind: "photo", baseName: fileName, fileName,
+      photoType: type, photoN: n,
+      jobNumber: job, eventCode: ev ? ev.code : "", projectId: rec.projectId || (ev && ev.projectId) || "",
+      sampleId: rec.trainId || "", bucket: "field-photos", storagePath: rec.path,
+      mime: rec.mime || "image/jpeg", bytes: rec.bytes || 0,
+      storageUploaded: true, rowInserted: false,
+      status: job ? "queued" : "stopped",
+      message: job ? "" : "job folder not found",
+      tries: 0, nextAt: 0, createdAt: new Date().toISOString()
+    };
+    remember(item);
+    putItem(item).catch(e => console.warn("[ENVSS] drive photo", e));
+    setTimeout(runDrive, 30);
+  }
+
+  async function uploadExport(item) {
+    const c = sbCfg(); if (!c) throw new Error("Supabase not configured");
+    const h = sbHeaders(); delete h["Content-Type"]; delete h.Prefer;
+    const path = item.storagePath.split("/").map(encodeURIComponent).join("/");
+    const res = await sbFetch(c.supabaseUrl + "/storage/v1/object/" + EXPORT_BUCKET + "/" + path, {
+      method: "POST",
+      headers: Object.assign(h, { "Content-Type": item.mime || "application/octet-stream", "x-upsert": "false" }),
+      body: item.blob
+    });
+    if (res.ok || res.status === 409) return;
+    const txt = await res.text().catch(() => "");
+    if (/already exists|Duplicate/i.test(txt)) return;
+    throw new Error("export upload " + res.status);
+  }
+  async function insertRow(item) {
+    const c = sbCfg(); if (!c) throw new Error("Supabase not configured");
+    const row = {
+      id: item.id, source_key: item.sourceKey, kind: item.kind, status: "queued",
+      job_number: item.jobNumber, event_code: item.eventCode || null, project_id: item.projectId || null,
+      sample_id: item.sampleId || null, file_name: item.fileName, bucket: item.bucket, storage_path: item.storagePath,
+      mime: item.mime || null, bytes: item.bytes || null, created_by: (function () { try { const s = getSession(); return s && s.user && s.user.email || whoText(); } catch (e) { return ""; } })()
+    };
+    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_drive_copies", {
+      method: "POST", headers: sbHeaders("return=minimal"), body: JSON.stringify(row)
+    });
+    if (res.ok || res.status === 409) return;
+    const txt = await res.text().catch(() => "");
+    if (/duplicate|already exists|23505/i.test(txt)) return;
+    throw new Error("drive row " + res.status + " " + txt.slice(0, 120));
+  }
+  async function refreshRemote() {
+    if (!navigator.onLine || !sbCfg() || !(typeof hasSession === "function" && hasSession())) return;
+    const keys = items.map(i => i.sourceKey).filter(Boolean);
+    const ev = view && view.eventId && eventOf(view.eventId);
+    const c = sbCfg();
+    const grab = async qs => {
+      const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_drive_copies?select=source_key,status,file_name,drive_file_id,drive_url,message,event_code&" + qs, { headers: sbHeaders() });
+      if (!res.ok) return;
+      const rows = await res.json();
+      (rows || []).forEach(r => { if (r && r.source_key) remote[r.source_key] = r; });
+    };
+    if (keys.length) await grab("source_key=in.(" + keys.map(k => '"' + String(k).replace(/"/g, "") + '"').join(",") + ")");
+    if (ev && ev.code) await grab("event_code=eq." + encodeURIComponent(ev.code));
+    items.forEach(it => {
+      const r = remote[it.sourceKey];
+      if (!r) return;
+      it.status = r.status; it.message = r.message || ""; it.driveFileId = r.drive_file_id || ""; it.driveUrl = r.drive_url || "";
+      if (r.drive_file_id) { it.blob = undefined; }
+    });
+  }
+  async function runDrive() {
+    if (running) return; running = true;
+    try {
+      if (navigator.onLine && sbCfg() && typeof hasSession === "function" && hasSession()) {
+        for (const it of items.slice()) {
+          if (it.status === "stopped" || it.status === "copied") continue;
+          if ((it.nextAt || 0) > Date.now()) continue;
+          try {
+            if (it.kind === "file" && !it.storageUploaded) { await uploadExport(it); it.storageUploaded = true; it.blob = undefined; }
+            if (!it.rowInserted && it.jobNumber) { await insertRow(it); it.rowInserted = true; }
+            it.message = it.message && /job folder not found/i.test(it.message) ? it.message : "";
+          } catch (e) {
+            it.tries = (it.tries || 0) + 1;
+            it.nextAt = Date.now() + Math.min(30 * 60e3, 15e3 * Math.pow(2, it.tries - 1));
+            it.lastErr = String(e && e.message || e).slice(0, 160);
+          }
+          await putItem(Object.assign({}, it));
+        }
+        await refreshRemote();
+      }
+    } catch (e) { console.warn("[ENVSS] drive queue", e); }
+    finally { running = false; try { paintSyncBar(); } catch (e) {} try { paintDriveBadges(); } catch (e) {} }
+  }
+
+  function paintDriveBadges() {
+    document.querySelectorAll("img[data-envss-pid]").forEach(im => {
+      const pid = im.dataset.envssPid;
+      let host = im.parentElement;
+      if (!host) return;
+      let badge = host.querySelector(":scope > .drive-st-wrap[data-pid='" + pid + "']");
+      if (!badge) {
+        badge = document.createElement("div");
+        badge.className = "drive-st-wrap";
+        badge.dataset.pid = pid;
+        im.insertAdjacentElement("afterend", badge);
+      }
+      badge.innerHTML = statusHtml(merged("photo:" + pid)) || '<span class="drive-st drive-wait">Waiting for Drive</span>';
+    });
+    if (view.page === "event" && !document.getElementById("driveCopies")) {
+      const ev = eventOf(view.eventId);
+      const wrap = document.querySelector("#app .wrap");
+      if (ev && wrap) {
+        const mine = items.filter(it => it.kind === "file" && it.eventCode === ev.code);
+        const rows = mine.map(it => {
+          const m = merged(it.sourceKey) || it;
+          return "<li><span>" + esc(m.fileName || it.fileName) + "</span> " + (statusHtml(m) || statusHtml(it)) + "</li>";
+        }).join("");
+        const html = '<div class="card" id="driveCopies"><h3 class="brand-type" style="margin:0 0 6px">Files for Drive</h3>'
+          + (rows ? "<ul class=\"drive-list\">" + rows + "</ul>" : '<p class="help">Exports and the COC are copied into the job folder as new files. Nothing already in the folder is changed.</p>')
+          + "</div>";
+        const filters = document.getElementById("sampleFilters");
+        if (filters) filters.insertAdjacentHTML("beforebegin", html);
+        else wrap.insertAdjacentHTML("beforeend", html);
+      }
+    }
+  }
+
+  const _dl = download;
+  download = function (blob, name) {
+    try { enqueueExport(blob, name); } catch (e) { console.warn("[ENVSS] drive export", e); }
+    return _dl.apply(this, arguments);
+  };
+  window.download = download;
+
+  const _psb = paintSyncBar;
+  paintSyncBar = function () {
+    const r = _psb.apply(this, arguments);
+    try {
+      const el = document.getElementById("syncBar");
+      const n = items.filter(it => it.status !== "copied" && it.status !== "stopped").length;
+      if (el && n) {
+        const s = document.createElement("div");
+        s.className = "photo-q";
+        s.id = "driveQueue";
+        s.textContent = "Drive: " + n + " waiting to copy";
+        el.appendChild(s);
+      }
+    } catch (e) {}
+    return r;
+  };
+  window.paintSyncBar = paintSyncBar;
+
+  /* ----- planned Podio HYG events (read). Refresh calls the Edge Function. No Podio URL in this page. ----- */
+  const PODIO_CACHE = "envss-podio-events-v45d";
+  const podioState = { job: "", rows: [], note: "", err: "", busy: false };
+  function readPodioCache() { try { return JSON.parse(localStorage.getItem(PODIO_CACHE) || "{}"); } catch (e) { return {}; } }
+  function writePodioCache(job, rows) {
+    const all = readPodioCache(); all[job] = { at: new Date().toISOString(), rows: rows };
+    try { localStorage.setItem(PODIO_CACHE, JSON.stringify(all)); } catch (e) {}
+  }
+  function podioRowsFor(job) {
+    return (podioState.job === job ? podioState.rows : (readPodioCache()[job] || {}).rows) || [];
+  }
+  async function loadPodioTable(job) {
+    const cached = (readPodioCache()[job] || {}).rows || [];
+    if (!navigator.onLine) { podioState.rows = cached; podioState.note = "Offline — showing planned events saved on this device."; podioState.err = ""; return; }
+    if (typeof hasSession !== "function" || !hasSession()) { podioState.rows = cached; podioState.note = "Sign in to refresh from Podio."; podioState.err = ""; return; }
+    const c = sbCfg(); if (!c) return;
+    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_podio_events?select=id,item_id,event_reference,job_number,payload,updated_at&job_number=eq." + job + "&planned=eq.true&order=event_reference.asc", { headers: sbHeaders() });
+    if (res.status === 404) { podioState.rows = cached; podioState.err = "Podio events appear here after the server table is applied."; podioState.note = ""; return; }
+    if (!res.ok) { podioState.rows = cached; podioState.err = "Could not load planned events (" + res.status + ")."; return; }
+    const rows = await res.json();
+    podioState.rows = rows || [];
+    podioState.err = "";
+    podioState.note = "";
+    writePodioCache(job, podioState.rows);
+  }
+  async function refreshPodio(job) {
+    podioState.busy = true; paintPodio();
+    try {
+      if (!navigator.onLine) { podioState.note = "You're offline. Planned events saved on this device are still listed. Refresh from Podio needs a connection."; return; }
+      if (typeof hasSession !== "function" || !hasSession()) { podioState.note = "Sign in to refresh from Podio."; return; }
+      const c = sbCfg(); if (!c) return;
+      const res = await sbFetch(c.supabaseUrl + "/functions/v1/pull-hyg-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job: job, force: true })
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || j.ok === false) {
+        podioState.err = (j && j.error) || ("Refresh failed (" + res.status + ").");
+        if (res.status === 404) podioState.err = "Refresh from Podio is not deployed yet. Planned events already loaded still show.";
+      } else {
+        podioState.err = "";
+        podioState.note = "Refreshed from Podio" + (j.planned != null ? " (" + j.planned + " planned)." : ".");
+      }
+      await loadPodioTable(job);
+    } catch (e) {
+      podioState.err = "Refresh failed: " + (e && e.message || e);
+    } finally {
+      podioState.busy = false; paintPodio();
+    }
+  }
+  function startFromPodio(itemId) {
+    const p = project(view.projectId);
+    const row = podioRowsFor(jobNumberOf(p)).map(r => r.payload || r).find(x => String(x.itemId) === String(itemId));
+    if (!p || !row) return;
+    const existing = (db.events || []).find(e => e.projectId === p.id && String(e.podioItemId || "") === String(row.itemId));
+    if (existing) { openEvent(existing.id); return; }
+    const codes = new Set((db.events || []).map(e => e.code));
+    let code = row.fieldCode && !codes.has(row.fieldCode) ? row.fieldCode : "";
+    if (!code) {
+      let n = (db.events || []).filter(e => e.projectId === p.id && !(typeof isFibreEvent === "function" && isFibreEvent(e))).length + 1;
+      while (codes.has(p.number + "-" + String(n).padStart(3, "0"))) n++;
+      code = p.number + "-" + String(n).padStart(3, "0");
+    }
+    const poc = row.poc || {};
+    const ev = {
+      id: uid("e"), projectId: p.id, type: "hygiene", stage: "planned",
+      date: row.startDate || new Date().toISOString().slice(0, 10),
+      code, multiDay: false, minesAct: false, notes: "", uploadReady: false, operators: [],
+      turnaround: row.turnaround || "standard",
+      taskDesc: row.task || "",
+      lab: row.lab || "",
+      siteContact: row.siteContact || "",
+      poc: { company: poc.company || "", first: poc.first || "", last: poc.last || "", role: poc.role || "", phone: poc.phone || "", email: poc.email || "" },
+      equipmentDetails: row.equipment || "",
+      podioDriveLink: row.driveLink || "",
+      podioItemId: String(row.itemId),
+      podioReference: row.reference || "",
+      podioLinked: true,
+      podioUnplanned: false
+    };
+    db.events.push(ev);
+    save();
+    openEvent(ev.id);
+  }
+  function podioCard(row) {
+    const p = row.payload || row;
+    const poc = p.poc || {};
+    const who = [poc.first, poc.last].filter(Boolean).join(" ");
+    const bits = [p.startDate || "date not set", p.startStatus || "", p.lab || ""].filter(Boolean).join(" · ");
+    const started = (db.events || []).some(e => String(e.podioItemId || "") === String(p.itemId));
+    return '<div class="card podio-ev"><div class="brand-type" style="font-weight:700">' + esc(p.fieldCode || p.reference || "Podio event") + "</div>"
+      + '<div class="muted">' + esc(bits) + "</div>"
+      + (p.siteContact ? '<p class="help">Site contact: ' + esc(p.siteContact) + "</p>" : "")
+      + (who || poc.company ? '<p class="help">POC: ' + esc([who, poc.role, poc.company, poc.phone, poc.email].filter(Boolean).join(" · ")) + "</p>" : "")
+      + (p.task ? '<p class="help">' + esc(p.task) + "</p>" : "")
+      + (started ? '<p class="help">Fieldwork started.</p>' : '<button type="button" class="btn green" data-podio-start="' + esc(p.itemId) + '">Start fieldwork</button>')
+      + "</div>";
+  }
+  function paintPodio() {
+    if (view.page !== "project") return;
+    const p = project(view.projectId);
+    const host = document.getElementById("podioPlan");
+    if (!p) return;
+    const job = jobNumberOf(p);
+    const rows = (podioState.job === job ? podioState.rows : podioRowsFor(job)) || [];
+    const signed = typeof hasSession === "function" && hasSession();
+    let html = '<div class="card" id="podioPlan"><div class="row" style="justify-content:space-between;align-items:center;gap:8px"><h3 class="brand-type" style="margin:0">Planned in Podio</h3>'
+      + '<button type="button" class="btn ghost" id="btnPodioRefresh"' + (!signed || podioState.busy ? " disabled" : "") + ">" + (podioState.busy ? "Refreshing…" : "Refresh from Podio") + "</button></div>";
+    if (!job) html += '<p class="help">This project has no 7-digit job number, so Podio events cannot be matched.</p>';
+    else if (!rows.length) html += '<p class="help">No planned Podio events on this job yet.</p>';
+    else html += rows.map(podioCard).join("");
+    html += '<button type="button" class="btn orange" id="btnUnplanned" style="margin-top:8px">Start an event not in Podio</button>';
+    if (podioState.note) html += '<p class="help" id="podioNote">' + esc(podioState.note) + "</p>";
+    if (podioState.err) html += '<p class="help" id="podioErr" style="color:var(--danger,#9B2C2C);font-weight:700">' + esc(podioState.err) + "</p>";
+    html += "</div>";
+    if (host) host.outerHTML = html;
+    else {
+      const anchor = document.querySelector("#app .wrap .filters") || document.querySelector("#app .wrap h2");
+      if (anchor) anchor.insertAdjacentHTML("beforebegin", html);
+    }
+    const b = document.getElementById("btnPodioRefresh");
+    if (b) b.onclick = () => { if (job) refreshPodio(job); };
+    const u = document.getElementById("btnUnplanned");
+    if (u) u.onclick = () => openNewEvent(p.id);
+    document.querySelectorAll("[data-podio-start]").forEach(btn => { btn.onclick = () => startFromPodio(btn.dataset.podioStart); });
+  }
+  function paintEventPodio() {
+    if (view.page !== "event") return;
+    const ev = eventOf(view.eventId);
+    if (!ev) return;
+    const h = document.querySelector("#app h2");
+    if (!h) return;
+    if (ev.podioUnplanned && !document.getElementById("podioUnplanned")) {
+      h.insertAdjacentHTML("afterend", '<p class="podio-flag" id="podioUnplanned">Not in Podio yet - office to create/link</p>');
+    }
+    if (ev.podioLinked && !document.getElementById("podioPrefill")) {
+      const poc = ev.poc || {};
+      const who = [poc.first, poc.last].filter(Boolean).join(" ");
+      const html = '<div class="card" id="podioPrefill"><h3 class="brand-type" style="margin:0 0 6px">From Podio</h3>'
+        + (ev.podioReference ? '<p class="help">Reference: ' + esc(ev.podioReference) + "</p>" : "")
+        + (ev.siteContact ? '<p class="help">Site contact: ' + esc(ev.siteContact) + "</p>" : "")
+        + (who || poc.company ? '<p class="help">POC: ' + esc([who, poc.role, poc.company, poc.phone, poc.email].filter(Boolean).join(" · ")) + "</p>" : "")
+        + (ev.taskDesc ? '<p class="help">Task: ' + esc(ev.taskDesc) + "</p>" : "")
+        + '<p class="help">Turnaround: ' + esc(ev.turnaround || "standard") + (ev.lab ? " · Lab: " + esc(ev.lab) : "") + "</p>"
+        + (ev.date ? '<p class="help">Start date: ' + esc(ev.date) + "</p>" : "")
+        + "</div>";
+      h.insertAdjacentHTML("afterend", html);
+    }
+  }
+
+  const _create = createEvent;
+  createEvent = function () {
+    const before = new Set((db.events || []).map(e => e.id));
+    const r = _create.apply(this, arguments);
+    let changed = false;
+    (db.events || []).forEach(ev => {
+      if (!before.has(ev.id) && !ev.podioItemId) { ev.podioUnplanned = true; ev.podioLinked = false; changed = true; }
+    });
+    if (changed) { try { saveQuiet(); render(); } catch (e) {} }
+    return r;
+  };
+  window.createEvent = createEvent;
+
+  const _openP = openProject;
+  openProject = function (id) {
+    const p = project(id);
+    const job = jobNumberOf(p);
+    podioState.job = job;
+    podioState.rows = job ? ((readPodioCache()[job] || {}).rows || []) : [];
+    podioState.err = "";
+    const r = _openP.apply(this, arguments);
+    if (job) loadPodioTable(job).then(() => { if (view.page === "project" && view.projectId === id) paintPodio(); }).catch(e => { podioState.err = String(e && e.message || e); paintPodio(); });
+    return r;
+  };
+  window.openProject = openProject;
+
+  const _renderD = render;
+  render = function () {
+    const r = _renderD.apply(this, arguments);
+    try { paintPodio(); paintEventPodio(); paintDriveBadges(); } catch (e) { console.warn("v45d paint", e); }
+    return r;
+  };
+  window.render = render;
+
+  window.envssDrive = {
+    enqueueExport, onPhotoUploaded, run: runDrive, items: () => items.slice(), remote: () => Object.assign({}, remote),
+    statusHtml, matchJobFolders: envssMatchJobFolders_, photoFileName: envssPhotoFileName_, versionedName: envssVersionedName_
+  };
+  window.envssPodio = { refresh: refreshPodio, rows: podioRowsFor, start: startFromPodio, state: () => Object.assign({}, podioState) };
+
+  const st = document.createElement("style");
+  st.textContent = ".drive-st{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:4px}"
+    + ".drive-ok{background:#E5F4EE;color:#1F6B4A}.drive-wait{background:#FFF4E5;color:#8A4B08}"
+    + ".drive-st-wrap{margin:4px 0 8px}.drive-list{margin:6px 0 0 18px;padding:0}.drive-list li{margin:4px 0}"
+    + ".podio-flag{margin:8px 0;padding:8px 10px;border-radius:10px;background:#FFF4E5;color:#8A4B08;font-weight:700}"
+    + ".podio-ev{margin-top:8px}";
+  document.head.appendChild(st);
+
+  (async () => {
+    try { items = (await allItems()) || []; } catch (e) { items = []; }
+    try { if (window.envssPhotos && envssPhotos.all) { const photos = await envssPhotos.all(); photos.forEach(rec => { if (rec && rec.uploaded && !rec.removed) onPhotoUploaded(rec); }); } } catch (e) {}
+    runDrive();
+  })();
+  setInterval(runDrive, 60e3);
+  window.addEventListener("online", () => runDrive());
+})();
+</script>
+
 </body>
 </html>
