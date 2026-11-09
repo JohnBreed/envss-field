@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v45d</title>
+  <title>ENVSS Field v45d.1</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -389,7 +389,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v45d</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v45d.1</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -405,11 +405,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=45d"></script>
+  <script src="config.js?v=45d.1"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "45d"; /* 2026-11-08 (AWST): COC analyte headers readable; Drive copy queue; planned HYG events read from Podio. */
+const APP_VERSION = "45d.1"; /* 2026-11-09 (AWST): Refresh from Podio moved to top sync banner (global, all jobs). */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -1137,14 +1137,22 @@ function paintSyncBar() {
   let html = '<span id="syncText">' + esc(parts.join(" · ")) + "</span>";
   html += ' <button type="button" class="sync-link" id="btnSyncNow">Sync now</button>';
   html += ' <button type="button" class="sync-link" id="btnRefreshProjects">Refresh projects</button>';
+  const podioSt = (window.envssPodio && typeof window.envssPodio.state === "function") ? window.envssPodio.state() : null;
+  const podioBusy = !!(podioSt && podioSt.busy);
+  const podioReady = !!(window.envssPodio && typeof window.envssPodio.refresh === "function");
+  const podioSigned = typeof hasSession === "function" && hasSession();
+  html += ' <button type="button" class="sync-link" id="btnPodioRefresh"' + (!podioReady || !podioSigned || podioBusy ? " disabled" : "") + ">" + (podioBusy ? "Refreshing…" : "Refresh from Podio") + "</button>";
   if (syncState.lastError && n) html += '<div class="sync-err">' + esc(syncState.lastError) + "</div>";
   if (storageWarning) html += '<div class="sync-warn" id="storageWarning">' + esc(storageWarning) + "</div>";
   if (sessionInvalid()) html += '<div class="sync-warn" id="authWarning">Your sign-in has ended. <button type="button" class="sync-link" id="btnSignInAgain">Sign in again</button>' + esc(n ? " to send " + n + " change" + (n === 1 ? "" : "s") + ". They are kept on this device." : ".") + "</div>";
+  if (podioSt && podioSt.err) html += '<div class="sync-err" id="podioSyncErr">' + esc(podioSt.err) + "</div>";
+  else if (podioSt && podioSt.note) html += '<div class="sync-warn" id="podioSyncNote">' + esc(podioSt.note) + "</div>";
   el.innerHTML = html;
   el.className = "sync-bar" + (storageWarning ? " warn" : n ? " pending" : "");
   el.dataset.pending = String(n);
   const s = document.getElementById("btnSyncNow"); if (s) s.onclick = () => { scanDirty(); flushQueue(); pullActivity(); };
   const r = document.getElementById("btnRefreshProjects"); if (r) r.onclick = refreshProjects;
+  const pr = document.getElementById("btnPodioRefresh"); if (pr) pr.onclick = () => { if (window.envssPodio && typeof window.envssPodio.refresh === "function") window.envssPodio.refresh(); };
   const a = document.getElementById("btnSignInAgain"); if (a) a.onclick = startGoogleSignIn;
 }
 window.addEventListener("online", () => { scheduleFlush(100); pullActivity(); if (!projectsLoaded) pullProjects(); paintSyncBar(); });
@@ -8309,30 +8317,59 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     podioState.note = "";
     writePodioCache(job, podioState.rows);
   }
+  async function loadPodioAll() {
+    if (!navigator.onLine) { podioState.note = "Offline — showing planned events saved on this device."; podioState.err = ""; return; }
+    if (typeof hasSession !== "function" || !hasSession()) { podioState.note = "Sign in to refresh from Podio."; podioState.err = ""; return; }
+    const c = sbCfg(); if (!c) return;
+    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_podio_events?select=id,item_id,event_reference,job_number,payload,updated_at&planned=eq.true&order=event_reference.asc", { headers: sbHeaders() });
+    if (res.status === 404) { podioState.err = "Podio events appear here after the server table is applied."; podioState.note = ""; return; }
+    if (!res.ok) { podioState.err = "Could not load planned events (" + res.status + ")."; return; }
+    const rows = await res.json();
+    const byJob = {};
+    (rows || []).forEach(r => {
+      const jn = String(r.job_number || "");
+      if (!/^\d{7}$/.test(jn)) return;
+      (byJob[jn] || (byJob[jn] = [])).push(r);
+    });
+    Object.keys(byJob).forEach(jn => writePodioCache(jn, byJob[jn]));
+    if (podioState.job && byJob[podioState.job]) podioState.rows = byJob[podioState.job];
+    else if (podioState.job) podioState.rows = [];
+    podioState.err = "";
+  }
+  /* Global refresh: no job → Edge Function pulls all planned HYG events. Optional job keeps per-job mode for tooling. */
   async function refreshPodio(job) {
-    podioState.busy = true; paintPodio();
+    podioState.busy = true;
+    try { paintSyncBar(); } catch (e) {}
+    paintPodio();
     try {
-      if (!navigator.onLine) { podioState.note = "You're offline. Planned events saved on this device are still listed. Refresh from Podio needs a connection."; return; }
-      if (typeof hasSession !== "function" || !hasSession()) { podioState.note = "Sign in to refresh from Podio."; return; }
+      if (!navigator.onLine) { podioState.note = "You're offline. Planned events saved on this device are still listed. Refresh from Podio needs a connection."; podioState.err = ""; return; }
+      if (typeof hasSession !== "function" || !hasSession()) { podioState.note = "Sign in to refresh from Podio."; podioState.err = ""; return; }
       const c = sbCfg(); if (!c) return;
+      const jobNum = String(job || "").match(/^(\d{7})$/) ? String(job) : "";
+      const body = jobNum ? { job: jobNum, force: true } : { all: true, force: true };
       const res = await sbFetch(c.supabaseUrl + "/functions/v1/pull-hyg-events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ job: job, force: true })
+        body: JSON.stringify(body)
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || j.ok === false) {
         podioState.err = (j && j.error) || ("Refresh failed (" + res.status + ").");
         if (res.status === 404) podioState.err = "Refresh from Podio is not deployed yet. Planned events already loaded still show.";
+        podioState.note = "";
       } else {
         podioState.err = "";
-        podioState.note = "Refreshed from Podio" + (j.planned != null ? " (" + j.planned + " planned)." : ".");
+        podioState.note = "Refreshed from Podio" + (j.planned != null ? " (" + j.planned + " planned across jobs)." : ".");
       }
-      await loadPodioTable(job);
+      if (jobNum) await loadPodioTable(jobNum);
+      else await loadPodioAll();
     } catch (e) {
       podioState.err = "Refresh failed: " + (e && e.message || e);
+      podioState.note = "";
     } finally {
-      podioState.busy = false; paintPodio();
+      podioState.busy = false;
+      try { paintSyncBar(); } catch (e) {}
+      paintPodio();
     }
   }
   function startFromPodio(itemId) {
@@ -8390,11 +8427,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (!p) return;
     const job = jobNumberOf(p);
     const rows = (podioState.job === job ? podioState.rows : podioRowsFor(job)) || [];
-    const signed = typeof hasSession === "function" && hasSession();
-    let html = '<div class="card" id="podioPlan"><div class="row" style="justify-content:space-between;align-items:center;gap:8px"><h3 class="brand-type" style="margin:0">Planned in Podio</h3>'
-      + '<button type="button" class="btn ghost" id="btnPodioRefresh"' + (!signed || podioState.busy ? " disabled" : "") + ">" + (podioState.busy ? "Refreshing…" : "Refresh from Podio") + "</button></div>";
+    let html = '<div class="card" id="podioPlan"><h3 class="brand-type" style="margin:0 0 6px">Planned in Podio</h3>';
     if (!job) html += '<p class="help">This project has no 7-digit job number, so Podio events cannot be matched.</p>';
-    else if (!rows.length) html += '<p class="help">No planned Podio events on this job yet.</p>';
+    else if (!rows.length) html += '<p class="help">No planned Podio events on this job yet. Use Refresh from Podio in the top bar to pull the latest.</p>';
     else html += rows.map(podioCard).join("");
     html += '<button type="button" class="btn orange" id="btnUnplanned" style="margin-top:8px">Start an event not in Podio</button>';
     if (podioState.note) html += '<p class="help" id="podioNote">' + esc(podioState.note) + "</p>";
@@ -8405,8 +8440,6 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       const anchor = document.querySelector("#app .wrap .filters") || document.querySelector("#app .wrap h2");
       if (anchor) anchor.insertAdjacentHTML("beforebegin", html);
     }
-    const b = document.getElementById("btnPodioRefresh");
-    if (b) b.onclick = () => { if (job) refreshPodio(job); };
     const u = document.getElementById("btnUnplanned");
     if (u) u.onclick = () => openNewEvent(p.id);
     document.querySelectorAll("[data-podio-start]").forEach(btn => { btn.onclick = () => startFromPodio(btn.dataset.podioStart); });
@@ -8473,7 +8506,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     enqueueExport, onPhotoUploaded, run: runDrive, items: () => items.slice(), remote: () => Object.assign({}, remote),
     statusHtml, matchJobFolders: envssMatchJobFolders_, photoFileName: envssPhotoFileName_, versionedName: envssVersionedName_
   };
-  window.envssPodio = { refresh: refreshPodio, rows: podioRowsFor, start: startFromPodio, state: () => Object.assign({}, podioState) };
+  window.envssPodio = { refresh: () => refreshPodio(), refreshJob: refreshPodio, rows: podioRowsFor, start: startFromPodio, state: () => Object.assign({}, podioState) };
 
   const st = document.createElement("style");
   st.textContent = ".drive-st{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:4px}"

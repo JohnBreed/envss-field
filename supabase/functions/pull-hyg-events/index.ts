@@ -130,7 +130,8 @@ Deno.serve(async (req) => {
   if (!force && !inBusinessWindow(new Date())) {
     return json(200, { ok: true, skipped: true, reason: "outside Mon–Fri 07:00–17:00 Australia/Perth" });
   }
-  const job = String(body.job || "").match(/^(\d{7})$/) ? String(body.job) : "";
+  /* all:true or omitted/invalid job → pull every planned HYG event (global banner refresh). */
+  const job = body.all === true ? "" : (String(body.job || "").match(/^(\d{7})$/) ? String(body.job) : "");
   try {
     const token = await podioToken();
     const items = await fetchPlanned(token);
