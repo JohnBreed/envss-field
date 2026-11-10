@@ -116,10 +116,19 @@
   const VAL = { LAeq: "LAeq dB(A)", LCpeak: "LCpeak dB(C)", LCeq: "LCeq dB(C)" };
   const num = v => { const n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return Number.isFinite(n) ? n : null; };
   const str = v => (v == null ? "" : String(v));
-  function nz(t) {
-    t.noise = t.noise || {};
+  /* nz(t) is READ-ONLY: it never changes the saved sample (opening or listing a sample must not create a change that
+     syncs over newer data from another device). nz(t, true) is used only where the user actually enters noise data. */
+  function defaultMethod(t) { return C().isStatic(t) ? ((t.startAt || t.endAt) && t.dosimeterSerial ? "dose" : "") : "dose"; }
+  function nz(t, write) {
+    const has = !!t.noise && typeof t.noise === "object";
+    if (!write) {
+      const n = has ? t.noise : {};
+      if (has && n.method && n.values && n.octave && Array.isArray(n.hpdAtt)) return n;
+      return Object.assign({}, n, { method: n.method || defaultMethod(t), values: n.values || {}, octave: n.octave || {}, hpdAtt: Array.isArray(n.hpdAtt) ? n.hpdAtt : [] });
+    }
+    if (!has) t.noise = {};
     const n = t.noise;
-    if (!n.method) n.method = C().isStatic(t) ? ((t.startAt || t.endAt) && t.dosimeterSerial ? "dose" : "") : "dose";
+    if (!n.method) n.method = defaultMethod(t);
     n.values = n.values || {};
     n.octave = n.octave || {};
     n.hpdAtt = Array.isArray(n.hpdAtt) ? n.hpdAtt : [];
@@ -238,7 +247,7 @@
     return out;
   }
   async function ocr(t, file) {
-    const n = nz(t);
+    const n = nz(t, true);
     ocrMem.set(t.id, { state: "reading" }); paint();
     try {
       const T = await loadTess();
@@ -283,7 +292,7 @@
     const r = await cropFlow(file); if (!r) return;
     const ph = C().photos;
     const ref = ph && ph.attach ? await ph.attach(r.file, t, which === "spectrum" ? "noiseSpectrum" : "noiseScreen") : "";
-    const n = nz(t);
+    const n = nz(t, true);
     if (which === "spectrum") { n.spectrumPhoto = ref; note(t, "Spectrum Table photo added", r.cropped ? "cropped to frame" : "whole photo"); }
     else { n.photo = ref; n.photoCropped = r.cropped; note(t, "Meter screen photo added", r.cropped ? "cropped to frame" : "whole photo"); }
     C().saveQuiet(); paint();
@@ -408,7 +417,8 @@
   function onInput(e) {
     const el = e.target; if (!el || !el.dataset) return;
     const t = curTrain(); if (!t || !C().isNoise(t)) return;
-    const n = nz(t);
+    if (!el.dataset.nz && !el.dataset.nzCal && !el.dataset.nzHpd) return;   // not a noise field: leave the record alone
+    const n = nz(t, true);
     if (el.dataset.nz) {
       const path = el.dataset.nz;
       if (path.startsWith("values.")) { const k = path.slice(7); n.values[k] = { v: el.value.trim(), src: "manual" }; }
@@ -443,7 +453,7 @@
     const b = e.target.closest && e.target.closest("[data-nz-method],[data-nz-entry],[data-nz-fix],[data-nz-save],[data-nz-share],#nzReadAgain,#nzAddHpd");
     if (!b) return;
     const t = curTrain(); if (!t || !C().isNoise(t)) return;
-    const n = nz(t);
+    const n = (b.dataset.nzSave || b.dataset.nzShare) ? nz(t) : nz(t, true);
     if (b.dataset.nzMethod) { if (n.method !== b.dataset.nzMethod) { note(t, "Noise measured with", n.method ? (n.method === "slm" ? "SLM → dose badge" : "dose badge → SLM") : (b.dataset.nzMethod === "slm" ? "sound level meter" : "dose badge"), "noise.method", n.method, b.dataset.nzMethod); n.method = b.dataset.nzMethod; C().save(); } else paint(); }
     else if (b.dataset.nzEntry) {
       const to = b.dataset.nzEntry; if (n.entry === to) return;
