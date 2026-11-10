@@ -2,8 +2,8 @@
    Registered by field.html with scope "./field.html", so it never controls index.html.
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
-const VERSION = "45d.1";
-const CACHE = "envss-field-v45d.1"; /* v45d.1: Refresh from Podio in top sync banner (global). */
+const VERSION = "46";
+const CACHE = "envss-field-v46"; /* v46: PR #1 + PR #2 merged, section B, offline sync queue, noise.js split. Rollback tag: rollback-v45c. */
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
 const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);

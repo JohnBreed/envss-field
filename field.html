@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v45d.1</title>
+  <title>ENVSS Field v46</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -389,7 +389,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v45d.1</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v46</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -405,11 +405,11 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=45d.1"></script>
+  <script src="config.js?v=46"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "45d.1"; /* 2026-11-09 (AWST): Refresh from Podio moved to top sync banner (global, all jobs). */
+const APP_VERSION = "46"; /* 2026-11-11 (AWST): v46 = merge of v45d.1 (PR #1) + v45e login log (PR #2) + section B + A14 core sync + noise.js split. */
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -7972,6 +7972,596 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     openEdit: openHireEdit
   };
 })();
+
+
+
+/* ===== v45e PREVIEW: daily login log (additive; does not touch per-record audit / updated_by) =====
+   Spec (John, 9 Nov 2026 AWST): insert-only envss_login_log rows at sign-in, first Perth-day
+   open while already signed in, and sign-out. Offline queue + client_event_id dedupe. Admin-only
+   Login log screen (envss_admins SELECT via RLS; button also visible to config isAdmin()).
+   Failures never block sign-in or app use. Live table may not exist yet — inserts queue/fail soft. */
+(function () {
+  "use strict";
+  var QUEUE_KEY = "envss-field-login-log-queue-v45e";
+  var DAILY_KEY_PREFIX = "envss-field-login-daily-"; /* + user id or email */
+  var MAX_QUEUE = 200;
+  var flushing = false;
+  var adminTableCache = null; /* null unknown, true/false known */
+  var adminTableCheckedAt = 0;
+
+  function perthDate(d) {
+    try {
+      var t = d ? new Date(d) : new Date();
+      var parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Australia/Perth", year: "numeric", month: "2-digit", day: "2-digit"
+      }).formatToParts(t);
+      var y = "", m = "", day = "";
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === "year") y = parts[i].value;
+        if (parts[i].type === "month") m = parts[i].value;
+        if (parts[i].type === "day") day = parts[i].value;
+      }
+      if (y && m && day) return y + "-" + m + "-" + day;
+    } catch (e) {}
+    /* Fallback: Perth is UTC+8 with no DST */
+    var x = d ? new Date(d) : new Date();
+    var ms = x.getTime() + 8 * 3600e3;
+    var u = new Date(ms);
+    function p2(n) { return (n < 10 ? "0" : "") + n; }
+    return u.getUTCFullYear() + "-" + p2(u.getUTCMonth() + 1) + "-" + p2(u.getUTCDate());
+  }
+
+  function browserLabel() {
+    var ua = navigator.userAgent || "";
+    if (/Edg\//i.test(ua)) return "Edge";
+    if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) return "Chrome";
+    if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) return "Safari";
+    if (/Firefox\//i.test(ua)) return "Firefox";
+    return "Other";
+  }
+
+  function newClientEventId() {
+    try {
+      if (crypto && crypto.randomUUID) return crypto.randomUUID();
+    } catch (e) {}
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0;
+      var v = c === "x" ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  function loadQueue() {
+    try {
+      var raw = localStorage.getItem(QUEUE_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  function saveQueue(arr) {
+    try {
+      if (!arr || !arr.length) { localStorage.removeItem(QUEUE_KEY); return; }
+      if (arr.length > MAX_QUEUE) arr = arr.slice(arr.length - MAX_QUEUE);
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(arr));
+    } catch (e) { console.warn("[ENVSS] login-log queue save failed", e); }
+  }
+
+  function currentUser() {
+    try {
+      var sess = typeof getSession === "function" ? getSession() : null;
+      if (sess && sess.user && sess.user.email) {
+        return {
+          id: sess.user.id || "",
+          email: String(sess.user.email || "").toLowerCase(),
+          name: sess.user.name || ""
+        };
+      }
+    } catch (e) {}
+    try {
+      var o = typeof getOperator === "function" ? getOperator() : null;
+      if (o && o.email) return { id: "", email: String(o.email).toLowerCase(), name: o.name || "" };
+    } catch (e2) {}
+    return null;
+  }
+
+  function buildRow(eventType, when) {
+    var u = currentUser();
+    if (!u || !u.email) return null;
+    if (typeof allowedEmail === "function" && !allowedEmail(u.email)) return null;
+    var at = when ? new Date(when) : new Date();
+    var row = {
+      user_id: u.id || undefined,
+      email: u.email,
+      full_name: u.name || null,
+      event: eventType,
+      occurred_at: at.toISOString(),
+      local_date: perthDate(at),
+      device: (typeof deviceLabel === "function" ? deviceLabel() : "Browser"),
+      browser: browserLabel(),
+      user_agent: String(navigator.userAgent || "").slice(0, 500),
+      app_version: (typeof APP_VERSION !== "undefined" ? APP_VERSION : "45e"),
+      client_event_id: newClientEventId()
+    };
+    if (!row.user_id) delete row.user_id; /* DB default auth.uid() when online insert */
+    return row;
+  }
+
+  function enqueue(row) {
+    if (!row || !row.client_event_id) return;
+    var q = loadQueue();
+    for (var i = 0; i < q.length; i++) {
+      if (q[i] && q[i].client_event_id === row.client_event_id) return;
+    }
+    q.push(row);
+    saveQueue(q);
+  }
+
+  async function postOne(row) {
+    var c = typeof sbCfg === "function" ? sbCfg() : null;
+    if (!c || !c.supabaseUrl) throw new Error("no supabase");
+    if (typeof hasSession === "function" && !hasSession()) throw new Error("no session");
+    var body = Object.assign({}, row);
+    /* Prefer server auth.uid() — omit blank user_id so default applies */
+    if (!body.user_id) delete body.user_id;
+    var res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_login_log", {
+      method: "POST",
+      headers: {
+        Prefer: "resolution=ignore-duplicates,return=minimal",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+    if (res.status === 201 || res.status === 200 || res.status === 204) return "ok";
+    if (res.status === 409) return "dup"; /* unique client_event_id already stored */
+    /* 404 / 42P01-ish: table not applied yet — keep queued, soft fail */
+    var txt = "";
+    try { txt = await res.text(); } catch (e) {}
+    var err = new Error("login-log post " + res.status + (txt ? (": " + txt.slice(0, 200)) : ""));
+    err.status = res.status;
+    throw err;
+  }
+
+  async function flushLoginLogQueue() {
+    if (flushing) return;
+    if (!navigator.onLine) return;
+    if (typeof hasSession === "function" && !hasSession()) return;
+    var q = loadQueue();
+    if (!q.length) return;
+    flushing = true;
+    try {
+      var kept = [];
+      for (var i = 0; i < q.length; i++) {
+        var row = q[i];
+        try {
+          await postOne(row);
+        } catch (e) {
+          /* Keep for retry. If the table is missing (404), stop this pass to avoid hammering. */
+          kept.push(row);
+          for (var j = i + 1; j < q.length; j++) kept.push(q[j]);
+          if (e && (e.status === 404 || e.status === 503)) break;
+          /* other errors: keep remaining and stop this pass */
+          break;
+        }
+      }
+      saveQueue(kept);
+    } finally {
+      flushing = false;
+    }
+  }
+
+  function recordLoginEvent(eventType, opts) {
+    try {
+      opts = opts || {};
+      var row = buildRow(eventType, opts.when);
+      if (!row) return;
+      enqueue(row);
+      /* Best-effort immediate send; never throw to caller */
+      Promise.resolve().then(function () { return flushLoginLogQueue(); }).catch(function () {});
+    } catch (e) {
+      console.warn("[ENVSS] login-log record failed soft", e);
+    }
+  }
+
+  function dailyKeyFor(u) {
+    return DAILY_KEY_PREFIX + (u && (u.id || u.email) || "unknown");
+  }
+
+  function maybeDailyOpen() {
+    try {
+      if (typeof hasSession !== "function" || !hasSession()) return;
+      var u = currentUser();
+      if (!u) return;
+      var today = perthDate();
+      var key = dailyKeyFor(u);
+      var last = "";
+      try { last = localStorage.getItem(key) || ""; } catch (e) {}
+      if (last === today) return;
+      recordLoginEvent("daily_open");
+      try { localStorage.setItem(key, today); } catch (e2) {}
+    } catch (e) {
+      console.warn("[ENVSS] daily_open check failed soft", e);
+    }
+  }
+
+  /* ---- hooks: sign-in, sign-out, boot ---- */
+  if (typeof acceptSession === "function") {
+    var _acceptSession = acceptSession;
+    window.acceptSession = acceptSession = async function () {
+      var r = await _acceptSession.apply(this, arguments);
+      try {
+        recordLoginEvent("sign_in");
+        var u = currentUser();
+        if (u) {
+          try { localStorage.setItem(dailyKeyFor(u), perthDate()); } catch (e) {}
+        }
+      } catch (e) {}
+      try { flushLoginLogQueue(); } catch (e2) {}
+      return r;
+    };
+  }
+
+  if (typeof signOut === "function") {
+    var _signOut = signOut;
+    window.signOut = signOut = function () {
+      /* Only log when the session is actually cleared (after any confirm dialogs).
+         Keepalive POST while the access token is still valid; otherwise queue for next sign-in. */
+      var _saveSession = saveSession;
+      saveSession = function (sess) {
+        if (sess == null) {
+          try {
+            var row = buildRow("sign_out");
+            if (row) {
+              enqueue(row);
+              try {
+                var c = typeof sbCfg === "function" ? sbCfg() : null;
+                var tok = typeof accessToken === "function" ? accessToken() : "";
+                if (c && tok && navigator.onLine) {
+                  var bodyObj = Object.assign({}, row);
+                  if (!bodyObj.user_id) delete bodyObj.user_id;
+                  fetch(c.supabaseUrl + "/rest/v1/envss_login_log", {
+                    method: "POST",
+                    keepalive: true,
+                    headers: {
+                      apikey: c.supabaseAnonKey,
+                      Authorization: "Bearer " + tok,
+                      "Content-Type": "application/json",
+                      Prefer: "resolution=ignore-duplicates,return=minimal"
+                    },
+                    body: JSON.stringify(bodyObj)
+                  }).then(function (res) {
+                    if (res && (res.ok || res.status === 409 || res.status === 201 || res.status === 200 || res.status === 204)) {
+                      var q2 = loadQueue().filter(function (r) {
+                        return !r || r.client_event_id !== row.client_event_id;
+                      });
+                      saveQueue(q2);
+                    }
+                  }).catch(function () {});
+                }
+              } catch (e2) {}
+            }
+          } catch (e) {}
+        }
+        return _saveSession.apply(this, arguments);
+      };
+      try {
+        return _signOut.apply(this, arguments);
+      } finally {
+        saveSession = _saveSession;
+      }
+    };
+  }
+
+  /* Boot: first open of the Perth day (even when already signed in) */
+  setTimeout(function () {
+    try { maybeDailyOpen(); } catch (e) {}
+    try { flushLoginLogQueue(); } catch (e2) {}
+  }, 800);
+  window.addEventListener("online", function () {
+    try { flushLoginLogQueue(); } catch (e) {}
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) {
+      try { maybeDailyOpen(); } catch (e) {}
+      try { flushLoginLogQueue(); } catch (e2) {}
+    }
+  });
+
+  /* ---- admin detection for Login log button ----
+     Browser convenience: existing isAdmin() (config.js / V34_DEFAULT_ADMINS).
+     Server truth for SELECT: membership in public.envss_admins (RLS).
+     Button shows when either is true so John can open the screen before seeding envss_admins;
+     the fetch will explain if the table/policy blocks the read. */
+  async function refreshAdminFromTable() {
+    try {
+      if (typeof hasSession !== "function" || !hasSession()) { adminTableCache = false; return false; }
+      var u = currentUser();
+      if (!u || !u.email) { adminTableCache = false; return false; }
+      var c = typeof sbCfg === "function" ? sbCfg() : null;
+      if (!c) { adminTableCache = false; return false; }
+      var url = c.supabaseUrl + "/rest/v1/envss_admins?select=email&email=eq." + encodeURIComponent(u.email) + "&limit=1";
+      var res = await sbFetch(url, { method: "GET", headers: { Accept: "application/json" } });
+      if (!res.ok) { adminTableCache = false; adminTableCheckedAt = Date.now(); return false; }
+      var rows = await res.json().catch(function () { return []; });
+      adminTableCache = Array.isArray(rows) && rows.length > 0;
+      adminTableCheckedAt = Date.now();
+      return adminTableCache;
+    } catch (e) {
+      adminTableCache = false;
+      adminTableCheckedAt = Date.now();
+      return false;
+    }
+  }
+
+  function canSeeLoginLogButton() {
+    try {
+      if (typeof isAdmin === "function" && isAdmin()) return true;
+    } catch (e) {}
+    return !!adminTableCache;
+  }
+
+  /* ---- Login log admin screen ---- */
+  function openLoginLog() {
+    if (!canSeeLoginLogButton()) { alert("Login log is only available to admins."); return; }
+    view.page = "loginLog";
+    view.loginLogFilter = view.loginLogFilter || { person: "", from: "", to: "" };
+    /* Default date range: last 7 Perth days */
+    if (!view.loginLogFilter.from || !view.loginLogFilter.to) {
+      var end = perthDate();
+      var endMs = Date.parse(end + "T12:00:00+08:00");
+      var startMs = endMs - 6 * 86400e3;
+      view.loginLogFilter.to = end;
+      view.loginLogFilter.from = perthDate(new Date(startMs));
+    }
+    view.loginLogRows = view.loginLogRows || null;
+    view.loginLogErr = "";
+    view.loginLogLoading = true;
+    render();
+    loadLoginLogRows();
+  }
+
+  async function loadLoginLogRows() {
+    view.loginLogLoading = true;
+    view.loginLogErr = "";
+    try {
+      var c = typeof sbCfg === "function" ? sbCfg() : null;
+      if (!c) throw new Error("Supabase is not configured");
+      var f = view.loginLogFilter || {};
+      var from = f.from || perthDate(new Date(Date.now() - 6 * 86400e3));
+      var to = f.to || perthDate();
+      var q = "select=id,email,full_name,event,occurred_at,local_date,device,browser,app_version,client_event_id"
+        + "&local_date=gte." + encodeURIComponent(from)
+        + "&local_date=lte." + encodeURIComponent(to)
+        + "&order=local_date.desc,occurred_at.desc"
+        + "&limit=2000";
+      if (f.person) q += "&email=eq." + encodeURIComponent(String(f.person).toLowerCase());
+      var res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_login_log?" + q, {
+        method: "GET",
+        headers: { Accept: "application/json" }
+      });
+      if (res.status === 404) {
+        view.loginLogErr = "Login log table is not on the live database yet. Apply work/loginlog_v45e_01_table.sql after John approves, and seed envss_admins.";
+        view.loginLogRows = [];
+      } else if (res.status === 401 || res.status === 403) {
+        view.loginLogErr = "Not allowed to read the login log. Your account must be in envss_admins (table is empty today — seed john@envss.com.au when ready).";
+        view.loginLogRows = [];
+      } else if (!res.ok) {
+        var t = "";
+        try { t = await res.text(); } catch (e) {}
+        view.loginLogErr = "Could not load login log (" + res.status + "). " + (t ? t.slice(0, 180) : "");
+        view.loginLogRows = [];
+      } else {
+        view.loginLogRows = await res.json();
+      }
+    } catch (e) {
+      view.loginLogErr = "Could not load login log: " + (e && e.message || e);
+      view.loginLogRows = [];
+    } finally {
+      view.loginLogLoading = false;
+      if (view.page === "loginLog") render();
+    }
+  }
+
+  function fmtAwst(iso) {
+    try {
+      return new Intl.DateTimeFormat("en-AU", {
+        timeZone: "Australia/Perth",
+        year: "numeric", month: "short", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+        hour12: false
+      }).format(new Date(iso)) + " AWST";
+    } catch (e) {
+      return String(iso || "");
+    }
+  }
+
+  function eventLabel(ev) {
+    if (ev === "sign_in") return "Sign-in";
+    if (ev === "daily_open") return "First open (day)";
+    if (ev === "sign_out") return "Sign-out";
+    return ev || "";
+  }
+
+  function loginLogHtml() {
+    var f = view.loginLogFilter || { person: "", from: "", to: "" };
+    var rows = Array.isArray(view.loginLogRows) ? view.loginLogRows : [];
+    var people = {};
+    rows.forEach(function (r) {
+      if (r && r.email) people[r.email] = r.full_name || r.email;
+    });
+    var html = "";
+    html += "<div class=\"wrap\">";
+    html += "<button class=\"btn ghost\" type=\"button\" id=\"btnLoginLogBack\">← Projects</button>";
+    html += "<div class=\"row\" style=\"margin-top:10px\"><div class=\"grow\"><h2 class=\"brand-type\" style=\"margin:0;color:var(--navy)\">Login log</h2>";
+    html += "<p class=\"help\" style=\"margin:4px 0 0\">Admin only · times in Australia/Perth (AWST) · last 7 days by default</p></div>";
+    html += "<button class=\"btn mid\" type=\"button\" id=\"btnLoginLogExport\">Export CSV</button></div>";
+
+    html += "<div class=\"card\" style=\"margin-top:12px\">";
+    html += "<div class=\"row\" style=\"gap:8px;flex-wrap:wrap;align-items:end\">";
+    html += "<label>From<br><input type=\"date\" id=\"loginLogFrom\" value=\"" + esc(f.from || "") + "\"></label>";
+    html += "<label>To<br><input type=\"date\" id=\"loginLogTo\" value=\"" + esc(f.to || "") + "\"></label>";
+    html += "<label>Person<br><select id=\"loginLogPerson\"><option value=\"\">Everyone</option>";
+    Object.keys(people).sort().forEach(function (em) {
+      html += "<option value=\"" + esc(em) + "\"" + (f.person === em ? " selected" : "") + ">" + esc(people[em] + " <" + em + ">") + "</option>";
+    });
+    /* Keep current filter person even if not in this result set */
+    if (f.person && !people[f.person]) {
+      html += "<option value=\"" + esc(f.person) + "\" selected>" + esc(f.person) + "</option>";
+    }
+    html += "</select></label>";
+    html += "<button class=\"btn orange\" type=\"button\" id=\"btnLoginLogApply\">Apply</button>";
+    html += "</div></div>";
+
+    if (view.loginLogLoading) {
+      html += "<p class=\"help\" style=\"margin-top:12px\">Loading…</p>";
+    }
+    if (view.loginLogErr) {
+      html += "<p class=\"help\" style=\"margin-top:12px;color:var(--danger,#b00020)\">" + esc(view.loginLogErr) + "</p>";
+    }
+
+    /* Group by local_date */
+    var byDay = {};
+    rows.forEach(function (r) {
+      var d = (r && r.local_date) || "";
+      if (!byDay[d]) byDay[d] = [];
+      byDay[d].push(r);
+    });
+    var days = Object.keys(byDay).sort().reverse();
+    if (!view.loginLogLoading && !days.length && !view.loginLogErr) {
+      html += "<p class=\"help\" style=\"margin-top:12px\">No login events in this range.</p>";
+    }
+    days.forEach(function (day) {
+      html += "<div class=\"card\" style=\"margin-top:12px\">";
+      html += "<h3 style=\"margin:0 0 8px;color:var(--navy)\">" + esc(day) + "</h3>";
+      html += "<div style=\"overflow:auto\"><table class=\"table\" style=\"width:100%;font-size:13px\"><thead><tr>";
+      html += "<th>Time (AWST)</th><th>Person</th><th>Event</th><th>Device</th><th>Browser</th><th>App</th>";
+      html += "</tr></thead><tbody>";
+      byDay[day].forEach(function (r) {
+        html += "<tr>";
+        html += "<td>" + esc(fmtAwst(r.occurred_at)) + "</td>";
+        html += "<td>" + esc((r.full_name || "") + (r.email ? " <" + r.email + ">" : "")) + "</td>";
+        html += "<td>" + esc(eventLabel(r.event)) + "</td>";
+        html += "<td>" + esc(r.device || "") + "</td>";
+        html += "<td>" + esc(r.browser || "") + "</td>";
+        html += "<td>" + esc(r.app_version || "") + "</td>";
+        html += "</tr>";
+      });
+      html += "</tbody></table></div></div>";
+    });
+
+    html += "<p class=\"help\" style=\"margin-top:16px\">ENVSS Field v" + esc(String(APP_VERSION)) + " · queued offline events: " + loadQueue().length + "</p>";
+    html += "</div>";
+    return html;
+  }
+
+  function exportLoginLogCsv() {
+    var rows = Array.isArray(view.loginLogRows) ? view.loginLogRows : [];
+    var lines = ["local_date,occurred_at_awst,email,full_name,event,device,browser,app_version,client_event_id"];
+    function csvEsc(s) {
+      s = String(s == null ? "" : s);
+      if (/[",\n]/.test(s)) return "\"" + s.replace(/"/g, "\"\"") + "\"";
+      return s;
+    }
+    rows.forEach(function (r) {
+      lines.push([
+        csvEsc(r.local_date),
+        csvEsc(fmtAwst(r.occurred_at)),
+        csvEsc(r.email),
+        csvEsc(r.full_name),
+        csvEsc(r.event),
+        csvEsc(r.device),
+        csvEsc(r.browser),
+        csvEsc(r.app_version),
+        csvEsc(r.client_event_id)
+      ].join(","));
+    });
+    var blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "envss-login-log-" + (view.loginLogFilter && view.loginLogFilter.from || "from") + "-to-" + (view.loginLogFilter && view.loginLogFilter.to || "to") + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) {} }, 500);
+  }
+
+  function bindLoginLog() {
+    var back = document.getElementById("btnLoginLogBack");
+    if (back) back.onclick = function () { view.page = "dash"; render(); };
+    var apply = document.getElementById("btnLoginLogApply");
+    if (apply) apply.onclick = function () {
+      view.loginLogFilter = {
+        from: (document.getElementById("loginLogFrom") || {}).value || "",
+        to: (document.getElementById("loginLogTo") || {}).value || "",
+        person: (document.getElementById("loginLogPerson") || {}).value || ""
+      };
+      loadLoginLogRows();
+    };
+    var exp = document.getElementById("btnLoginLogExport");
+    if (exp) exp.onclick = function () { exportLoginLogCsv(); };
+  }
+
+  /* Inject Login log button on dashboard for admins */
+  if (typeof dashHtml === "function") {
+    var _dashLogin = dashHtml;
+    dashHtml = function () {
+      var html = _dashLogin();
+      if (!canSeeLoginLogButton()) return html;
+      if (html.indexOf("id=\"btnLoginLog\"") >= 0) return html;
+      if (html.indexOf("id=\"btnHireRequests\"") >= 0) {
+        html = html.replace(
+          "id=\"btnHireRequests\">Hire requests</button>",
+          "id=\"btnHireRequests\">Hire requests</button>"
+            + "<button type=\"button\" class=\"btn ghost\" id=\"btnLoginLog\">Login log</button>"
+        );
+      } else {
+        html = html.replace(
+          /(<div class="row"><h2 class="brand-type"[^>]*>Active projects<\/h2><button class="btn orange" id="btnNewProject">New project<\/button><\/div>)/,
+          "$1<div class=\"row\" style=\"margin:10px 0 4px;gap:8px;flex-wrap:wrap\">"
+            + "<button type=\"button\" class=\"btn ghost\" id=\"btnLoginLog\">Login log</button></div>"
+        );
+      }
+      return html;
+    };
+  }
+
+  if (typeof render === "function") {
+    var _renderLogin = render;
+    render = function () {
+      if (view.page === "loginLog") {
+        setOnline();
+        var whoEl = document.getElementById("whoLabel");
+        if (whoEl) whoEl.textContent = whoText();
+        paintLogin();
+        var root = document.getElementById("app");
+        if (tickMin) { clearInterval(tickMin); tickMin = null; }
+        root.innerHTML = loginLogHtml();
+        bindLoginLog();
+        paintSyncBar();
+        return;
+      }
+      var r = _renderLogin.apply(this, arguments);
+      var btn = document.getElementById("btnLoginLog");
+      if (btn) btn.onclick = function () { openLoginLog(); };
+      return r;
+    };
+  }
+
+  /* Periodically refresh envss_admins membership for the button (self-read RLS). */
+  setTimeout(function () {
+    refreshAdminFromTable().then(function () {
+      try { if (view && view.page === "dash") render(); } catch (e) {}
+    });
+  }, 1200);
+
+  window.envssLoginLog = {
+    record: recordLoginEvent,
+    flush: flushLoginLogQueue,
+    queue: loadQueue,
+    open: openLoginLog,
+    perthDate: perthDate,
+    maybeDailyOpen: maybeDailyOpen
+  };
+})();
+/* ===== end v45e login log ===== */
 
 </script>
 <script>
