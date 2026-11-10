@@ -9266,6 +9266,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
 <script>
 /* ===== v46 layer (John, 11 Nov 2026 — Version 1: airborne, dose badge, samples, data safety) =====
    B9  "Add samples to this person": tick unallocated samples, Select, then Yes/No. Shared fields stay in step.
+       Reallocation rule (John, 11 Nov 2026): a sample that has been started can never be reallocated (it carries that
+       person's information). A sample allocated to someone that has NOT been started can be reallocated only after
+       "Clear this sample's information" (with a confirm) removes its person details; the clear is in the audit trail.
    B11 Respirator (PPE) answers carry across a person's airborne samples on the same day. Hearing protection does not.
    B12 Start all samples on one person (each is still stopped on its own). Passive badge type lives in the core screen.
    A14 (core) every change is kept on this device (localStorage + an IndexedDB second copy) and queued for Supabase
@@ -9290,11 +9293,47 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const k = nameKey(t);
     return trainsOf(t.eventId).filter(x => x !== t && personType(x) && (t.personTag ? x.personTag === t.personTag : (!x.personTag && k && nameKey(x) === k)));
   }
-  function unallocated(t) {
-    return trainsOf(t.eventId).filter(x => x !== t && personType(x) && !x.personTag && !voided(x)
-      && !str((x.person || {}).first).trim() && !str((x.person || {}).last).trim() && !str((x.person || {}).occupation).trim());
-  }
   function notStarted(x) { return x && x.status !== "running" && !x.startAt && !x.endAt && !voided(x) && !isStoppedTrain(x); }
+  /* B9 rule: "started" = has a start or stop time, is running, or is stopped. Started samples are never offered. */
+  function started(x) { return !!x && !voided(x) && !notStarted(x); }
+  function hasPersonInfo(x) {
+    const p = x.person || {};
+    return !!(x.personTag || str(p.first).trim() || str(p.last).trim() || str(p.occupation).trim() || str(p.occupationCode).trim() || str(x.occupationCode).trim());
+  }
+  function unallocated(t) {
+    return trainsOf(t.eventId).filter(x => x !== t && personType(x) && notStarted(x) && !hasPersonInfo(x));
+  }
+  /* samples in this event that belong to someone else (not this person) */
+  function othersAllocated(t) {
+    const mine = new Set(siblings(t));
+    return trainsOf(t.eventId).filter(x => x !== t && personType(x) && !mine.has(x) && !voided(x) && hasPersonInfo(x));
+  }
+  function personName(x) { const p = x.person || {}; return [p.first, p.last].map(v => str(v).trim()).filter(Boolean).join(" ") || str(p.occupation).trim() || "someone"; }
+  /* the person-linked fields removed by "Clear this sample's information". Equipment, contaminant, sample number,
+     sampling date / shift and the audit trail are kept. */
+  const PERSON_FIELDS = ["person", "personTag", "occupationCode", "seg", "location", "locationCode", "rpdAsked", "rpd", "hpdAsked", "hpd", "dailyLog"];
+  function blankPerson(p) { const o = {}; Object.keys(p || {}).forEach(k => { o[k] = ""; }); ["first", "last", "occupation"].forEach(k => { o[k] = ""; }); return o; }
+  /* returns "" when cleared, else the reason it was not */
+  function clearInfo(x) {
+    if (!x) return "Sample not found.";
+    if (started(x)) return displayNo(x) + " has been started, so it carries " + personName(x) + "'s information and cannot be reallocated.";
+    if (voided(x)) return displayNo(x) + " is rejected / fault and cannot be reallocated.";
+    const dl = x.dailyLog || {};
+    if (Array.isArray(dl.photos) && dl.photos.length) return displayNo(x) + " holds daily log pages. Remove those pages first, then clear it.";
+    const was = personName(x), cleared = [];
+    PERSON_FIELDS.forEach(k => {
+      const v = x[k];
+      const empty = v == null || v === "" || (typeof v === "object" && !Object.keys(v).some(q => str(v[q]).trim()));
+      if (empty) return;
+      cleared.push(k);
+      if (k === "person") x.person = blankPerson(x.person);
+      else if (k === "rpd" || k === "hpd") x[k] = {};
+      else if (k === "dailyLog" || k === "personTag") delete x[k];
+      else x[k] = "";
+    });
+    note(x, "Sample information cleared for reallocation", "was allocated to " + was + "; cleared: " + (cleared.join(", ") || "nothing to clear") + ". Sample is now unallocated.", "person", was, "");
+    return "";
+  }
   function note(x, action, detail, field, from, to) { x.audit = x.audit || []; x.audit.push({ at: nowIso(), who: whoText(), action, field: field || "", from: from == null ? "" : from, to: to == null ? "" : to, detail: detail || "" }); }
   function curTrain() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
   window.v46 = { siblings, unallocated, personType, nameKey };
@@ -9322,12 +9361,26 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       : `<p class="help" id="allocList">No other samples on this person yet.</p>`;
     if (!list.length) h += `<p class="help">No unallocated samples in this event (a sample with a name or occupation already belongs to someone).</p>`;
     h += `<div id="allocPick" hidden><p class="help">Only samples with no name or occupation are listed.</p>${list.map(x => `<label class="check-row v46-pick"><input type="checkbox" data-alloc="${esc(x.id)}"> ${esc(displayNo(x))} · ${esc(kindLabel(x))}${x.trainKind === "airborne_passive" && x.badgeId ? " · badge " + esc(x.badgeId) : ""}${!isNoise(x) && x.mediaId ? " · " + esc(x.mediaId) : ""}${isNoise(x) && x.dosimeterSerial ? " · " + esc(x.dosimeterSerial) : ""}</label>`).join("")}
-      <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn green" id="btnAllocSelect">Select</button><button type="button" class="btn ghost" id="btnAllocCancel">Cancel</button></div></div></div>`;
+      <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn green" id="btnAllocSelect">Select</button><button type="button" class="btn ghost" id="btnAllocCancel">Cancel</button></div></div>`;
+    /* B9 reallocation rule */
+    if (started(t)) h += `<p class="help" id="allocThisLocked">This sample has been started, so it stays with ${esc(personName(t))} and cannot be reallocated.</p>`;
+    else if (!voided(t)) h += `<div class="row" style="gap:8px;margin-top:6px"><button type="button" class="btn ghost" id="btnClearThis" data-clear="${esc(t.id)}">Clear this sample's information</button></div><p class="help">To give this sample to someone else, clear its information first.</p>`;
+    const others = othersAllocated(t);
+    if (others.length) h += `<details class="v46-others" id="allocOthers"><summary>Samples allocated to other people (${others.length})</summary>${others.map(x => started(x)
+      ? `<div class="v46-other" data-other="${esc(x.id)}">${esc(displayNo(x))} · ${esc(personName(x))} — <span class="v46-locked">started, cannot be reallocated</span></div>`
+      : `<div class="v46-other" data-other="${esc(x.id)}">${esc(displayNo(x))} · ${esc(personName(x))} — not started <button type="button" class="btn ghost sm" data-clear="${esc(x.id)}">Clear this sample's information</button></div>`).join("")}</details>`;
+    h += `</div>`;
     return h;
   }
   async function allocate(t, ids) {
     collectTrain(t);
-    const targets = ids.map(id => db.trains.find(x => x.id === id)).filter(Boolean).filter(x => unallocated(t).includes(x));   // never reallocate someone else's sample
+    const asked = ids.map(id => db.trains.find(x => x.id === id)).filter(Boolean);
+    const free = unallocated(t);
+    const targets = asked.filter(x => free.includes(x));   // never reallocate someone else's sample, never a started one
+    const refused = asked.filter(x => !free.includes(x) && x !== t && !siblings(t).includes(x));
+    if (refused.length) alert("Not allocated:\n• " + refused.map(x => started(x)
+      ? displayNo(x) + " has been started, so it carries " + personName(x) + "'s information and cannot be reallocated."
+      : displayNo(x) + " is allocated to " + personName(x) + ". Clear this sample's information first, then allocate it.").join("\n• "));
     if (!targets.length) return 0;
     const ok = await ask("Are you sure you want to allocate these samples to this individual?",
       `<p class="help">${esc([t.person.first, t.person.last].join(" "))}: ${targets.map(x => esc(displayNo(x))).join(", ")}</p>`, "Yes", "No");
@@ -9350,6 +9403,23 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     return targets.length;
   }
   window.v46Allocate = allocate;
+  async function clearSample(id) {
+    const x = db.trains.find(y => y.id === id);
+    if (!x) return false;
+    if (started(x) || voided(x)) { alert(clearInfo(x)); return false; }
+    const ok = await ask("Clear this sample's information?",
+      `<p class="help">${esc(displayNo(x))} is allocated to <strong>${esc(personName(x))}</strong>. Clearing removes the person details, occupation, SEG, location and PPE answers from this sample so it can be allocated to someone else. Equipment and the audit trail are kept. This cannot be undone.</p>`,
+      "Yes, clear it", "No");
+    if (!ok) return false;
+    if (view.page === "train" && view.trainId === x.id) collectTrain(x);
+    const why = clearInfo(x);
+    if (why) { alert(why); return false; }
+    snaps.delete(x.id);
+    save();
+    return true;
+  }
+  window.v46ClearSample = clearSample;
+  Object.assign(window.v46, { started, othersAllocated, clearInfo, hasPersonInfo });
 
   /* ---------- B12 start all on this person ---------- */
   async function startAll(t) {
@@ -9551,6 +9621,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       const b = document.getElementById("btnAllocate"), pick = document.getElementById("allocPick");
       if (b && pick) b.onclick = () => { pick.hidden = !pick.hidden; };
       const c = document.getElementById("btnAllocCancel"); if (c) c.onclick = () => { pick.hidden = true; document.querySelectorAll("[data-alloc]").forEach(i => { i.checked = false; }); };
+      document.querySelectorAll("#allocBox [data-clear]").forEach(btn => { btn.onclick = async () => { if (await clearSample(btn.dataset.clear)) render(); }; });
       const sel = document.getElementById("btnAllocSelect");
       if (sel) sel.onclick = async () => {
         const ids = [...document.querySelectorAll("[data-alloc]:checked")].map(i => i.dataset.alloc);
@@ -9579,6 +9650,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     + ".v46-pick input{width:22px;height:22px}.v46-startall{width:100%;margin-top:8px}"
     + ".v46-safe{font-size:12px;font-weight:700;margin-top:2px;color:#FFB020}.v46-safe.ok{color:#3FBF7F}"
     + ".v46-sample-sync{font-size:13px;font-weight:700;margin:6px 0 2px;padding:4px 10px;border-radius:999px;display:inline-block}.v46-sample-sync.ok{background:#16382A;color:#7FE0B0}.v46-sample-sync.wait{background:#3A2A0E;color:#FFC861}"
+    + ".v46-others{margin-top:10px}.v46-others summary{cursor:pointer;font-weight:700}.v46-other{padding:6px 0;font-size:15px}.v46-locked{color:#FFC861;font-weight:700}"
     + ".v46-unsync{display:inline-block;margin-left:8px;font-size:12px;font-weight:700;color:#FFC861}.v46-noproj{margin-top:10px}";
   document.head.appendChild(st);
   try { paintSyncBar(); render(); } catch (e) {}
