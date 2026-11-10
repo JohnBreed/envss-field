@@ -9517,6 +9517,102 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       return "current";
     } catch (e) { backupErr = String(e && e.message || e); return "error"; }
   })();
+  /* ---------- A14b: never overwrite another device's newer change (John, 11 Nov 2026: keep the team's data first) ----------
+     Before a queued sample or event is sent, the current Supabase row is read. If another device changed it since this
+     device last synced it, the two copies are merged field by field against the last synced copy (the "base"):
+       - a field changed only on the other device is taken from Supabase; a field changed only here is sent;
+       - audit entries from both devices are kept;
+       - if both changed the same field, this device's value is kept and the other device's value is written to the
+         audit trail ("Sync conflict"), so nothing is lost.
+     If Supabase cannot be read first, nothing is sent (the change stays queued and retries). */
+  const MERGE = { events: 1, trains: 1 };
+  let bases = { events: {}, trains: {} }, baseH = { events: {}, trains: {} }, baseTimer = null;
+  idbGet("bases").then(b => { if (b && typeof b === "object") ["events", "trains"].forEach(c => { bases[c] = Object.assign({}, b[c] || {}, bases[c]); }); }).catch(() => {});
+  function saveBases() { clearTimeout(baseTimer); baseTimer = setTimeout(() => { idbPut("bases", bases).catch(e => { backupErr = String(e && e.message || e); }); }, 800); }
+  function cleanRec(rec) { const o = JSON.parse(JSON.stringify(rec || {})); delete o.updatedAt; delete o.syncedAt; return o; }
+  function setBase(coll, id, payload) {
+    if (!MERGE[coll] || !id || !payload) return;
+    const h = snapOf(coll, payload);
+    if (baseH[coll][id] === h && bases[coll][id]) return;
+    baseH[coll][id] = h; bases[coll][id] = cleanRec(payload); saveBases();
+  }
+  const isObj = v => !!v && typeof v === "object" && !Array.isArray(v);
+  const same = (a, b) => stableStringify(a === undefined ? null : a) === stableStringify(b === undefined ? null : b);
+  const blankV = v => v == null || v === "" || (Array.isArray(v) && !v.length) || (isObj(v) && !Object.keys(v).some(k => !blankV(v[k])));
+  const asText = v => typeof v === "string" ? v : JSON.stringify(v === undefined ? null : v);
+  function auditKey(a) { return a && typeof a === "object" ? [a.at, a.who, a.action, a.field, asText(a.to)].join("|") : asText(a); }
+  function unionAudit(l, s) {
+    const out = [], seen = new Set();
+    (Array.isArray(s) ? s : []).concat(Array.isArray(l) ? l : []).forEach(a => { const k = auditKey(a); if (seen.has(k)) return; seen.add(k); out.push(a); });
+    return out;
+  }
+  /* which fields each side's own (not shared) audit entries say were changed; used when there is no base copy */
+  function touchedBy(mine, other) {
+    const seen = new Set((Array.isArray(other) ? other : []).map(auditKey)), f = new Set();
+    (Array.isArray(mine) ? mine : []).forEach(a => { if (a && a.field && !seen.has(auditKey(a))) f.add(String(a.field)); });
+    return f;
+  }
+  const hits = (set, at) => { for (const f of set) if (f === at || f.startsWith(at + ".") || at.startsWith(f + ".")) return true; return false; };
+  function merge3(b, l, s, path, conflicts, theirs, tl, ts) {
+    const out = {};
+    new Set(Object.keys(l || {}).concat(Object.keys(s || {}))).forEach(k => {
+      if (k === "updatedAt" || k === "syncedAt") return;
+      const lv = (l || {})[k], sv = (s || {})[k], bv = b ? b[k] : undefined, at = path ? path + "." + k : k;
+      let v;
+      if (k === "audit" && !path) v = unionAudit(lv, sv);
+      else if (same(lv, sv)) v = lv;
+      else if (b && same(lv, bv)) { v = sv; theirs.push(at); }      // changed only on the other device
+      else if (b && same(sv, bv)) v = lv;                            // changed only here
+      else if (isObj(lv) && isObj(sv)) v = merge3(b ? (isObj(bv) ? bv : {}) : null, lv, sv, at, conflicts, theirs, tl, ts);
+      else if (!b && hits(ts, at) && !hits(tl, at)) { v = sv; theirs.push(at); }  // no base: the other device's audit shows it changed this
+      else if (!b && hits(tl, at) && !hits(ts, at)) v = lv;                        // no base: this device's audit shows it changed this
+      else if (!b && blankV(lv) && !blankV(sv)) { v = sv; theirs.push(at); }   // no base: never blank out the other device's value
+      else if (!b && blankV(sv)) v = lv;
+      else { v = lv; conflicts.push({ k: at, local: asText(lv), server: asText(sv) }); }
+      if (v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+  async function reconcile(p) {
+    const rec = findRec(p.coll, p.id); if (!rec) return;
+    const c = sbCfg();
+    const res = await sbFetch(c.supabaseUrl + "/rest/v1/" + TABLE[p.coll] + "?select=id,payload,updated_at,updated_by&id=eq." + encodeURIComponent(p.id), { headers: sbHeaders() });
+    if (!res.ok) throw new Error("check before send " + res.status);
+    const row = (await res.json())[0];
+    if (!row || !row.payload) return;                                            // new row: nothing to protect
+    const server = cleanRec(row.payload);
+    const known = syncState.hash[p.coll][p.id];
+    if (known !== undefined && snapOf(p.coll, server) === known) return;          // nobody else changed it since our last sync
+    const local = cleanRec(rec);
+    if (same(local, server)) return;
+    const base = bases[p.coll][p.id] || null;
+    const conflicts = [], theirs = [];
+    const merged = merge3(base, local, server, "", conflicts, theirs, touchedBy(local.audit, server.audit), touchedBy(server.audit, local.audit));
+    Object.keys(rec).forEach(k => { if (k !== "updatedAt" && !(k in merged)) delete rec[k]; });
+    Object.assign(rec, merged);
+    rec.audit = Array.isArray(rec.audit) ? rec.audit : [];
+    const other = row.updated_by || "another device";
+    rec.audit.push({ at: nowIso(), who: whoText(), action: "Merged with a newer copy from another device", field: "", from: "", to: "",
+      detail: other + " changed this " + (p.coll === "events" ? "event" : "sample") + " too. Kept from the other device: " + (theirs.join(", ") || "audit entries only") + (conflicts.length ? ". Both changed: " + conflicts.map(x => x.k).join(", ") + " (this device's value kept, the other value is in the next audit entries)" : "") + (base ? "" : ". (No earlier synced copy on this device: blanks were filled from the other device.)") });
+    conflicts.forEach(x => rec.audit.push({ at: nowIso(), who: whoText(), action: "Sync conflict: kept this device's value", field: x.k, from: x.server, to: x.local, detail: "the other device (" + other + ") had: " + x.server }));
+    persist();
+  }
+  const _mergeRemote46 = mergeRemote;
+  mergeRemote = function (coll, rows) {
+    const r = _mergeRemote46.apply(this, arguments);
+    if (MERGE[coll]) (rows || []).forEach(row => { const pl = row && row.payload; if (pl && pl.id && !syncState.pending[coll + ":" + pl.id]) setBase(coll, pl.id, pl); });
+    return r;
+  };
+  window.mergeRemote = mergeRemote;
+  const _sendOne46 = sendOne;
+  sendOne = async function (p) {
+    if (p && MERGE[p.coll]) await reconcile(p);                                  // throws (stays queued) if Supabase cannot be read
+    const sent = await _sendOne46.apply(this, arguments);
+    if (sent && p && MERGE[p.coll]) setBase(p.coll, p.id, Object.assign({ id: p.id }, sent));
+    return sent;
+  };
+  window.sendOne = sendOne;
+  window.v46Merge = { merge3, bases: () => bases };
   /* records saved here that Supabase has not confirmed yet (pending, or never seen remotely) */
   function unsyncedOf(coll, rec) {
     const id = recId(coll, rec); if (!id) return false;

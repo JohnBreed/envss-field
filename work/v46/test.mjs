@@ -202,6 +202,23 @@ opts.failTables = []; await ev(() => { envssSync.scanDirty(); envssSync.flushQue
 const rr = await ev(F => ({ n: v46Unsynced(), p: JSON.stringify(envssSync.state().pending).slice(0, 200) }), F);
 ok("A14 retry succeeds", rr.n === 0 && ((store.envss_trains.get(F) || {}).payload || {}).comments === "TEST retry", JSON.stringify(rr) + " remote:" + ((store.envss_trains.get(F) || {}).payload || {}).comments);
 
+/* A14b: a newer change from another device is merged, not overwritten */
+{
+  const row = store.envss_trains.get(F); const pl = JSON.parse(JSON.stringify(row.payload));
+  pl.comments = "TEST other device comment"; pl.audit = (pl.audit || []).concat([{ at: new Date().toISOString(), who: "Other Device <o@envss.com.au>", action: "edit", field: "comments", from: "", to: "TEST other device comment" }]);
+  store.envss_trains.set(F, Object.assign({}, row, { payload: pl, updated_by: "Other Device <o@envss.com.au> · Android", updated_at: new Date().toISOString() }));
+  await ev(F => { const t = db.trains.find(x => x.id === F); t.location = "TEST this device location"; save(); }, F); await sleep(2500);
+  const m = (store.envss_trains.get(F) || {}).payload || {};
+  ok("A14b other device's newer edit kept when this device sends its own", m.comments === "TEST other device comment" && m.location === "TEST this device location" && (m.audit || []).some(a => a.who && /Other Device/.test(a.who)) , JSON.stringify({ c: m.comments, l: m.location }));
+  const pl2 = JSON.parse(JSON.stringify(store.envss_trains.get(F).payload)); pl2.location = "TEST other device location";
+  store.envss_trains.set(F, Object.assign({}, store.envss_trains.get(F), { payload: pl2, updated_by: "Other Device <o@envss.com.au> · Android" }));
+  await ev(F => { const t = db.trains.find(x => x.id === F); t.location = "TEST this device location 2"; save(); }, F); await sleep(2500);
+  const m2 = (store.envss_trains.get(F) || {}).payload || {}; const cf = (m2.audit || []).find(a => /Sync conflict/.test(a.action) && a.field === "location");
+  ok("A14b same field changed on both: this device's value kept, other value in the audit trail", m2.location === "TEST this device location 2" && cf && cf.from === "TEST other device location", JSON.stringify(cf || null).slice(0, 120));
+  const dbl = await ev(F => db.trains.find(x => x.id === F).location, F);
+  ok("A14b device and Supabase agree after the merge", dbl === m2.location);
+}
+
 /* 6. existing flows: field blank, airborne start/stop with soft warning */
 await ev(() => { addTrain("etest", "blank"); }); await sleep(200);
 ok("field blank: no START gates", await ev(() => startGaps(db.trains.find(t => t.id === view.trainId)).length === 0));

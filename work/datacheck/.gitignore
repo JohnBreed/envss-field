@@ -1,0 +1,3 @@
+# live-data copies and run results stay on the box only (never published)
+*.json
+result_*.txt
