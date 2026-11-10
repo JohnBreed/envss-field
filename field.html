@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ENVSS Field v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
 <!-- ENVSS Field v36 single-file build v44 (field.html, live; v44d: photos shrunk, kept in IndexedDB and uploaded to the private field-photos bucket, record keeps references only; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
@@ -406,10 +407,22 @@ body.has-fab { padding-bottom: 104px; }
   </div>
   <div id="app"></div>
   <script src="config.js?v=46"></script>
+  <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
 const APP_VERSION = "46"; /* 2026-11-11 (AWST): v46 = merge of v45d.1 (PR #1) + v45e login log (PR #2) + section B + A14 core sync + noise.js split. */
+/* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
+   samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
+const NOISE_STUB = {
+  version: "not loaded", loaded: false,
+  rejects: () => [{ code: "measurement_fault", label: "Measurement fault", photo: false }],
+  startGaps: () => ["Noise module (reload the app)"],
+  equipHtml: () => '<p class="help" style="color:var(--danger);font-weight:700">Noise module did not load. Reload the app before using this noise sample.</p>',
+  hpdFields: () => "",
+  installTrainLayer: () => {}
+};
+function noiseApi() { return window.ENVSS_NOISE && window.ENVSS_NOISE.loaded ? window.ENVSS_NOISE : NOISE_STUB; }
 
 const REJECTS = [
   { code: "pump_fault", label: "Pump fault / equipment failure", photo: false },
@@ -1312,16 +1325,23 @@ function elapsedLabel(startAt) {
   const h = Math.floor(m / 60);
   return (h ? h + "h " : "") + (m % 60) + "m running";
 }
+/* v46 B10 (John, 11 Nov 2026): START is blocked until these are filled. STOP has no hard gate (soft warnings only).
+   Noise personal: dosimeter serial, first name, last name, occupation. Noise static: dosimeter serial, location.
+   Airborne personal: contaminant, pump serial, sample head, cassette/filter/tube, start flow, first name, last name, occupation.
+   Airborne static: the same equipment fields plus location. Passive badge: badge ID, first name, last name, occupation.
+   Location is recorded on every type but only blocks START on static samples (B13a). */
 function startGaps(t) {
   const miss = [];
   if (isBlank(t)) return miss;
-  if (isNoise(t)) {
-    if (!t.dosimeterSerial) miss.push("Dosimeter serial");
-    if (isStatic(t)) { if (!t.location) miss.push("Location"); }
-    else {
-      if (!t.person?.first) miss.push("First name");
-      if (!t.person?.last) miss.push("Last name");
-    }
+  const person = () => {
+    if (!t.person?.first) miss.push("First name");
+    if (!t.person?.last) miss.push("Last name");
+    if (!String(t.person?.occupation || "").trim()) miss.push("Occupation");
+  };
+  if (isNoise(t)) return noiseApi().startGaps(t);   /* noise gate lives in noise.js */
+  if (isPassive(t)) {
+    if (!String(t.badgeId || "").trim()) miss.push("Badge ID");
+    person();
     return miss;
   }
   if (!t.contaminantId) miss.push("Contaminant");
@@ -1330,17 +1350,13 @@ function startGaps(t) {
   if (!t.mediaId) miss.push("Cassette / filter / tube");
   if (!t.startFlow) miss.push("Start flow");
   if (isStatic(t)) { if (!t.location) miss.push("Location"); }
-  else {
-    if (!t.person?.first) miss.push("First name");
-    if (!t.person?.last) miss.push("Last name");
-  }
+  else person();
   return miss;
 }
 function optionalGaps(t) {
   if (isBlank(t)) return [];
   const miss = [];
-  if (!isStatic(t) && !t.person?.occupation) miss.push("Occupation");
-  if (!isNoise(t) && t.status === "ended" && !t.endFlow) miss.push("End flow");
+  if (!isNoise(t) && !isPassive(t) && t.status === "ended" && !t.endFlow) miss.push("End flow");
   if (!t.comments) miss.push("Comments");
   return miss;
 }
@@ -1356,6 +1372,7 @@ function kindLabel(t) {
   return ({
     airborne_personal: "Airborne · personal",
     airborne_static: "Airborne · static",
+    airborne_passive: "Airborne · passive badge",
     blank: "Field blank",
     noise_personal: "Noise · personal",
     noise_static: "Noise · static"
@@ -1377,7 +1394,8 @@ function blankComplete(t) {
   const hasDate = !!(t.shiftDate || ev.date);
   return hasAnalysis && hasMedia && hasNo && hasDate;
 }
-function isAirbornePersonal(t) { return (t.trainKind || "airborne_personal") === "airborne_personal"; }
+function isAirbornePersonal(t) { const k = t.trainKind || "airborne_personal"; return k === "airborne_personal" || k === "airborne_passive"; }   /* v46: passive badges are worn by a person (RPD / PPE asked) */
+function isPassive(t) { return !!t && t.trainKind === "airborne_passive"; }   /* v46 B12 */
 function isStatic(t) { return (t.trainKind || "").endsWith("static") || t.mode === "static"; }
 
 function displayStatus(t) {
@@ -1418,7 +1436,7 @@ function followUpComplete(t) {
     if (worn === "yes" && !(t.hpd?.model || "").trim()) return false;
   }
   if (!personComplete(t)) return false;
-  if (!isNoise(t) && !isBlank(t) && t.status === "ended" && !t.endFlow) return false;
+  if (!isNoise(t) && !isBlank(t) && !isPassive(t) && t.status === "ended" && !t.endFlow) return false;
   return true;
 }
 function badge(status) {
@@ -1577,6 +1595,7 @@ function titleLine(t) {
   if (c && !isNoise(t)) parts.push(c.code);
   if (isBlank(t)) { parts.push(dash(t.mediaId)); return parts.join(" · "); }   /* v45b: blanks show the cassette, not the (hidden) head */
   if (isNoise(t)) { parts.push(dash(t.dosimeterSerial)); return parts.join(" · "); }
+  if (isPassive(t)) { parts.push("badge " + dash(t.badgeId)); return parts.join(" · "); }   /* v46 */
   parts.push(dash(t.pumpSerial), dash(t.headId), dash(t.mediaId));
   return parts.join(" · ");
 }
@@ -1684,19 +1703,10 @@ function trainHtml() {
             <input id="contam" value="${esc(c ? c.code + " — " + c.name : "")}" placeholder="INH, SIL, DP, WLD, ASB">
             <div class="suggest" id="sug-contam"></div>
           </div>`}
-          ${isNoise(t) ? `
-          <label>Dosimeter serial</label>
-          <div class="combo">
-            <input id="dosimeter" value="${esc(t.dosimeterSerial)}" placeholder="Badge serial">
-            <div class="suggest" id="sug-dosimeter"></div>
-          </div>
-          <p class="help">Serial on the badge (not the noise sample number).</p>
-          <label>Field calibrator</label>
-          <div class="combo">
-            <input id="fieldCal" value="${esc(t.fieldCalibrator || "")}" placeholder="Acoustic calibrator serial" autocomplete="off">
-            <div class="suggest" id="sug-fieldCal"></div>
-          </div>
-          <p class="help">Acoustic calibrator used for the dosimeter field calibration check.</p>` : isBlank(t) ? `
+          ${isNoise(t) ? noiseApi().equipHtml(t) : isPassive(t) ? `
+          <label>Badge ID</label>
+          <input id="badgeId" value="${esc(t.badgeId || "")}" placeholder="Passive badge ID / serial" autocomplete="off">
+          <p class="help">Typed for now. No pump, sample head or flow on a passive badge.</p>` : isBlank(t) ? `
           <label>Sample head</label>
           <div class="combo">
             <input id="head" value="${esc(t.headId)}" placeholder="IESS… / RESS… / DP…">
@@ -1718,7 +1728,9 @@ function trainHtml() {
           <input id="media" value="${esc(t.mediaId)}">`}
         </div>
         <div>
-          ${isBlank(t) || isNoise(t) ? "" : `
+          ${isBlank(t) || isNoise(t) ? "" : isPassive(t) ? `
+          <label>Runtime</label>
+          <input value="${mins == null ? "—" : mins.toFixed(1) + " min"}" disabled>` : `
           <label>Rotameter</label>
           <div class="combo">
             <input id="rotameter" value="${esc(t.rotameter || "")}" placeholder="Flow calibrator / rotameter ID" autocomplete="off">
@@ -1784,12 +1796,7 @@ function trainHtml() {
     </div>`;
 }
 
-function noiseRejects() {
-  return [
-    { code: "battery_fault", label: "Battery fault", photo: false },
-    { code: "measurement_fault", label: "Measurement fault", photo: false }
-  ];
-}
+function noiseRejects() { return noiseApi().rejects(); }   /* noise fault reasons live in noise.js */
 function rejectList(t) { return isNoise(t) ? noiseRejects() : REJECTS; }
 
 function yn(name, val, extra) {
@@ -1912,6 +1919,7 @@ function modeFields(t) {
     <div><label>Hours / shift</label><input id="hours" value="${esc(p.hours)}"></div>
     <div><label>Days on</label><input id="daysOn" value="${esc(p.daysOn)}"></div>
     <div><label>Days off</label><input id="daysOff" value="${esc(p.daysOff)}"></div>
+    <div><label>Location</label><input id="location" value="${esc(t.location || "")}" placeholder="e.g. Crusher west (recorded, not needed to start)"></div>
   </div>`;
 }
 function mineCodesHtml(t) {
@@ -1956,29 +1964,14 @@ function rqYn(field, label, v) {
   return `<div class="rq-q"><label>${label}</label><div class="filters">${[["yes", "Yes"], ["no", "No"]].map(([val, l]) =>
     `<button type="button" class="chip ${cur === val ? "on" : ""}" data-rq="${field}" data-val="${val}">${l}</button>`).join("")}</div></div>`;
 }
-function hpdFields(t) {
-  const h = t.hpd || {};
-  const asked = t.hpdAsked || "";
-  const on = asked === "yes";
-  return `<div class="${asked ? "" : "need-yn"}">
-      <label>Hearing protection worn?</label>
-      ${yn("hpd", asked, [["yes","Yes"],["no","No"],["unknown","Unknown"]])}
-    </div>
-    <div id="hpdBox" style="${on ? "" : "display:none"}">
-      <label>Brand / model</label>
-      <input id="hpdModel" value="${esc(h.model)}" placeholder="Brand model or Unknown">
-      <label>Style</label>
-      <input id="hpdStyle" value="${esc(h.style)}" placeholder="earmuff / earplug">
-      <label>Class / attenuation</label>
-      <input id="hpdClass" value="${esc(h.classRating)}" placeholder="e.g. Class 4 / SLC80 or Unknown">
-    </div>`;
-}
+function hpdFields(t) { return noiseApi().hpdFields(t); }   /* hearing protection lives in noise.js */
 
 function pickTypeHtml() {
   const ev = eventById(view.eventId);
   const opts = [
     ["airborne_personal", "Airborne · personal", "Worn pump. Person, RPD, flow, start/stop."],
     ["airborne_static", "Airborne · static", "Fixed location. No person, no RPD."],
+    ["airborne_passive", "Airborne · passive badge", "Badge worn by a person. Contaminant + badge ID. No pump, head or flow."],
     ["blank", "Field blank", "Control. Contaminant + cassette only. Not run."],
     ["noise_personal", "Noise · personal", "Dose badge on a person. HPD. No cassette."],
     ["noise_static", "Noise · static", "Dose badge at a location."]
@@ -2367,8 +2360,10 @@ function collectTrain(t) {
   const sd = g("shiftDate")?.value || t.shiftDate || "";
   if (g("startAt") && g("startAt").value) t.startAt = combineShiftTime(sd, g("startAt").value, false);
   if (g("endAt") && g("endAt").value) t.endAt = combineShiftTime(sd, g("endAt").value, true, g("startAt")?.value || toLocalInput(t.startAt));
+  if (g("badgeId")) t.badgeId = g("badgeId").value.trim();   /* v46 B12 */
   if (t.mode === "static") t.location = g("location")?.value || "";
   else {
+    if (g("location")) t.location = g("location").value.trim();   /* v46 B13a: location recorded on personal samples too */
     const dd = (g("dobD")?.value || "").replace(/\D/g,"");
     const mm = (g("dobM")?.value || "").replace(/\D/g,"");
     const yy = (g("dobY")?.value || "").replace(/\D/g,"");
@@ -2585,6 +2580,7 @@ function trainKindOptions(t) {
   const airSet = [
     ["airborne_personal", "Airborne · personal"],
     ["airborne_static", "Airborne · static"],
+    ["airborne_passive", "Airborne · passive badge"],
     ["blank", "Field blank"]
   ];
   const set = cur.startsWith("noise") ? noiseSet : airSet;
@@ -2847,8 +2843,16 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) pull
 setInterval(() => { if (!document.hidden) pullActivity(); }, 8000);
 paintSyncBar();
 
+/* v46: the stable interface noise.js uses. Getters, so later layers that re-wrap save/render are always the ones called. */
+window.envssCore = {
+  db: () => db, save: (...a) => save(...a), saveQuiet: (...a) => saveQuiet(...a), commit: (...a) => commit(...a),
+  audit: (...a) => audit(...a), get photos() { return window.envssPhotos; }, get sync() { return window.envssSync; },
+  operator: () => getOperator(), who: () => whoText(), captureLocation: () => captureLocation(), render: () => render(),
+  esc: v => esc(v), yn: (...a) => yn(...a), view: () => view, trainsOf: id => trainsOf(id), eventById: id => eventById(id),
+  isNoise: t => isNoise(t), isStatic: t => isStatic(t), isBlank: t => isBlank(t), appVersion: APP_VERSION
+};
 </script>
-  <script>document.getElementById("appVersion").textContent = "v" + APP_VERSION;</script>
+  <script>document.getElementById("appVersion").textContent = "v" + APP_VERSION; document.getElementById("appVersion").title = "App v" + APP_VERSION + " · noise.js " + noiseApi().version;</script>
   <script>
 /* catalogs-srs.js inlined */
 window.ENVSS_SRS_CATALOGS = {"version": "2026-10-01c", "occupations": [{"code": "100000", "name": "Management and supervisory", "parentCode": "", "parentName": "", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "110000", "name": "General management occupations", "parentCode": "100000", "parentName": "Management and supervisory", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "111000", "name": "Financial manager", "parentCode": "110000", "parentName": "General management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "112000", "name": "Personnel manager", "parentCode": "110000", "parentName": "General management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "113000", "name": "Sales manager", "parentCode": "110000", "parentName": "General management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "114000", "name": "Purchasing manager", "parentCode": "110000", "parentName": "General management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "115000", "name": "Manager NOC", "parentCode": "110000", "parentName": "General management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "120000", "name": "Engineering occupations", "parentCode": "100000", "parentName": "Management and supervisory", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "121000", "name": "Mining engineer", "parentCode": "120000", "parentName": "Engineering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "122000", "name": "Mechanical engineer", "parentCode": "120000", "parentName": "Engineering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "123000", "name": "Civil engineer", "parentCode": "120000", "parentName": "Engineering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "124000", "name": "Chemical engineer", "parentCode": "120000", "parentName": "Engineering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "125000", "name": "Metallurgical engineer", "parentCode": "120000", "parentName": "Engineering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "126000", "name": "Petroleum engineer", "parentCode": "120000", "parentName": "Engineering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "129000", "name": "Engineer NOC", "parentCode": "120000", "parentName": "Engineering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "130000", "name": "Professional and related occupations", "parentCode": "100000", "parentName": "Management and supervisory", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "131000", "name": "Chemist", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "132000", "name": "Geologist", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "133000", "name": "Metallurgist", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "134000", "name": "Environmental scientist or assistant", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "135000", "name": "Surveyor", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "136000", "name": "Draftsman", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "137000", "name": "Health or medical occupations", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "137100", "name": "Doctor", "parentCode": "137000", "parentName": "Health or medical occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "137200", "name": "Occupational health nurse", "parentCode": "137000", "parentName": "Health or medical occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "137300", "name": "First aid attendant", "parentCode": "137000", "parentName": "Health or medical occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "138000", "name": "Industrial hygienist", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "139000", "name": "Professional and related NOC", "parentCode": "130000", "parentName": "Professional and related occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "140000", "name": "Management or administration services", "parentCode": "100000", "parentName": "Management and supervisory", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "141000", "name": "Security officer", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "142000", "name": "Safety officer", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "143000", "name": "Training officer", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "144000", "name": "Personnel officer", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "145000", "name": "Clerical or secretarial occupations", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "146000", "name": "Township or accommodation occupations", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "146100", "name": "Caretaker", "parentCode": "146000", "parentName": "Township or accommodation occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "146200", "name": "Housekeeper or cleaner", "parentCode": "146000", "parentName": "Township or accommodation occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "146300", "name": "Handyman", "parentCode": "146000", "parentName": "Township or accommodation occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "146400", "name": "Gardener", "parentCode": "146000", "parentName": "Township or accommodation occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "146500", "name": "Groundsman", "parentCode": "146000", "parentName": "Township or accommodation occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "146900", "name": "Township or accommodation occupations NOC", "parentCode": "146000", "parentName": "Township or accommodation occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "147000", "name": "Catering occupations", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "147100", "name": "Cook", "parentCode": "147000", "parentName": "Catering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "147200", "name": "Catering assistant", "parentCode": "147000", "parentName": "Catering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "147300", "name": "Kitchen hand", "parentCode": "147000", "parentName": "Catering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "147400", "name": "Canteen attendant", "parentCode": "147000", "parentName": "Catering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "147900", "name": "Catering occupations NOC", "parentCode": "147000", "parentName": "Catering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "148000", "name": "Cleaning or laundering occupations", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "148100", "name": "Cleaners", "parentCode": "148000", "parentName": "Cleaning or laundering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "148200", "name": "Change house attendant", "parentCode": "148000", "parentName": "Cleaning or laundering occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "149000", "name": "Manager or administrative services occupations NOC", "parentCode": "140000", "parentName": "Management or administration services", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "150000", "name": "Mine management occupations", "parentCode": "100000", "parentName": "Management and supervisory", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "151000", "name": "Mine manager", "parentCode": "150000", "parentName": "Mine management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "152000", "name": "Underground manager", "parentCode": "150000", "parentName": "Mine management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "153000", "name": "Assistant underground manager", "parentCode": "150000", "parentName": "Mine management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "154000", "name": "Under manager", "parentCode": "150000", "parentName": "Mine management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "155000", "name": "Mine or pit superintendent", "parentCode": "150000", "parentName": "Mine management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "159000", "name": "Mine management occupations NOC", "parentCode": "150000", "parentName": "Mine management occupations", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "160000", "name": "Supervisory occupation", "parentCode": "100000", "parentName": "Management and supervisory", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "161000", "name": "Deputy (coal)", "parentCode": "160000", "parentName": "Supervisory occupation", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "162000", "name": "Foreman or shift boss underground", "parentCode": "160000", "parentName": "Supervisory occupation", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "163000", "name": "Foreman or shift foreman surface", "parentCode": "160000", "parentName": "Supervisory occupation", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "164000", "name": "Overman (coal)", "parentCode": "160000", "parentName": "Supervisory occupation", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "165000", "name": "Supervisor", "parentCode": "160000", "parentName": "Supervisory occupation", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "170000", "name": "Prospector", "parentCode": "100000", "parentName": "Management and supervisory", "majorGroup": "100000 Management and supervisory", "active": "Y"}, {"code": "200000", "name": "Underground production and services", "parentCode": "", "parentName": "", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "210000", "name": "Miners production or development (underground)", "parentCode": "200000", "parentName": "Underground production and services", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211000", "name": "Contract miners", "parentCode": "210000", "parentName": "Miners production or development (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211100", "name": "Stope miner", "parentCode": "211000", "parentName": "Contract miners", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211110", "name": "Stope miner – handheld", "parentCode": "211100", "parentName": "Stope miner", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211120", "name": "Stope miner – jumbo", "parentCode": "211100", "parentName": "Stope miner", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211200", "name": "Development miner", "parentCode": "211000", "parentName": "Contract miners", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211210", "name": "Development miner – handheld", "parentCode": "211200", "parentName": "Development miner", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211220", "name": "Development miner – jumbo", "parentCode": "211200", "parentName": "Development miner", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211300", "name": "Shaft sinker", "parentCode": "211000", "parentName": "Contract miners", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211310", "name": "Shaft sinker – handheld", "parentCode": "211300", "parentName": "Shaft sinker", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "211320", "name": "Shaft sinker – jumbo", "parentCode": "211300", "parentName": "Shaft sinker", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "212000", "name": "Coal miner (underground)", "parentCode": "210000", "parentName": "Miners production or development (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "212100", "name": "Composite miner", "parentCode": "212000", "parentName": "Coal miner (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "212200", "name": "Continuous miner driver", "parentCode": "212000", "parentName": "Coal miner (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "212300", "name": "Machineman", "parentCode": "212000", "parentName": "Coal miner (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "212400", "name": "Coal miner NOC", "parentCode": "212000", "parentName": "Coal miner (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "212500", "name": "Borer / shotfirer", "parentCode": "212000", "parentName": "Coal miner (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "212600", "name": "Shiftman", "parentCode": "212000", "parentName": "Coal miner (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "213000", "name": "Non-contract miners (underground)", "parentCode": "210000", "parentName": "Miners production or development (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "213100", "name": "Miner – handheld", "parentCode": "213000", "parentName": "Non-contract miners (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "213200", "name": "Miner – jumbo", "parentCode": "213000", "parentName": "Non-contract miners (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "213300", "name": "Popper machineman", "parentCode": "213000", "parentName": "Non-contract miners (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "214000", "name": "Trainee miner", "parentCode": "210000", "parentName": "Miners production or development (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "215000", "name": "Miner NOC", "parentCode": "210000", "parentName": "Miners production or development (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "216000", "name": "Miner assistant", "parentCode": "210000", "parentName": "Miners production or development (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "220000", "name": "Long hole drill and blast occupations (underground)", "parentCode": "200000", "parentName": "Underground production and services", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "221000", "name": "Long hole drill operator", "parentCode": "220000", "parentName": "Long hole drill and blast occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "222000", "name": "Long hole driller assistant", "parentCode": "220000", "parentName": "Long hole drill and blast occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "223000", "name": "Shotfirer", "parentCode": "220000", "parentName": "Long hole drill and blast occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "224000", "name": "Shotfirer assistant (charging)", "parentCode": "220000", "parentName": "Long hole drill and blast occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "230000", "name": "Diamond driller / raiseborers", "parentCode": "200000", "parentName": "Underground production and services", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "231000", "name": "Diamond drill operator", "parentCode": "230000", "parentName": "Diamond driller / raiseborers", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "232000", "name": "Diamond drillers assistant", "parentCode": "230000", "parentName": "Diamond driller / raiseborers", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "233000", "name": "Raiseborer operator", "parentCode": "230000", "parentName": "Diamond driller / raiseborers", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "234000", "name": "Raiseborer assistant", "parentCode": "230000", "parentName": "Diamond driller / raiseborers", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "240000", "name": "Loading / transport occupations (underground)", "parentCode": "200000", "parentName": "Underground production and services", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "241000", "name": "Diesel loader operator", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "243000", "name": "Scraper operator", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "244000", "name": "Locomotive driver", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "245000", "name": "Truck driver", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "246000", "name": "Plant operator", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "246100", "name": "Bobcat driver", "parentCode": "246000", "parentName": "Plant operator", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "246200", "name": "Grader driver", "parentCode": "246000", "parentName": "Plant operator", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "247000", "name": "Underground personnel transport driver", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "248000", "name": "Conveyor attendant or operator", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "249000", "name": "Trucker", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "249900", "name": "Loading or transport occupations NOC", "parentCode": "240000", "parentName": "Loading / transport occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "250000", "name": "Ground / roof support occupations (underground)", "parentCode": "200000", "parentName": "Underground production and services", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "251000", "name": "Timberman", "parentCode": "250000", "parentName": "Ground / roof support occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "252000", "name": "Roofbolter", "parentCode": "250000", "parentName": "Ground / roof support occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "253000", "name": "Hydraulic fill operator", "parentCode": "250000", "parentName": "Ground / roof support occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "260000", "name": "Services occupations (underground)", "parentCode": "200000", "parentName": "Underground production and services", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "261000", "name": "Ventilation occupations", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "261100", "name": "Ventilation officer", "parentCode": "261000", "parentName": "Ventilation occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "261200", "name": "Ventilation man", "parentCode": "261000", "parentName": "Ventilation occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "262000", "name": "Tracklayer or platelayer", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "263000", "name": "Pipefitter", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "264000", "name": "Pumpman or pump attendant", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "265000", "name": "Nipper or salvageman / utilityman", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "266000", "name": "Underground crushing operator", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "266100", "name": "Grizzleyman / pass runner", "parentCode": "266000", "parentName": "Underground crushing operator", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "267000", "name": "Underground labourer / tool carrier", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "268000", "name": "Sanitaryman", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "269000", "name": "Underground services occupation NOC", "parentCode": "260000", "parentName": "Services occupations (underground)", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "269100", "name": "Scaler", "parentCode": "269000", "parentName": "Underground services occupation NOC", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "270000", "name": "Underground winding & hoisting occupations", "parentCode": "200000", "parentName": "Underground production and services", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "271000", "name": "Winding engine driver", "parentCode": "270000", "parentName": "Underground winding & hoisting occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "272000", "name": "Hoist driver", "parentCode": "270000", "parentName": "Underground winding & hoisting occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "273000", "name": "Platman", "parentCode": "270000", "parentName": "Underground winding & hoisting occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "274000", "name": "Skipman", "parentCode": "270000", "parentName": "Underground winding & hoisting occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "275000", "name": "Braceman", "parentCode": "270000", "parentName": "Underground winding & hoisting occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "276000", "name": "Brakeman", "parentCode": "270000", "parentName": "Underground winding & hoisting occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "277000", "name": "Onsetter", "parentCode": "270000", "parentName": "Underground winding & hoisting occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "279000", "name": "Winding and hoisting occupations NOC", "parentCode": "270000", "parentName": "Underground winding & hoisting occupations", "majorGroup": "200000 Underground production and services", "active": "Y"}, {"code": "300000", "name": "Mining production and services (surface – open pit)", "parentCode": "", "parentName": "", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "310000", "name": "Blast hole drilling surface", "parentCode": "300000", "parentName": "Mining production and services (surface – open pit)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "311000", "name": "Blast hole drill operator", "parentCode": "310000", "parentName": "Blast hole drilling surface", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "312000", "name": "Blast hole drill operators assistant", "parentCode": "310000", "parentName": "Blast hole drilling surface", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "313000", "name": "Air track or crawl air driller", "parentCode": "310000", "parentName": "Blast hole drilling surface", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "314000", "name": "Sniper drill operator (rubber tyred)", "parentCode": "310000", "parentName": "Blast hole drilling surface", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "320000", "name": "Charging and blasting (surface)", "parentCode": "300000", "parentName": "Mining production and services (surface – open pit)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "321000", "name": "Powder monkey / leading hand / shotfirer", "parentCode": "320000", "parentName": "Charging and blasting (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "322000", "name": "Powder truck driver", "parentCode": "320000", "parentName": "Charging and blasting (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "323000", "name": "Powder crew labourer", "parentCode": "320000", "parentName": "Charging and blasting (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "330000", "name": "Exploration drilling (surface)", "parentCode": "300000", "parentName": "Mining production and services (surface – open pit)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "331000", "name": "Driller", "parentCode": "330000", "parentName": "Exploration drilling (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "332000", "name": "Driller assistant", "parentCode": "330000", "parentName": "Exploration drilling (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "340000", "name": "Excavation equipment operators (surface)", "parentCode": "300000", "parentName": "Mining production and services (surface – open pit)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "341000", "name": "Bucketwheel operator", "parentCode": "340000", "parentName": "Excavation equipment operators (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "342000", "name": "Bucketwheel operator assistant", "parentCode": "340000", "parentName": "Excavation equipment operators (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "343000", "name": "Dragline operator", "parentCode": "340000", "parentName": "Excavation equipment operators (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "344000", "name": "Rope shovel operator", "parentCode": "340000", "parentName": "Excavation equipment operators (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "346000", "name": "Hydraulic excavator operator", "parentCode": "340000", "parentName": "Excavation equipment operators (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "347000", "name": "Dredge operator", "parentCode": "340000", "parentName": "Excavation equipment operators (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "348000", "name": "Front end loader operator", "parentCode": "340000", "parentName": "Excavation equipment operators (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "349000", "name": "Excavation equipment operator NOC", "parentCode": "340000", "parentName": "Excavation equipment operators (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "350000", "name": "Mobile plant operator (surface)", "parentCode": "300000", "parentName": "Mining production and services (surface – open pit)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "351000", "name": "Bulldozer operator", "parentCode": "350000", "parentName": "Mobile plant operator (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "352000", "name": "Grader driver", "parentCode": "350000", "parentName": "Mobile plant operator (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "353000", "name": "Backhoe operator", "parentCode": "350000", "parentName": "Mobile plant operator (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "354000", "name": "Scraper driver", "parentCode": "350000", "parentName": "Mobile plant operator (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "359000", "name": "Mobile plant operator NOC", "parentCode": "350000", "parentName": "Mobile plant operator (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "360000", "name": "Driving occupations (surface)", "parentCode": "300000", "parentName": "Mining production and services (surface – open pit)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "361000", "name": "Haulage truck driver", "parentCode": "360000", "parentName": "Driving occupations (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "362000", "name": "Water truck driver", "parentCode": "360000", "parentName": "Driving occupations (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "363000", "name": "Explosives truck driver", "parentCode": "360000", "parentName": "Driving occupations (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "364000", "name": "Fuel / grease /service truck driver", "parentCode": "360000", "parentName": "Driving occupations (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "365000", "name": "Hiab truck driver", "parentCode": "360000", "parentName": "Driving occupations (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "366000", "name": "Passenger vehicle driver / bus driver", "parentCode": "360000", "parentName": "Driving occupations (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "367000", "name": "Equipment transport driver", "parentCode": "360000", "parentName": "Driving occupations (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "369000", "name": "Driver NOC", "parentCode": "360000", "parentName": "Driving occupations (surface)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "370000", "name": "Open cut service occupations", "parentCode": "300000", "parentName": "Mining production and services (surface – open pit)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "371000", "name": "Greaser / oiler", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "372000", "name": "Quarry labourer or labourer", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "373000", "name": "Fuel and lubrication serviceman", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "374000", "name": "Wash bay operator", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "375000", "name": "Dump spotter", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "376000", "name": "Weighbridge operator", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "377000", "name": "Surveyors assistant – chainman", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "378000", "name": "Field assistant pit tech, sampler", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "379000", "name": "Mine worker NOC", "parentCode": "370000", "parentName": "Open cut service occupations", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "390000", "name": "Contractor or contractors employees NOC", "parentCode": "300000", "parentName": "Mining production and services (surface – open pit)", "majorGroup": "300000 Mining production and services (surface – open pit)", "active": "Y"}, {"code": "400000", "name": "Ore treatment occupations", "parentCode": "", "parentName": "", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "410000", "name": "Final product handling / transport occupations", "parentCode": "400000", "parentName": "Ore treatment occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "411000", "name": "Processing plant operator", "parentCode": "410000", "parentName": "Final product handling / transport occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "412000", "name": "Processing plant serviceman", "parentCode": "410000", "parentName": "Final product handling / transport occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "413000", "name": "Processing plant utility worker", "parentCode": "410000", "parentName": "Final product handling / transport occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "420000", "name": "Mobile plant occupations", "parentCode": "400000", "parentName": "Ore treatment occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "422000", "name": "Mobile plant operator NOC", "parentCode": "420000", "parentName": "Mobile plant occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "430000", "name": "Final product handling / transport occupations", "parentCode": "400000", "parentName": "Ore treatment occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "431000", "name": "Final product packer / loader / dumper operator", "parentCode": "430000", "parentName": "Final product handling / transport occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "432000", "name": "Final product warehouse operator", "parentCode": "430000", "parentName": "Final product handling / transport occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "433000", "name": "Final product handling or transport NOC", "parentCode": "430000", "parentName": "Final product handling / transport occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "440000", "name": "Sampling, assay, laboratory occupations", "parentCode": "400000", "parentName": "Ore treatment occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "441000", "name": "Laboratory technician / assistant / analyst", "parentCode": "440000", "parentName": "Sampling, assay, laboratory occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "442000", "name": "Sample preparation operator", "parentCode": "440000", "parentName": "Sampling, assay, laboratory occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "443000", "name": "Sampler / sample plant operator", "parentCode": "440000", "parentName": "Sampling, assay, laboratory occupations", "majorGroup": "400000 Ore treatment occupations", "active": "Y"}, {"code": "500000", "name": "Railway operations occupations", "parentCode": "", "parentName": "", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "510000", "name": "Railway controller", "parentCode": "500000", "parentName": "Railway operations occupations", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "520000", "name": "Locomotive crews", "parentCode": "500000", "parentName": "Railway operations occupations", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "521000", "name": "Locomotive driver", "parentCode": "520000", "parentName": "Locomotive crews", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "522000", "name": "Observer", "parentCode": "520000", "parentName": "Locomotive crews", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "523000", "name": "Trainee observer", "parentCode": "520000", "parentName": "Locomotive crews", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "524000", "name": "Shunter locomotive driver", "parentCode": "520000", "parentName": "Locomotive crews", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "530000", "name": "Track laying / maintenance", "parentCode": "500000", "parentName": "Railway operations occupations", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "531000", "name": "Ganger", "parentCode": "530000", "parentName": "Track laying / maintenance", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "532000", "name": "Platelayer", "parentCode": "530000", "parentName": "Track laying / maintenance", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "533000", "name": "Track maintenance machine operator", "parentCode": "530000", "parentName": "Track laying / maintenance", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "534000", "name": "Track labourer", "parentCode": "530000", "parentName": "Track laying / maintenance", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "540000", "name": "Car and wagon examiner", "parentCode": "500000", "parentName": "Railway operations occupations", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "550000", "name": "Railway yardman", "parentCode": "500000", "parentName": "Railway operations occupations", "majorGroup": "500000 Railway operations occupations", "active": "Y"}, {"code": "600000", "name": "Metal working progressing trades", "parentCode": "", "parentName": "", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "610000", "name": "Sheet metal trades", "parentCode": "600000", "parentName": "Metal working progressing trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "611000", "name": "Metal patternmaker", "parentCode": "610000", "parentName": "Sheet metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "612000", "name": "Sheet metal worker", "parentCode": "610000", "parentName": "Sheet metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "613000", "name": "Coppersmith", "parentCode": "610000", "parentName": "Sheet metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "614000", "name": "Guillotine operator", "parentCode": "610000", "parentName": "Sheet metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "615000", "name": "Millwright", "parentCode": "610000", "parentName": "Sheet metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "620000", "name": "Metal machining trades", "parentCode": "600000", "parentName": "Metal working progressing trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "621000", "name": "Metal machinist", "parentCode": "620000", "parentName": "Metal machining trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "622000", "name": "Fitter and turner", "parentCode": "620000", "parentName": "Metal machining trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "630000", "name": "Fitters mechanical", "parentCode": "600000", "parentName": "Metal working progressing trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "631000", "name": "Fitter", "parentCode": "630000", "parentName": "Fitters mechanical", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "632000", "name": "Fitter – welder", "parentCode": "630000", "parentName": "Fitters mechanical", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "633000", "name": "Fitter – diesel", "parentCode": "630000", "parentName": "Fitters mechanical", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "634000", "name": "Fitter – pipe", "parentCode": "630000", "parentName": "Fitters mechanical", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "640000", "name": "Structural steel trades", "parentCode": "600000", "parentName": "Metal working progressing trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "641000", "name": "Boilermaker welder", "parentCode": "640000", "parentName": "Structural steel trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "642000", "name": "Boilermaker", "parentCode": "640000", "parentName": "Structural steel trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "643000", "name": "Welder", "parentCode": "640000", "parentName": "Structural steel trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "650000", "name": "Metal trades apprentices", "parentCode": "600000", "parentName": "Metal working progressing trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "651000", "name": "Sheet metal apprentice", "parentCode": "650000", "parentName": "Metal trades apprentices", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "652000", "name": "Metal machining apprentice", "parentCode": "650000", "parentName": "Metal trades apprentices", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "653000", "name": "Fitters apprentice", "parentCode": "650000", "parentName": "Metal trades apprentices", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "654000", "name": "Boilermakers apprentice", "parentCode": "650000", "parentName": "Metal trades apprentices", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "659000", "name": "Apprentice NOC", "parentCode": "650000", "parentName": "Metal trades apprentices", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "660000", "name": "Trades assistant", "parentCode": "600000", "parentName": "Metal working progressing trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "690000", "name": "Metal trades", "parentCode": "600000", "parentName": "Metal working progressing trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "691000", "name": "Tool and dye setter", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "692000", "name": "Saw setter", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "693000", "name": "Electroplater", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "694000", "name": "Blacksmith", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "695000", "name": "Shipwright", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "696000", "name": "Instrument artificer", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "697000", "name": "Lamp room mechanic and assistant", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "698000", "name": "Toolmaker", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "699000", "name": "Drill doctor", "parentCode": "690000", "parentName": "Metal trades", "majorGroup": "600000 Metal working progressing trades", "active": "Y"}, {"code": "700000", "name": "Electrical or electronic trades", "parentCode": "", "parentName": "", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "710000", "name": "Electrical trades", "parentCode": "700000", "parentName": "Electrical or electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "711000", "name": "Linesman", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "712000", "name": "Electrical fitter", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "712100", "name": "Cable splicer", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "713000", "name": "Electrical mechanic", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "714000", "name": "Automotive electrician", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "715000", "name": "Refrigeration mechanic", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "716000", "name": "Air-conditioning mechanic", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "717000", "name": "Electrical installer", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "718000", "name": "Lift mechanic", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "719000", "name": "Electrician NOC", "parentCode": "710000", "parentName": "Electrical trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "720000", "name": "Electronic trades", "parentCode": "700000", "parentName": "Electrical or electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "721000", "name": "Radio technician", "parentCode": "720000", "parentName": "Electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "722000", "name": "Telecommunication technician", "parentCode": "720000", "parentName": "Electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "723000", "name": "Telecommunication trainee", "parentCode": "720000", "parentName": "Electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "724000", "name": "Signals technician", "parentCode": "720000", "parentName": "Electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "725000", "name": "Instrument technician", "parentCode": "720000", "parentName": "Electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "730000", "name": "Electrical / electronic apprentices", "parentCode": "700000", "parentName": "Electrical or electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "731000", "name": "Electrical apprentice", "parentCode": "730000", "parentName": "Electrical / electronic apprentices", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "732000", "name": "Electronic apprentice", "parentCode": "730000", "parentName": "Electrical / electronic apprentices", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "790000", "name": "Electrical trades assistant", "parentCode": "700000", "parentName": "Electrical or electronic trades", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "791000", "name": "Electrical trades assistant", "parentCode": "790000", "parentName": "Electrical trades assistant", "majorGroup": "700000 Electrical or electronic trades", "active": "Y"}, {"code": "800000", "name": "Miscellaneous trades or utilities", "parentCode": "", "parentName": "", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "810000", "name": "Construction trades", "parentCode": "800000", "parentName": "Miscellaneous trades or utilities", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "811000", "name": "Bricklayer", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "812000", "name": "Carpenter or joiner", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "813000", "name": "Painter", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "814000", "name": "Plasterer or tiler", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "815000", "name": "Plumber or drainer", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "816000", "name": "Rigger or rope splicer", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "817000", "name": "Scaffolder", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "818000", "name": "Construction trades apprentice", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "819000", "name": "Construction trades assistant", "parentCode": "810000", "parentName": "Construction trades", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "820000", "name": "Conveyor belt repair occupations", "parentCode": "800000", "parentName": "Miscellaneous trades or utilities", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "821000", "name": "Belt repairer", "parentCode": "820000", "parentName": "Conveyor belt repair occupations", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "822000", "name": "Belt repairer assistant", "parentCode": "820000", "parentName": "Conveyor belt repair occupations", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "823000", "name": "Trainee belt repairer", "parentCode": "820000", "parentName": "Conveyor belt repair occupations", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "830000", "name": "MOTOR / ENGINE TRADES", "parentCode": "800000", "parentName": "Miscellaneous trades or utilities", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "831000", "name": "Motor mechanic", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "832000", "name": "Diesel motor mechanic", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "833000", "name": "Brake mechanic", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "834000", "name": "Tyre fitter", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "835000", "name": "Panel beater", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "836000", "name": "Spray painter", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "837000", "name": "Mechanic NOC", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "838000", "name": "Trades assistant", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "839000", "name": "Sand blaster", "parentCode": "830000", "parentName": "MOTOR / ENGINE TRADES", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "840000", "name": "Power plant operators", "parentCode": "800000", "parentName": "Miscellaneous trades or utilities", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "841000", "name": "Power plant engine driver", "parentCode": "840000", "parentName": "Power plant operators", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "842000", "name": "Power plant trainee engine driver", "parentCode": "840000", "parentName": "Power plant operators", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "843000", "name": "Power plant greaser", "parentCode": "840000", "parentName": "Power plant operators", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "844000", "name": "Boiler attendant", "parentCode": "840000", "parentName": "Power plant operators", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "845000", "name": "Fireman", "parentCode": "840000", "parentName": "Power plant operators", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "850000", "name": "Water treatment plant operator", "parentCode": "800000", "parentName": "Miscellaneous trades or utilities", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "860000", "name": "Waste disposal equipment operator", "parentCode": "800000", "parentName": "Miscellaneous trades or utilities", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "870000", "name": "Gas supply service operator", "parentCode": "800000", "parentName": "Miscellaneous trades or utilities", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "890000", "name": "Utility operator NOC", "parentCode": "800000", "parentName": "Miscellaneous trades or utilities", "majorGroup": "800000 Miscellaneous trades or utilities", "active": "Y"}, {"code": "900000", "name": "Material handling – stores or warehouse occupations", "parentCode": "", "parentName": "", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "910000", "name": "Crane driving occupations", "parentCode": "900000", "parentName": "Material handling – stores or warehouse occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "911000", "name": "Mobile crane driver", "parentCode": "910000", "parentName": "Crane driving occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "912000", "name": "Tower crane driver", "parentCode": "910000", "parentName": "Crane driving occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "913000", "name": "Overhead crane driver (cabin controlled)", "parentCode": "910000", "parentName": "Crane driving occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "914000", "name": "Crane driver NOC", "parentCode": "910000", "parentName": "Crane driving occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "915000", "name": "Dogman or cranechaser", "parentCode": "910000", "parentName": "Crane driving occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "920000", "name": "Fork lift operator", "parentCode": "900000", "parentName": "Material handling – stores or warehouse occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "930000", "name": "Storeman  NOC", "parentCode": "900000", "parentName": "Material handling – stores or warehouse occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "931000", "name": "Toolstore attendant", "parentCode": "930000", "parentName": "Storeman  NOC", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "990000", "name": "Non-mining occupations", "parentCode": "900000", "parentName": "Material handling – stores or warehouse occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "991000", "name": "Seafaring occupation", "parentCode": "990000", "parentName": "Non-mining occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "992000", "name": "Farming occupations", "parentCode": "990000", "parentName": "Non-mining occupations", "majorGroup": "900000 Material handling – stores or warehouse occupations", "active": "Y"}, {"code": "Published gaps kept: 127000–128000, 242000, 345000, 355–358, 380000s, 421000, 414–419. Dual heading 410000 and 430000 both printed as 'Final product handling / transport occupations'.", "name": "", "parentCode": "", "parentName": "", "majorGroup": "", "active": "Y"}], "contaminants": [{"id": "TCE", "code": "TCE", "name": "1,1,1-Trichloroethane", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 100.0, "stel": 200.0, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "TBE", "code": "TBE", "name": "1,1,2,2-Tetrabromoethane", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 1.0, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "ACD", "code": "ACD", "name": "Acetaldehyde", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 20.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ACT", "code": "ACT", "name": "Acetone", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 500.0, "stel": 1000.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ACN", "code": "ACN", "name": "Actinolite", "kind": "airborne", "equipment": "AS", "headHint": "AS / RESS", "defaultFlow": 1.0, "flowTolPct": 5.0, "unit": "f/mL", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "ALD", "code": "ALD", "name": "Aldehyde", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 1.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ALM", "code": "ALM", "name": "Aluminium (metal dust or oxide, as Al)", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, FC, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ALW", "code": "ALW", "name": "Aluminium welding fume (as Al)", "kind": "airborne", "equipment": "7H, FC, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "NH3", "code": "NH3", "name": "Ammonia", "kind": "airborne", "equipment": "ED, IP, PM, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 25.0, "stel": 35.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "AMS", "code": "AMS", "name": "Amosite", "kind": "airborne", "equipment": "AS", "headHint": "AS / RESS", "defaultFlow": 1.0, "flowTolPct": 5.0, "unit": "f/mL", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "ANT", "code": "ANT", "name": "Anthophyllite", "kind": "airborne", "equipment": "AS", "headHint": "AS / RESS", "defaultFlow": 1.0, "flowTolPct": 5.0, "unit": "f/mL", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "SB", "code": "SB", "name": "Antimony", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.5, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "AS", "code": "AS", "name": "Arsenic", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.05, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "ASB", "code": "ASB", "name": "Asbestos", "kind": "airborne", "equipment": "AS", "headHint": "AS / RESS", "defaultFlow": 1.0, "flowTolPct": 5.0, "unit": "f/mL", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "BNZ", "code": "BNZ", "name": "Benzene", "kind": "airborne", "equipment": "ED, PM, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 1.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "BE", "code": "BE", "name": "Beryllium & compounds", "kind": "airborne", "equipment": "7H, FC, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.002, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "BRO", "code": "BRO", "name": "Bromoform", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 0.5, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "CD", "code": "CD", "name": "Cadmium", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.01, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "LST", "code": "LST", "name": "Calcium carbonate (limestone)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "LIM", "code": "LIM", "name": "Calcium hydroxide (slaked lime)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "CAO", "code": "CAO", "name": "Calcium oxide (quicklime)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 2.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "GYP", "code": "GYP", "name": "Calcium sulphate (gypsum)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "CRB", "code": "CRB", "name": "Carbon black", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 3.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "CO2", "code": "CO2", "name": "Carbon dioxide", "kind": "airborne", "equipment": "DT, ED, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 5000.0, "stel": 30000.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "CS2", "code": "CS2", "name": "Carbon disulphide", "kind": "airborne", "equipment": "SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 10.0, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "CO", "code": "CO", "name": "Carbon monoxide", "kind": "airborne", "equipment": "DT, ED, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 30.0, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "CL2", "code": "CL2", "name": "Chlorine", "kind": "airborne", "equipment": "FC, IO, IP", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "ppm", "twa": null, "stel": null, "peak": 1.0, "adj": 1.0, "active": "Y"}, {"id": "CRM", "code": "CRM", "name": "Chromium (metal or compounds, as Cr)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.5, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "CR", "code": "CR", "name": "Chromium (VI) compounds (as Cr)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.05, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "CHR", "code": "CHR", "name": "Chrysotile", "kind": "airborne", "equipment": "AS", "headHint": "AS / RESS", "defaultFlow": 1.0, "flowTolPct": 5.0, "unit": "f/mL", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "COL", "code": "COL", "name": "Coal dust (<5% silica/quartz)", "kind": "airborne", "equipment": "C2, C3, CA, PPI", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 3.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "COB", "code": "COB", "name": "Cobalt", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.05, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "CU", "code": "CU", "name": "Copper (dust or mist, as Cu)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": null, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "CUF", "code": "CUF", "name": "Copper (fume, as Cu)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.2, "stel": null, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "CRO", "code": "CRO", "name": "Crocidolite", "kind": "airborne", "equipment": "AS", "headHint": "AS / RESS", "defaultFlow": 1.0, "flowTolPct": 5.0, "unit": "f/mL", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "CYN", "code": "CYN", "name": "Cyanides (as Cn)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "DP", "code": "DP", "name": "Diesel particulate matter (as elemental carbon)", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, DM, FC, IO, ED", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "DBK", "code": "DBK", "name": "Diisobutyl ketone (DIBK)", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 25.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "EGAM", "code": "EGAM", "name": "Environmental external gamma", "kind": "special", "equipment": "TLD, OSL", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "mSv", "twa": 0.5, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "EGAD", "code": "EGAD", "name": "Environmental gross alpha dust", "kind": "special", "equipment": "HVol", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "mBq/m3", "twa": 25.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "EGAW", "code": "EGAW", "name": "Environmental gross alpha water", "kind": "special", "equipment": "LSC", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "Bq/L", "twa": 0.5, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "EGBW", "code": "EGBW", "name": "Environmental gross beta water", "kind": "special", "equipment": "LSC", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "Bq/L", "twa": 0.5, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ERn", "code": "ERn", "name": "Environmental radon", "kind": "special", "equipment": "ARnD, PRnD", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "Bq/m3", "twa": 250.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ETn", "code": "ETn", "name": "Environmental thoron", "kind": "special", "equipment": "ATnD, PTnD", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "Bq/m3", "twa": 250.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ETL", "code": "ETL", "name": "Ethanol", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 1000.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ETA", "code": "ETA", "name": "Ethyl acetate", "kind": "airborne", "equipment": "PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 200.0, "stel": 400.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "GAM", "code": "GAM", "name": "External gamma", "kind": "special", "equipment": "TLD, OSL", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "mSv", "twa": 5.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "FVA", "code": "FVA", "name": "Ferrovanadium dust", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": 3.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "FLD", "code": "FLD", "name": "Fluorides (as F)", "kind": "airborne", "equipment": "7H, IO, IP", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 2.5, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "FHD", "code": "FHD", "name": "Formaldehyde", "kind": "airborne", "equipment": "IP, PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 1.0, "stel": 2.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "GRT", "code": "GRT", "name": "Graphite (non-fibrous)", "kind": "airborne", "equipment": "C2, C3, CA, PPI", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 3.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "HCL", "code": "HCL", "name": "Hydrogen chloride", "kind": "airborne", "equipment": "DT, FC, IP, ST", "headHint": "IESS", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": null, "stel": null, "peak": 5.0, "adj": 1.0, "active": "Y"}, {"id": "HCN", "code": "HCN", "name": "Hydrogen cyanide", "kind": "airborne", "equipment": "ED, IP, PM, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": null, "stel": null, "peak": 10.0, "adj": 1.0, "active": "Y"}, {"id": "HF", "code": "HF", "name": "Hydrogen fluoride (as F)", "kind": "airborne", "equipment": "DT, FC, IP, ST", "headHint": "IESS", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": null, "stel": null, "peak": 3.0, "adj": 1.0, "active": "Y"}, {"id": "H2S", "code": "H2S", "name": "Hydrogen sulphide", "kind": "airborne", "equipment": "DT, ED, FC, IP, ST", "headHint": "IESS", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 10.0, "stel": 15.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "INH", "code": "INH", "name": "Inhalable dust", "kind": "airborne", "equipment": "7H, IO, ED", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "FEO", "code": "FEO", "name": "Iron oxide (fume, as Fe)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "IBA", "code": "IBA", "name": "Isobutyl alcohol", "kind": "airborne", "equipment": "ED, PM, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 50.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ISO", "code": "ISO", "name": "Isocyanates (as NCO)", "kind": "airborne", "equipment": "7H, ED, FC, IO, IP, ST", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.02, "stel": 0.07, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "IPA", "code": "IPA", "name": "Isopropyl alcohol", "kind": "airborne", "equipment": "ED, PM, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 400.0, "stel": 500.0, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "PB", "code": "PB", "name": "Lead, inorganic dusts and fumes", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.05, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "LLA", "code": "LLA", "name": "Long-lived alpha", "kind": "special", "equipment": "7H", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mBq/m3", "twa": 500.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "MGO", "code": "MGO", "name": "Magnesium oxide (as Mg)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "MNF", "code": "MNF", "name": "Manganese (fume, as Mn)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": 3.0, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "MN", "code": "MN", "name": "Manganese (metal or compounds, as Mn)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "HG", "code": "HG", "name": "Mercury & compounds", "kind": "airborne", "equipment": "ED, FC, PM, ST, 7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.025, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "MEC", "code": "MEC", "name": "Methyl chloride", "kind": "airborne", "equipment": "SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 50.0, "stel": 100.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "MEK", "code": "MEK", "name": "Methyl ethyl ketone (MEK)", "kind": "airborne", "equipment": "DT, PM, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 150.0, "stel": 300.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "MKP", "code": "MKP", "name": "Methyl ethyl ketone peroxide", "kind": "airborne", "equipment": "IP, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": null, "stel": null, "peak": 0.2, "adj": 1.0, "active": "Y"}, {"id": "MBK", "code": "MBK", "name": "Methyl isobutyl ketone", "kind": "airborne", "equipment": "DT, PM, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 50.0, "stel": 75.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "MNC", "code": "MNC", "name": "Methylene chloride", "kind": "airborne", "equipment": "PM, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 50.0, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "MIC", "code": "MIC", "name": "Mica", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 2.5, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "MO", "code": "MO", "name": "Molybdenum", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "NBA", "code": "NBA", "name": "n-Butyl alcohol", "kind": "airborne", "equipment": "PM, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": null, "stel": null, "peak": 50.0, "adj": 1.0, "active": "Y"}, {"id": "HEP", "code": "HEP", "name": "n-Heptane", "kind": "airborne", "equipment": "ED, PM, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 400.0, "stel": 500.0, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "HEX", "code": "HEX", "name": "n-Hexane", "kind": "airborne", "equipment": "ED, PM, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 20.0, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "NI", "code": "NI", "name": "Nickel (metal)", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "NSO", "code": "NSO", "name": "Nickel (soluble compounds, as Ni)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "NIS", "code": "NIS", "name": "Nickel sulphide (fume or dust, as Ni)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "HNO", "code": "HNO", "name": "Nitric acid", "kind": "airborne", "equipment": "DT, FC, ST", "headHint": "IESS", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 2.0, "stel": 4.0, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "NO", "code": "NO", "name": "Nitric oxide", "kind": "airborne", "equipment": "DT, ED, ST, PM", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 25.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "NO2", "code": "NO2", "name": "Nitrogen dioxide", "kind": "airborne", "equipment": "DT, ED, ST, PM", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 3.0, "stel": 5.0, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "NPA", "code": "NPA", "name": "n-Propyl alcohol", "kind": "airborne", "equipment": "PM", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 200.0, "stel": 250.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "OCT", "code": "OCT", "name": "Octane", "kind": "airborne", "equipment": "DT, PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 300.0, "stel": 375.0, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "OIL", "code": "OIL", "name": "Oil mist (refined mineral oils)", "kind": "airborne", "equipment": "7H, FC, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "PCE", "code": "PCE", "name": "Perchloroethylene", "kind": "airborne", "equipment": "DT, PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 50.0, "stel": 150.0, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "PAH", "code": "PAH", "name": "Polycyclic aromatic hydrocarbons (PAH)", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, DM, FC, IO, ST", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.2, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "rIN", "code": "rIN", "name": "Real-time INH", "kind": "special", "equipment": "ED", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "rRE", "code": "rRE", "name": "Real-time RES", "kind": "special", "equipment": "ED", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 3.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "rDP", "code": "rDP", "name": "Real-time DPM", "kind": "special", "equipment": "ED", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "rCS", "code": "rCS", "name": "Real-time SIL", "kind": "special", "equipment": "ED", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.05, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "RES", "code": "RES", "name": "Respirable dust", "kind": "airborne", "equipment": "C2, C3, CA, PPI, ED", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 3.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "SBA", "code": "SBA", "name": "sec-Butyl alcohol", "kind": "airborne", "equipment": "ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 100.0, "stel": null, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "SE", "code": "SE", "name": "Selenium", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.1, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "ASL", "code": "ASL", "name": "Silica, amorphous", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 2.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "SIL", "code": "SIL", "name": "Silica, crystalline (quartz)", "kind": "airborne", "equipment": "C2, C3, CA, PPI, ED", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.05, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "AG", "code": "AG", "name": "Silver (metal)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "SPS", "code": "SPS", "name": "Soapstone (inhalable)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 6.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "SPR", "code": "SPR", "name": "Soapstone (respirable)", "kind": "airborne", "equipment": "C2, C3, CA, PPI", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 3.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "NAH", "code": "NAH", "name": "Sodium hydroxide", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, FC, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": null, "stel": null, "peak": 2.0, "adj": 1.0, "active": "Y"}, {"id": "STY", "code": "STY", "name": "Styrene (monomer)", "kind": "airborne", "equipment": "PM, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 50.0, "stel": 100.0, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "SO2", "code": "SO2", "name": "Sulphur dioxide", "kind": "airborne", "equipment": "DT, ED, FC, IP, ST, PM", "headHint": "IESS", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 2.0, "stel": 5.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "HSO", "code": "HSO", "name": "Sulphuric acid", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, FC, IO, IP, ST", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": 3.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "SMF", "code": "SMF", "name": "Synthetic mineral fibres (SMF, as dust)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 2.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "RCF", "code": "RCF", "name": "Synthetic mineral fibres (SMF, as fibrous)", "kind": "airborne", "equipment": "FC", "headHint": "IESS", "defaultFlow": null, "flowTolPct": 5.0, "unit": "f/mL", "twa": 0.5, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "TAF", "code": "TAF", "name": "Talc (fibrous)", "kind": "airborne", "equipment": "AS", "headHint": "AS / RESS", "defaultFlow": 1.0, "flowTolPct": 5.0, "unit": "f/mL", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "TAD", "code": "TAD", "name": "Talc (non-fibrous)", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 2.5, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "TAM", "code": "TAM", "name": "Tantalum", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "TE", "code": "TE", "name": "Tellurium", "kind": "airborne", "equipment": "7H, IO, ST", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.1, "stel": null, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "THA", "code": "THA", "name": "Thallium (soluble compounds, as Tl)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.1, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "TIN", "code": "TIN", "name": "Tin (metal)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 2.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "SNO", "code": "SNO", "name": "Tin (oxide or inorganic compounds, as Sn)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 2.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "TID", "code": "TID", "name": "Titanium dioxide", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "TOL", "code": "TOL", "name": "Toluene", "kind": "airborne", "equipment": "ED, IP, PM, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 50.0, "stel": 150.0, "peak": null, "adj": 4.0, "active": "Y"}, {"id": "TOT", "code": "TOT", "name": "Total dust", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "TPH", "code": "TPH", "name": "Total petroleum hydrocarbons (TPH)", "kind": "airborne", "equipment": "ED, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 480.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "TRI", "code": "TRI", "name": "Trichloroethylene", "kind": "airborne", "equipment": "DT, PM, SB, ST", "headHint": "", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 10.0, "stel": 40.0, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "TUN", "code": "TUN", "name": "Tungsten", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": 10.0, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "VAN", "code": "VAN", "name": "Vanadium (as V2O5)", "kind": "airborne", "equipment": "7H, C2, C3, CA, PPI, IO", "headHint": "RESS", "defaultFlow": 2.2, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 0.05, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "WLD", "code": "WLD", "name": "Welding fumes", "kind": "airborne", "equipment": "7H, FC, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": null, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "WDH", "code": "WDH", "name": "Wood dust (hardwoods)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 1.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "WDS", "code": "WDS", "name": "Wood dust (soft woods)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 3.0, "active": "Y"}, {"id": "XYL", "code": "XYL", "name": "Xylene", "kind": "airborne", "equipment": "ED, IP, PM, SB, ST", "headHint": "direct-read", "defaultFlow": null, "flowTolPct": 5.0, "unit": "ppm", "twa": 80.0, "stel": 150.0, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "ZN", "code": "ZN", "name": "Zinc oxide (dust)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 10.0, "stel": null, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "ZNF", "code": "ZNF", "name": "Zinc oxide (fume)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": null, "peak": null, "adj": 2.0, "active": "Y"}, {"id": "ZRC", "code": "ZRC", "name": "Zirconium compounds (as Zr)", "kind": "airborne", "equipment": "7H, IO", "headHint": "IESS", "defaultFlow": 2.0, "flowTolPct": 5.0, "unit": "mg/m3", "twa": 5.0, "stel": 10.0, "peak": null, "adj": 1.0, "active": "Y"}, {"id": "NOISE", "code": "NOISE", "name": "Noise 8h average / peak", "kind": "noise", "equipment": "", "headHint": "dosimeter", "defaultFlow": null, "flowTolPct": 5, "unit": "dB(A) / dB(C)", "twa": 85.0, "stel": null, "peak": 140.0, "adj": null, "active": "Y"}], "locations": [{"code": "040", "name": "Exploration (not on a mine site)", "parentCode": "", "parentName": "", "division": "040 Exploration"}, {"code": "100", "name": "Underground workplaces", "parentCode": "", "parentName": "", "division": "100 Underground workplaces"}, {"code": "110", "name": "Underground access or haulage ways", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "111", "name": "Brace or winder building", "parentCode": "110", "parentName": "Underground access or haulage ways", "division": "100 Underground workplaces"}, {"code": "112", "name": "Shaft", "parentCode": "110", "parentName": "Underground access or haulage ways", "division": "100 Underground workplaces"}, {"code": "113", "name": "Plat", "parentCode": "110", "parentName": "Underground access or haulage ways", "division": "100 Underground workplaces"}, {"code": "114", "name": "Decline, adit or drift", "parentCode": "110", "parentName": "Underground access or haulage ways", "division": "100 Underground workplaces"}, {"code": "115", "name": "Haul road or level", "parentCode": "110", "parentName": "Underground access or haulage ways", "division": "100 Underground workplaces"}, {"code": "116", "name": "Conveyor road", "parentCode": "110", "parentName": "Underground access or haulage ways", "division": "100 Underground workplaces"}, {"code": "117", "name": "Ladder way", "parentCode": "110", "parentName": "Underground access or haulage ways", "division": "100 Underground workplaces"}, {"code": "118", "name": "Return airways", "parentCode": "110", "parentName": "Underground access or haulage ways", "division": "100 Underground workplaces"}, {"code": "120", "name": "Underground production or development areas", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "121", "name": "Underground face area (coal)", "parentCode": "120", "parentName": "Underground production or development areas", "division": "100 Underground workplaces"}, {"code": "122", "name": "Underground stope", "parentCode": "120", "parentName": "Underground production or development areas", "division": "100 Underground workplaces"}, {"code": "125", "name": "Loading pocket", "parentCode": "120", "parentName": "Underground production or development areas", "division": "100 Underground workplaces"}, {"code": "126", "name": "Raise (development)", "parentCode": "120", "parentName": "Underground production or development areas", "division": "100 Underground workplaces"}, {"code": "127", "name": "Decline or winze (development)", "parentCode": "120", "parentName": "Underground production or development areas", "division": "100 Underground workplaces"}, {"code": "128", "name": "Level (development)", "parentCode": "120", "parentName": "Underground production or development areas", "division": "100 Underground workplaces"}, {"code": "129", "name": "Capital (development)", "parentCode": "120", "parentName": "Underground production or development areas", "division": "100 Underground workplaces"}, {"code": "130", "name": "Underground workshops", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "140", "name": "Pump chamber", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "150", "name": "Underground storage areas", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "151", "name": "Fuel storage", "parentCode": "150", "parentName": "Underground storage areas", "division": "100 Underground workplaces"}, {"code": "152", "name": "Explosives magazines", "parentCode": "150", "parentName": "Underground storage areas", "division": "100 Underground workplaces"}, {"code": "153", "name": "Underground stores – general", "parentCode": "150", "parentName": "Underground storage areas", "division": "100 Underground workplaces"}, {"code": "160", "name": "Underground ore or waste dumping", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "161", "name": "Ore, waste tip or pass area", "parentCode": "160", "parentName": "Underground ore or waste dumping", "division": "100 Underground workplaces"}, {"code": "162", "name": "Grizzly", "parentCode": "160", "parentName": "Underground ore or waste dumping", "division": "100 Underground workplaces"}, {"code": "163", "name": "Mill hole", "parentCode": "160", "parentName": "Underground ore or waste dumping", "division": "100 Underground workplaces"}, {"code": "170", "name": "Underground crushing area", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "180", "name": "Ancillary locations", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "181", "name": "Crib room", "parentCode": "180", "parentName": "Ancillary locations", "division": "100 Underground workplaces"}, {"code": "182", "name": "Latrine", "parentCode": "180", "parentName": "Ancillary locations", "division": "100 Underground workplaces"}, {"code": "190", "name": "Underground NOC", "parentCode": "100", "parentName": "Underground workplaces", "division": "100 Underground workplaces"}, {"code": "199", "name": "Underground – place not stated", "parentCode": "190", "parentName": "Underground NOC", "division": "100 Underground workplaces"}, {"code": "200", "name": "Open pit production or development areas", "parentCode": "", "parentName": "", "division": "200 Open pit"}, {"code": "210", "name": "Face loading area", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "220", "name": "Bench area not haul road", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "221", "name": "Drill pattern area", "parentCode": "220", "parentName": "Bench area not haul road", "division": "200 Open pit"}, {"code": "222", "name": "Heavy vehicle park up area", "parentCode": "220", "parentName": "Bench area not haul road", "division": "200 Open pit"}, {"code": "230", "name": "Haul road", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "231", "name": "Haul road – level", "parentCode": "230", "parentName": "Haul road", "division": "200 Open pit"}, {"code": "232", "name": "Haul road – ramp or incline", "parentCode": "230", "parentName": "Haul road", "division": "200 Open pit"}, {"code": "240", "name": "Waste dump area", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "250", "name": "Ore tipping area", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "260", "name": "In pit crushing", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "261", "name": "In pit crusher area", "parentCode": "260", "parentName": "In pit crushing", "division": "200 Open pit"}, {"code": "262", "name": "In pit conveyors", "parentCode": "260", "parentName": "In pit crushing", "division": "200 Open pit"}, {"code": "270", "name": "Stockpile – run of mine", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "280", "name": "Salt production areas", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "290", "name": "Open cut NOC", "parentCode": "200", "parentName": "Open pit production or development areas", "division": "200 Open pit"}, {"code": "291", "name": "Dredge", "parentCode": "290", "parentName": "Open cut NOC", "division": "200 Open pit"}, {"code": "299", "name": "Open cut – place not stated", "parentCode": "290", "parentName": "Open cut NOC", "division": "200 Open pit"}, {"code": "300", "name": "Surface work areas – general", "parentCode": "", "parentName": "", "division": "300 Surface general"}, {"code": "310", "name": "Mine access road / not haul road", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "320", "name": "Park up areas / heavy vehicles / plant", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "330", "name": "Warehouse / stores", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "340", "name": "Explosives magazine", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "350", "name": "Fuel storage area", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "360", "name": "Laboratory", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "370", "name": "Storage yard or rebuild area", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "380", "name": "Lube bay or service bay", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "381", "name": "Wash down area", "parentCode": "380", "parentName": "Lube bay or service bay", "division": "300 Surface general"}, {"code": "390", "name": "Surface general area NOC", "parentCode": "300", "parentName": "Surface work areas – general", "division": "300 Surface general"}, {"code": "399", "name": "Surface general area – not stated", "parentCode": "390", "parentName": "Surface general area NOC", "division": "300 Surface general"}, {"code": "400", "name": "Treatment plant or ore processing", "parentCode": "", "parentName": "", "division": "400 Treatment plant"}, {"code": "411", "name": "Process control rooms", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "413", "name": "Crushing, screening or conveyor", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "416", "name": "Heap, vat or in-situ leaching", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "419", "name": "Grinding or classification", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "422", "name": "Gravity concentration or magnetic separation", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "425", "name": "Flotation", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "428", "name": "Leaching", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "431", "name": "Solvent extraction, scrubbers or strippers", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "434", "name": "Filters, presses or wet screening", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "437", "name": "Thickening or clarification", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "439", "name": "Crystallisation, nucleation or ion exchange", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "441", "name": "Electrowinning or cell house", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "444", "name": "Smelter, roaster or furnace areas", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "447", "name": "Gold room and elution facilities", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "451", "name": "Tailings storage facility", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "454", "name": "Product packaging or storage", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "457", "name": "Sample plant or station", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "461", "name": "Reagent or raw material storage areas", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "464", "name": "Reagent or raw materials preparation plants", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "467", "name": "Water treatment plants", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "471", "name": "Processing plant other", "parentCode": "400", "parentName": "Treatment plant or ore processing", "division": "400 Treatment plant"}, {"code": "500", "name": "Crushed ore areas", "parentCode": "", "parentName": "", "division": "500 Crushed ore"}, {"code": "510", "name": "Stockpiles", "parentCode": "500", "parentName": "Crushed ore areas", "division": "500 Crushed ore"}, {"code": "511", "name": "Stockpile access roads", "parentCode": "510", "parentName": "Stockpiles", "division": "500 Crushed ore"}, {"code": "520", "name": "Train loading or unloading", "parentCode": "500", "parentName": "Crushed ore areas", "division": "500 Crushed ore"}, {"code": "521", "name": "Train loader or loading area", "parentCode": "520", "parentName": "Train loading or unloading", "division": "500 Crushed ore"}, {"code": "522", "name": "Train unloader or tippler area", "parentCode": "520", "parentName": "Train loading or unloading", "division": "500 Crushed ore"}, {"code": "530", "name": "Stacker or reclaimer area", "parentCode": "500", "parentName": "Crushed ore areas", "division": "500 Crushed ore"}, {"code": "540", "name": "Stacker or reclaim conveyors", "parentCode": "500", "parentName": "Crushed ore areas", "division": "500 Crushed ore"}, {"code": "550", "name": "Wharf area", "parentCode": "500", "parentName": "Crushed ore areas", "division": "500 Crushed ore"}, {"code": "551", "name": "Shiploader wharf", "parentCode": "550", "parentName": "Wharf area", "division": "500 Crushed ore"}, {"code": "552", "name": "Conveyors wharf", "parentCode": "550", "parentName": "Wharf area", "division": "500 Crushed ore"}, {"code": "600", "name": "Workshop surface", "parentCode": "", "parentName": "", "division": "600 Workshop surface"}, {"code": "610", "name": "Workshop heavy equipment", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "620", "name": "Workshop electrical or instruments", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "630", "name": "Workshop railway", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "640", "name": "Workshop auto or light vehicles", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "650", "name": "Workshop boilermakers", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "660", "name": "Workshop painters or carpenters", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "670", "name": "Workshop tyre fitting", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "680", "name": "Workshop belt repairs", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "690", "name": "Workshop NOC", "parentCode": "600", "parentName": "Workshop surface", "division": "600 Workshop surface"}, {"code": "700", "name": "Railways", "parentCode": "", "parentName": "", "division": "700 Railways"}, {"code": "710", "name": "Main line", "parentCode": "700", "parentName": "Railways", "division": "700 Railways"}, {"code": "711", "name": "Main line – on track", "parentCode": "710", "parentName": "Main line", "division": "700 Railways"}, {"code": "712", "name": "Main line – off track", "parentCode": "710", "parentName": "Main line", "division": "700 Railways"}, {"code": "720", "name": "Siding", "parentCode": "700", "parentName": "Railways", "division": "700 Railways"}, {"code": "721", "name": "Siding – on track", "parentCode": "720", "parentName": "Siding", "division": "700 Railways"}, {"code": "722", "name": "Siding – off track", "parentCode": "720", "parentName": "Siding", "division": "700 Railways"}, {"code": "730", "name": "Railway access road", "parentCode": "700", "parentName": "Railways", "division": "700 Railways"}, {"code": "740", "name": "Railway yard", "parentCode": "700", "parentName": "Railways", "division": "700 Railways"}, {"code": "800", "name": "Power generation plant", "parentCode": "", "parentName": "", "division": "800 Power generation"}, {"code": "810", "name": "Control room", "parentCode": "800", "parentName": "Power generation plant", "division": "800 Power generation"}, {"code": "820", "name": "Distribution or sub-stations", "parentCode": "800", "parentName": "Power generation plant", "division": "800 Power generation"}, {"code": "830", "name": "Engine room", "parentCode": "800", "parentName": "Power generation plant", "division": "800 Power generation"}, {"code": "900", "name": "Administration areas", "parentCode": "", "parentName": "", "division": "900 Administration"}, {"code": "910", "name": "Offices or administration buildings", "parentCode": "900", "parentName": "Administration areas", "division": "900 Administration"}, {"code": "920", "name": "Crib room, canteen or mess", "parentCode": "900", "parentName": "Administration areas", "division": "900 Administration"}, {"code": "930", "name": "Showers or change room", "parentCode": "900", "parentName": "Administration areas", "division": "900 Administration"}, {"code": "940", "name": "Lamproom", "parentCode": "900", "parentName": "Administration areas", "division": "900 Administration"}, {"code": "950", "name": "Car park", "parentCode": "900", "parentName": "Administration areas", "division": "900 Administration"}, {"code": "960", "name": "Pathways", "parentCode": "900", "parentName": "Administration areas", "division": "900 Administration"}, {"code": "970", "name": "Gardens", "parentCode": "900", "parentName": "Administration areas", "division": "900 Administration"}, {"code": "990", "name": "Administration – NOC", "parentCode": "900", "parentName": "Administration areas", "division": "900 Administration"}, {"code": "Note: codes 123–124, 241–249 unused gaps, and 400-series skip numbers are as published (not missing rows).", "name": "", "parentCode": "", "parentName": "", "division": ""}], "pumps": [{"serial": "100438", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "100877", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "100814", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "100509", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "100880", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "94434", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "95063", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "95652", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "95003", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "94475", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "95062", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "91674", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "91648", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "91643", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "91622", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "92010", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "92530", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "92486", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "92569", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "88668", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "88683", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "88684", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "88658", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "88416", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "84274", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "85352", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "87652", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "87035", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "87029", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "84293", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "87208", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "87989", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "85343", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "87708", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}, {"serial": "71377", "owner": "ENVSS Fleet", "make_model": "XR5000", "active": "Y"}], "heads": [{"id": "IESS01", "kind": "inhalable", "active": "Y"}, {"id": "IESS02", "kind": "inhalable", "active": "Y"}, {"id": "RESS001", "kind": "respirable", "active": "Y"}, {"id": "RESS002", "kind": "respirable", "active": "Y"}, {"id": "DP01", "kind": "diesel", "active": "Y"}], "dosimeters": [{"serial": "N0001", "make_model": "", "active": "Y"}], "segs": [], "hearingPpe": [{"code": "None", "name": "None Worn"}, {"code": "EP", "name": "Ear Plugs"}, {"code": "EM", "name": "Ear Muffs"}, {"code": "CPM", "name": "Combined Plug and Muff"}, {"code": "Other", "name": "Other"}]};
@@ -4330,13 +4334,15 @@ if (typeof render === "function") render();
 /* ===== v40: pre-START required fields marked (amber "Needs answer" / green ✓) with a count near START. Uses startGaps() as-is. ===== */
 (function () {
   const FIELD = { "Contaminant": ["contam", "addAnalysis"], "Pump serial": ["pump"], "Sample head": ["head"], "Cassette / filter / tube": ["media"],
-    "Start flow": ["startFlow"], "Location": ["location"], "First name": ["first"], "Last name": ["last"], "Dosimeter serial": ["dosimeter"], "Cowl number": ["cowlNo"] };
+    "Start flow": ["startFlow"], "Location": ["location"], "First name": ["first"], "Last name": ["last"], "Dosimeter serial": ["dosimeter"], "Cowl number": ["cowlNo"],
+    "Occupation": ["occupation", "occSearch"], "Badge ID": ["badgeId"] };   /* v46 B10 */
   function curTrain() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
   function notStarted(t) { return t && t.status !== "running" && !t.startAt && !t.endAt && t.status !== "rejected" && t.status !== "fault"; }
   function requiredLabels(t) {
     const c = JSON.parse(JSON.stringify(t));
     Object.assign(c, { contaminantId: t.contaminantId === "NOISE" ? "NOISE" : "", analyses: [], pumpSerial: "", headId: "", mediaId: "", startFlow: "", location: "", dosimeterSerial: "", cowlNo: "" });
-    c.person = Object.assign({}, c.person, { first: "", last: "" });
+    c.badgeId = "";
+    c.person = Object.assign({}, c.person, { first: "", last: "", occupation: "" });
     try { return startGaps(c); } catch (e) { return []; }
   }
   function elFor(label) { for (const id of FIELD[label] || []) { const e = document.getElementById(id); if (e) return e; } return null; }
@@ -4447,7 +4453,7 @@ if (typeof render === "function") render();
     seg: "SEG", locationCode: "Location code (SRS)", occupationCode: "Occupation code (SRS)", irsstCat: "IRSST category", dosimeterSerial: "Dosimeter serial",
     rotameter: "Rotameter", fieldCalibrator: "Field calibrator", startLoc: "Start location", endLoc: "Stop location", photo: "Filter photo", equipPhoto: "Equipment photo",
     date: "Event date", notes: "Notes", code: "Event code", minesAct: "Mining job?", multiDay: "Multiple day/shift job?", tat: "Lab turnaround", protocol: "Monitoring type",
-    taskDesc: "Task", stage: "Stage", uploadReady: "Upload ready" };
+    taskDesc: "Task", stage: "Stage", uploadReady: "Upload ready", badgeId: "Badge ID", personTag: "Allocated to person" };
   const label = k => LABEL[k] || k.split(".").pop().replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase());
   function flat(o, pre, out) {
     out = out || {};
@@ -4610,11 +4616,11 @@ function answerItems(t) {
   }
   if (!isStatic(t)) { const s = (t.person || {}).sex; add("sex", "Sex", s === "male" || s === "female" || s === "not_stated", "#seg-sex"); }
   /* v44: flow / acoustic calibrator IDs. Required only on samples created in v44 or later (t.v44Equip), so older records keep their status. */
-  if (t.v44Equip && !isFibreTrain(t)) {
+  if (t.v44Equip && !isFibreTrain(t) && !isPassive(t)) {
     if (isNoise(t)) add("fieldCal", "Field calibrator", String(v("fieldCal", t.fieldCalibrator || "")).trim(), "#fieldCal");
     else add("rotameter", "Rotameter", String(v("rotameter", t.rotameter || "")).trim(), "#rotameter");
   }
-  if (!isNoise(t) && t.status === "ended") add("endFlow", "End flow", String(v("endFlow", t.endFlow == null ? "" : t.endFlow)).trim(), "#endFlow");
+  if (!isNoise(t) && !isPassive(t) && t.status === "ended") add("endFlow", "End flow", String(v("endFlow", t.endFlow == null ? "" : t.endFlow)).trim(), "#endFlow");
   return items;
 }
 /* v41: optional detail fields that are on screen for this sample (the screen already applies the exclusions:
@@ -4677,20 +4683,9 @@ followUpComplete = function (t) {
 })();
 </script>
 <script>
-/* ===== v41: noise samples have no analyses. The "Add analysis" box is not shown for noise (personal or static);
-   the contaminant stays NOISE (a stray analysis picked on a noise sample earlier is kept on the record, hidden,
-   and never becomes the contaminant). Noise never needs a contaminant for START or the status. ===== */
+/* ===== v41 noise layer: moved to noise.js (ENVSS_NOISE.installTrainLayer), installed here at the same point as before. ===== */
 (function () {
-  function fixNoise(t) { if (t && isNoise(t) && !isBlank(t) && (t.trainKind || "").startsWith("noise") && t.contaminantId !== "NOISE") { t.contaminantId = "NOISE"; return true; } return false; }
-  const _th41 = trainHtml;
-  trainHtml = function () {
-    let html = _th41.apply(this, arguments);
-    const t = db.trains.find(x => x.id === view.trainId);
-    if (t && isNoise(t)) { fixNoise(t); const tp = document.createElement("template"); tp.innerHTML = html; tp.content.querySelectorAll(".analysis-box").forEach(e => e.remove()); html = tp.innerHTML; }
-    return html;
-  };
-  window.trainHtml = trainHtml;
-  try { let n = 0; (db.trains || []).forEach(t => { if (fixNoise(t)) n++; }); if (n) saveQuiet(); } catch (e) { console.warn("v41 noise", e); }
+  try { if (window.ENVSS_NOISE && ENVSS_NOISE.loaded) ENVSS_NOISE.installTrainLayer(); } catch (e) { console.warn("noise.js install", e); }
   render();
 })();
 </script>
@@ -8893,68 +8888,220 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   function podioRowsFor(job) {
     return (podioState.job === job ? podioState.rows : (readPodioCache()[job] || {}).rows) || [];
   }
+  /* v46 E18: Refresh from Podio reads the Dashboard Bot's Podio mirror (view v_field_hyg_events, staff only, read only).
+     The app never calls Podio, so Podio rate limits (HTTP 420) cannot hit it; a busy server (420 / 429 / 503) gets a
+     cool-down message and the planned events already saved on this device keep showing. Nothing is written to Podio,
+     and an event started outside Podio is not flagged to the office. Mapping = supabase/functions/pull-hyg-events/map.js. */
+  const PodioMap = (function () {
+    function cleanText(v) {
+      return String(v == null ? "" : v).replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim();
+    }
+
+    function htmlToText(v) {
+      return String(v == null ? "" : v)
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&#39;|&apos;/gi, "'")
+        .replace(/&quot;/gi, '"')
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function rawValue(v0) {
+      if (!v0 || typeof v0 !== "object") return v0;
+      if (v0.value && typeof v0.value === "object") {
+        if (v0.value.text && !v0.value.title) return v0.value.text;
+        return v0.value;
+      }
+      if (v0.start || v0.start_date) return { start: v0.start || v0.start_date };
+      if (v0.value != null) return v0.value;
+      return v0;
+    }
+
+    /* Accept either a Podio API item (fields is an array) or the decoded mirror shape (fields is an object). */
+    function fieldBag(item) {
+      const fields = item && item.fields;
+      if (Array.isArray(fields)) {
+        const out = {};
+        fields.forEach(f => {
+          if (!f || !f.external_id) return;
+          const values = f.values || [];
+          out[f.external_id] = values.length > 1 ? values.map(rawValue) : rawValue(values[0]);
+        });
+        return out;
+      }
+      if (fields && typeof fields === "object") return fields;
+      return item || {};
+    }
+
+    function textOf(v) {
+      if (v == null) return "";
+      if (typeof v === "string" || typeof v === "number") return cleanText(v);
+      if (Array.isArray(v)) return textOf(v[0]);
+      if (typeof v === "object") {
+        if (v.title) return cleanText(v.title);
+        if (v.text && !v.value) return cleanText(v.text);
+        if (v.value != null && typeof v.value !== "object") return cleanText(v.value);
+      }
+      return "";
+    }
+
+    function dateOf(v) {
+      if (!v) return "";
+      const s = typeof v === "string" ? v : (v.start || v.start_date || "");
+      const m = String(s).match(/(\d{4}-\d{2}-\d{2})/);
+      return m ? m[1] : "";
+    }
+
+    function relOf(v) {
+      if (!v) return { title: "", itemId: "" };
+      if (Array.isArray(v)) return relOf(v[0]);
+      if (typeof v === "string") return { title: cleanText(v), itemId: "" };
+      return { title: cleanText(v.title || ""), itemId: v.item_id || v.itemId || "" };
+    }
+
+    function jobNumberFrom(reference, projectTitle, jobCalc) {
+      const sources = [reference, projectTitle];
+      for (let i = 0; i < sources.length; i++) {
+        const m = String(sources[i] || "").match(/^(\d{7})(?!\d)/);
+        if (m) return m[1];
+      }
+      const n = Number(jobCalc && typeof jobCalc === "object" ? jobCalc.value : jobCalc);
+      if (Number.isFinite(n) && n >= 0 && n < 10000000) return String(Math.round(n)).padStart(7, "0");
+      return "";
+    }
+
+    /* selection (Laboratory Turnaround Time) is deleted in Podio and usually empty.
+       Map it when a value is still present. Hygiene COC codes: standard | same_day | 1_day | 2_day | 3_day. */
+    function mapTurnaround(label) {
+      const s = String(label || "").toLowerCase();
+      if (!s) return "";
+      if (/emergency|same\s*day/.test(s)) return "same_day";
+      if (/next day|\b1\s*day|0700/.test(s)) return "1_day";
+      if (/\b2\s*day/.test(s)) return "2_day";
+      if (/\b3\s*day|normal/.test(s)) return "3_day";
+      if (/standard/.test(s)) return "standard";
+      return "";
+    }
+
+    function isPlanned(p) {
+      const start = String(p.startStatus || "");
+      if (/not required/i.test(start)) return false;
+      if (p.cocStatus === "Lab Results Received") return false;
+      if (p.reportStatus === "Report Sent") return false;
+      if (!start) return true;
+      return /tentative|confirmed/i.test(start);
+    }
+
+    function mapItem(item) {
+      const f = fieldBag(item);
+      const project = f.project;
+      const projectTitle = project && typeof project === "object" ? cleanText(project.title) : cleanText(project);
+      const reference = textOf(f["reference-3"]);
+      const jobNumber = jobNumberFrom(reference, projectTitle, f["job-number"]);
+      const turnaroundLabel = textOf(f.selection);
+      const lab = relOf(f["which-laboratory-is-processing-samples"]);
+      const attended = relOf(f["report-submitted-by"]);
+      const taskRaw = f["task-description"];
+      const equipRaw = f["equipment-details"];
+      const payload = {
+        itemId: String((item && (item.item_id || item.itemId)) || ""),
+        reference,
+        fieldCode: /^\d{7}-\d{3}$/.test(reference) ? reference : "",
+        jobNumber,
+        projectItemId: project && typeof project === "object" && project.item_id ? String(project.item_id) : "",
+        projectTitle,
+        startDate: dateOf(f["site-works-start-date"]),
+        startStatus: textOf(f["site-works-start-date-status"]),
+        siteContact: textOf(f["site-contact-namephone"]),
+        poc: {
+          company: textOf(f.company),
+          first: textOf(f["first-name"]),
+          last: textOf(f["last-name"]),
+          role: textOf(f["job-role"]),
+          phone: textOf(f["contact-number"]),
+          email: textOf(f.email)
+        },
+        task: htmlToText(typeof taskRaw === "string" ? taskRaw : textOf(taskRaw)),
+        turnaroundLabel,
+        turnaround: mapTurnaround(turnaroundLabel),
+        lab: lab.title,
+        labItemId: lab.itemId ? String(lab.itemId) : "",
+        attendedBy: attended.title,
+        cocStatus: textOf(f["generate-report"]),
+        reportStatus: textOf(f["generate-final-report"]),
+        equipment: htmlToText(typeof equipRaw === "string" ? equipRaw : textOf(equipRaw)),
+        driveLink: textOf(f["google-drive-job-folder-link"]),
+        fieldSheetLink: textOf(f["field-sheet-link"])
+      };
+      payload.planned = isPlanned(payload);
+      return payload;
+    }
+    return { mapItem };
+  })();
+  const COOL_KEY = "envss-podio-cooldown-v46";
+  let mirrorAt = 0;
+  function coolLeft() { const t = +(localStorage.getItem(COOL_KEY) || 0); return Math.max(0, t - Date.now()); }
+  async function pullMirror() {
+    const c = sbCfg(); if (!c) return false;
+    const left = coolLeft();
+    if (left) { podioState.note = "Podio data is busy. Try again in " + Math.ceil(left / 60000) + " min. Planned events saved on this device still show."; podioState.err = ""; return false; }
+    const ac = typeof AbortController === "function" ? new AbortController() : null;
+    const tm = ac ? setTimeout(() => ac.abort(), 20000) : 0;
+    let res;
+    try { res = await sbFetch(c.supabaseUrl + "/rest/v1/v_field_hyg_events?select=item_id,title,last_edit_on,synced_at,fields&order=item_id.asc&limit=2000", { headers: sbHeaders(), signal: ac ? ac.signal : undefined }); }
+    catch (e) { podioState.err = ""; podioState.note = (e && e.name === "AbortError" ? "Podio data took too long to answer." : "Could not reach the server.") + " Planned events saved on this device still show."; return false; }
+    finally { clearTimeout(tm); }
+    if (res.status === 420 || res.status === 429 || res.status === 503) {
+      const ra = +(res.headers.get("retry-after") || 0);
+      localStorage.setItem(COOL_KEY, String(Date.now() + Math.min(Math.max(ra * 1000, 120e3), 30 * 60e3)));
+      podioState.note = "Podio data is busy (" + res.status + "). Try again in a few minutes. Planned events saved on this device still show."; podioState.err = "";
+      return false;
+    }
+    if (res.status === 401 || res.status === 403) { podioState.err = ""; podioState.note = "Sign in with your ENVSS Google account to refresh from Podio."; return false; }
+    if (!res.ok) { podioState.err = "Could not load planned events (" + res.status + "). Planned events saved on this device still show."; podioState.note = ""; return false; }
+    const items = await res.json();
+    const byJob = {}; let planned = 0, newest = "";
+    (items || []).forEach(it => {
+      const pl = PodioMap.mapItem({ item_id: it.item_id, fields: it.fields || {} });
+      if (it.synced_at && it.synced_at > newest) newest = it.synced_at;
+      if (!pl.planned || !/^\d{7}$/.test(pl.jobNumber)) return;
+      planned++;
+      (byJob[pl.jobNumber] || (byJob[pl.jobNumber] = [])).push({ id: "podio-" + pl.itemId, item_id: pl.itemId, event_reference: pl.reference, job_number: pl.jobNumber, payload: pl, updated_at: it.last_edit_on });
+    });
+    const cache = readPodioCache();
+    Object.keys(cache).forEach(jn => { if (!byJob[jn]) byJob[jn] = []; });   // jobs whose events are no longer planned
+    Object.keys(byJob).forEach(jn => writePodioCache(jn, byJob[jn]));
+    if (podioState.job) podioState.rows = byJob[podioState.job] || [];
+    mirrorAt = Date.now();
+    podioState.err = "";
+    podioState.note = "Refreshed from Podio: " + planned + " planned HYG event" + (planned === 1 ? "" : "s") + " across jobs" + (newest ? " (Podio copy updated " + fmtClock(newest) + ")" : "") + ".";
+    return true;
+  }
   async function loadPodioTable(job) {
     const cached = (readPodioCache()[job] || {}).rows || [];
-    if (!navigator.onLine) { podioState.rows = cached; podioState.note = "Offline — showing planned events saved on this device."; podioState.err = ""; return; }
-    if (typeof hasSession !== "function" || !hasSession()) { podioState.rows = cached; podioState.note = "Sign in to refresh from Podio."; podioState.err = ""; return; }
-    const c = sbCfg(); if (!c) return;
-    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_podio_events?select=id,item_id,event_reference,job_number,payload,updated_at&job_number=eq." + job + "&planned=eq.true&order=event_reference.asc", { headers: sbHeaders() });
-    if (res.status === 404) { podioState.rows = cached; podioState.err = "Podio events appear here after the server table is applied."; podioState.note = ""; return; }
-    if (!res.ok) { podioState.rows = cached; podioState.err = "Could not load planned events (" + res.status + ")."; return; }
-    const rows = await res.json();
-    podioState.rows = rows || [];
-    podioState.err = "";
-    podioState.note = "";
-    writePodioCache(job, podioState.rows);
-  }
-  async function loadPodioAll() {
+    podioState.rows = cached;
     if (!navigator.onLine) { podioState.note = "Offline — showing planned events saved on this device."; podioState.err = ""; return; }
     if (typeof hasSession !== "function" || !hasSession()) { podioState.note = "Sign in to refresh from Podio."; podioState.err = ""; return; }
-    const c = sbCfg(); if (!c) return;
-    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_podio_events?select=id,item_id,event_reference,job_number,payload,updated_at&planned=eq.true&order=event_reference.asc", { headers: sbHeaders() });
-    if (res.status === 404) { podioState.err = "Podio events appear here after the server table is applied."; podioState.note = ""; return; }
-    if (!res.ok) { podioState.err = "Could not load planned events (" + res.status + ")."; return; }
-    const rows = await res.json();
-    const byJob = {};
-    (rows || []).forEach(r => {
-      const jn = String(r.job_number || "");
-      if (!/^\d{7}$/.test(jn)) return;
-      (byJob[jn] || (byJob[jn] = [])).push(r);
-    });
-    Object.keys(byJob).forEach(jn => writePodioCache(jn, byJob[jn]));
-    if (podioState.job && byJob[podioState.job]) podioState.rows = byJob[podioState.job];
-    else if (podioState.job) podioState.rows = [];
-    podioState.err = "";
+    if (Date.now() - mirrorAt < 10 * 60e3) return;
+    await pullMirror();
   }
-  /* Global refresh: no job → Edge Function pulls all planned HYG events. Optional job keeps per-job mode for tooling. */
-  async function refreshPodio(job) {
+  async function loadPodioAll() { await pullMirror(); }
+  async function refreshPodio() {
     podioState.busy = true;
     try { paintSyncBar(); } catch (e) {}
     paintPodio();
     try {
       if (!navigator.onLine) { podioState.note = "You're offline. Planned events saved on this device are still listed. Refresh from Podio needs a connection."; podioState.err = ""; return; }
       if (typeof hasSession !== "function" || !hasSession()) { podioState.note = "Sign in to refresh from Podio."; podioState.err = ""; return; }
-      const c = sbCfg(); if (!c) return;
-      const jobNum = String(job || "").match(/^(\d{7})$/) ? String(job) : "";
-      const body = jobNum ? { job: jobNum, force: true } : { all: true, force: true };
-      const res = await sbFetch(c.supabaseUrl + "/functions/v1/pull-hyg-events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok || j.ok === false) {
-        podioState.err = (j && j.error) || ("Refresh failed (" + res.status + ").");
-        if (res.status === 404) podioState.err = "Refresh from Podio is not deployed yet. Planned events already loaded still show.";
-        podioState.note = "";
-      } else {
-        podioState.err = "";
-        podioState.note = "Refreshed from Podio" + (j.planned != null ? " (" + j.planned + " planned across jobs)." : ".");
-      }
-      if (jobNum) await loadPodioTable(jobNum);
-      else await loadPodioAll();
+      await pullMirror();
     } catch (e) {
-      podioState.err = "Refresh failed: " + (e && e.message || e);
+      podioState.err = "Refresh failed: " + (e && e.message || e) + ". Planned events saved on this device still show.";
       podioState.note = "";
     } finally {
       podioState.busy = false;
@@ -9040,8 +9187,8 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (!ev) return;
     const h = document.querySelector("#app h2");
     if (!h) return;
-    if (ev.podioUnplanned && !document.getElementById("podioUnplanned")) {
-      h.insertAdjacentHTML("afterend", '<p class="podio-flag" id="podioUnplanned">Not in Podio yet - office to create/link</p>');
+    if (ev.podioUnplanned && !document.getElementById("podioUnplanned")) {   /* v46: neutral note, nothing is flagged to the office */
+      h.insertAdjacentHTML("afterend", '<p class="help podio-note" id="podioUnplanned">Not linked to a Podio event.</p>');
     }
     if (ev.podioLinked && !document.getElementById("podioPrefill")) {
       const poc = ev.poc || {};
@@ -9113,6 +9260,328 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   })();
   setInterval(runDrive, 60e3);
   window.addEventListener("online", () => runDrive());
+})();
+</script>
+
+<script>
+/* ===== v46 layer (John, 11 Nov 2026 — Version 1: airborne, dose badge, samples, data safety) =====
+   B9  "Add samples to this person": tick unallocated samples, Select, then Yes/No. Shared fields stay in step.
+   B11 Respirator (PPE) answers carry across a person's airborne samples on the same day. Hearing protection does not.
+   B12 Start all samples on one person (each is still stopped on its own). Passive badge type lives in the core screen.
+   A14 (core) every change is kept on this device (localStorage + an IndexedDB second copy) and queued for Supabase
+       with retry; the sync state is shown on the bar, on each sample and on each list row.
+   E17 dashboard says why no projects show, with a retry, and a "My jobs" filter.
+   No Podio writes, no emails, no Drive edits. ===== */
+(function () {
+  const SHARED = [["seg", "SEG"], ["location", "Location"], ["shiftDate", "Sampling date"], ["shiftKind", "Sampling shift"],
+    ["person.hours", "Shift length (hours / shift)"], ["person.daysOn", "Roster: days on"], ["person.daysOff", "Roster: days off"]];
+  const PPE = [["rpdAsked", "Respirator worn?"], ["rpd.model", "Respirator brand / model"], ["rpd.shaven", "Clean-shaven?"], ["rpd.fit", "Fit-tested?"]];
+  const get = (o, k) => k.split(".").reduce((a, p) => (a == null ? a : a[p]), o);
+  const set = (o, k, v) => { const ps = k.split("."); let a = o; for (let i = 0; i < ps.length - 1; i++) { a[ps[i]] = a[ps[i]] || {}; a = a[ps[i]]; } a[ps[ps.length - 1]] = v; };
+  const str = v => (v == null ? "" : String(v));
+  function fibre(t) { try { return isFibreTrain(t); } catch (e) { return false; } }
+  function personType(t) { return !!t && !isBlank(t) && !isStatic(t) && !fibre(t); }
+  function nameKey(t) { const p = t.person || {}; const a = str(p.first).trim().toLowerCase(), b = str(p.last).trim().toLowerCase(); return a && b ? a + "|" + b : ""; }
+  function dayOf(t) { return str(t.shiftDate || (eventById(t.eventId) || {}).date).slice(0, 10); }
+  function voided(t) { return t.status === "rejected" || t.status === "fault"; }
+  /* the other samples in this event that belong to the same person (allocation tag first, else the same full name) */
+  function siblings(t) {
+    if (!t || !personType(t)) return [];
+    const k = nameKey(t);
+    return trainsOf(t.eventId).filter(x => x !== t && personType(x) && (t.personTag ? x.personTag === t.personTag : (!x.personTag && k && nameKey(x) === k)));
+  }
+  function unallocated(t) {
+    return trainsOf(t.eventId).filter(x => x !== t && personType(x) && !x.personTag && !voided(x)
+      && !str((x.person || {}).first).trim() && !str((x.person || {}).last).trim() && !str((x.person || {}).occupation).trim());
+  }
+  function notStarted(x) { return x && x.status !== "running" && !x.startAt && !x.endAt && !voided(x) && !isStoppedTrain(x); }
+  function note(x, action, detail, field, from, to) { x.audit = x.audit || []; x.audit.push({ at: nowIso(), who: whoText(), action, field: field || "", from: from == null ? "" : from, to: to == null ? "" : to, detail: detail || "" }); }
+  function curTrain() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  window.v46 = { siblings, unallocated, personType, nameKey };
+
+  /* ---------- Yes / No dialog (B9 wording) ---------- */
+  function ask(question, detailHtml, yes, no) {
+    return new Promise(res => {
+      const w = document.createElement("div"); w.className = "v46-modal"; w.id = "v46Modal";
+      w.innerHTML = `<div class="v46-dialog" role="dialog" aria-modal="true"><p class="v46-q">${esc(question)}</p>${detailHtml || ""}
+        <div class="row" style="gap:10px;justify-content:flex-end;margin-top:14px"><button type="button" class="btn ghost" id="v46No">${esc(no || "No")}</button><button type="button" class="btn green" id="v46Yes">${esc(yes || "Yes")}</button></div></div>`;
+      document.body.appendChild(w);
+      const done = v => { w.remove(); res(v); };
+      w.querySelector("#v46Yes").onclick = () => done(true);
+      w.querySelector("#v46No").onclick = () => done(false);
+    });
+  }
+
+  /* ---------- B9 allocation ---------- */
+  function allocHtml(t) {
+    const sib = siblings(t);
+    const list = unallocated(t);
+    let h = `<div class="card v46-alloc" id="allocBox"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>This person's samples</strong>
+      <button type="button" class="btn mid" id="btnAllocate" ${list.length ? "" : "disabled"}>Add samples to this person</button></div>`;
+    h += sib.length ? `<p class="help" id="allocList">Also on ${esc([t.person.first, t.person.last].join(" "))}: ${sib.map(x => esc(displayNo(x) + " (" + kindLabel(x) + ")")).join(", ")}. SEG, location, sampling date, shift, shift length and roster stay the same on all of them.</p>`
+      : `<p class="help" id="allocList">No other samples on this person yet.</p>`;
+    if (!list.length) h += `<p class="help">No unallocated samples in this event (a sample with a name or occupation already belongs to someone).</p>`;
+    h += `<div id="allocPick" hidden><p class="help">Only samples with no name or occupation are listed.</p>${list.map(x => `<label class="check-row v46-pick"><input type="checkbox" data-alloc="${esc(x.id)}"> ${esc(displayNo(x))} · ${esc(kindLabel(x))}${x.trainKind === "airborne_passive" && x.badgeId ? " · badge " + esc(x.badgeId) : ""}${!isNoise(x) && x.mediaId ? " · " + esc(x.mediaId) : ""}${isNoise(x) && x.dosimeterSerial ? " · " + esc(x.dosimeterSerial) : ""}</label>`).join("")}
+      <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn green" id="btnAllocSelect">Select</button><button type="button" class="btn ghost" id="btnAllocCancel">Cancel</button></div></div></div>`;
+    return h;
+  }
+  async function allocate(t, ids) {
+    collectTrain(t);
+    const targets = ids.map(id => db.trains.find(x => x.id === id)).filter(Boolean).filter(x => unallocated(t).includes(x));   // never reallocate someone else's sample
+    if (!targets.length) return 0;
+    const ok = await ask("Are you sure you want to allocate these samples to this individual?",
+      `<p class="help">${esc([t.person.first, t.person.last].join(" "))}: ${targets.map(x => esc(displayNo(x))).join(", ")}</p>`, "Yes", "No");
+    if (!ok) return 0;
+    const tag = t.personTag || uid("pt");
+    if (!t.personTag) { t.personTag = tag; note(t, "Allocated to person", "person tag created for " + [t.person.first, t.person.last].join(" ")); }
+    const src = t.person || {};
+    targets.forEach(x => {
+      x.person = Object.assign({}, x.person || {}, JSON.parse(JSON.stringify(src)));
+      x.personTag = tag;
+      ["seg", "location", "shiftDate", "shiftKind", "occupationCode"].forEach(k => { if (t[k] != null && t[k] !== "") x[k] = t[k]; });
+      if (isAirbornePersonal(x) && isAirbornePersonal(t) && !isNoise(x) && !isNoise(t) && dayOf(x) === dayOf(t) && !x.rpdAsked && t.rpdAsked) {   // B11
+        x.rpdAsked = t.rpdAsked; x.rpd = Object.assign({}, t.rpd || {});
+        note(x, "Respirator answers carried across", "from " + displayNo(t) + " (same person, same day)");
+      }
+      note(x, "Allocated to person", [src.first, src.last].join(" ") + (src.occupation ? " · " + src.occupation : "") + " (from " + displayNo(t) + ")", "personTag", "", tag);
+    });
+    note(t, "Samples allocated to this person", targets.map(displayNo).join(", "));
+    save();
+    return targets.length;
+  }
+  window.v46Allocate = allocate;
+
+  /* ---------- B12 start all on this person ---------- */
+  async function startAll(t) {
+    collectTrain(t);
+    const all = [t].concat(siblings(t)).filter(notStarted);
+    const ready = all.filter(x => !startGaps(x).length), blocked = all.filter(x => startGaps(x).length);
+    if (!ready.length) { alert("Nothing can start yet:\n• " + blocked.map(x => displayNo(x) + ": " + startGaps(x).join(", ")).join("\n• ")); return 0; }
+    const ok = await ask("Start " + ready.length + " sample" + (ready.length === 1 ? "" : "s") + " on this person now?",
+      `<p class="help">${ready.map(x => esc(displayNo(x) + " (" + kindLabel(x) + ")")).join(", ")}</p>` + (blocked.length ? `<p class="help" style="color:var(--danger,#c33)">Not started (fields missing): ${blocked.map(x => esc(displayNo(x) + ": " + startGaps(x).join(", "))).join("; ")}</p>` : "") + `<p class="help">Each sample is still stopped on its own.</p>`, "Yes", "No");
+    if (!ok) return 0;
+    const at = nowIso();
+    ready.forEach(x => { x.startAt = at; x.status = "running"; note(x, "START pressed", "start all on this person (from " + displayNo(t) + ")"); });
+    save();
+    captureLocation().then(loc => {
+      ready.forEach(x => { if (loc) { x.startLoc = loc; note(x, "Start location", loc.lat.toFixed(5) + ", " + loc.lng.toFixed(5)); } else note(x, "Start location", "no fix"); });
+      save();
+    });
+    return ready.length;
+  }
+  window.v46StartAll = startAll;
+
+  /* ---------- B9 shared fields + B11 PPE carry-across, on every commit of the open sample ---------- */
+  const snaps = new Map();
+  function snapOfT(t) { const o = {}; SHARED.concat(PPE).forEach(([k]) => { o[k] = str(get(t, k)); }); return o; }
+  function propagate() {
+    const t = curTrain(); if (!t || !personType(t)) return;
+    const before = snaps.get(t.id); const now = snapOfT(t); snaps.set(t.id, now);
+    if (!before) return;
+    const sib = siblings(t);
+    if (t.personTag) SHARED.forEach(([k, label]) => {
+      if (before[k] === now[k]) return;
+      sib.filter(x => x.personTag === t.personTag).forEach(x => {
+        if (str(get(x, k)) === now[k]) return;
+        const was = str(get(x, k)); set(x, k, get(t, k));
+        note(x, "Changed " + label, (was || "(empty)") + " → " + (now[k] || "(empty)") + " (same person, from " + displayNo(t) + ")", k, was, now[k]);
+        if (snaps.has(x.id)) snaps.get(x.id)[k] = now[k];
+      });
+    });
+    if (isAirbornePersonal(t) && !isNoise(t)) PPE.forEach(([k, label]) => {
+      if (before[k] === now[k]) return;
+      sib.filter(x => isAirbornePersonal(x) && !isNoise(x) && dayOf(x) === dayOf(t)).forEach(x => {
+        const was = str(get(x, k));
+        if (was !== "" && was !== before[k]) return;   // a different answer typed on that sample is kept
+        if (was === now[k]) return;
+        set(x, k, get(t, k)); if (k === "rpdAsked") { x.rpd = x.rpd || {}; x.rpd.worn = t.rpdAsked; }
+        note(x, "Changed " + label, (was || "(empty)") + " → " + (now[k] || "(empty)") + " (carried across from " + displayNo(t) + ", same person, same day)", k, was, now[k]);
+      });
+    });
+  }
+  const _commit46 = commit;
+  commit = function () { try { propagate(); } catch (e) { console.warn("v46 propagate", e); } return _commit46.apply(this, arguments); };
+  window.commit = commit;
+
+  /* ---------- A14: second copy on the device (IndexedDB) + visible sync state ---------- */
+  const IDB = "envss-field-v46", ST = "kv";
+  let idbP = null;
+  function idb() { if (!idbP) idbP = new Promise((res, rej) => { const r = indexedDB.open(IDB, 1); r.onupgradeneeded = () => r.result.createObjectStore(ST); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); return idbP; }
+  async function idbPut(k, v) { const d = await idb(); return new Promise((res, rej) => { const tx = d.transaction(ST, "readwrite"); tx.objectStore(ST).put(v, k); tx.oncomplete = () => res(true); tx.onerror = () => rej(tx.error); }); }
+  async function idbGet(k) { const d = await idb(); return new Promise((res, rej) => { const tx = d.transaction(ST, "readonly"); const q = tx.objectStore(ST).get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+  let backupTimer = null, lastBackupAt = "", backupErr = "";
+  function backupNow() {
+    clearTimeout(backupTimer);
+    const snap = { savedAt: db._savedAt || nowIso(), db: JSON.parse(JSON.stringify(db)), sync: JSON.parse(JSON.stringify(syncState)), appVersion: APP_VERSION };
+    return idbPut("state", snap).then(() => { lastBackupAt = snap.savedAt; backupErr = ""; }).catch(e => { backupErr = String(e && e.message || e); });
+  }
+  const _persist46 = persist;
+  persist = function () {
+    db._savedAt = nowIso();
+    const ok = _persist46.apply(this, arguments);
+    clearTimeout(backupTimer); backupTimer = setTimeout(backupNow, ok ? 250 : 0);
+    return ok;
+  };
+  window.persist = persist;
+  window.addEventListener("pagehide", () => { try { persist(); backupNow(); } catch (e) {} });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { try { persist(); backupNow(); } catch (e) {} return; }
+    try { scanDirty(); if (navigator.onLine) { flushQueue(); pullActivity(); } } catch (e) {}
+  });
+  /* restore: if this device's main copy is missing or older than the second copy, use the second copy */
+  window.v46Restore = (async () => {
+    try {
+      const b = await idbGet("state");
+      if (!b || !b.db) return "none";
+      const mainAt = db._savedAt || "";
+      const mainEmpty = !localStorage.getItem(KEY);
+      if (mainEmpty || (b.savedAt && b.savedAt > mainAt)) {
+        const keep = { projects: db.projects };
+        db = baseLoad(b.db);
+        if ((!db.projects || !db.projects.length) && keep.projects) db.projects = keep.projects;
+        if (b.sync) { const s = b.sync; s.pending = Object.assign({}, s.pending || {}, syncState.pending || {}); syncState = Object.assign(loadSyncState(), s); }
+        persist(); scanDirty(); scheduleFlush(300); render();
+        console.warn("[ENVSS] v46 restored local data from the IndexedDB copy (" + (mainEmpty ? "main copy missing" : "main copy older") + ")");
+        return "restored";
+      }
+      return "current";
+    } catch (e) { backupErr = String(e && e.message || e); return "error"; }
+  })();
+  /* records saved here that Supabase has not confirmed yet (pending, or never seen remotely) */
+  function unsyncedOf(coll, rec) {
+    const id = recId(coll, rec); if (!id) return false;
+    if (syncState.pending[coll + ":" + id]) return true;
+    if (coll === "projects") return false;
+    const h = syncState.hash[coll] && syncState.hash[coll][id];
+    if (h === undefined) return !(typeof DEMO_IDS !== "undefined" && DEMO_IDS.has(id));
+    return h !== snapOf(coll, rec);
+  }
+  function unsyncedCount() {
+    let n = 0;
+    ["events", "trains", "deletions", "hires"].forEach(c => (db[c] || []).forEach(r => { if (unsyncedOf(c, r)) n++; }));
+    return Math.max(n, pendingCount());
+  }
+  window.v46Unsynced = unsyncedCount;
+  window.v46UnsyncedOf = unsyncedOf;
+  const _paint46 = paintSyncBar;
+  paintSyncBar = function () {
+    const r = _paint46.apply(this, arguments);
+    try {
+      const el = document.getElementById("syncBar"); const tx = document.getElementById("syncText");
+      const n = unsyncedCount();
+      if (el && tx) {
+        if (n && !pendingCount()) tx.textContent = tx.textContent.replace("All changes synced", n + " change" + (n === 1 ? "" : "s") + " saved on this device, waiting to sync");
+        el.dataset.unsynced = String(n);
+        el.classList.toggle("pending", !!n);
+        let s = document.getElementById("v46Safe");
+        if (!s) { s = document.createElement("div"); s.id = "v46Safe"; s.className = "v46-safe"; el.appendChild(s); }
+        s.textContent = n ? "Saved on this device ✓ · " + n + " waiting for Supabase" + (syncState.lastError ? " (" + syncState.lastError + ")" : "") + (navigator.onLine ? " — retrying" : " — will send when back online")
+          : "Saved on this device ✓ · Supabase ✓";
+        s.classList.toggle("ok", !n);
+      }
+    } catch (e) { console.warn("v46 sync bar", e); }
+    return r;
+  };
+  window.paintSyncBar = paintSyncBar;
+  setInterval(() => {
+    try {
+      if (!navigator.onLine) return;
+      if (!activityLoaded) pullActivity();
+      else if (pendingCount() && !flushing) flushQueue();
+      else if (unsyncedCount()) { scanDirty(); scheduleFlush(100); }
+    } catch (e) {}
+  }, 30e3);
+
+  /* ---------- E17: dashboard always says why no projects show, and offers My jobs ---------- */
+  const _dash46 = dashHtml;
+  dashHtml = function () {
+    let html = _dash46.apply(this, arguments);
+    try {
+      const me = (getOperator() || {}).name || "";
+      const mine = me && (db.projects || []).some(p => activeProject(p) && String(p.controller || "").toLowerCase() === me.toLowerCase());
+      if (mine && html.indexOf('id="controllerFilter"') >= 0 && html.indexOf('id="btnMyJobs"') < 0) {
+        html = html.replace('<label>Controller</label>', `<div class="row" style="gap:8px;margin-top:8px"><button type="button" class="chip ${view.controller === me ? "on" : ""}" id="btnMyJobs" data-me="${esc(me)}">My jobs (${esc(me)})</button><button type="button" class="chip ${view.controller === "all" ? "on" : ""}" id="btnAllJobs">All jobs</button></div><label>Controller</label>`);
+      }
+      const shown = (html.match(/class="card open-project"/g) || []).length;
+      if (!shown) {
+        const st = syncState || {};
+        const why = projectsLoading ? "Loading the project list…"
+          : !navigator.onLine ? "This device is offline and has no active projects saved yet."
+          : st.lastError && /Project list/.test(st.lastError) ? st.lastError
+          : projectsLoaded ? (((db.projects || []).length) + " projects downloaded" + (st.projectsAt ? " at " + fmtClock(st.projectsAt) : "") + ", none active" + (view.controller !== "all" || view.statusFilter !== "all" ? " for the filter chosen" : "") + ".")
+          : "The project list has not loaded yet.";
+        html = html.replace(/(<p class="help">0 active jobs\.<\/p>)/, `$1<div class="card v46-noproj" id="noProjects"><strong>No active projects showing.</strong><p class="help">${esc(why)} Signed in as ${esc(whoText())}.</p><button type="button" class="btn orange" id="btnRetryProjects">Reload projects</button>${view.controller !== "all" || view.statusFilter !== "all" ? ` <button type="button" class="btn ghost" id="btnClearFilters">Show all controllers</button>` : ""}</div>`);
+      }
+    } catch (e) { console.warn("v46 dash", e); }
+    return html;
+  };
+  /* a sign-in (or token refresh) after the first project pull re-pulls the list so RLS-filtered empties don't stick */
+  window.addEventListener("storage", e => { if (e.key === AUTH_KEY && hasSession()) refreshProjects(); });
+
+  /* ---------- screen decoration ---------- */
+  function decorate() {
+    if (view.page === "dash") {
+      const my = document.getElementById("btnMyJobs"); if (my) my.onclick = () => { view.controller = my.dataset.me; render(); };
+      const al = document.getElementById("btnAllJobs"); if (al) al.onclick = () => { view.controller = "all"; view.statusFilter = "all"; render(); };
+      const rp = document.getElementById("btnRetryProjects"); if (rp) rp.onclick = () => { refreshProjects(); setTimeout(render, 50); };
+      const cf = document.getElementById("btnClearFilters"); if (cf) cf.onclick = () => { view.controller = "all"; view.statusFilter = "all"; render(); };
+    }
+    if (view.page === "event") {
+      document.querySelectorAll("#app .train[onclick]").forEach(row => {
+        const m = /openTrain\('([^']+)'\)/.exec(row.getAttribute("onclick") || ""); if (!m) return;
+        const x = db.trains.find(y => y.id === m[1]); if (!x || row.querySelector(".v46-unsync")) return;
+        if (unsyncedOf("trains", x)) { const s = document.createElement("span"); s.className = "v46-unsync"; s.title = "Saved on this device, waiting to sync"; s.textContent = "⟳ not synced yet"; (row.querySelector(".muted") || row).appendChild(s); }
+      });
+    }
+    const t = curTrain(); if (!t) return;
+    if (!snaps.has(t.id)) snaps.set(t.id, snapOfT(t));
+    /* per-sample save state */
+    const h2 = document.querySelector("#app .wrap h2");
+    if (h2 && !document.getElementById("v46SampleSync")) {
+      const p = syncState.pending["trains:" + t.id]; const u = unsyncedOf("trains", t);
+      const d = document.createElement("div"); d.id = "v46SampleSync"; d.className = "v46-sample-sync " + (u ? "wait" : "ok");
+      d.textContent = u ? "Saved on this device ✓ · waiting to sync to Supabase" + (p && p.tries ? " (" + p.tries + " tr" + (p.tries === 1 ? "y" : "ies") + (p.lastError ? ": " + p.lastError : "") + ")" : "") : "Saved on this device ✓ · synced to Supabase ✓";
+      (h2.closest(".row") || h2).insertAdjacentElement("afterend", d);
+    }
+    if (!personType(t)) return;
+    /* B9 allocate box under the person fields */
+    const host = document.getElementById("modeFields");
+    if (host && !document.getElementById("allocBox") && nameKey(t)) {
+      host.insertAdjacentHTML("afterend", allocHtml(t));
+      const b = document.getElementById("btnAllocate"), pick = document.getElementById("allocPick");
+      if (b && pick) b.onclick = () => { pick.hidden = !pick.hidden; };
+      const c = document.getElementById("btnAllocCancel"); if (c) c.onclick = () => { pick.hidden = true; document.querySelectorAll("[data-alloc]").forEach(i => { i.checked = false; }); };
+      const sel = document.getElementById("btnAllocSelect");
+      if (sel) sel.onclick = async () => {
+        const ids = [...document.querySelectorAll("[data-alloc]:checked")].map(i => i.dataset.alloc);
+        if (!ids.length) { alert("Tick at least one sample first."); return; }
+        const n = await allocate(t, ids);
+        if (n) render();
+      };
+    }
+    /* start all on this person */
+    const start = document.getElementById("btnStart");
+    const group = [t].concat(siblings(t)).filter(notStarted);
+    if (start && group.length >= 2 && !document.getElementById("btnStartAll")) {
+      const b = document.createElement("button"); b.type = "button"; b.id = "btnStartAll"; b.className = "btn orange v46-startall";
+      b.textContent = "Start all " + group.length + " samples on this person";
+      b.onclick = async () => { const n = await startAll(t); if (n) render(); };
+      (start.closest(".startstop") || start).insertAdjacentElement("afterend", b);
+    }
+  }
+  const _render46 = render;
+  render = function () { const r = _render46.apply(this, arguments); try { decorate(); } catch (e) { console.warn("v46 decorate", e); } return r; };
+  window.render = render;
+  const st = document.createElement("style");
+  st.textContent = ".v46-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}"
+    + ".v46-dialog{background:var(--surf2,#1c2233);color:var(--text,#fff);border-radius:14px;padding:18px;max-width:460px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.5)}"
+    + ".v46-q{font-weight:700;font-size:17px;margin:0 0 6px}.v46-alloc{margin-top:10px}.v46-pick{display:flex;gap:10px;align-items:center;padding:8px 0;font-size:16px}"
+    + ".v46-pick input{width:22px;height:22px}.v46-startall{width:100%;margin-top:8px}"
+    + ".v46-safe{font-size:12px;font-weight:700;margin-top:2px;color:#FFB020}.v46-safe.ok{color:#3FBF7F}"
+    + ".v46-sample-sync{font-size:13px;font-weight:700;margin:6px 0 2px;padding:4px 10px;border-radius:999px;display:inline-block}.v46-sample-sync.ok{background:#16382A;color:#7FE0B0}.v46-sample-sync.wait{background:#3A2A0E;color:#FFC861}"
+    + ".v46-unsync{display:inline-block;margin-left:8px;font-size:12px;font-weight:700;color:#FFC861}.v46-noproj{margin-top:10px}";
+  document.head.appendChild(st);
+  try { paintSyncBar(); render(); } catch (e) {}
 })();
 </script>
 
