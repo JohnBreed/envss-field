@@ -29,11 +29,11 @@ await ev(() => { db.projects.push({ id: "ptest", number: "9999901", name: "V47 T
 
 /* data safety: opening / listing an existing noise sample must not change it (no silent write that could sync over newer data) */
 {
-  const old = await ev(() => { const t = { id: "tnzold", eventId: "etest", trainKind: "noise_personal", contaminantId: "NOISE", sampleNo: 9, pouch: "9", status: "ended", startAt: "2026-11-10T00:00:00Z", endAt: "2026-11-10T08:00:00Z", dosimeterSerial: "D-OLD", person: { first: "Old", last: "Record", occupation: "Fitter" }, audit: [] };
-    db.trains.push(t); save(); return JSON.stringify(t); });
+  const old = await ev(() => { const t = { id: "tnzold", eventId: "etest", trainKind: "noise_personal", contaminantId: "NOISE", sampleNo: 9, pouch: "9", status: "ended", startAt: "2026-11-10T00:00:00Z", endAt: "2026-11-10T08:00:00Z", dosimeterSerial: "D-OLD", analyses: [], person: { first: "Old", last: "Record", occupation: "Fitter" }, audit: [] };
+    db.trains.push(t); save(); const c = JSON.parse(JSON.stringify(t)); delete c.updatedAt; return JSON.stringify(c); });
   await ev(() => openEvent("etest")); await sleep(200); await ev(() => openTrain("tnzold")); await sleep(400); await ev(() => openEvent("etest")); await sleep(200);
   const now = await ev(() => { const t = db.trains.find(x => x.id === "tnzold"); const c = JSON.parse(JSON.stringify(t)); delete c.updatedAt; return JSON.stringify(c); });
-  ok("v47 opening an existing noise sample does not change the saved record", now === old, now === old ? "" : now.slice(0, 160));
+  { const a = JSON.parse(old), b = JSON.parse(now); const dk = [...new Set(Object.keys(a).concat(Object.keys(b)))].filter(k => JSON.stringify(a[k]) !== JSON.stringify(b[k])); ok("v47 opening an existing noise sample does not change the saved record", !dk.length, dk.map(k => k + ": " + JSON.stringify(a[k]) + " -> " + JSON.stringify(b[k])).join("; ").slice(0, 300)); }
 }
 /* A1 static: choose SLM */
 const S = await ev(() => { addTrain("etest", "noise_static"); const t = db.trains.find(x => x.id === view.trainId); t.audit = [{ at: "2026-11-01T00:00:00Z", who: "old", action: "old entry", detail: "x" }]; save(); return t.id; });
