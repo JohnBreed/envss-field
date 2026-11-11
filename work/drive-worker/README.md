@@ -24,7 +24,7 @@ The Supabase key is the Script Property **`drive-worker`**. It is a dedicated se
    - Property: `drive-worker`
    - Value: the dedicated Supabase secret API key you just created and named `drive-worker`
    Save. Do not email the key, do not put it in the sheet, and do not paste the service-role key here.
-8. In the editor, choose the function **`testFolderMatch`** and **Run**. The log should show one folder for `0019333` (`12U0YFSi3_yhY9ItrsGt0G2t67OW7bayx`) and one for `0019032` (`18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4`) when those names are the fixtures in the function — that run does not call Drive. Then choose **`processDriveQueue`** and **Run**.
+8. In the editor, choose the function **`testFolderMatch`** and **Run**. The log should show one folder for `0019333` (`TEST_FOLDER_ID_0019333`) and one for `0019032` (`18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4`) when those names are the fixtures in the function — that run does not call Drive. Then choose **`processDriveQueue`** and **Run**.
 9. Google will ask you to authorise. Review the scopes (Drive, and external requests to Supabase). Approve as developer@envss.com.au.
 10. Left menu → **Triggers** → **Add trigger**:
     - Function: `processDriveQueue`

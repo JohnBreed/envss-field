@@ -283,7 +283,7 @@ function installTrigger() {
 /** Run from the editor. Logs the fixture results. Does not touch Drive. */
 function testFolderMatch() {
   var folders = [
-    { id: "12U0YFSi3_yhY9ItrsGt0G2t67OW7bayx", name: "0019333 HYG-ACA North Perth Primary School" },
+    { id: "TEST_FOLDER_ID_0019333", name: "0019333 HYG-ACA Example Primary School" },
     { id: "18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4", name: "0019032 Applied Safety & Risk Management" },
     { id: "admin", name: "0019032_Admin" },
     { id: "lab", name: "0019032_Lab" },

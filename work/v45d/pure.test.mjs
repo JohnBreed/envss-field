@@ -24,7 +24,7 @@ if (fromHtml !== fromGs) {
 const api = new Function(fromHtml + "\nreturn { envssIsSideFolder_, envssIsProjectRoot_, envssMatchJobFolders_, envssUniqueDriveName_, envssPhotoFileName_, envssVersionedName_ };")();
 
 const folders = [
-  { id: "12U0YFSi3_yhY9ItrsGt0G2t67OW7bayx", name: "0019333 HYG-ACA North Perth Primary School" },
+  { id: "TEST_FOLDER_ID_0019333", name: "0019333 HYG-ACA Example Primary School" },
   { id: "18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4", name: "0019032 Applied Safety & Risk Management" },
   { id: "admin", name: "0019032_Admin" },
   { id: "lab", name: "0019032_Lab" },
@@ -34,7 +34,7 @@ const folders = [
 function assert(cond, msg) { if (!cond) { console.error("FAIL", msg); process.exit(1); } }
 
 const a = api.envssMatchJobFolders_("0019333", folders);
-assert(a.ok && a.folder.id === "12U0YFSi3_yhY9ItrsGt0G2t67OW7bayx", "0019333 match");
+assert(a.ok && a.folder.id === "TEST_FOLDER_ID_0019333", "0019333 match");
 const b = api.envssMatchJobFolders_("0019032", folders);
 assert(b.ok && b.folder.id === "18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4", "0019032 match, admin/lab excluded, Laboratory kept");
 const none = api.envssMatchJobFolders_("0099999", folders);
@@ -61,16 +61,16 @@ assert(planned.planned === true, "planned");
 assert(planned.startDate === "2026-11-07", "start");
 assert(planned.turnaround === "3_day", "turnaround");
 assert(planned.lab === "MPL Laboratories", "lab");
-assert(planned.siteContact === "School office 08 9227 9050", "site");
-assert(planned.poc.email === "alex@programmed.example", "poc");
+assert(planned.siteContact === "School office 08 0000 0000", "site");
+assert(planned.poc.email === "alex@client.example", "poc");
 assert(planned.task.indexOf("Lead dust") >= 0 && planned.task.indexOf("<p>") < 0, "task text");
-assert(planned.driveLink.indexOf("12U0YFSi3_yhY9ItrsGt0G2t67OW7bayx") >= 0, "drive link stored, not used to pick a folder");
+assert(planned.driveLink.indexOf("TEST_FOLDER_ID_0019333") >= 0, "drive link stored, not used to pick a folder");
 assert(planned.projectItemId === "3384715481", "project item");
 
 const long = mapItem(fix.decodedLongReference);
 assert(long.jobNumber === "0019333" && long.fieldCode === "" && long.planned === true, "long reference stays a reference");
 assert(long.driveLink.indexOf("http") === 0, "bom stripped");
-assert(long.poc.phone === "08 9227 9050", "decoded phone");
+assert(long.poc.phone === "08 0000 0000", "decoded phone");
 
 const closed = mapItem(fix.decodedClosed);
 assert(closed.planned === false, "closed not planned");
