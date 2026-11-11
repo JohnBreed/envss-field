@@ -45,7 +45,7 @@ const summary = await page.evaluate(async () => {
       startFlow: "2", endFlow: "2", status: "ended", analyses: [], audit: []
     }, extra);
   }
-  db.projects.push({ id: "p1", number: "0019333", name: "0019333-Programmed Facility Management-HYG-LPS-North Perth Primary School", source: "podio" });
+  db.projects.push({ id: "p1", number: "0019333", name: "0019333-Example Client Pty Ltd-HYG-LPS-Example Primary School", source: "podio" });
   db.events.push({ id: "e1", projectId: "p1", code: "0019333-001", type: "hygiene", date: "2026-11-07", turnaround: "standard", stage: "planned" });
   const lead = [{ code: "PB", name: "Lead, inorganic dusts and fumes" }];
   db.trains.push(sample("t1", { sampleNo: 3, mediaId: "IESS22", analyses: lead }));
@@ -127,9 +127,9 @@ const flow = await page.evaluate(() => {
     "0019333": { at: "2026-11-08", rows: [{ payload: {
       itemId: "900001933301", fieldCode: "0019333-009", reference: "0019333-009", jobNumber: "0019333",
       startDate: "2026-11-07", startStatus: "Site Works Start Date is now Confirmed", turnaround: "3_day",
-      lab: "MPL Laboratories", siteContact: "School office 08 9227 9050",
-      poc: { first: "Alex", last: "Nguyen", company: "Programmed Facility Management", role: "Site supervisor", phone: "0400 000 000", email: "alex@programmed.example" },
-      task: "Lead dust monitoring at North Perth Primary School.", planned: true
+      lab: "MPL Laboratories", siteContact: "School office 08 0000 0000",
+      poc: { first: "Alex", last: "Nguyen", company: "Example Client Pty Ltd", role: "Site supervisor", phone: "0400 000 000", email: "alex@client.example" },
+      task: "Lead dust monitoring at Example Primary School.", planned: true
     } }] }
   }));
   openProject("p1");

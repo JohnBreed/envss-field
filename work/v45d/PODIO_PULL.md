@@ -47,7 +47,7 @@ Filter: Site Works Start Date Status is **Tentative** (option 1) or **Confirmed*
 
 A row is stored with `planned = false` when COC Status is **Lab Results Received** or Report Status is **Report Sent**, so it drops off the field list. Items that leave the Podio filter are marked `planned = false`. Rows are not deleted.
 
-Job number comes from the leading 7 digits of `reference-3` or the project title, otherwise from the `job-number` calculation padded to 7 digits. `0019333` matches project `podio-3384715481` (`0019333-Programmed Facility Management-HYG-LPS-…`). The Podio Drive link is stored for display and for a later write-back. The Drive copier does **not** use it (Podio says HYG-LPS, the shared drive folder for this job is the one whose name starts with `0019333`).
+Job number comes from the leading 7 digits of `reference-3` or the project title, otherwise from the `job-number` calculation padded to 7 digits. `0019333` matches project `podio-3384715481` (`0019333-Example Client Pty Ltd-HYG-LPS-…`). The Podio Drive link is stored for display and for a later write-back. The Drive copier does **not** use it (Podio says HYG-LPS, the shared drive folder for this job is the one whose name starts with `0019333`).
 
 On the 92 mirrored items (8 Nov 2026), `reference-3` is the long project title, not `0019333-001`. The mapper still accepts `0019333-001` when that is what Podio holds, and uses it as the field event code. A long reference keeps the next `0019333-00N` code and shows the Podio reference on the event.
 

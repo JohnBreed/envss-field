@@ -34,7 +34,7 @@ A real phone photo of a cassette is usually a few megabytes and lands in the sam
 
 Folder match, shared-drive search by name only:
 
-- `0019333 …` → `12U0YFSi3_yhY9ItrsGt0G2t67OW7bayx`
+- `0019333 …` → `TEST_FOLDER_ID_0019333`
 - `0019032 …` plus siblings `0019032_Admin` and `0019032_Lab` → `18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4` only
 - No match, or two project roots → stopped, and the app says `Drive copy waiting: job folder not found` or `… not unique`
 
