@@ -2,11 +2,11 @@
    Registered by field.html with scope "./field.html", so it never controls index.html.
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
-const VERSION = "45";
-const CACHE = "envss-field-v45b-hire"; /* local unpublished hire layer; VERSION stays "45". Live rollback remains a710ca9 / v45a. */
+const VERSION = "46";
+const CACHE = "envss-field-v46"; /* v46: PR #1 + PR #2 merged, section B, offline sync queue, noise.js split. Rollback tag: rollback-v45c. */
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
-const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);
+const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "noise.js", "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);
 const CDN_ASSETS = [
   "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
   "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"
@@ -33,9 +33,11 @@ self.addEventListener("activate", event => {
     await self.clients.claim();
   })());
 });
+const NOISE = BASE + "noise.js";
 function cacheKey(req) {
   const u = new URL(req.url);
   if (u.href.startsWith(PAGE)) return PAGE;          // field.html?anything -> one cached copy
+  if (u.href.startsWith(NOISE)) return NOISE;        // noise.js?anything -> one cached copy
   return u.href;
 }
 async function networkFirst(req, key, timeoutMs) {
@@ -62,5 +64,8 @@ self.addEventListener("fetch", event => {
     return;
   }
   const key = cacheKey(req);
+  /* v46: noise.js is refreshed on its own. Online it is always re-checked with the server (no-cache), so a new
+     noise.js goes live without a new field.html or a new worker; offline the last good copy is used. */
+  if (key === NOISE) { event.respondWith(networkFirst(new Request(NOISE, { cache: "no-cache" }), NOISE, 6000)); return; }
   if (CACHEABLE.has(key)) event.respondWith(networkFirst(req, key, 0));
 });

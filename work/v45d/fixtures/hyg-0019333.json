@@ -1,0 +1,59 @@
+{
+  "note": "Shape taken from the decoded podio_items mirror of app 24280319 (real events use a long reference-3 copied from the project title; none of the 92 mirrored rows is 0019333). Job 0019333 is the live Occ Hygiene project podio-3384715481, name 0019333-Example Client Pty Ltd-HYG-LPS-Example Primary School. This fixture is not a Podio write.",
+  "rawPlanned": {
+    "item_id": 900001933301,
+    "fields": [
+      {"external_id": "reference-3", "type": "text", "values": [{"value": "0019333-001"}]},
+      {"external_id": "project", "type": "app", "values": [{"value": {"item_id": 3384715481, "app_id": 21851342, "title": "0019333-Example Client Pty Ltd-HYG-LPS-Example Primary School"}}]},
+      {"external_id": "job-number", "type": "calculation", "values": [{"value": 19333}]},
+      {"external_id": "site-contact-namephone", "type": "text", "values": [{"value": "School office 08 0000 0000"}]},
+      {"external_id": "company", "type": "text", "values": [{"value": "Example Client Pty Ltd"}]},
+      {"external_id": "first-name", "type": "text", "values": [{"value": "Alex"}]},
+      {"external_id": "last-name", "type": "text", "values": [{"value": "Nguyen"}]},
+      {"external_id": "job-role", "type": "text", "values": [{"value": "Site supervisor"}]},
+      {"external_id": "contact-number", "type": "phone", "values": [{"type": "work", "value": "0400 000 000"}]},
+      {"external_id": "email", "type": "email", "values": [{"type": "work", "value": "alex@client.example"}]},
+      {"external_id": "task-description", "type": "text", "values": [{"value": "<p>Lead dust monitoring at Example Primary School.</p>"}]},
+      {"external_id": "selection", "type": "category", "values": [{"value": {"id": 1, "text": "Normal Turnaround(3 Days)"}}]},
+      {"external_id": "site-works-start-date", "type": "date", "values": [{"start": "2026-11-07 00:00:00"}]},
+      {"external_id": "site-works-start-date-status", "type": "category", "values": [{"value": {"id": 2, "text": "Site Works Start Date is now Confirmed"}}]},
+      {"external_id": "which-laboratory-is-processing-samples", "type": "app", "values": [{"value": {"title": "MPL Laboratories", "app_id": 22142144, "item_id": 1594450857}}]},
+      {"external_id": "google-drive-job-folder-link", "type": "text", "values": [{"value": "https://drive.google.com/drive/folders/TEST_FOLDER_ID_0019333"}]},
+      {"external_id": "equipment-details", "type": "text", "values": [{"value": "<p>Pumps and IOM heads</p>"}]},
+      {"external_id": "generate-report", "type": "category", "values": [{"value": {"id": 7, "text": "Samples Not Sent"}}]}
+    ]
+  },
+  "decodedLongReference": {
+    "item_id": 900001933302,
+    "fields": {
+      "reference-3": "0019333-Example Client Pty Ltd-HYG-LPS-Example Primary School",
+      "project": {"title": "0019333-Example Client Pty Ltd-HYG-LPS-Example Primary School", "app_id": 21851342, "item_id": 3384715481},
+      "job-number": 19333.0,
+      "site-contact-namephone": "Mr onsite test",
+      "company": "Example Client Pty Ltd",
+      "first-name": "Sam",
+      "last-name": "Lee",
+      "job-role": "Facilities",
+      "contact-number": {"type": "work", "value": "08 0000 0000"},
+      "email": {"type": "work", "value": "sam.lee@example.com"},
+      "task-description": "<p>Originally quoted under another job, however site contacts wanted lead dust monitoring.</p>",
+      "site-works-start-date": {"start": "2026-11-08 00:00:00"},
+      "site-works-start-date-status": "Site Works Start Date is Tentative",
+      "which-laboratory-is-processing-samples": {"title": "MPL Laboratories", "app_id": 22142144, "item_id": 1594450857},
+      "google-drive-job-folder-link": "\ufeffhttps://drive.google.com/drive/folders/TEST_FOLDER_ID_0019333",
+      "equipment-details": "<p>4 X AIRMET PUMPS</p>",
+      "generate-report": "Samples Not Sent"
+    }
+  },
+  "decodedClosed": {
+    "item_id": 900001933303,
+    "fields": {
+      "reference-3": "0019333-Example Client Pty Ltd-HYG-LPS-Example Primary School",
+      "project": {"title": "0019333-Example Client Pty Ltd-HYG-LPS-Example Primary School", "item_id": 3384715481},
+      "job-number": 19333,
+      "site-works-start-date-status": "Site Works Start Date is now Confirmed",
+      "generate-report": "Lab Results Received",
+      "generate-final-report": "Report Sent"
+    }
+  }
+}
