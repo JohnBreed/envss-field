@@ -1,0 +1,1156 @@
+{
+ "comment": "Real rows from the Supabase podio_items mirror (read only, 12 Nov 2026 AWST) for the three AFM events planned for 13 Nov 2026, in the shape of the proposed views v_field_afm_events / v_field_afm_samples. Used by work/v49/afm-pull.test.mjs with mocked Supabase only. Repo is public: client contact names, phones, emails, staff names and site-plan links are replaced with placeholders; operational values (job numbers, references, dates, sample numbers, cowls, pump and rotameter serials, locations, flows) are the real mirror values.",
+ "v_field_afm_events": [
+  {
+   "item_id": 3393177499,
+   "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+   "last_edit_on": "2026-11-12 11:39:22+00",
+   "synced_at": "2026-11-12 12:13:16.730403+00",
+   "fields": {
+    "project": {
+     "title": "0018637-PESP Alliance-HAZ-ACS,AFM,VCC-PESP-CMC/PWD - 007",
+     "app_id": 21851342,
+     "item_id": 3387709482
+    },
+    "reference-3": "ENVSS-HAZ-AFM-0018637-0011-20261113",
+    "job-number": 18637,
+    "afm-title": "20261113-0018637-PESP Alliance-\nPESP-CMC/PWD\n",
+    "samples-date": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "company": "PESP Alliance",
+    "first-name": "POC",
+    "last-name": "Contact",
+    "job-role": "Site representative",
+    "contact-number": {
+     "type": "work",
+     "value": "0400 000 000"
+    },
+    "email": [
+     {
+      "type": "work",
+      "value": "poc@example.com"
+     }
+    ],
+    "job-location": {
+     "address": "\nPESP-CMC/PWD\n"
+    },
+    "task-description": "Earthworks",
+    "selection": "Next Day 0700",
+    "calculation": 9,
+    "generate-report": "Field Sheet/COC not Generated",
+    "send-report": "Field Sheet/COC not sent",
+    "generate-final-report": "Final Report not Generated",
+    "editable-site-plan-link": "<p><a href=\"https://docs.google.com/drawings/d/EXAMPLE/edit\">https://docs.google.com/drawings/d/EXAMPLE/edit</a></p>"
+   }
+  },
+  {
+   "item_id": 3393177423,
+   "title": "20261113-0019299-Main Roads Western Australia- Perth Park Project",
+   "last_edit_on": "2026-11-12 11:39:23+00",
+   "synced_at": "2026-11-12 12:13:16.730403+00",
+   "fields": {
+    "project": {
+     "title": "0019299-Main Roads-HYG-AFM-Perth Park Project",
+     "app_id": 21851342,
+     "item_id": 3387707678
+    },
+    "reference-3": "ENVSS-HAZ-AFM-0019299-0010-20261113",
+    "job-number": 19299,
+    "afm-title": "20261113-0019299-Main Roads Western Australia-\nPerth Park Project\n",
+    "samples-date": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "company": "Main Roads Western Australia",
+    "first-name": "POC",
+    "last-name": "Contact",
+    "job-role": "Site representative",
+    "contact-number": {
+     "type": "work",
+     "value": "0400 000 000"
+    },
+    "email": [
+     {
+      "type": "work",
+      "value": "poc@example.com"
+     }
+    ],
+    "job-location": {
+     "lat": -31.9567112,
+     "lng": 115.8919443,
+     "address": "Camfield Dr, Burswood WA 6100, Australia"
+    },
+    "task-description": "Earthworks",
+    "selection": "Next Day 0700",
+    "calculation": 5,
+    "generate-report": "Field Sheet/COC not Generated",
+    "send-report": "Field Sheet/COC not sent",
+    "generate-final-report": "Final Report not Generated",
+    "editable-site-plan-link": "<p><a href=\"https://docs.google.com/drawings/d/EXAMPLE/edit\">https://docs.google.com/drawings/d/EXAMPLE/edit</a></p>"
+   }
+  },
+  {
+   "item_id": 3393177640,
+   "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+   "last_edit_on": "2026-11-12 11:39:22+00",
+   "synced_at": "2026-11-12 12:13:16.730403+00",
+   "fields": {
+    "project": {
+     "title": "0017889-PESP Alliance-HAZ-ACS-Burswood WA 6100",
+     "app_id": 21851342,
+     "item_id": 3387717386
+    },
+    "reference-3": "ENVSS-HAZ-AFM-0017889-0011-20261113",
+    "job-number": 17889,
+    "afm-title": "20261113-0017889-PESP Alliance-\nBurswood WA 6100\n",
+    "samples-date": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "company": "PESP Alliance",
+    "first-name": "POC",
+    "last-name": "Contact",
+    "job-role": "Site representative",
+    "contact-number": {
+     "type": "work",
+     "value": "0400 000 000"
+    },
+    "email": [
+     {
+      "type": "work",
+      "value": "poc@example.com"
+     }
+    ],
+    "job-location": {
+     "lat": -31.9625938,
+     "lng": 115.8989491,
+     "address": "Burswood WA 6100, Australia"
+    },
+    "task-description": "Earthworks",
+    "selection": "Next Day 0700",
+    "calculation": 11,
+    "generate-report": "Field Sheet/COC not Generated",
+    "send-report": "Field Sheet/COC not sent",
+    "generate-final-report": "Final Report not Generated",
+    "editable-site-plan-link": "<p><a href=\"https://docs.google.com/drawings/d/EXAMPLE/edit\">https://docs.google.com/drawings/d/EXAMPLE/edit</a></p>"
+   }
+  }
+ ],
+ "v_field_afm_samples": [
+  {
+   "item_id": 3393177427,
+   "event_item_id": "3393177423",
+   "title": "0 - ENVSS-HAZ-AFM-0019299-0010-12576",
+   "last_edit_on": "2026-11-12 01:35:03+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0019299-Main Roads Western Australia- Perth Park Project",
+     "app_id": 21120412,
+     "item_id": 3393177423
+    },
+    "sample-number": 0,
+    "default": "Yes",
+    "cowl": "12576",
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "0-Field Blank",
+    "monitoring-type": "Control",
+    "start-flow-rate": 0,
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0019299-0010-12576"
+   }
+  },
+  {
+   "item_id": 3393177429,
+   "event_item_id": "3393177423",
+   "title": "1 - ENVSS-HAZ-AFM-0019299-0010-12577",
+   "last_edit_on": "2026-11-12 01:34:56+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0019299-Main Roads Western Australia- Perth Park Project",
+     "app_id": 21120412,
+     "item_id": 3393177423
+    },
+    "sample-number": 1,
+    "default": "-",
+    "cowl": "12577",
+    "equipment": {
+     "title": "101587",
+     "app_id": 21184100,
+     "item_id": 3382580613
+    },
+    "pump-number-2": 101587,
+    "rotameter": {
+     "title": "4435",
+     "app_id": 21184220,
+     "item_id": 1237665232
+    },
+    "location-3": "1-Exclusion Zone – Northern Boundary (West)",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0019299-0010-12577"
+   }
+  },
+  {
+   "item_id": 3393177431,
+   "event_item_id": "3393177423",
+   "title": "2 - ENVSS-HAZ-AFM-0019299-0010-12578",
+   "last_edit_on": "2026-11-12 01:34:46+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0019299-Main Roads Western Australia- Perth Park Project",
+     "app_id": 21120412,
+     "item_id": 3393177423
+    },
+    "sample-number": 2,
+    "default": "-",
+    "cowl": "12578",
+    "equipment": {
+     "title": "101564",
+     "app_id": 21184100,
+     "item_id": 3382582131
+    },
+    "pump-number-2": 101564,
+    "rotameter": {
+     "title": "4435",
+     "app_id": 21184220,
+     "item_id": 1237665232
+    },
+    "location-3": "2- Exclusion Zone – Corner (Fencing)",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0019299-0010-12578"
+   }
+  },
+  {
+   "item_id": 3393177432,
+   "event_item_id": "3393177423",
+   "title": "3 - ENVSS-HAZ-AFM-0019299-0010-12579",
+   "last_edit_on": "2026-11-12 01:34:38+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0019299-Main Roads Western Australia- Perth Park Project",
+     "app_id": 21120412,
+     "item_id": 3393177423
+    },
+    "sample-number": 3,
+    "default": "-",
+    "cowl": "12579",
+    "equipment": {
+     "title": "101568",
+     "app_id": 21184100,
+     "item_id": 3382584148
+    },
+    "pump-number-2": 101568,
+    "rotameter": {
+     "title": "4435",
+     "app_id": 21184220,
+     "item_id": 1237665232
+    },
+    "location-3": "3-Exclusion Zone – Corner (Fencing)",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0019299-0010-12579"
+   }
+  },
+  {
+   "item_id": 3393177433,
+   "event_item_id": "3393177423",
+   "title": "4 - ENVSS-HAZ-AFM-0019299-0010-12580",
+   "last_edit_on": "2026-11-12 01:34:28+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0019299-Main Roads Western Australia- Perth Park Project",
+     "app_id": 21120412,
+     "item_id": 3393177423
+    },
+    "sample-number": 4,
+    "default": "-",
+    "cowl": "12580",
+    "equipment": {
+     "title": "87652",
+     "app_id": 21184100,
+     "item_id": 1233536580
+    },
+    "pump-number-2": 87652,
+    "rotameter": {
+     "title": "4435",
+     "app_id": 21184220,
+     "item_id": 1237665232
+    },
+    "location-3": "4-  Exclusion Zone – Northern Boundary (West)",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0019299-0010-12580"
+   }
+  },
+  {
+   "item_id": 3393177503,
+   "event_item_id": "3393177499",
+   "title": "0 - ENVSS-HAZ-AFM-0018637-0011-12581",
+   "last_edit_on": "2026-11-12 01:38:07+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 0,
+    "default": "Yes",
+    "cowl": "12581",
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "0-Field Blank",
+    "monitoring-type": "Control",
+    "start-flow-rate": 0,
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12581"
+   }
+  },
+  {
+   "item_id": 3393177505,
+   "event_item_id": "3393177499",
+   "title": "1 - ENVSS-HAZ-AFM-0018637-0011-12582",
+   "last_edit_on": "2026-11-12 01:38:17+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 1,
+    "default": "-",
+    "cowl": "12582",
+    "equipment": {
+     "title": "94475",
+     "app_id": 21184100,
+     "item_id": 2603557409
+    },
+    "pump-number-2": 94475,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "1-Eastern side of the excavation boundary",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12582"
+   }
+  },
+  {
+   "item_id": 3393177508,
+   "event_item_id": "3393177499",
+   "title": "2 - ENVSS-HAZ-AFM-0018637-0011-12583",
+   "last_edit_on": "2026-11-12 01:38:26+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 2,
+    "default": "-",
+    "cowl": "12583",
+    "equipment": {
+     "title": "101561",
+     "app_id": 21184100,
+     "item_id": 3382588812
+    },
+    "pump-number-2": 101561,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "2-Nothern side of the excavation boundary",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12583"
+   }
+  },
+  {
+   "item_id": 3393177511,
+   "event_item_id": "3393177499",
+   "title": "3 - ENVSS-HAZ-AFM-0018637-0011-12584",
+   "last_edit_on": "2026-11-12 01:38:33+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 3,
+    "default": "-",
+    "cowl": "12584",
+    "equipment": {
+     "title": "95003",
+     "app_id": 21184100,
+     "item_id": 2603560472
+    },
+    "pump-number-2": 95003,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "3-Western side of the excavation boundary",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12584"
+   }
+  },
+  {
+   "item_id": 3393177512,
+   "event_item_id": "3393177499",
+   "title": "4 - ENVSS-HAZ-AFM-0018637-0011-12585",
+   "last_edit_on": "2026-11-12 01:38:41+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 4,
+    "default": "-",
+    "cowl": "12585",
+    "equipment": {
+     "title": "101312",
+     "app_id": 21184100,
+     "item_id": 3382585039
+    },
+    "pump-number-2": 101312,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "4-Southern side of the excavation boundary",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12585"
+   }
+  },
+  {
+   "item_id": 3393177515,
+   "event_item_id": "3393177499",
+   "title": "5 - ENVSS-HAZ-AFM-0018637-0011-12586",
+   "last_edit_on": "2026-11-12 01:38:47+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 5,
+    "default": "-",
+    "cowl": "12586",
+    "equipment": {
+     "title": "101584",
+     "app_id": 21184100,
+     "item_id": 3382574887
+    },
+    "pump-number-2": 101584,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "5 - south west corner pit",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12586"
+   }
+  },
+  {
+   "item_id": 3393177516,
+   "event_item_id": "3393177499",
+   "title": "6 - ENVSS-HAZ-AFM-0018637-0011-12587",
+   "last_edit_on": "2026-11-12 01:38:54+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 6,
+    "default": "-",
+    "cowl": "12587",
+    "equipment": {
+     "title": "101319",
+     "app_id": 21184100,
+     "item_id": 3382579970
+    },
+    "pump-number-2": 101319,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "6 - East of office compound pit",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12587"
+   }
+  },
+  {
+   "item_id": 3393177518,
+   "event_item_id": "3393177499",
+   "title": "7 - ENVSS-HAZ-AFM-0018637-0011-12588",
+   "last_edit_on": "2026-11-12 01:39:04+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 7,
+    "default": "-",
+    "cowl": "12588",
+    "equipment": {
+     "title": "101597",
+     "app_id": 21184100,
+     "item_id": 3382590127
+    },
+    "pump-number-2": 101597,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "7 - Centre of restricted area / north of deep excavation pit",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12588"
+   }
+  },
+  {
+   "item_id": 3393177519,
+   "event_item_id": "3393177499",
+   "title": "8 - ENVSS-HAZ-AFM-0018637-0011-12589",
+   "last_edit_on": "2026-11-12 01:39:11+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0018637-PESP Alliance- PESP-CMC/PWD",
+     "app_id": 21120412,
+     "item_id": 3393177499
+    },
+    "sample-number": 8,
+    "default": "-",
+    "cowl": "12589",
+    "equipment": {
+     "title": "101592",
+     "app_id": 21184100,
+     "item_id": 3382574158
+    },
+    "pump-number-2": 101592,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "8 - Northern boundary stockpile",
+    "monitoring-type": "Control",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0018637-0011-12589"
+   }
+  },
+  {
+   "item_id": 3393177647,
+   "event_item_id": "3393177640",
+   "title": "0 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:19+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 0,
+    "default": "Yes",
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "0-Field Blank",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177649,
+   "event_item_id": "3393177640",
+   "title": "1 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:18+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 1,
+    "default": "-",
+    "equipment": {
+     "title": "91648",
+     "app_id": 21184100,
+     "item_id": 1898084005
+    },
+    "pump-number-2": 91648,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "1- North Eastern Boundary",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177650,
+   "event_item_id": "3393177640",
+   "title": "2 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:19+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 2,
+    "default": "-",
+    "equipment": {
+     "title": "92010",
+     "app_id": 21184100,
+     "item_id": 1875428190
+    },
+    "pump-number-2": 92010,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "2-  Eastern Boundary (Miravac North Enviro Monitor Cage)",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177652,
+   "event_item_id": "3393177640",
+   "title": "3 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:20+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 3,
+    "default": "-",
+    "equipment": {
+     "title": "71377",
+     "app_id": 21184100,
+     "item_id": 886987693
+    },
+    "pump-number-2": 71377,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "3- South Eastern Boundary",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177653,
+   "event_item_id": "3393177640",
+   "title": "4 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:21+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 4,
+    "default": "-",
+    "equipment": {
+     "title": "100880",
+     "app_id": 21184100,
+     "item_id": 3296973287
+    },
+    "pump-number-2": 100880,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "4-  Southern Boundary (Crown East Enviro Monitor Cage)",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177658,
+   "event_item_id": "3393177640",
+   "title": "5 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:22+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 5,
+    "default": "-",
+    "equipment": {
+     "title": "92530",
+     "app_id": 21184100,
+     "item_id": 1875427339
+    },
+    "pump-number-2": 92530,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "5-  Southern Boundary (Crown West Enviro Monitor Cage)",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177661,
+   "event_item_id": "3393177640",
+   "title": "6 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:21+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 6,
+    "default": "-",
+    "equipment": {
+     "title": "100877",
+     "app_id": 21184100,
+     "item_id": 3296974399
+    },
+    "pump-number-2": 100877,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "6- South Western Boundary",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177662,
+   "event_item_id": "3393177640",
+   "title": "7 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:21+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 7,
+    "default": "-",
+    "equipment": {
+     "title": "85343",
+     "app_id": 21184100,
+     "item_id": 1160421706
+    },
+    "pump-number-2": 85343,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "7- Western Boundary (Facing Camfield Dr)",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177663,
+   "event_item_id": "3393177640",
+   "title": "8 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:23+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 8,
+    "default": "-",
+    "equipment": {
+     "title": "100814",
+     "app_id": 21184100,
+     "item_id": 3296973978
+    },
+    "pump-number-2": 100814,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "8- Western Boundary (Facing Roundabout)",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177664,
+   "event_item_id": "3393177640",
+   "title": "9 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:23+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 9,
+    "default": "-",
+    "equipment": {
+     "title": "95063",
+     "app_id": 21184100,
+     "item_id": 2603563363
+    },
+    "pump-number-2": 95063,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "9- Tennis West North",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  },
+  {
+   "item_id": 3393177666,
+   "event_item_id": "3393177640",
+   "title": "10 - ENVSS-HAZ-AFM-0017889-0011-null",
+   "last_edit_on": "2026-11-12 01:05:24+00",
+   "synced_at": "2026-11-12 02:03:32.979381+00",
+   "fields": {
+    "job-site": {
+     "title": "20261113-0017889-PESP Alliance- Burswood WA 6100",
+     "app_id": 21120412,
+     "item_id": 3393177640
+    },
+    "sample-number": 10,
+    "default": "-",
+    "equipment": {
+     "title": "84293",
+     "app_id": 21184100,
+     "item_id": 1231548803
+    },
+    "pump-number-2": 84293,
+    "rotameter": {
+     "title": "2520A4A0BNBN-NL-05",
+     "app_id": 21184220,
+     "item_id": 1239012202
+    },
+    "location-3": "10- Northern Boundary  (Facing Roger MacKay Dr)",
+    "monitoring-type": "Background",
+    "start-flow-rate": 2,
+    "sample-start-2": {
+     "start": "2026-11-13 07:00:00"
+    },
+    "sample-by": {
+     "title": "ENVSS Technician",
+     "app_id": 21061319,
+     "item_id": 1
+    },
+    "pump-failed": "No",
+    "referenece": "ENVSS-HAZ-AFM-0017889-0011-null"
+   }
+  }
+ ],
+ "projects": [
+  {
+   "id": "podio-3387717386",
+   "number": "0017889",
+   "name": "PESP Alliance-HAZ-ACS-Burswood WA 6100",
+   "client": "PESP Alliance",
+   "status": "Active",
+   "source": "podio",
+   "active": true
+  },
+  {
+   "id": "podio-3387709482",
+   "number": "0018637",
+   "name": "PESP Alliance-HAZ-ACS,AFM,VCC-PESP-CMC/PWD - 007",
+   "client": "PESP Alliance",
+   "status": "Active",
+   "source": "podio",
+   "active": true
+  },
+  {
+   "id": "podio-3387707678",
+   "number": "0019299",
+   "name": "Main Roads-HYG-AFM-Perth Park Project",
+   "client": "Main Roads",
+   "status": "Active",
+   "source": "podio",
+   "active": true
+  }
+ ]
+}

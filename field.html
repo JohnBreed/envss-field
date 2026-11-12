@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
 <!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
 <!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
 <!-- ENVSS Field v36 single-file build v44 (field.html, live; v44d: photos shrunk, kept in IndexedDB and uploaded to the private field-photos bucket, record keeps references only; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
@@ -7,7 +8,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.1</title>
+  <title>ENVSS Field v48.2</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -391,7 +392,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.1</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.2</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -407,12 +408,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.1"></script>
+  <script src="config.js?v=48.2"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.1"; /* 2026-11-12 (AWST): v48.1 = v48 + flow check compares end flow with the sample's own start flow (REQ-009 fix). v48 quick fixes on v46 + noise.js 47.0. Numbering unchanged (not A001/N001). */
+const APP_VERSION = "48.2"; /* 2026-11-12 (AWST): v48.2 = v48.1 + AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks, read-only Podio pull). v48.1: end flow vs the sample's own start flow. v48 quick fixes on v46 + noise.js 47.0. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -1247,6 +1248,14 @@ function shiftSortKey(t) {
 }
 function displayNo(t) {
   const n = sampleNoOf(t) || t.pouch || "";
+  /* AFM is exempt from A001/N001 and from "Sample N": field blank is 0, then Pump 1, Pump 2… */
+  const ev = (typeof eventById === "function" && t) ? eventById(t.eventId) : null;
+  const fibre = t && (typeof isFibreTrain === "function" ? isFibreTrain(t)
+    : ((t.trainKind || "").startsWith("fibre") || (ev && (ev.type === "fibre" || /(^|-)AFM-/.test(String(ev.code || ""))))));
+  if (fibre) {
+    if ((typeof isBlank === "function" && isBlank(t)) || Number(n) === 0) return "0";
+    return "Pump " + n;
+  }
   return isNoise(t) ? ("Noise Sample " + n) : ("Sample " + n);
 }
 function contam(id) { return db.catalogs.contaminants.find(c => c.id === id || c.code === id); }
@@ -3353,14 +3362,28 @@ window.deleteEvent = deleteEvent;
 window.deleteProject = deleteProject;
 
 /* ---------- AFM fibre ---------- */
-const TAT_OPTS = [["same_day", "Same day"], ["next_0700", "Next day by 07:00"], ["emergency", "Emergency"]];
-const PROTO_OPTS = [["background", "Background"], ["control", "Control"], ["clearance", "Clearance"]];
+const TAT_OPTS = [["same_day", "Same day"], ["next_0700", "Next day by 07:00"], ["normal_3day", "Normal turnaround (3 days)"], ["emergency", "Emergency"]];
+const PROTO_OPTS = [["background", "Background"], ["control", "Control"], ["clearance", "Clearance"], ["exposure", "Exposure"]];
 function optLabel(list, v) { const x = list.find(o => o[0] === v); return x ? x[1] : (v || ""); }
 function optsHtml(list, cur) { return list.map(([v, l]) => `<option value="${v}" ${cur === v ? "selected" : ""}>${l}</option>`).join(""); }
 function isFibreEvent(ev) { return !!ev && (ev.type === "fibre" || /(^|-)AFM-/.test(String(ev.code || ""))); }
 function isFibreTrain(t) { return !!t && ((t.trainKind || "").startsWith("fibre") || isFibreEvent(eventById(t.eventId))); }
-function cowlDigits(v) { return String(v || "").replace(/^ENVSS/i, "").replace(/\D/g, ""); }
-function cowlDisplay(t) { const d = cowlDigits(t.cowlNo || t.mediaId); return d ? "ENVSS" + d : ""; }
+function cowlDigits(v) {
+  /* Bare digits as text. Strip ENVSS/ESS prefixes, spaces and dashes so existing
+     mediaId values like "ENVSS01850" still read back as "01850". Never parse as a
+     number — leading zeros must stay. The app does not add a prefix. */
+  let s = String(v == null ? "" : v).trim().toUpperCase();
+  s = s.replace(/[\s-]+/g, "");
+  s = s.replace(/^(ENVSS|ESS)(?=\d)/, "");
+  return s.replace(/\D/g, "");
+}
+function cowlValid(v) { return /^\d{5}$/.test(cowlDigits(v)); }
+function cowlDisplay(t) { return cowlDigits(t && (t.cowlNo || t.mediaId)); }
+function cowlDuplicates(t) {
+  const d = cowlDigits(t && (t.cowlNo || t.mediaId));
+  if (!d) return [];
+  return trainsOf(t.eventId).filter(x => x && x.id !== t.id && cowlDigits(x.cowlNo || x.mediaId) === d);
+}
 function ymd(date) { return String(date || "").replace(/-/g, ""); }
 function fibreEventCode(p, date, seq) { const d = ymd(date); return "ENVSS-HYG-AFM-" + ((p && p.number) || "") + "-" + seq + (d ? "-" + d : ""); }
 function fibreSeqOf(code) { const m = String(code || "").match(/-(\d{3,})(?:-\d{8})?$/); return m ? m[1] : ""; }
@@ -3401,7 +3424,8 @@ const _startGaps33 = startGaps;
 startGaps = function (t) {
   if (!isFibreTrain(t)) return _startGaps33(t);
   const miss = [];
-  if (!cowlDigits(t.cowlNo || t.mediaId)) miss.push("Cowl number");
+  if (!cowlValid(t.cowlNo || t.mediaId)) miss.push("Cowl number (5 digits)");
+  else if (cowlDuplicates(t).length) miss.push("Cowl number (already used in this event)");
   if (isBlank(t)) return miss;
   if (!t.pumpSerial) miss.push("Pump serial");
   if (!t.location) miss.push("Location");
@@ -3419,14 +3443,14 @@ function fibreRejected(t) { return t.status === "rejected" || !!t.rejectCode; }
 const _followUpComplete33 = followUpComplete;
 followUpComplete = function (t) {
   if (!isFibreTrain(t)) return _followUpComplete33(t);
-  if (isBlank(t)) return !!cowlDigits(t.cowlNo || t.mediaId);
+  if (isBlank(t)) return cowlValid(t.cowlNo || t.mediaId) && !cowlDuplicates(t).length;
   if (fibreRejected(t)) return true;
   return t.status === "ended" && num(t.endFlow) != null;
 };
 const _displayStatus33 = displayStatus;
 displayStatus = function (t) {
   if (!t || typeof t === "string" || !isFibreTrain(t)) return _displayStatus33(t);
-  if (isBlank(t)) return cowlDigits(t.cowlNo || t.mediaId) ? "sample_complete" : "incomplete_blank";
+  if (isBlank(t)) return cowlValid(t.cowlNo || t.mediaId) ? "sample_complete" : "incomplete_blank";
   if (fibreRejected(t)) return "rejected";
   if (t.status === "running") return "running";
   if (t.status === "ended") return num(t.endFlow) != null ? "sample_complete" : "incomplete";
@@ -3440,9 +3464,26 @@ volumeLitres = function (t) {
   if (mins == null || a == null || b == null) return null;
   return round1(mins * ((a + b) / 2));   // volume = average flow x minutes
 };
+const _flowCheckFibre = flowCheck;
+flowCheck = function (t) {
+  /* AFM / NOHSC:3003 context: warn if start and end flow differ by more than ±10%.
+     Hygiene INH ±10% and other contaminant tolerances are unchanged. */
+  if (!isFibreTrain(t) || isBlank(t)) return _flowCheckFibre(t);
+  const start = num(t.startFlow), end = num(t.endFlow), tol = 10;
+  if (start == null || start === 0) return { ok: true, tol, pct: null, set: start, noStart: end != null };
+  if (end == null) return { ok: true, tol, pct: null, set: start, noStart: false };
+  const pct = Math.abs(end - start) / Math.abs(start) * 100;
+  return { ok: pct <= tol + 1e-9, tol, pct, set: start, noStart: false };
+};
 const _rejectList33 = rejectList;
 rejectList = function (t) {
-  if (isFibreTrain(t)) return [{ code: "pump_fault", label: "Pump failure", photo: false }, { code: "damaged_filter", label: "Filter failure", photo: false }];
+  if (isFibreTrain(t)) return [
+    { code: "pump_fault", label: "Pump failed", photo: false },
+    { code: "flow_fault", label: "Flow fault", photo: false },
+    { code: "compromised", label: "Sample compromised", photo: false },
+    { code: "overload", label: "Filter particle overload", photo: false },
+    { code: "damaged_filter", label: "Filter failure", photo: false }
+  ];
   return _rejectList33(t);
 };
 const _summaryLine33 = summaryLine;
@@ -3464,12 +3505,19 @@ trainKindOptions = function (t) {
 };
 
 function gpsLines(t) {
+  function poor(loc) { return loc && loc.acc != null && Number(loc.acc) > 50; }
   function line(label, loc) {
     if (!loc || loc.lat == null || loc.lng == null) return `<p class="help">${label}: no GPS fix yet</p>`;
     const acc = loc.acc != null ? " ±" + Math.round(Number(loc.acc)) + " m" : "";
-    return `<p class="help">${label} ${Number(loc.lat).toFixed(5)}, ${Number(loc.lng).toFixed(5)}${acc}</p>`;
+    const warn = poor(loc) ? ` <span style="color:var(--danger);font-weight:700">Accuracy worse than 50 m — check you are at the pump.</span>` : "";
+    return `<p class="help">${label} ${Number(loc.lat).toFixed(5)}, ${Number(loc.lng).toFixed(5)}${acc}${warn}</p>`;
   }
-  return `<div id="gpsBlock">${line("Start location", t.startLoc)}${line("Stop location", t.endLoc)}</div>`;
+  const started = !!t.startAt, stopped = !!t.endAt;
+  const miss = [];
+  if (started && !(t.startLoc && t.startLoc.lat != null)) miss.push("start");
+  if (stopped && !(t.endLoc && t.endLoc.lat != null)) miss.push("stop");
+  const missHtml = miss.length ? `<p class="help" id="gpsMissWarn" style="color:var(--danger);font-weight:700">No GPS fix at ${miss.join(" and ")}. You can keep going — the missing fix is flagged.</p>` : "";
+  return `<div id="gpsBlock">${line("Start location", t.startLoc)}${line("Stop location", t.endLoc)}${missHtml}</div>`;
 }
 function auditHtml(t) {
   const a = t.audit || [];
@@ -3497,9 +3545,16 @@ function fibreTrainHtml(t, ev) {
     </div>
     <p class="muted">${esc(optLabel(PROTO_OPTS, (ev && ev.protocol) || t.monitorType || "background"))}${ev && ev.rotameter ? " · rotameter " + esc(ev.rotameter) : " · no rotameter set on the event"}</p>
     <label>Cowl number</label>
-    <div class="row" style="gap:6px"><span class="muted" style="padding-top:10px">ENVSS</span>
-      <input id="cowlNo" class="grow" inputmode="numeric" autocomplete="off" value="${esc(cowlDigits(t.cowlNo || t.mediaId))}" placeholder="11850"></div>
-    <p class="help">Digits only. Stored and printed as ENVSS + number.</p>`;
+    <input id="cowlNo" class="grow" inputmode="numeric" autocomplete="off" value="${esc(cowlDigits(t.cowlNo || t.mediaId))}" placeholder="11850" aria-describedby="cowlHelp">
+    <p class="help" id="cowlHelp">Enter the 5-digit cowl number (XXXXX). Leading zeros are kept. Do not add a prefix.</p>
+    <p class="help" id="cowlWarn" style="color:var(--danger);font-weight:700;${cowlDigits(t.cowlNo || t.mediaId) && !cowlValid(t.cowlNo || t.mediaId) ? "" : "display:none"}">Cowl number must be exactly 5 digits.</p>
+    <p class="help" id="cowlDup" style="color:var(--danger);font-weight:700;${cowlDuplicates(t).length ? "" : "display:none"}">${cowlDuplicates(t).length ? "Cowl " + cowlDisplay(t) + " is already on " + cowlDuplicates(t).map(x => displayNo(x)).join(", ") + " in this event. Each sample, including the field blank, needs its own cowl." : ""}</p>
+    <label>Cassette manufacturer serial (DU)</label>
+    <div class="row" style="gap:6px;align-items:end">
+      <input id="duSerial" class="grow" value="${esc(t.duSerial || "")}" placeholder="e.g. DU972121" autocomplete="off">
+      <button type="button" class="btn mid" id="btnDuScan">Scan</button>
+    </div>
+    <p class="help">Optional. Scan the Data Matrix, or type the serial. Stored on this device only (not sent to Podio). It does not replace the cowl number.</p>`;
   if (blank) {
     h += `<div class="grid2"><div>${na("Pump serial")}${na("Start / stop")}</div><div>${na("Flow (L/min)")}${na("Volume (L)")}</div></div>
       <p class="help">Sample 0 is the field blank. Pump, times, flow and volume are N/A.</p>`;
@@ -3525,8 +3580,9 @@ function fibreTrainHtml(t, ev) {
         <div><label>Volume (L)</label><input id="volumeOut" value="${vol != null ? vol.toFixed(1) : "—"}" disabled></div>
       </div>
       <p class="muted" id="runtimeOut">${mins != null ? "Runtime " + Math.round(mins) + " min" : (running ? elapsedLabel(t.startAt) : "")}</p>
-      ${vol != null && vol < 360 ? `<p class="help" id="volWarn" style="color:var(--danger);font-weight:700">Volume ${vol.toFixed(1)} L is under 360 L. The limit of detection rises (0.01 f/mL).</p>` : ""}
-      ${chk.noStart ? `<p class="help muted flow-nostart">${esc(flowNoStartNote(chk))}</p>` : chk.pct != null && !chk.ok ? `<p class="help" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from the set flow${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%).</p>` : ""}
+      ${vol != null && vol < 333 ? `<p class="help muted" id="volWarn">Note: volume ${vol.toFixed(1)} L is under 333 L. This is a soft note only (not a reject, and it is not taken from a government document). It does not block the sample.</p>` : ""}
+      ${chk.noStart ? `<p class="help muted flow-nostart">${esc(flowNoStartNote(chk))}</p>` : chk.pct != null && !chk.ok ? `<p class="help" id="flowWarn" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from this sample's start flow${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%). This is a warning — flag a flow fault if the pump was not held at the set flow.</p>` : ""}
+      ${t.startAt && t.endAt && new Date(t.endAt) < new Date(t.startAt) ? `<p class="help" id="timeOrderWarn" style="color:var(--danger);font-weight:700">Stop time is before start time. Check the times.</p>` : ""}
       <p class="help">Accidental START/STOP: edit the times. Location is stored when START or STOP gets a GPS fix.</p>
       ${gpsLines(t)}
       ${rejectBlockHtml(t)}`;
@@ -3536,6 +3592,40 @@ function fibreTrainHtml(t, ev) {
   return h;
 }
 window.fibreTrainHtml = fibreTrainHtml;
+window.cowlDigits = cowlDigits;
+window.cowlValid = cowlValid;
+window.cowlDisplay = cowlDisplay;
+window.cowlDuplicates = cowlDuplicates;
+function scanDuSerial(t, input) {
+  const pick = document.createElement("input");
+  pick.type = "file"; pick.accept = "image/*"; pick.capture = "environment";
+  pick.onchange = async () => {
+    const file = pick.files && pick.files[0];
+    if (!file) return;
+    let value = "";
+    try {
+      if (typeof BarcodeDetector === "function") {
+        const det = new BarcodeDetector({ formats: ["data_matrix", "qr_code", "code_128", "code_39"] });
+        const bmp = await createImageBitmap(file);
+        const codes = await det.detect(bmp);
+        if (codes && codes[0] && codes[0].rawValue) value = String(codes[0].rawValue).trim();
+      }
+    } catch (e) { console.warn("du scan", e); }
+    if (!value) {
+      const typed = prompt("Could not read a Data Matrix on this device. Type the cassette manufacturer serial (DU), or cancel.", input.value || "");
+      if (typed == null) return;
+      value = String(typed).trim();
+      t.duSerialSource = value ? "manual" : "unscanned";
+    } else {
+      t.duSerialSource = "data_matrix";
+    }
+    input.value = value;
+    t.duSerial = value;
+    saveQuiet();
+  };
+  pick.click();
+}
+window.scanDuSerial = scanDuSerial;
 
 /* ---------- Mines Act / SRS fields ---------- */
 function srs() { return window.ENVSS_SRS_CATALOGS || {}; }
@@ -3630,7 +3720,13 @@ collectTrain = function (t) {
   _collectTrain33(t);
   const g = id => document.getElementById(id);
   if (isFibreTrain(t)) {
-    if (g("cowlNo")) { t.cowlNo = cowlDigits(g("cowlNo").value); t.mediaId = cowlDisplay(t); }
+    if (g("cowlNo")) { t.cowlNo = cowlDigits(g("cowlNo").value); t.mediaId = t.cowlNo; }
+    if (g("duSerial")) {
+      const du = g("duSerial").value.trim();
+      t.duSerial = du;
+      if (!du) t.duSerialSource = "unscanned";
+      else if (t.duSerialSource !== "data_matrix") t.duSerialSource = "manual";
+    }
     if (g("location")) t.location = g("location").value.trim();
     t.headId = "";
     if (isBlank(t)) { t.pumpSerial = ""; t.startFlow = ""; t.endFlow = ""; t.startAt = ""; t.endAt = ""; t.status = "field_blank"; }
@@ -4174,7 +4270,23 @@ bind = function () {
   wireSrs("locSearch", "locations", () => { window._v34MineOpen = true; collectTrain(t); saveQuiet(); render(); });
   if (isFibreTrain(t)) {
     const cowl = document.getElementById("cowlNo");
-    if (cowl) cowl.addEventListener("input", () => { const d = cowlDigits(cowl.value); if (d !== cowl.value) cowl.value = d; });
+    const paintCowl = () => {
+      if (!cowl) return;
+      const d = cowlDigits(cowl.value);
+      if (d !== cowl.value) cowl.value = d;
+      const warn = document.getElementById("cowlWarn");
+      const dup = document.getElementById("cowlDup");
+      if (warn) warn.style.display = (d && !cowlValid(d)) ? "" : "none";
+      const hits = d ? trainsOf(t.eventId).filter(x => x && x.id !== t.id && cowlDigits(x.cowlNo || x.mediaId) === d) : [];
+      if (dup) {
+        dup.style.display = hits.length ? "" : "none";
+        if (hits.length) dup.textContent = "Cowl " + d + " is already on " + hits.map(x => displayNo(x)).join(", ") + " in this event. Each sample, including the field blank, needs its own cowl.";
+      }
+    };
+    if (cowl) { cowl.addEventListener("input", paintCowl); paintCowl(); }
+    const scan = document.getElementById("btnDuScan");
+    const duIn = document.getElementById("duSerial");
+    if (scan && duIn) scan.onclick = () => scanDuSerial(t, duIn);
   }
 };
 
@@ -9872,6 +9984,804 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   st.textContent = "#pouch[readonly],#pouch[disabled]{opacity:1;background:var(--surf,#151b2b);color:var(--text,#e8eefc);cursor:default}"
     + "#pouch[readonly]:focus,#pouch[disabled]:focus{outline:none}";
   document.head.appendChild(st);
+})();
+</script>
+
+<script>
+/* ===== v49 draft: AFM-only extras. No Podio writes. IndexedDB names unchanged.
+   Night-shift reuse warning for AFM pumps (spec wording). Hygiene clash text is not changed.
+   Previous-night use is read from existing shiftKind; shift start/end hours are not invented. ===== */
+(function () {
+  function prevNightHits(serial, t) {
+    serial = String(serial || "").trim().toUpperCase();
+    if (!serial || !t || typeof isFibreTrain !== "function" || !isFibreTrain(t)) return [];
+    return (db.trains || []).filter(x => {
+      if (!x || x.id === t.id) return false;
+      if (String(x.pumpSerial || "").trim().toUpperCase() !== serial) return false;
+      if ((db.deletions || []).some(d => d.trainId === x.id)) return false;
+      if (x.status === "rejected" || x.status === "fault") return false;
+      if ((x.shiftKind || "day") !== "night") return false;
+      /* Same shift/day is already covered by the v48 clash banner; this flag is for a previous night shift. */
+      const sameShift = typeof window.v40ClashHits === "function" && window.v40ClashHits("pumpSerial", serial, t).some(h => h.id === x.id);
+      return !sameShift;
+    });
+  }
+  function paintAfmReuse() {
+    const t = typeof curTrain === "function" ? curTrain() : (db.trains || []).find(x => x.id === (view && view.trainId));
+    const inp = document.getElementById("pump");
+    let w = document.getElementById("afmReuseWarn");
+    if (!inp || !t || typeof isFibreTrain !== "function" || !isFibreTrain(t) || isBlank(t)) { if (w) w.remove(); return; }
+    const hits = prevNightHits(inp.value, t);
+    if (!hits.length) { if (w) w.remove(); return; }
+    if (!w) {
+      w = document.createElement("div");
+      w.id = "afmReuseWarn";
+      w.className = "pump-warn clash-warn";
+      (inp.closest(".combo") || inp).insertAdjacentElement("afterend", w);
+    }
+    const evs = hits.map(x => ((eventById(x.eventId) || {}).code || displayNo(x))).filter(Boolean);
+    w.textContent = "This has been used on a previous shift, ensure it is clean before use. Previously on " + evs.join(", ") + " (night shift). You can still use it.";
+  }
+  if (typeof render === "function") {
+    const _r = render;
+    render = function () { const r = _r.apply(this, arguments); try { paintAfmReuse(); } catch (e) { console.warn("v49 afm reuse", e); } return r; };
+    window.render = render;
+  }
+  document.addEventListener("input", e => { if (e.target && e.target.id === "pump") paintAfmReuse(); });
+  document.addEventListener("change", e => { if (e.target && e.target.id === "pump") paintAfmReuse(); });
+  window.v49AfmPrevNight = prevNightHits;
+})();
+</script>
+
+<script>
+/* ===== v49 draft: AFM read-only pull from Podio (via the Supabase podio_items mirror). =====
+   Reads views v_field_afm_events (Podio app 21120412 "AFM Event") and v_field_afm_samples (Podio app 21120488
+   "AFM Samples"). The app never calls Podio and never writes to Podio; nothing here sends Podio anything.
+   Fill-blanks only: a value already captured in the field app is never overwritten. Every value that came
+   from Podio is listed on the event ("From Podio (AFM)") and on the sample. IndexedDB names are unchanged;
+   the downloaded Podio copy is kept in localStorage under its own key (envss-podio-afm-v49).
+   SQL for the two views: work/afm_v49_01_afm_podio_views.sql (rollback kept). Applied with the v48.2 publish. */
+(function () {
+  const CACHE = "envss-podio-afm-v49";
+  const st = { busy: false, note: "", err: "", at: 0 };
+
+  /* ---------- pure mapping (also used by work/v49/afm-pull.test.mjs) ---------- */
+  const M = (function () {
+    function clean(v) { return String(v == null ? "" : v).replace(/^\uFEFF/, "").replace(/\uFEFF/g, "").replace(/\s+/g, " ").trim(); }
+    function text(v) {
+      if (v == null) return "";
+      if (typeof v === "string" || typeof v === "number") return clean(v);
+      if (Array.isArray(v)) return text(v[0]);
+      if (typeof v === "object") {
+        if (v.title != null) return clean(v.title);
+        if (v.address != null) return clean(v.address);
+        if (v.value != null && typeof v.value !== "object") return clean(v.value);
+        if (v.text != null) return clean(v.text);
+      }
+      return "";
+    }
+    function list(v) { return (Array.isArray(v) ? v : (v == null ? [] : [v])).map(text).filter(Boolean); }
+    function rel(v) { if (Array.isArray(v)) v = v[0]; return v && typeof v === "object" ? { title: clean(v.title || ""), itemId: v.item_id ? String(v.item_id) : "" } : { title: text(v), itemId: "" }; }
+    function dateOf(v) { const s = typeof v === "string" ? v : (v && (v.start || v.start_date)) || ""; const m = String(s).match(/(\d{4}-\d{2}-\d{2})/); return m ? m[1] : ""; }
+    function timeOf(v) { const s = typeof v === "string" ? v : (v && (v.start || v.start_date)) || ""; const m = String(s).match(/\d{4}-\d{2}-\d{2}[ T](\d{2}:\d{2})/); return m ? m[1] : ""; }
+    function num(v) { if (v == null || v === "") return null; const n = Number(typeof v === "object" ? v.value : v); return Number.isFinite(n) ? n : null; }
+    function linkIn(html) { const m = String(html || "").match(/https?:\/\/[^\s"'<>]+/); return m ? m[0].replace(/&amp;/g, "&") : ""; }
+    function cowl(v, numberField) {
+      /* Bare 5 digits as text; strip ENVSS/ESS. A Podio number field loses leading zeros, so pad that one only. */
+      let s = text(v).toUpperCase().replace(/[\s-]+/g, "").replace(/^(ENVSS|ESS)(?=\d)/, "").replace(/\D/g, "");
+      if (!s) { const n = num(numberField); if (n != null && n > 0 && n < 100000) s = String(Math.round(n)).padStart(5, "0"); }
+      return s;
+    }
+    function tat(label) {
+      const s = String(label || "").toLowerCase();
+      if (!s) return "";
+      if (/next day|0700/.test(s)) return "next_0700";
+      if (/normal|3\s*day/.test(s)) return "normal_3day";
+      if (/emergency/.test(s)) return "emergency";
+      if (/same\s*day/.test(s)) return "same_day";
+      return "";
+    }
+    function proto(label) {
+      const s = String(label || "").toLowerCase();
+      return ["background", "control", "clearance", "exposure"].find(k => s.indexOf(k) >= 0) || "";
+    }
+    function jobNumber(reference, projectTitle, title, calc) {
+      let m = String(reference || "").match(/AFM-(\d{7})(?!\d)/i); if (m) return m[1];
+      m = String(projectTitle || "").match(/^(\d{7})(?!\d)/); if (m) return m[1];
+      m = String(title || "").match(/^\d{8}-(\d{7})(?!\d)/); if (m) return m[1];
+      const n = num(calc); if (n != null && n > 0 && n < 1e7) return String(Math.round(n)).padStart(7, "0");
+      return "";
+    }
+    const CLOSED_REPORT = /report generated|report sent|invoiced|canceled|cancelled|lab results loaded/i;
+    function event(row) {
+      const f = (row && row.fields) || {};
+      const project = rel(f.project);
+      const reference = text(f["reference-3"]);
+      const poc = {
+        company: text(f.company), first: text(f["first-name"]), last: text(f["last-name"]),
+        role: text(f["job-role"]), phone: text(f["contact-number"]), email: list(f.email).join(", ")
+      };
+      const loc = f["job-location"];
+      const out = {
+        itemId: String(row.item_id || ""), title: clean(row.title), reference,
+        jobNumber: jobNumber(reference, project.title, row.title, f["job-number"]),
+        projectTitle: project.title, projectItemId: project.itemId,
+        date: dateOf(f["samples-date"]), startTime: timeOf(f["samples-date"]),
+        task: text(f["task-description"]), tatLabel: text(f.selection), tat: tat(text(f.selection)),
+        protocol: proto(text(f["monitoring-type"])), rotameter: rel(f.rotameter).title,
+        collectedBy: list(f["samples-collected-by"]).join(", "),
+        siteContact: text(f["site-contact-namephone"]),
+        siteAddress: loc && typeof loc === "object" ? clean(loc.address || "") : text(loc),
+        poc, totalSamples: num(f.calculation),
+        cocStatus: text(f["generate-report"]), cocSend: text(f["send-report"]), reportStatus: text(f["generate-final-report"]),
+        sitePlanLink: linkIn(f["editable-site-plan-link"]),
+        lastEdit: row.last_edit_on || "", syncedAt: row.synced_at || ""
+      };
+      out.open = !CLOSED_REPORT.test(out.reportStatus) && !/cancel/i.test(out.cocStatus);
+      return out;
+    }
+    function sample(row) {
+      const f = (row && row.fields) || {};
+      const ev = rel(f["job-site"]);
+      const no = num(f["sample-number"]);
+      const blank = /^yes$/i.test(text(f.default)) || no === 0;
+      const pump = rel(f.equipment).title || text(f["pump-number-2"]) || text(f["pump-number"]);
+      const locRaw = text(f["location-3"]);
+      return {
+        itemId: String(row.item_id || ""), eventItemId: ev.itemId || String(row.event_item_id || ""),
+        sampleNo: no == null ? null : Math.round(no), blank,
+        cowl: cowl(f.cowl, f["cowl-number"]),
+        pumpSerial: blank ? "" : pump,
+        rotameter: rel(f.rotameter).title,
+        locationRaw: locRaw,
+        location: locRaw.replace(/^\s*\d+\s*[-\u2013\u2014]\s*/, "").trim(),
+        protocol: proto(text(f["monitoring-type"])),
+        startFlow: blank ? null : num(f["start-flow-rate"]),
+        endFlow: blank ? null : num(f["end-flow-rate"]),
+        plannedStart: text(f["sample-start-2"] && f["sample-start-2"].start) || (typeof f["sample-start-2"] === "string" ? f["sample-start-2"] : ""),
+        plannedEnd: text(f["sample-end-2"] && f["sample-end-2"].start) || (typeof f["sample-end-2"] === "string" ? f["sample-end-2"] : ""),
+        sampledBy: rel(f["sample-by"]).title,
+        failed: text(f["pump-failed"]),
+        reference: text(f.referenece)
+      };
+    }
+    return { event, sample, cowl, tat, proto, jobNumber };
+  })();
+
+  /* ---------- cache ---------- */
+  function readCache() { try { return JSON.parse(localStorage.getItem(CACHE) || "null") || { at: "", events: [], samples: [] }; } catch (e) { return { at: "", events: [], samples: [] }; } }
+  function writeCache(c) { try { localStorage.setItem(CACHE, JSON.stringify(c)); } catch (e) {} }
+  function eventsForJob(job) { return readCache().events.filter(e => e.jobNumber === job && e.open); }
+  function samplesFor(itemId) {
+    return readCache().samples.filter(s => s.eventItemId === String(itemId))
+      .sort((a, b) => (a.sampleNo == null ? 1e9 : a.sampleNo) - (b.sampleNo == null ? 1e9 : b.sampleNo));
+  }
+  function rowFor(itemId) { return readCache().events.find(e => e.itemId === String(itemId)) || null; }
+  function jobOf(p) { const m = String(p && p.number || "").trim().match(/^(\d{7})(?!\d)/); return m ? m[1] : ""; }
+
+  /* ---------- read-only fetch (GET only) ---------- */
+  async function getView(c, name, select) {
+    const ac = typeof AbortController === "function" ? new AbortController() : null;
+    const tm = ac ? setTimeout(() => ac.abort(), 20000) : 0;
+    try { return await sbFetch(c.supabaseUrl + "/rest/v1/" + name + "?select=" + select + "&order=item_id.asc&limit=5000", { method: "GET", headers: sbHeaders(), signal: ac ? ac.signal : undefined }); }
+    finally { clearTimeout(tm); }
+  }
+  async function pull() {
+    const c = typeof sbCfg === "function" ? sbCfg() : null;
+    if (!c) { st.note = "Not connected to the server."; return false; }
+    if (!navigator.onLine) { st.note = "You're offline. AFM events saved on this device from Podio still show."; st.err = ""; return false; }
+    if (typeof hasSession !== "function" || !hasSession()) { st.note = "Sign in to refresh AFM from Podio."; st.err = ""; return false; }
+    st.busy = true; paint();
+    try {
+      let er, sr;
+      try {
+        [er, sr] = await Promise.all([
+          getView(c, "v_field_afm_events", "item_id,title,last_edit_on,synced_at,fields"),
+          getView(c, "v_field_afm_samples", "item_id,event_item_id,title,last_edit_on,synced_at,fields")
+        ]);
+      } catch (e) { st.err = ""; st.note = (e && e.name === "AbortError" ? "Podio data took too long to answer." : "Could not reach the server.") + " AFM events saved on this device still show."; return false; }
+      const bad = [er, sr].find(r => !r.ok);
+      if (bad) {
+        if (bad.status === 404) { st.note = "AFM from Podio isn't switched on yet (the read-only AFM views are waiting on approval). AFM fieldwork still works as normal."; st.err = ""; }
+        else if (bad.status === 401 || bad.status === 403) { st.note = "Sign in with your ENVSS Google account to refresh AFM from Podio."; st.err = ""; }
+        else { st.err = "Could not load AFM events from Podio (" + bad.status + "). AFM events saved on this device still show."; st.note = ""; }
+        return false;
+      }
+      const evRows = await er.json(), smRows = await sr.json();
+      const events = (evRows || []).map(M.event).filter(e => e.itemId);
+      const samples = (smRows || []).map(M.sample).filter(s => s.itemId && s.eventItemId);
+      let newest = "";
+      (evRows || []).concat(smRows || []).forEach(r => { if (r && r.synced_at && r.synced_at > newest) newest = r.synced_at; });
+      writeCache({ at: new Date().toISOString(), newest, events, samples });
+      st.at = Date.now(); st.err = "";
+      const open = events.filter(e => e.open).length;
+      st.note = "Refreshed AFM from Podio: " + open + " open AFM event" + (open === 1 ? "" : "s") + ", " + samples.length + " Podio sample" + (samples.length === 1 ? "" : "s")
+        + (newest ? " (Podio copy updated " + (typeof fmtClock === "function" ? fmtClock(newest) : newest) + ")" : "") + ". Nothing is sent to Podio.";
+      return true;
+    } finally { st.busy = false; paint(); }
+  }
+
+  /* ---------- fill blanks (never overwrite) ---------- */
+  function blankVal(v) { return v == null || String(v).trim() === ""; }
+  function deletedNos(eventId) {
+    return new Set((db.deletions || []).filter(d => d.eventId === eventId && d.trainId).map(d => Number(d.pouch)).filter(n => Number.isFinite(n)));
+  }
+  function note(list, where, field, value) { list.push({ where, field, value: String(value), at: new Date().toISOString() }); }
+  function apply(ev, row, samples) {
+    const sum = { filled: [], kept: [], conflicts: [], added: 0, skipped: [] };
+    if (!ev || !row) return sum;
+    const setE = (k, v, label) => {
+      if (blankVal(v)) return;
+      if (blankVal(ev[k])) { ev[k] = v; note(sum.filled, "event", label, v); }
+      else if (String(ev[k]) !== String(v)) sum.kept.push({ where: "event", field: label, field_app: String(ev[k]), podio: String(v) });
+    };
+    setE("date", row.date, "Date");
+    setE("taskDesc", row.task, "Task");
+    setE("tat", row.tat, "Lab turnaround");
+    setE("siteAddress", row.siteAddress, "Site address");
+    setE("siteContact", row.siteContact, "Site contact");
+    const nonBlank = samples.filter(s => !s.blank);
+    const protos = Array.from(new Set(nonBlank.map(s => s.protocol).filter(Boolean)));
+    setE("protocol", row.protocol || (protos.length === 1 ? protos[0] : ""), "Monitoring type");
+    const rotas = Array.from(new Set(nonBlank.map(s => s.rotameter).filter(Boolean)));
+    setE("rotameter", row.rotameter || (rotas.length === 1 ? rotas[0] : ""), "Rotameter");
+    ev.poc = ev.poc || {};
+    ["company", "first", "last", "role", "phone", "email"].forEach(k => {
+      const v = (row.poc || {})[k];
+      if (!blankVal(v) && blankVal(ev.poc[k])) { ev.poc[k] = v; note(sum.filled, "event", "POC " + k, v); }
+    });
+    ev.podioAfmItemId = row.itemId;
+    ev.podioAfmReference = row.reference;
+    ev.podioAfm = {
+      title: row.title, reference: row.reference, projectTitle: row.projectTitle, client: (row.poc || {}).company || "",
+      siteAddress: row.siteAddress, date: row.date, startTime: row.startTime, task: row.task, tatLabel: row.tatLabel,
+      totalSamples: row.totalSamples, podioSamples: samples.length, cocStatus: row.cocStatus, reportStatus: row.reportStatus,
+      sitePlanLink: row.sitePlanLink, sampledBy: Array.from(new Set(samples.map(s => s.sampledBy).filter(Boolean))).join(", ") || row.collectedBy || "",
+      refreshedAt: new Date().toISOString(), podioLastEdit: row.lastEdit
+    };
+
+    const live = () => trainsOf(ev.id);
+    const gone = deletedNos(ev.id);
+    const usedPodio = new Set();
+    samples.forEach(s => {
+      if (s.sampleNo == null) { sum.skipped.push({ podioItem: s.itemId, why: "no sample number in Podio" }); return; }
+      let t = live().find(x => String(x.podioAfmItemId || "") === s.itemId);
+      if (!t) t = live().find(x => !x.podioAfmItemId && sampleNoOf(x) === s.sampleNo && (s.blank ? isBlank(x) : !isBlank(x)));
+      if (!t && live().some(x => sampleNoOf(x) === s.sampleNo)) {
+        sum.conflicts.push({ sample: s.sampleNo, why: "the field app already has a different sample with this number" }); return;
+      }
+      if (usedPodio.has(s.sampleNo)) { sum.conflicts.push({ sample: s.sampleNo, why: "Podio has two samples with this number" }); return; }
+      usedPodio.add(s.sampleNo);
+      if (!t) {
+        if (gone.has(s.sampleNo)) { sum.skipped.push({ sample: s.sampleNo, why: "deleted in the field app, not re-added" }); return; }
+        t = fibreTrainRecord(ev, s.sampleNo, s.blank ? "blank" : "fibre_static");
+        t.startFlow = "";   /* filled from Podio below, or the normal 2.0 default */
+        t.rotameter = "";
+        t.audit = [{ at: nowIso(), action: "Created", detail: (s.blank ? "field blank (sample 0)" : "Pump " + s.sampleNo) + " from Podio AFM sample (read only)", who: whoText() }];
+        db.trains.push(t);
+        sum.added++;
+      }
+      const label = displayNo(t);
+      const filled = t.podioFilled || [];
+      const setT = (k, v, name) => {
+        if (blankVal(v)) return;
+        if (blankVal(t[k])) { t[k] = v; filled.push(name); note(sum.filled, label, name, v); }
+        else if (String(t[k]) !== String(v)) sum.kept.push({ where: label, field: name, field_app: String(t[k]), podio: String(v) });
+      };
+      if (s.cowl) {
+        const have = cowlDigits(t.cowlNo || t.mediaId);
+        if (!have) {
+          if (!cowlValid(s.cowl)) sum.conflicts.push({ sample: label, why: "Podio cowl " + s.cowl + " is not 5 digits; left blank" });
+          else if (live().some(x => x.id !== t.id && cowlDigits(x.cowlNo || x.mediaId) === s.cowl)) sum.conflicts.push({ sample: label, why: "Podio cowl " + s.cowl + " is already on another sample in this event; left blank" });
+          else { t.cowlNo = s.cowl; t.mediaId = s.cowl; filled.push("Cowl"); note(sum.filled, label, "Cowl", s.cowl); }
+        } else if (have !== s.cowl) sum.kept.push({ where: label, field: "Cowl", field_app: have, podio: s.cowl });
+      }
+      if (!isBlank(t)) {
+        setT("pumpSerial", s.pumpSerial, "Pump serial");
+        setT("location", s.location, "Location");
+        setT("rotameter", s.rotameter || ev.rotameter || "", "Rotameter");
+        setT("monitorType", s.protocol || ev.protocol || "", "Monitoring type");
+        if (s.startFlow != null && s.startFlow > 0) setT("startFlow", s.startFlow.toFixed(1), "Start flow");
+        if (blankVal(t.startFlow) && t.status === "prepped") t.startFlow = "2.0";
+      }
+      /* Podio times on a planned event are the office's planned start, not a real START. Shown, never used as START/STOP. */
+      t.podioAfmItemId = s.itemId;
+      t.podioAfm = { plannedStart: s.plannedStart, plannedEnd: s.plannedEnd, sampledBy: s.sampledBy, location: s.locationRaw, reference: s.reference };
+      t.podioFilled = Array.from(new Set(filled));
+    });
+    ev.podioAfm.lastResult = { filled: sum.filled.length, kept: sum.kept.length, conflicts: sum.conflicts.length, added: sum.added, skipped: sum.skipped.length };
+    ev.podioAfmLog = sum.filled.slice(-200);
+    ev.podioAfmKept = sum.kept.slice(0, 100);
+    ev.podioAfmConflicts = sum.conflicts.concat(sum.skipped).slice(0, 100);
+    return sum;
+  }
+
+  function startFromPodio(itemId) {
+    const row = rowFor(itemId);
+    const p = project(view.projectId);
+    if (!row || !p) return null;
+    let ev = (db.events || []).find(e => String(e.podioAfmItemId || "") === String(row.itemId));
+    if (!ev) {
+      const codes = new Set((db.events || []).map(e => e.code));
+      const code = row.reference && !codes.has(row.reference) ? row.reference : fibreEventCode(p, row.date, nextFibreSeq(p.id));
+      ev = { id: uid("e"), projectId: p.id, type: "fibre", stage: "planned", date: "", code,
+        multiDay: false, notes: "", uploadReady: false, operators: [], protocol: "", taskDesc: "", tat: "", rotameter: "",
+        podioLinked: false, podioUnplanned: false };
+      db.events.push(ev);
+    }
+    const samples = samplesFor(row.itemId);
+    const sum = apply(ev, row, samples);
+    if (!ev.protocol) ev.protocol = "background";
+    if (!ev.tat) ev.tat = "next_0700";
+    if (!trainsOf(ev.id).some(t => isBlank(t) && sampleNoOf(t) === 0) && !deletedNos(ev.id).has(0)) {
+      db.trains.push(fibreTrainRecord(ev, 0, "blank"));   /* every AFM event has its field blank (0) */
+    }
+    save();
+    openEvent(ev.id);
+    return sum;
+  }
+  function refillEvent(eventId) {
+    const ev = eventById(eventId);
+    if (!ev || !ev.podioAfmItemId) return null;
+    const row = rowFor(ev.podioAfmItemId);
+    if (!row) { st.note = "This AFM event isn't in the latest Podio copy (it may be closed in Podio). Nothing was changed."; paint(); return null; }
+    const sum = apply(ev, row, samplesFor(row.itemId));
+    st.note = "Filled " + sum.filled.length + " blank field" + (sum.filled.length === 1 ? "" : "s") + " from Podio" + (sum.added ? ", added " + sum.added + " sample" + (sum.added === 1 ? "" : "s") : "")
+      + (sum.kept.length ? ". Kept " + sum.kept.length + " value" + (sum.kept.length === 1 ? "" : "s") + " already in the field app" : "") + ". Nothing is sent to Podio.";
+    save();
+    return sum;
+  }
+
+  /* ---------- UI ---------- */
+  function e_(s) { return typeof esc === "function" ? esc(s) : String(s == null ? "" : s); }
+  function projectCard(p) {
+    const job = jobOf(p);
+    const rows = job ? eventsForJob(job) : [];
+    const c = readCache();
+    let h = '<div class="card" id="afmPodioPlan"><h3 class="brand-type" style="margin:0 0 6px">AFM planned in Podio</h3>';
+    if (!job) h += '<p class="help">This project has no 7-digit job number, so Podio AFM events cannot be matched.</p>';
+    else if (!rows.length) h += '<p class="help">No open Podio AFM events on this job' + (c.at ? "" : " on this device yet") + ".</p>";
+    rows.forEach(r => {
+      const n = samplesFor(r.itemId);
+      const linked = (db.events || []).find(e => String(e.podioAfmItemId || "") === r.itemId);
+      const pumps = n.filter(s => !s.blank).length, blanks = n.filter(s => s.blank).length;
+      const cowls = n.filter(s => s.cowl).length;
+      h += '<div class="card podio-afm-ev" style="margin-top:8px"><div class="brand-type" style="font-weight:700">' + e_(r.reference || r.title) + "</div>"
+        + '<div class="muted">' + e_([r.date + (r.startTime ? " " + r.startTime : ""), r.poc.company, r.siteAddress].filter(Boolean).join(" · ")) + "</div>"
+        + '<p class="help">' + e_([r.task ? "Task: " + r.task : "", r.tatLabel ? "Turnaround: " + r.tatLabel : ""].filter(Boolean).join(" · ")) + "</p>"
+        + '<p class="help">Podio samples: ' + (blanks ? "field blank 0 + " : "") + pumps + " pump" + (pumps === 1 ? "" : "s") + " · cowls set on " + cowls + " of " + n.length + "</p>"
+        + (linked
+          ? '<p class="help">Started in the field app as ' + e_(linked.code) + '.</p><button type="button" class="btn mid" data-afm-open="' + e_(linked.id) + '">Open AFM event</button>'
+          : '<button type="button" class="btn green" data-afm-start="' + e_(r.itemId) + '">Start AFM from Podio</button>')
+        + "</div>";
+    });
+    h += '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button type="button" class="btn ghost" id="btnAfmPodioRefresh"' + (st.busy ? " disabled" : "") + ">" + (st.busy ? "Refreshing AFM…" : "Refresh AFM from Podio") + "</button></div>";
+    h += '<p class="help">Read only: Podio is not changed. Values already entered in the field app are kept.</p>';
+    if (st.note) h += '<p class="help" id="afmPodioNote">' + e_(st.note) + "</p>";
+    if (st.err) h += '<p class="help" id="afmPodioErr" style="color:var(--danger,#9B2C2C);font-weight:700">' + e_(st.err) + "</p>";
+    return h + "</div>";
+  }
+  function eventCard(ev) {
+    const a = ev.podioAfm || {};
+    const poc = ev.poc || {};
+    const who = [poc.first, poc.last].filter(Boolean).join(" ");
+    const log = ev.podioAfmLog || [];
+    const kept = ev.podioAfmKept || [];
+    const conf = ev.podioAfmConflicts || [];
+    let h = '<div class="card" id="afmPodioPrefill"><h3 class="brand-type" style="margin:0 0 6px">From Podio (AFM)</h3>'
+      + '<p class="help">Reference: ' + e_(a.reference || ev.podioAfmReference || "") + "</p>"
+      + (a.client || who ? '<p class="help">Client / POC: ' + e_([a.client, who, poc.role, poc.phone, poc.email].filter(Boolean).join(" · ")) + "</p>" : "")
+      + (a.siteAddress ? '<p class="help">Site: ' + e_(a.siteAddress) + "</p>" : "")
+      + (a.task ? '<p class="help">Task: ' + e_(a.task) + "</p>" : "")
+      + '<p class="help">Planned: ' + e_([a.date, a.startTime].filter(Boolean).join(" ")) + (a.tatLabel ? " · Turnaround: " + e_(a.tatLabel) : "") + (a.sampledBy ? " · Sampled by (Podio): " + e_(a.sampledBy) : "") + "</p>"
+      + '<p class="help">Podio samples: ' + e_(a.podioSamples != null ? a.podioSamples : "?") + (a.totalSamples != null ? " (Podio total " + e_(a.totalSamples) + ")" : "") + "</p>"
+      + (a.sitePlanLink ? '<p class="help"><a href="' + e_(a.sitePlanLink) + '" target="_blank" rel="noopener">Site plan (Google Drawing)</a></p>' : "")
+      + '<p class="help">Last filled from Podio: ' + e_(a.refreshedAt ? (typeof fmtClock === "function" ? fmtClock(a.refreshedAt) : a.refreshedAt) : "never") + ". " + log.length + " value" + (log.length === 1 ? "" : "s") + " came from Podio.</p>";
+    if (log.length) h += '<details><summary class="help">What came from Podio</summary><ul class="help" id="afmPodioLog">' + log.map(x => "<li>" + e_(x.where + " · " + x.field + ": " + x.value) + "</li>").join("") + "</ul></details>";
+    if (kept.length) h += '<details><summary class="help">Kept field-app values (' + kept.length + ")</summary><ul class=\"help\">" + kept.map(x => "<li>" + e_(x.where + " · " + x.field + ": kept " + x.field_app + " (Podio has " + x.podio + ")") + "</li>").join("") + "</ul></details>";
+    if (conf.length) h += '<p class="help" id="afmPodioConf" style="color:var(--danger,#9B2C2C);font-weight:700">' + conf.map(x => e_((x.sample != null ? x.sample + ": " : "") + x.why)).join("<br>") + "</p>";
+    h += '<button type="button" class="btn ghost" id="btnAfmRefill">Fill blanks from Podio</button>'
+      + '<p class="help">Only empty fields are filled. Nothing is sent to Podio.</p>';
+    if (st.note) h += '<p class="help" id="afmPodioNote">' + e_(st.note) + "</p>";
+    return h + "</div>";
+  }
+  function trainLine(t) {
+    const a = t.podioAfm || {};
+    const filled = t.podioFilled || [];
+    return '<p class="help podio-afm-train" id="afmPodioTrain">From Podio (read only): ' + e_(filled.length ? filled.join(", ") : "nothing filled")
+      + (a.plannedStart ? " · Podio planned start " + e_(a.plannedStart.slice(0, 16)) + " (press START when the pump starts)" : "")
+      + (a.sampledBy ? " · Podio sampled by " + e_(a.sampledBy) : "") + "</p>";
+  }
+  function paint() {
+    try {
+      if (view.page === "project") {
+        const p = project(view.projectId);
+        if (!p) return;
+        const html = projectCard(p);
+        const host = document.getElementById("afmPodioPlan");
+        if (host) host.outerHTML = html;
+        else {
+          const hyg = document.getElementById("podioPlan");
+          if (hyg) hyg.insertAdjacentHTML("afterend", html);
+          else {
+            const anchor = document.querySelector("#app .wrap .filters") || document.querySelector("#app .wrap h2");
+            if (anchor) anchor.insertAdjacentHTML(anchor.tagName === "H2" ? "afterend" : "beforebegin", html);
+          }
+        }
+        const b = document.getElementById("btnAfmPodioRefresh"); if (b) b.onclick = () => pull();
+        document.querySelectorAll("[data-afm-start]").forEach(x => { x.onclick = () => startFromPodio(x.dataset.afmStart); });
+        document.querySelectorAll("[data-afm-open]").forEach(x => { x.onclick = () => openEvent(x.dataset.afmOpen); });
+      } else if (view.page === "event") {
+        const ev = eventById(view.eventId);
+        if (!ev || !ev.podioAfmItemId || !isFibreEvent(ev)) return;
+        const html = eventCard(ev);
+        const host = document.getElementById("afmPodioPrefill");
+        if (host) host.outerHTML = html;
+        else {
+          /* Put the card below the event header row (not inside it), so it has full width on a phone. */
+          const h = document.querySelector("#app h2");
+          let at = h;
+          while (at && at.parentElement && !at.parentElement.classList.contains("wrap") && at.parentElement.id !== "app") at = at.parentElement;
+          if (at) at.insertAdjacentHTML("afterend", html);
+        }
+        const b = document.getElementById("btnAfmRefill");
+        if (b) b.onclick = async () => { b.disabled = true; if (navigator.onLine && hasSession()) await pull(); refillEvent(ev.id); };
+      } else if (view.page === "train") {
+        const t = (db.trains || []).find(x => x.id === view.trainId);
+        if (!t || !t.podioAfmItemId || document.getElementById("afmPodioTrain")) return;
+        const h = document.querySelector("#app h2");
+        if (h) h.insertAdjacentHTML("afterend", trainLine(t));
+      }
+    } catch (e) { console.warn("v49 afm podio paint", e); }
+  }
+
+  /* A Podio-linked AFM event keeps its Podio reference as its code when the event is edited. */
+  if (typeof saveEventEdits === "function") {
+    const _se = saveEventEdits;
+    saveEventEdits = function () {
+      const ev = eventById(view.eventId);
+      const keep = ev && ev.podioAfmItemId && ev.podioAfmReference && ev.code === ev.podioAfmReference ? ev.code : "";
+      const r = _se.apply(this, arguments);
+      if (keep && ev && ev.code !== keep) { ev.code = keep; saveQuiet(); render(); }
+      return r;
+    };
+    window.saveEventEdits = saveEventEdits;
+  }
+  if (typeof openProject === "function") {
+    const _op = openProject;
+    openProject = function (id) {
+      const r = _op.apply(this, arguments);
+      if (navigator.onLine && typeof hasSession === "function" && hasSession() && Date.now() - st.at > 10 * 60e3) pull().catch(() => {});
+      return r;
+    };
+    window.openProject = openProject;
+  }
+  if (typeof render === "function") {
+    const _r = render;
+    render = function () { const r = _r.apply(this, arguments); paint(); return r; };
+    window.render = render;
+  }
+  /* The top-bar "Refresh from Podio" also refreshes AFM (the hygiene refresh itself is unchanged). */
+  document.addEventListener("click", e => { if (e.target && e.target.id === "btnPodioRefresh" && !e.target.disabled) pull().catch(() => {}); }, true);
+
+  window.envssAfmPodio = { map: M, pull, start: startFromPodio, refill: refillEvent, apply, cache: readCache, state: () => Object.assign({}, st) };
+})();
+</script>
+
+
+<script>
+/* ===== v48.2: AFM live irregularity checks during the day.
+   Re-run whenever a sample is saved (commit) and whenever the event or sample is painted.
+   Hard duplicates (same cowl, or same pump on a running sample) block Create COC unless a COC already exists.
+   Podio pull already leaves a duplicate cowl blank and reports it; these live checks use the same wording. ===== */
+(function () {
+  function live(t) {
+    if (!t) return false;
+    if (t.status === "rejected" || t.status === "fault" || t.status === "void" || t.status === "not_used") return false;
+    if (typeof fibreRejected === "function" && fibreRejected(t)) return false;
+    if ((db.deletions || []).some(d => d.trainId === t.id)) return false;
+    return true;
+  }
+  function runningOf(t) {
+    if (!live(t) || (typeof isBlank === "function" && isBlank(t))) return false;
+    return t.status === "running" || (!!t.startAt && !t.endAt);
+  }
+  function pumpKey(t) { return String((t && t.pumpSerial) || "").trim().toUpperCase(); }
+  function labelOf(t) { return (typeof displayNo === "function") ? displayNo(t) : String((t && (t.sampleNo != null ? t.sampleNo : t.pouch)) || ""); }
+  function listLabels(arr) { return arr.map(labelOf).join(", "); }
+  function parseWhen(s, evDate) {
+    s = String(s || "").trim();
+    if (!s) return null;
+    const direct = new Date(s);
+    if (!isNaN(direct.getTime())) return direct;
+    const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (m && evDate) {
+      const d = new Date(String(evDate).slice(0, 10) + "T" + String(m[1]).padStart(2, "0") + ":" + m[2] + ":" + (m[3] || "00"));
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }
+  function plannedEndOf(t, ev) {
+    const raw = (t && t.podioAfm && (t.podioAfm.plannedEnd || t.podioAfm.planned_end)) || ev && ev.podioAfm && ev.podioAfm.plannedEnd;
+    return parseWhen(raw, (t && t.shiftDate) || (ev && ev.date));
+  }
+function fixOpen(ts) {
+    const names = ts.map(labelOf);
+    if (!names.length) return "Open the sample and correct it.";
+    if (names.length === 1) return "Open " + names[0] + " and correct it.";
+    return "Open " + names.join(" or ") + " and correct the clash.";
+  }
+  function cocExists(ev) {
+    if (!ev) return false;
+    if (ev.cocCreated || ev.cocCreatedAt || ev.cocAt || ev.cocFile || ev.cocName) return true;
+    const audit = ev.audit || [];
+    if (audit.some(a => /create\s*coc/i.test(String(a.action || "")) || /form 302 downloaded/i.test(String(a.detail || "")))) return true;
+    return false;
+  }
+
+  function afmEventChecks(ev) {
+    const items = [];
+    if (!ev || typeof isFibreEvent !== "function" || !isFibreEvent(ev)) return items;
+    const trains = (typeof trainsOf === "function" ? trainsOf(ev.id) : (db.trains || []).filter(x => x.eventId === ev.id));
+    const shown = trains.filter(t => !(db.deletions || []).some(d => d.trainId === t.id));
+    const active = shown.filter(live);
+
+    /* Cowls: not 5 digits, and duplicates (bare 5 digits, ENVSS/ESS already stripped by cowlDigits). */
+    const cowlGroups = {};
+    active.forEach(t => {
+      const raw = (t.cowlNo || t.mediaId || "");
+      const d = cowlDigits(raw);
+      if (!d) {
+        items.push({ code: "cowl_digits", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: labelOf(t) + " has no cowl number. Enter the 5-digit cowl.",
+          fix: "Open " + labelOf(t) + " and enter a 5-digit cowl." });
+        return;
+      }
+      if (!cowlValid(d)) {
+        items.push({ code: "cowl_digits", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: "Cowl on " + labelOf(t) + " must be exactly 5 digits (ENVSS/ESS prefixes are ignored). It is currently " + d + ".",
+          fix: "Open " + labelOf(t) + " and enter a 5-digit cowl." });
+        return;
+      }
+      (cowlGroups[d] = cowlGroups[d] || []).push(t);
+    });
+    Object.keys(cowlGroups).forEach(d => {
+      const g = cowlGroups[d];
+      if (g.length < 2) return;
+      items.push({ code: "dup_cowl", severity: "hard", sampleIds: g.map(x => x.id), samples: g,
+        text: "Cowl " + d + " is already on " + listLabels(g) + " in this event. Each sample, including the field blank, needs its own cowl.",
+        fix: fixOpen(g) + " Create COC is blocked until this is fixed." });
+    });
+
+    /* Duplicate pump serials (non-blank). Hard when any of the clashing samples is running. */
+    const pumpGroups = {};
+    active.filter(t => !isBlank(t)).forEach(t => {
+      const k = pumpKey(t);
+      if (!k) return;
+      (pumpGroups[k] = pumpGroups[k] || []).push(t);
+    });
+    Object.keys(pumpGroups).forEach(k => {
+      const g = pumpGroups[k];
+      if (g.length < 2) return;
+      items.push({ code: "dup_pump", severity: "hard", sampleIds: g.map(x => x.id), samples: g,
+        text: "Pump " + k + " is on " + listLabels(g) + " in this event. Each running sample needs its own pump.",
+        fix: fixOpen(g) + " Create COC is blocked until this is fixed." });
+    });
+
+    /* Field blank: exactly one sample 0 / blank. */
+    const blanks = shown.filter(t => isBlank(t) || sampleNoOf(t) === 0);
+    if (blanks.length === 0) {
+      items.push({ code: "blank_count", severity: "warn", sampleIds: [], samples: [],
+        text: "This event has no field blank (sample 0). Add a field blank.",
+        fix: "Add a field blank (sample 0) to the event." });
+    } else if (blanks.length > 1) {
+      items.push({ code: "blank_count", severity: "warn", sampleIds: blanks.map(x => x.id), samples: blanks,
+        text: "This event has more than one field blank (sample 0): " + listLabels(blanks) + ". Keep only one.",
+        fix: "Open the extra field blank and mark it not used, or delete it if you are an admin." });
+    }
+
+    /* Duplicate or out-of-sequence sample numbers. */
+    const nos = {};
+    shown.forEach(t => {
+      const n = sampleNoOf(t);
+      (nos[n] = nos[n] || []).push(t);
+    });
+    Object.keys(nos).forEach(n => {
+      const g = nos[n];
+      if (g.length < 2) return;
+      items.push({ code: "dup_sample_no", severity: "warn", sampleIds: g.map(x => x.id), samples: g,
+        text: "Sample number " + n + " is used more than once (" + listLabels(g) + ").",
+        fix: "Open the extra sample and use the next free number." });
+    });
+    const have = new Set(shown.map(sampleNoOf));
+    const miss = [];
+    if (have.size) {
+      const max = Math.max.apply(null, Array.from(have));
+      for (let i = 0; i <= max; i++) if (!have.has(i)) miss.push(i);
+      if (miss.length) {
+        items.push({ code: "sample_seq", severity: "warn", sampleIds: [], samples: [],
+          text: "Sample numbers are out of sequence (missing " + miss.map(n => (n === 0 ? "0" : "Pump " + n)).join(", ") + "). Numbers should run 0, then Pump 1, Pump 2 and so on.",
+          fix: "Add the missing sample, or check that a sample was not numbered ahead." });
+      }
+    }
+
+    /* Missing start flow, end flow vs this sample's own start flow, overrun, rotameter, failed with no reason. */
+    const rotaVals = [];
+    shown.forEach(t => {
+      if (!live(t) && !(t.status === "rejected" || t.status === "fault" || (typeof fibreRejected === "function" && fibreRejected(t)))) return;
+      if ((t.status === "rejected" || t.status === "fault" || (typeof fibreRejected === "function" && fibreRejected(t))) &&
+          !String(t.rejectReason || "").trim() && !String(t.rejectCode || "").trim()) {
+        items.push({ code: "reject_reason", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: labelOf(t) + " is failed or rejected but has no reason.",
+          fix: "Open " + labelOf(t) + " and enter a reject reason." });
+      }
+      if (!live(t) || isBlank(t)) return;
+      if (num(t.startFlow) == null) {
+        items.push({ code: "missing_start_flow", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: labelOf(t) + " has no start flow.",
+          fix: "Open " + labelOf(t) + " and enter the start flow." });
+      }
+      const chk = typeof flowCheck === "function" ? flowCheck(t) : { ok: true };
+      if (chk && chk.pct != null && !chk.ok) {
+        items.push({ code: "flow_tol", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: "End flow on " + labelOf(t) + " is " + chk.pct.toFixed(1) + "% from this sample's start flow" + (chk.set != null ? " (" + chk.set + " L/min)" : "") + " (tolerance ±" + chk.tol + "%).",
+          fix: "Open " + labelOf(t) + " and check the end flow, or flag a flow fault if the pump was not held at the set flow." });
+      }
+      if (runningOf(t)) {
+        const planned = plannedEndOf(t, ev);
+        const start = t.startAt ? new Date(t.startAt) : null;
+        const cutoff = planned ? new Date(planned.getTime() + 60 * 60e3) : (start && !isNaN(start.getTime()) ? new Date(start.getTime() + 12 * 60 * 60e3) : null);
+        if (cutoff && Date.now() > cutoff.getTime()) {
+          items.push({ code: "overrun", severity: "warn", sampleIds: [t.id], samples: [t],
+            text: labelOf(t) + " is still running long after " + (planned ? "the planned end (" + planned.toLocaleString() + ")" : "a 12-hour run") + ". Stop the pump or enter the stop time.",
+            fix: "Open " + labelOf(t) + " and press STOP, or enter the stop time." });
+        }
+      }
+      const rota = String(t.rotameter || "").trim();
+      if (rota) rotaVals.push({ t, rota: rota.toUpperCase(), raw: rota });
+    });
+    const evRota = String(ev.rotameter || "").trim();
+    const rotaSet = Array.from(new Set(rotaVals.map(x => x.rota).concat(evRota ? [evRota.toUpperCase()] : [])));
+    if (rotaSet.length > 1) {
+      const affected = rotaVals.map(x => x.t);
+      items.push({ code: "rotameter", severity: "warn", sampleIds: affected.map(x => x.id), samples: affected,
+        text: "Rotameter does not match across this event" + (evRota ? " (event rotameter " + evRota + ")" : "") + ". One rotameter is used for the event.",
+        fix: "Set the event rotameter, or open the sample that differs and correct it." });
+    }
+
+    return items;
+  }
+
+  function panelHtml(ev) {
+    const items = afmEventChecks(ev);
+    const hard = items.filter(x => x.severity === "hard");
+    const warn = items.filter(x => x.severity !== "hard");
+    let h = '<div class="card" id="afmChecksPanel" style="margin-top:10px">';
+    h += '<h3 class="brand-type" style="margin:0 0 6px">Checks during the day</h3>';
+    if (!items.length) {
+      h += '<p class="help" id="afmChecksClear">No irregularity checks flagged.</p></div>';
+      return h;
+    }
+    if (hard.length) {
+      h += '<p class="help" id="afmChecksHard" style="color:var(--danger);font-weight:700">Create COC is blocked until these are fixed:</p><ul id="afmChecksHardList">';
+      hard.forEach(it => {
+        h += '<li style="color:var(--danger);font-weight:700">' + esc(it.text) + (it.fix ? ' <span class="help" style="font-weight:600">' + esc(it.fix) + "</span>" : "") + "</li>";
+      });
+      h += "</ul>";
+    }
+    if (warn.length) {
+      h += '<ul id="afmChecksWarnList">';
+      warn.forEach(it => {
+        h += "<li>" + esc(it.text) + (it.fix ? ' <span class="help">' + esc(it.fix) + "</span>" : "") + "</li>";
+      });
+      h += "</ul>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function inlineHtml(t, ev) {
+    const items = afmEventChecks(ev).filter(it => (it.sampleIds || []).indexOf(t.id) >= 0);
+    if (!items.length) return '<div id="afmSampleChecks" hidden></div>';
+    let h = '<div id="afmSampleChecks" class="card" style="margin:8px 0">';
+    h += '<p class="help" style="margin:0 0 6px;font-weight:700">Checks on this sample</p><ul style="margin:0">';
+    items.forEach(it => {
+      const col = it.severity === "hard" ? "color:var(--danger);font-weight:700" : "";
+      h += "<li" + (col ? ' style="' + col + '"' : "") + ">" + esc(it.text) + (it.fix ? " " + esc(it.fix) : "") + "</li>";
+    });
+    h += "</ul></div>";
+    return h;
+  }
+
+  function paintAfmChecks() {
+    const ev = (view && view.eventId) ? eventById(view.eventId) : null;
+    const t = (view && view.trainId) ? (db.trains || []).find(x => x.id === view.trainId) : null;
+    const evFor = ev || (t && eventById(t.eventId));
+    if (!evFor || typeof isFibreEvent !== "function" || !isFibreEvent(evFor)) return;
+    const panel = document.getElementById("afmChecksPanel");
+    if (panel) {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = panelHtml(evFor);
+      const next = wrap.firstElementChild;
+      if (next) panel.replaceWith(next);
+    }
+    const box = document.getElementById("afmSampleChecks");
+    if (box && t && isFibreTrain(t)) {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = inlineHtml(t, evFor);
+      const next = wrap.firstElementChild;
+      if (next) box.replaceWith(next);
+    }
+  }
+
+  if (typeof eventHtml === "function") {
+    const _eh = eventHtml;
+    eventHtml = function () {
+      let html = _eh.apply(this, arguments);
+      const ev = eventById(view.eventId);
+      if (ev && isFibreEvent(ev) && html.indexOf('id="afmChecksPanel"') === -1) {
+        const panel = panelHtml(ev);
+        if (html.indexOf('id="fibreEventBox"') >= 0) html = html.replace('<div class="card" id="fibreEventBox"', panel + '<div class="card" id="fibreEventBox"');
+        else html = html.replace("</h2>", "</h2>" + panel);
+      }
+      return html;
+    };
+    window.eventHtml = eventHtml;
+  }
+  if (typeof fibreTrainHtml === "function") {
+    const _fh = fibreTrainHtml;
+    fibreTrainHtml = function (t, ev) {
+      let html = _fh.apply(this, arguments);
+      if (t && ev && html.indexOf('id="afmSampleChecks"') === -1) {
+        const block = inlineHtml(t, ev);
+        if (html.indexOf('id="cowlDup"') >= 0) html = html.replace(/<\/p>(\s*<label>Cassette manufacturer serial)/, "</p>" + block + "$1");
+        else html = html.replace("</h2>", "</h2>" + block);
+      }
+      return html;
+    };
+    window.fibreTrainHtml = fibreTrainHtml;
+  }
+  if (typeof createCoc === "function") {
+    const _coc = createCoc;
+    createCoc = async function () {
+      const ev = eventById(view.eventId);
+      if (ev && isFibreEvent(ev) && !cocExists(ev)) {
+        const hard = afmEventChecks(ev).filter(x => x.severity === "hard");
+        if (hard.length) {
+          const msg = "Can't create the COC yet.\n\n" + hard.map(h => h.text + (h.fix ? "\n" + h.fix : "")).join("\n\n");
+          alert(msg);
+          if (view.page !== "event") { try { openEvent(ev.id); } catch (e) { render(); } }
+          else render();
+          return false;
+        }
+      }
+      return _coc.apply(this, arguments);
+    };
+    window.createCoc = createCoc;
+  }
+  if (typeof commit === "function") {
+    const _commit = commit;
+    commit = function () {
+      const r = _commit.apply(this, arguments);
+      try { paintAfmChecks(); } catch (e) { console.warn("v48.2 afm checks", e); }
+      return r;
+    };
+    window.commit = commit;
+  }
+  if (typeof render === "function") {
+    const _r = render;
+    render = function () {
+      const r = _r.apply(this, arguments);
+      try { paintAfmChecks(); } catch (e) { console.warn("v48.2 afm checks", e); }
+      return r;
+    };
+    window.render = render;
+  }
+
+  window.afmEventChecks = afmEventChecks;
+  window.afmCocBlocked = function (ev) { return !cocExists(ev) && afmEventChecks(ev).some(x => x.severity === "hard"); };
+  window.afmCocExists = cocExists;
+  window.paintAfmChecks = paintAfmChecks;
 })();
 </script>
 
