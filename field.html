@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
 <!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
 <!-- ENVSS Field v36 single-file build v44 (field.html, live; v44d: photos shrunk, kept in IndexedDB and uploaded to the private field-photos bucket, record keeps references only; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
@@ -6,7 +7,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48</title>
+  <title>ENVSS Field v48.1</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -390,7 +391,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.1</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -406,12 +407,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48"></script>
+  <script src="config.js?v=48.1"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48"; /* 2026-11-12 (AWST): v48 quick fixes on v46 + noise.js 47.0. Numbering unchanged (not A001/N001). */
+const APP_VERSION = "48.1"; /* 2026-11-12 (AWST): v48.1 = v48 + flow check compares end flow with the sample's own start flow (REQ-009 fix). v48 quick fixes on v46 + noise.js 47.0. Numbering unchanged (not A001/N001). */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -1271,19 +1272,31 @@ function volumeLitres(t) {
   return mins * q;
 }
 function flowCheck(t) {
-  /* v48: post-flow is checked against the set flow (contaminant default, else start flow).
-     Inhalable dust (INH) allows up to and including ±10% (e.g. 1.8–2.2 L/min at 2.0). */
-  if (!t) return { ok: true, tol: 5, pct: null, set: null };
+  /* v48.1: post/end flow is checked against THIS sample's own start (set) flow, i.e. the flow the pump was
+     actually set to at START/pre-cal. Only when no start flow is recorded do we fall back to the contaminant
+     default, and then it is a soft note (ok stays true, noStart: true) rather than a reject.
+     Tolerance is unchanged from v48: INH up to and including ±10%, others use the catalog flowTolPct (default 5%).
+     Computed on every render, so existing samples re-evaluate on load; no stored data is rewritten. */
+  if (!t) return { ok: true, tol: 5, pct: null, set: null, noStart: false };
   const c = contam(t.contaminantId);
   let tol = Number(c && c.flowTolPct);
   if (!Number.isFinite(tol) || tol <= 0) tol = 5;
   const code = String((c && (c.code || c.id)) || t.contaminantId || "").toUpperCase();
   if (code === "INH" && tol < 10) tol = 10;
   const start = num(t.startFlow), end = num(t.endFlow);
-  const set = num(c && c.defaultFlow) != null ? num(c.defaultFlow) : start;
-  if (set == null || end == null || set === 0) return { ok: true, tol, pct: null, set };
-  const pct = Math.abs(end - set) / Math.abs(set) * 100;
-  return { ok: pct <= tol + 1e-9, tol, pct, set };
+  if (start != null && start !== 0) {
+    if (end == null) return { ok: true, tol, pct: null, set: start, noStart: false };
+    const pct = Math.abs(end - start) / Math.abs(start) * 100;
+    return { ok: pct <= tol + 1e-9, tol, pct, set: start, noStart: false };
+  }
+  const def = num(c && c.defaultFlow);
+  if (end == null || def == null || def === 0) return { ok: true, tol, pct: null, set: null, noStart: end != null };
+  const pct = Math.abs(end - def) / Math.abs(def) * 100;
+  return { ok: true, tol, pct, set: def, noStart: true, soft: true };
+}
+function flowNoStartNote(chk) {
+  /* v48.1: soft note only, never a reject. */
+  return "No start flow recorded" + (chk && chk.set != null ? " — compared with the method default " + chk.set + " L/min" + (chk.pct != null ? " (" + chk.pct.toFixed(1) + "% from it)" : "") : "") + ". Enter the start flow if it was measured.";
 }
 
 /* v42: event status = its least-progressed sample. Prepped < Running < Needs fields < Samples complete < Event complete.
@@ -1769,7 +1782,7 @@ function trainHtml() {
           </div>`}
         </div>
       </div>
-      ${!isBlank(t) && !isNoise(t) && chk.pct != null ? `<p class="${chk.ok ? "muted" : ""}" style="${chk.ok ? "" : "color:var(--danger);font-weight:700"}">
+      ${!isBlank(t) && !isNoise(t) && chk.noStart ? `<p class="muted flow-nostart">${esc(flowNoStartNote(chk))}</p>` : !isBlank(t) && !isNoise(t) && chk.pct != null ? `<p class="${chk.ok ? "muted" : ""}" style="${chk.ok ? "" : "color:var(--danger);font-weight:700"}">
         End flow is ${chk.pct.toFixed(1)}% from the set flow${chk.set != null ? " (" + chk.set + " L/min)" : ""}. Tolerance ±${chk.tol}%.
         ${chk.ok ? "Within tolerance." : "Outside tolerance — reject unless you have a documented reason."}
       </p>` : ""}
@@ -3513,7 +3526,7 @@ function fibreTrainHtml(t, ev) {
       </div>
       <p class="muted" id="runtimeOut">${mins != null ? "Runtime " + Math.round(mins) + " min" : (running ? elapsedLabel(t.startAt) : "")}</p>
       ${vol != null && vol < 360 ? `<p class="help" id="volWarn" style="color:var(--danger);font-weight:700">Volume ${vol.toFixed(1)} L is under 360 L. The limit of detection rises (0.01 f/mL).</p>` : ""}
-      ${chk.pct != null && !chk.ok ? `<p class="help" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from the set flow${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%).</p>` : ""}
+      ${chk.noStart ? `<p class="help muted flow-nostart">${esc(flowNoStartNote(chk))}</p>` : chk.pct != null && !chk.ok ? `<p class="help" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from the set flow${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%).</p>` : ""}
       <p class="help">Accidental START/STOP: edit the times. Location is stored when START or STOP gets a GPS fix.</p>
       ${gpsLines(t)}
       ${rejectBlockHtml(t)}`;

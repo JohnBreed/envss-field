@@ -2,8 +2,8 @@
    Registered by field.html with scope "./field.html", so it never controls index.html.
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
-const VERSION = "48";
-const CACHE = "envss-field-v48"; /* v48: quick fixes (flow, LAeq, dose-badge UI, toggle jump, rotameter, add confirm, clash, locked sample no). IndexedDB names are unchanged. Rollback: previous cache envss-field-v46. */
+const VERSION = "48.1";
+const CACHE = "envss-field-v48-1"; /* v48.1: flow check vs own start flow. v48: quick fixes (flow, LAeq, dose-badge UI, toggle jump, rotameter, add confirm, clash, locked sample no). IndexedDB names are unchanged. Rollback: previous cache envss-field-v46. */
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
 const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "noise.js", "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);
