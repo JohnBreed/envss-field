@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
+<!-- ENVSS Field v49 draft (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks). Not live until approved. v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
 <!-- ENVSS Field v36 single-file build v44 (field.html, live; v44d: photos shrunk, kept in IndexedDB and uploaded to the private field-photos bucket, record keeps references only; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
@@ -411,7 +411,7 @@ body.has-fab { padding-bottom: 104px; }
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48"; /* 2026-11-12 (AWST): v48 quick fixes on v46 + noise.js 47.0. Numbering unchanged (not A001/N001). */
+const APP_VERSION = "49"; /* 2026-11-12 (AWST): v49 draft AFM field-app changes on v48. AFM exempt from A001/N001 (0, then Pump 1…). Not live until approved. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -1246,6 +1246,14 @@ function shiftSortKey(t) {
 }
 function displayNo(t) {
   const n = sampleNoOf(t) || t.pouch || "";
+  /* AFM is exempt from A001/N001 and from "Sample N": field blank is 0, then Pump 1, Pump 2… */
+  const ev = (typeof eventById === "function" && t) ? eventById(t.eventId) : null;
+  const fibre = t && (typeof isFibreTrain === "function" ? isFibreTrain(t)
+    : ((t.trainKind || "").startsWith("fibre") || (ev && (ev.type === "fibre" || /(^|-)AFM-/.test(String(ev.code || ""))))));
+  if (fibre) {
+    if ((typeof isBlank === "function" && isBlank(t)) || Number(n) === 0) return "0";
+    return "Pump " + n;
+  }
   return isNoise(t) ? ("Noise Sample " + n) : ("Sample " + n);
 }
 function contam(id) { return db.catalogs.contaminants.find(c => c.id === id || c.code === id); }
@@ -3340,14 +3348,28 @@ window.deleteEvent = deleteEvent;
 window.deleteProject = deleteProject;
 
 /* ---------- AFM fibre ---------- */
-const TAT_OPTS = [["same_day", "Same day"], ["next_0700", "Next day by 07:00"], ["emergency", "Emergency"]];
-const PROTO_OPTS = [["background", "Background"], ["control", "Control"], ["clearance", "Clearance"]];
+const TAT_OPTS = [["same_day", "Same day"], ["next_0700", "Next day by 07:00"], ["normal_3day", "Normal turnaround (3 days)"], ["emergency", "Emergency"]];
+const PROTO_OPTS = [["background", "Background"], ["control", "Control"], ["clearance", "Clearance"], ["exposure", "Exposure"]];
 function optLabel(list, v) { const x = list.find(o => o[0] === v); return x ? x[1] : (v || ""); }
 function optsHtml(list, cur) { return list.map(([v, l]) => `<option value="${v}" ${cur === v ? "selected" : ""}>${l}</option>`).join(""); }
 function isFibreEvent(ev) { return !!ev && (ev.type === "fibre" || /(^|-)AFM-/.test(String(ev.code || ""))); }
 function isFibreTrain(t) { return !!t && ((t.trainKind || "").startsWith("fibre") || isFibreEvent(eventById(t.eventId))); }
-function cowlDigits(v) { return String(v || "").replace(/^ENVSS/i, "").replace(/\D/g, ""); }
-function cowlDisplay(t) { const d = cowlDigits(t.cowlNo || t.mediaId); return d ? "ENVSS" + d : ""; }
+function cowlDigits(v) {
+  /* Bare digits as text. Strip ENVSS/ESS prefixes, spaces and dashes so existing
+     mediaId values like "ENVSS01850" still read back as "01850". Never parse as a
+     number — leading zeros must stay. The app does not add a prefix. */
+  let s = String(v == null ? "" : v).trim().toUpperCase();
+  s = s.replace(/[\s-]+/g, "");
+  s = s.replace(/^(ENVSS|ESS)(?=\d)/, "");
+  return s.replace(/\D/g, "");
+}
+function cowlValid(v) { return /^\d{5}$/.test(cowlDigits(v)); }
+function cowlDisplay(t) { return cowlDigits(t && (t.cowlNo || t.mediaId)); }
+function cowlDuplicates(t) {
+  const d = cowlDigits(t && (t.cowlNo || t.mediaId));
+  if (!d) return [];
+  return trainsOf(t.eventId).filter(x => x && x.id !== t.id && cowlDigits(x.cowlNo || x.mediaId) === d);
+}
 function ymd(date) { return String(date || "").replace(/-/g, ""); }
 function fibreEventCode(p, date, seq) { const d = ymd(date); return "ENVSS-HYG-AFM-" + ((p && p.number) || "") + "-" + seq + (d ? "-" + d : ""); }
 function fibreSeqOf(code) { const m = String(code || "").match(/-(\d{3,})(?:-\d{8})?$/); return m ? m[1] : ""; }
@@ -3388,7 +3410,8 @@ const _startGaps33 = startGaps;
 startGaps = function (t) {
   if (!isFibreTrain(t)) return _startGaps33(t);
   const miss = [];
-  if (!cowlDigits(t.cowlNo || t.mediaId)) miss.push("Cowl number");
+  if (!cowlValid(t.cowlNo || t.mediaId)) miss.push("Cowl number (5 digits)");
+  else if (cowlDuplicates(t).length) miss.push("Cowl number (already used in this event)");
   if (isBlank(t)) return miss;
   if (!t.pumpSerial) miss.push("Pump serial");
   if (!t.location) miss.push("Location");
@@ -3406,14 +3429,14 @@ function fibreRejected(t) { return t.status === "rejected" || !!t.rejectCode; }
 const _followUpComplete33 = followUpComplete;
 followUpComplete = function (t) {
   if (!isFibreTrain(t)) return _followUpComplete33(t);
-  if (isBlank(t)) return !!cowlDigits(t.cowlNo || t.mediaId);
+  if (isBlank(t)) return cowlValid(t.cowlNo || t.mediaId) && !cowlDuplicates(t).length;
   if (fibreRejected(t)) return true;
   return t.status === "ended" && num(t.endFlow) != null;
 };
 const _displayStatus33 = displayStatus;
 displayStatus = function (t) {
   if (!t || typeof t === "string" || !isFibreTrain(t)) return _displayStatus33(t);
-  if (isBlank(t)) return cowlDigits(t.cowlNo || t.mediaId) ? "sample_complete" : "incomplete_blank";
+  if (isBlank(t)) return cowlValid(t.cowlNo || t.mediaId) ? "sample_complete" : "incomplete_blank";
   if (fibreRejected(t)) return "rejected";
   if (t.status === "running") return "running";
   if (t.status === "ended") return num(t.endFlow) != null ? "sample_complete" : "incomplete";
@@ -3427,9 +3450,25 @@ volumeLitres = function (t) {
   if (mins == null || a == null || b == null) return null;
   return round1(mins * ((a + b) / 2));   // volume = average flow x minutes
 };
+const _flowCheckFibre = flowCheck;
+flowCheck = function (t) {
+  /* AFM / NOHSC:3003 context: warn if start and end flow differ by more than ±10%.
+     Hygiene INH ±10% and other contaminant tolerances are unchanged. */
+  if (!isFibreTrain(t) || isBlank(t)) return _flowCheckFibre(t);
+  const start = num(t.startFlow), end = num(t.endFlow), tol = 10;
+  if (start == null || end == null || start === 0) return { ok: true, tol, pct: null, set: start };
+  const pct = Math.abs(end - start) / Math.abs(start) * 100;
+  return { ok: pct <= tol + 1e-9, tol, pct, set: start };
+};
 const _rejectList33 = rejectList;
 rejectList = function (t) {
-  if (isFibreTrain(t)) return [{ code: "pump_fault", label: "Pump failure", photo: false }, { code: "damaged_filter", label: "Filter failure", photo: false }];
+  if (isFibreTrain(t)) return [
+    { code: "pump_fault", label: "Pump failed", photo: false },
+    { code: "flow_fault", label: "Flow fault", photo: false },
+    { code: "compromised", label: "Sample compromised", photo: false },
+    { code: "overload", label: "Filter particle overload", photo: false },
+    { code: "damaged_filter", label: "Filter failure", photo: false }
+  ];
   return _rejectList33(t);
 };
 const _summaryLine33 = summaryLine;
@@ -3451,12 +3490,19 @@ trainKindOptions = function (t) {
 };
 
 function gpsLines(t) {
+  function poor(loc) { return loc && loc.acc != null && Number(loc.acc) > 50; }
   function line(label, loc) {
     if (!loc || loc.lat == null || loc.lng == null) return `<p class="help">${label}: no GPS fix yet</p>`;
     const acc = loc.acc != null ? " ±" + Math.round(Number(loc.acc)) + " m" : "";
-    return `<p class="help">${label} ${Number(loc.lat).toFixed(5)}, ${Number(loc.lng).toFixed(5)}${acc}</p>`;
+    const warn = poor(loc) ? ` <span style="color:var(--danger);font-weight:700">Accuracy worse than 50 m — check you are at the pump.</span>` : "";
+    return `<p class="help">${label} ${Number(loc.lat).toFixed(5)}, ${Number(loc.lng).toFixed(5)}${acc}${warn}</p>`;
   }
-  return `<div id="gpsBlock">${line("Start location", t.startLoc)}${line("Stop location", t.endLoc)}</div>`;
+  const started = !!t.startAt, stopped = !!t.endAt;
+  const miss = [];
+  if (started && !(t.startLoc && t.startLoc.lat != null)) miss.push("start");
+  if (stopped && !(t.endLoc && t.endLoc.lat != null)) miss.push("stop");
+  const missHtml = miss.length ? `<p class="help" id="gpsMissWarn" style="color:var(--danger);font-weight:700">No GPS fix at ${miss.join(" and ")}. You can keep going — the missing fix is flagged.</p>` : "";
+  return `<div id="gpsBlock">${line("Start location", t.startLoc)}${line("Stop location", t.endLoc)}${missHtml}</div>`;
 }
 function auditHtml(t) {
   const a = t.audit || [];
@@ -3484,9 +3530,16 @@ function fibreTrainHtml(t, ev) {
     </div>
     <p class="muted">${esc(optLabel(PROTO_OPTS, (ev && ev.protocol) || t.monitorType || "background"))}${ev && ev.rotameter ? " · rotameter " + esc(ev.rotameter) : " · no rotameter set on the event"}</p>
     <label>Cowl number</label>
-    <div class="row" style="gap:6px"><span class="muted" style="padding-top:10px">ENVSS</span>
-      <input id="cowlNo" class="grow" inputmode="numeric" autocomplete="off" value="${esc(cowlDigits(t.cowlNo || t.mediaId))}" placeholder="11850"></div>
-    <p class="help">Digits only. Stored and printed as ENVSS + number.</p>`;
+    <input id="cowlNo" class="grow" inputmode="numeric" autocomplete="off" value="${esc(cowlDigits(t.cowlNo || t.mediaId))}" placeholder="11850" aria-describedby="cowlHelp">
+    <p class="help" id="cowlHelp">Enter the 5-digit cowl number (XXXXX). Leading zeros are kept. Do not add a prefix.</p>
+    <p class="help" id="cowlWarn" style="color:var(--danger);font-weight:700;${cowlDigits(t.cowlNo || t.mediaId) && !cowlValid(t.cowlNo || t.mediaId) ? "" : "display:none"}">Cowl number must be exactly 5 digits.</p>
+    <p class="help" id="cowlDup" style="color:var(--danger);font-weight:700;${cowlDuplicates(t).length ? "" : "display:none"}">${cowlDuplicates(t).length ? "Cowl " + cowlDisplay(t) + " is already on " + cowlDuplicates(t).map(x => displayNo(x)).join(", ") + " in this event. Each sample, including the field blank, needs its own cowl." : ""}</p>
+    <label>Cassette manufacturer serial (DU)</label>
+    <div class="row" style="gap:6px;align-items:end">
+      <input id="duSerial" class="grow" value="${esc(t.duSerial || "")}" placeholder="e.g. DU972121" autocomplete="off">
+      <button type="button" class="btn mid" id="btnDuScan">Scan</button>
+    </div>
+    <p class="help">Optional. Scan the Data Matrix, or type the serial. Stored on this device only (not sent to Podio). It does not replace the cowl number.</p>`;
   if (blank) {
     h += `<div class="grid2"><div>${na("Pump serial")}${na("Start / stop")}</div><div>${na("Flow (L/min)")}${na("Volume (L)")}</div></div>
       <p class="help">Sample 0 is the field blank. Pump, times, flow and volume are N/A.</p>`;
@@ -3512,8 +3565,9 @@ function fibreTrainHtml(t, ev) {
         <div><label>Volume (L)</label><input id="volumeOut" value="${vol != null ? vol.toFixed(1) : "—"}" disabled></div>
       </div>
       <p class="muted" id="runtimeOut">${mins != null ? "Runtime " + Math.round(mins) + " min" : (running ? elapsedLabel(t.startAt) : "")}</p>
-      ${vol != null && vol < 360 ? `<p class="help" id="volWarn" style="color:var(--danger);font-weight:700">Volume ${vol.toFixed(1)} L is under 360 L. The limit of detection rises (0.01 f/mL).</p>` : ""}
-      ${chk.pct != null && !chk.ok ? `<p class="help" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from the set flow${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%).</p>` : ""}
+      ${vol != null && vol < 333 ? `<p class="help" id="volWarn" style="color:var(--danger);font-weight:700">Volume ${vol.toFixed(1)} L is under 333 L. This is a warning only, using the ~333 L figure from the 12 Nov AFM spec, pending confirmation of the exact NOHSC:3003(2005) minimum for a &lt; 0.01 f/mL report. It does not block the sample.</p>` : ""}
+      ${chk.pct != null && !chk.ok ? `<p class="help" id="flowWarn" style="color:var(--danger);font-weight:700">Start and end flow differ by ${chk.pct.toFixed(1)}% (tolerance ±${chk.tol}% under NOHSC:3003). This is a warning — flag a flow fault if the pump was not held at the set flow.</p>` : ""}
+      ${t.startAt && t.endAt && new Date(t.endAt) < new Date(t.startAt) ? `<p class="help" id="timeOrderWarn" style="color:var(--danger);font-weight:700">Stop time is before start time. Check the times.</p>` : ""}
       <p class="help">Accidental START/STOP: edit the times. Location is stored when START or STOP gets a GPS fix.</p>
       ${gpsLines(t)}
       ${rejectBlockHtml(t)}`;
@@ -3523,6 +3577,40 @@ function fibreTrainHtml(t, ev) {
   return h;
 }
 window.fibreTrainHtml = fibreTrainHtml;
+window.cowlDigits = cowlDigits;
+window.cowlValid = cowlValid;
+window.cowlDisplay = cowlDisplay;
+window.cowlDuplicates = cowlDuplicates;
+function scanDuSerial(t, input) {
+  const pick = document.createElement("input");
+  pick.type = "file"; pick.accept = "image/*"; pick.capture = "environment";
+  pick.onchange = async () => {
+    const file = pick.files && pick.files[0];
+    if (!file) return;
+    let value = "";
+    try {
+      if (typeof BarcodeDetector === "function") {
+        const det = new BarcodeDetector({ formats: ["data_matrix", "qr_code", "code_128", "code_39"] });
+        const bmp = await createImageBitmap(file);
+        const codes = await det.detect(bmp);
+        if (codes && codes[0] && codes[0].rawValue) value = String(codes[0].rawValue).trim();
+      }
+    } catch (e) { console.warn("du scan", e); }
+    if (!value) {
+      const typed = prompt("Could not read a Data Matrix on this device. Type the cassette manufacturer serial (DU), or cancel.", input.value || "");
+      if (typed == null) return;
+      value = String(typed).trim();
+      t.duSerialSource = value ? "manual" : "unscanned";
+    } else {
+      t.duSerialSource = "data_matrix";
+    }
+    input.value = value;
+    t.duSerial = value;
+    saveQuiet();
+  };
+  pick.click();
+}
+window.scanDuSerial = scanDuSerial;
 
 /* ---------- Mines Act / SRS fields ---------- */
 function srs() { return window.ENVSS_SRS_CATALOGS || {}; }
@@ -3617,7 +3705,13 @@ collectTrain = function (t) {
   _collectTrain33(t);
   const g = id => document.getElementById(id);
   if (isFibreTrain(t)) {
-    if (g("cowlNo")) { t.cowlNo = cowlDigits(g("cowlNo").value); t.mediaId = cowlDisplay(t); }
+    if (g("cowlNo")) { t.cowlNo = cowlDigits(g("cowlNo").value); t.mediaId = t.cowlNo; }
+    if (g("duSerial")) {
+      const du = g("duSerial").value.trim();
+      t.duSerial = du;
+      if (!du) t.duSerialSource = "unscanned";
+      else if (t.duSerialSource !== "data_matrix") t.duSerialSource = "manual";
+    }
     if (g("location")) t.location = g("location").value.trim();
     t.headId = "";
     if (isBlank(t)) { t.pumpSerial = ""; t.startFlow = ""; t.endFlow = ""; t.startAt = ""; t.endAt = ""; t.status = "field_blank"; }
@@ -4161,7 +4255,23 @@ bind = function () {
   wireSrs("locSearch", "locations", () => { window._v34MineOpen = true; collectTrain(t); saveQuiet(); render(); });
   if (isFibreTrain(t)) {
     const cowl = document.getElementById("cowlNo");
-    if (cowl) cowl.addEventListener("input", () => { const d = cowlDigits(cowl.value); if (d !== cowl.value) cowl.value = d; });
+    const paintCowl = () => {
+      if (!cowl) return;
+      const d = cowlDigits(cowl.value);
+      if (d !== cowl.value) cowl.value = d;
+      const warn = document.getElementById("cowlWarn");
+      const dup = document.getElementById("cowlDup");
+      if (warn) warn.style.display = (d && !cowlValid(d)) ? "" : "none";
+      const hits = d ? trainsOf(t.eventId).filter(x => x && x.id !== t.id && cowlDigits(x.cowlNo || x.mediaId) === d) : [];
+      if (dup) {
+        dup.style.display = hits.length ? "" : "none";
+        if (hits.length) dup.textContent = "Cowl " + d + " is already on " + hits.map(x => displayNo(x)).join(", ") + " in this event. Each sample, including the field blank, needs its own cowl.";
+      }
+    };
+    if (cowl) { cowl.addEventListener("input", paintCowl); paintCowl(); }
+    const scan = document.getElementById("btnDuScan");
+    const duIn = document.getElementById("duSerial");
+    if (scan && duIn) scan.onclick = () => scanDuSerial(t, duIn);
   }
 };
 
@@ -9859,6 +9969,52 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   st.textContent = "#pouch[readonly],#pouch[disabled]{opacity:1;background:var(--surf,#151b2b);color:var(--text,#e8eefc);cursor:default}"
     + "#pouch[readonly]:focus,#pouch[disabled]:focus{outline:none}";
   document.head.appendChild(st);
+})();
+</script>
+
+<script>
+/* ===== v49 draft: AFM-only extras. No Podio writes. IndexedDB names unchanged.
+   Night-shift reuse warning for AFM pumps (spec wording). Hygiene clash text is not changed.
+   Previous-night use is read from existing shiftKind; shift start/end hours are not invented. ===== */
+(function () {
+  function prevNightHits(serial, t) {
+    serial = String(serial || "").trim().toUpperCase();
+    if (!serial || !t || typeof isFibreTrain !== "function" || !isFibreTrain(t)) return [];
+    return (db.trains || []).filter(x => {
+      if (!x || x.id === t.id) return false;
+      if (String(x.pumpSerial || "").trim().toUpperCase() !== serial) return false;
+      if ((db.deletions || []).some(d => d.trainId === x.id)) return false;
+      if (x.status === "rejected" || x.status === "fault") return false;
+      if ((x.shiftKind || "day") !== "night") return false;
+      /* Same shift/day is already covered by the v48 clash banner; this flag is for a previous night shift. */
+      const sameShift = typeof window.v40ClashHits === "function" && window.v40ClashHits("pumpSerial", serial, t).some(h => h.id === x.id);
+      return !sameShift;
+    });
+  }
+  function paintAfmReuse() {
+    const t = typeof curTrain === "function" ? curTrain() : (db.trains || []).find(x => x.id === (view && view.trainId));
+    const inp = document.getElementById("pump");
+    let w = document.getElementById("afmReuseWarn");
+    if (!inp || !t || typeof isFibreTrain !== "function" || !isFibreTrain(t) || isBlank(t)) { if (w) w.remove(); return; }
+    const hits = prevNightHits(inp.value, t);
+    if (!hits.length) { if (w) w.remove(); return; }
+    if (!w) {
+      w = document.createElement("div");
+      w.id = "afmReuseWarn";
+      w.className = "pump-warn clash-warn";
+      (inp.closest(".combo") || inp).insertAdjacentElement("afterend", w);
+    }
+    const evs = hits.map(x => ((eventById(x.eventId) || {}).code || displayNo(x))).filter(Boolean);
+    w.textContent = "This has been used on a previous shift, ensure it is clean before use. Previously on " + evs.join(", ") + " (night shift). You can still use it.";
+  }
+  if (typeof render === "function") {
+    const _r = render;
+    render = function () { const r = _r.apply(this, arguments); try { paintAfmReuse(); } catch (e) { console.warn("v49 afm reuse", e); } return r; };
+    window.render = render;
+  }
+  document.addEventListener("input", e => { if (e.target && e.target.id === "pump") paintAfmReuse(); });
+  document.addEventListener("change", e => { if (e.target && e.target.id === "pump") paintAfmReuse(); });
+  window.v49AfmPrevNight = prevNightHits;
 })();
 </script>
 

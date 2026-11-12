@@ -1,0 +1,121 @@
+{
+  "comment": "Legacy AFM event as stored before the v49 cowl change: mediaId has an ENVSS prefix, cowlNo may already be bare digits, sample 0 is the field blank, sample 1 is a pump. Leading zero in 01850 must survive. Opening this record must not rewrite mediaId until the cowl field is edited.",
+  "project": {
+    "id": "p-afm-upg",
+    "number": "9999299",
+    "name": "AFM upgrade fixture",
+    "client": "TEST",
+    "status": "Active",
+    "active": true
+  },
+  "event": {
+    "id": "e-afm-upg",
+    "projectId": "p-afm-upg",
+    "type": "fibre",
+    "stage": "planned",
+    "date": "2026-11-12",
+    "code": "ENVSS-HYG-AFM-9999299-001-20261112",
+    "multiDay": false,
+    "notes": "",
+    "uploadReady": false,
+    "operators": [],
+    "protocol": "control",
+    "taskDesc": "Upgrade fixture",
+    "tat": "next_0700",
+    "rotameter": "4430"
+  },
+  "trains": [
+    {
+      "id": "t-afm-blank",
+      "eventId": "e-afm-upg",
+      "pouch": "0",
+      "sampleNo": 0,
+      "trainKind": "blank",
+      "contaminantId": "ASB",
+      "pumpSerial": "",
+      "mediaId": "ENVSS01850",
+      "cowlNo": "01850",
+      "monitorType": "control",
+      "rotameter": "",
+      "startFlow": "",
+      "endFlow": "",
+      "mode": "blank",
+      "person": {
+        "first": "",
+        "last": "",
+        "sex": "",
+        "dob": "",
+        "occupation": "",
+        "company": "",
+        "hours": "",
+        "daysOn": "",
+        "daysOff": ""
+      },
+      "location": "",
+      "startAt": "",
+      "endAt": "",
+      "status": "field_blank",
+      "shiftDate": "2026-11-12",
+      "shiftKind": "day",
+      "audit": [
+        {
+          "at": "2026-11-12T08:00:00+08:00",
+          "action": "Created",
+          "detail": "field blank (sample 0)",
+          "who": "fixture"
+        }
+      ]
+    },
+    {
+      "id": "t-afm-pump1",
+      "eventId": "e-afm-upg",
+      "pouch": "1",
+      "sampleNo": 1,
+      "trainKind": "fibre_static",
+      "contaminantId": "ASB",
+      "pumpSerial": "191568",
+      "mediaId": "ENVSS12574",
+      "cowlNo": "12574",
+      "monitorType": "control",
+      "rotameter": "4430",
+      "startFlow": "2.0",
+      "endFlow": "2.0",
+      "mode": "static",
+      "person": {
+        "first": "",
+        "last": "",
+        "sex": "",
+        "dob": "",
+        "occupation": "",
+        "company": "",
+        "hours": "",
+        "daysOn": "",
+        "daysOff": ""
+      },
+      "location": "1 - North fence",
+      "startAt": "2026-11-12T06:58:00+08:00",
+      "endAt": "2026-11-12T12:54:00+08:00",
+      "status": "ended",
+      "shiftDate": "2026-11-12",
+      "shiftKind": "day",
+      "startLoc": {
+        "lat": -31.95,
+        "lng": 115.86,
+        "acc": 12
+      },
+      "endLoc": {
+        "lat": -31.95,
+        "lng": 115.86,
+        "acc": 18
+      },
+      "audit": [
+        {
+          "at": "2026-11-12T06:58:00+08:00",
+          "action": "Created",
+          "detail": "fibre_static",
+          "who": "fixture"
+        }
+      ]
+    }
+  ]
+}
