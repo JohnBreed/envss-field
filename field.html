@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ENVSS Field v48.3 (12 Nov 2026 AWST): times from START/STOP only (Edit time needs a reason, kept in the audit trail); COC and Mark event complete blocked while samples are prepped / not stopped; not used / void status. -->
 <!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
 <!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
 <!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
@@ -8,7 +9,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.2</title>
+  <title>ENVSS Field v48.3</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -392,7 +393,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.2</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.3</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -408,12 +409,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.2"></script>
+  <script src="config.js?v=48.3"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.2"; /* 2026-11-12 (AWST): v48.2 = v48.1 + AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks, read-only Podio pull). v48.1: end flow vs the sample's own start flow. v48 quick fixes on v46 + noise.js 47.0. */
+const APP_VERSION = "48.3"; /* 2026-11-12 (AWST): v48.3 = v48.2 + time capture lock (START/STOP or Edit time with a reason), COC / Mark complete gate for unfinished samples, not used / void status. v48.2 = v48.1 + AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks, read-only Podio pull). v48.1: end flow vs the sample's own start flow. v48 quick fixes on v46 + noise.js 47.0. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -2533,14 +2534,14 @@ function exportWorkbookCsvs(eventId) {
   const ev = eventById(eventId);
   const air = trainsOf(eventId).filter(t => !isNoise(t));
   const noise = trainsOf(eventId).filter(isNoise);
-  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id","rotameter_sn","daily_log_status","daily_log_ref","photo_paths"];
+  const sampleHead = ["event_code","sample_no","train_kind","status","include_on_coc","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","contaminant","irsst_cat","pump_sn","sample_head","cassette","start_flow_lmin","end_flow_lmin","avg_flow_lmin","start_time","end_time","runtime_min","volume_L","volume_m3","rpd_worn","rpd_model","clean_shaven","fit_tested","reject","reject_reason","equip_damaged","comments","tasks","lab_job","lab_sample_id","rotameter_sn","daily_log_status","daily_log_ref","photo_paths","time_start_capture","time_stop_capture","time_edit_reasons","not_used"];   /* v48.3 time capture columns */
   const sampleRows = [sampleHead];
   air.forEach(t => {
     const p = t.person || {};
     const c = contam(t.contaminantId);
     const mins = runtimeMinutes(t);
     const vol = volumeLitres(t);
-    const include = (t.rejectAsked === "yes" && !t.includeOnCoc) ? "NO" : "YES";
+    const include = ((t.rejectAsked === "yes" && !t.includeOnCoc) || t.status === "not_used") ? "NO" : "YES";   /* v48.3: not used / void left off */
     sampleRows.push([
       ev.code, t.sampleNo || t.pouch, t.trainKind, displayStatus(t), include,
       ev.date || (t.startAt || "").slice(0,10), p.first || "", p.last || "", p.dob || "", p.sex || "",
@@ -2551,10 +2552,10 @@ function exportWorkbookCsvs(eventId) {
       mins ?? "", vol ?? "", (vol != null ? (vol/1000).toFixed(6) : ""),
       t.rpd?.worn || t.rpdAsked || "", t.rpd?.model || "", t.rpd?.shaven || "", t.rpd?.fit || "",
       t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "",
-      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", "", t.rotameter || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : "", window.envssPhotoPaths ? envssPhotoPaths(t) : ""
+      t.equipAsked === "yes" ? "YES" : "", t.comments || "", "", "", "", t.rotameter || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : "", window.envssPhotoPaths ? envssPhotoPaths(t) : "", ...(window.v483 ? v483.exportCols(t) : ["", "", "", ""])
     ]);
   });
-  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak","field_calibrator_sn","daily_log_status","daily_log_ref","photo_paths"];
+  const noiseHead = ["event_code","noise_sample_no","train_kind","status","date","given_name","surname","dob","gender","occupation","occupation_code","company","location","location_code","seg","shift_hours","days_on","days_off","dosimeter_sn","start_time","end_time","runtime_min","hpd_worn","hpd_model","hpd_style","hpd_class","fault","fault_reason","comments","tasks","laeq_unadj","laeq_8hr","lcpeak","field_calibrator_sn","daily_log_status","daily_log_ref","photo_paths","time_start_capture","time_stop_capture","time_edit_reasons","not_used"];
   const noiseRows = [noiseHead];
   noise.forEach(t => {
     const p = t.person || {};
@@ -2565,13 +2566,13 @@ function exportWorkbookCsvs(eventId) {
       t.seg || "", p.hours || "", p.daysOn || "", p.daysOff || "", t.dosimeterSerial || "",
       t.startAt || "", t.endAt || "", runtimeMinutes(t) ?? "",
       t.hpd?.worn || t.hpdAsked || "", t.hpd?.model || "", t.hpd?.style || "", t.hpd?.classRating || "",
-      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", "", t.fieldCalibrator || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : "", window.envssPhotoPaths ? envssPhotoPaths(t) : ""
+      t.rejectAsked === "yes" ? "YES" : "", t.rejectReason || t.rejectCode || "", t.comments || "", "", "", "", "", t.fieldCalibrator || "", window.v44DailyLog ? v44DailyLog.label(t) : "", window.v44DailyLog ? v44DailyLog.ref(t) : "", window.envssPhotoPaths ? envssPhotoPaths(t) : "", ...(window.v483 ? v483.exportCols(t) : ["", "", "", ""])
     ]);
   });
-  const cocHead = ["include","client_sample_id","depth","date_sampled","type_of_sample","tests_required","runtime_min","volume_L","comments","sample_no","contaminant","envss_sampler"];
+  const cocHead = ["include","client_sample_id","depth","date_sampled","type_of_sample","tests_required","runtime_min","volume_L","comments","sample_no","contaminant","envss_sampler","time_flag"];
   const cocRows = [cocHead];
   air.forEach(t => {
-    const skip = t.rejectAsked === "yes" && !t.includeOnCoc;
+    const skip = (t.rejectAsked === "yes" && !t.includeOnCoc) || t.status === "not_used";   /* v48.3 */
     if (skip) return;
     const c = contam(t.contaminantId);
     const d = t.startAt ? new Date(t.startAt) : null;
@@ -2579,7 +2580,8 @@ function exportWorkbookCsvs(eventId) {
     cocRows.push([
       "YES", t.mediaId || "", "N/A", date, typeOfSample(t), c ? c.code : "",
       runtimeMinutes(t) ?? "", volumeLitres(t) ?? "", "",
-      t.sampleNo || "", c ? c.code : "", whoText()
+      t.sampleNo || "", c ? c.code : "", whoText(),
+      window.v483 ? ({ edited: "time edited", manual: "manual time", legacy_manual: "manual (pre-v48.3)", legacy_edited: "edited (pre-v48.3)" })[v483.timeFlag(t)] || "" : ""
     ]);
   });
   const toCsv = rows => rows.map(r => r.map(csvEscape).join(",")).join("\n");
@@ -2734,11 +2736,11 @@ function exportEvent(eventId) {
 }
 function exportCsv(eventId) {
   const ev = eventById(eventId);
-  const rows = [["event","sample_no","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","dob","occupation","occupation_code","company","seg","location_code","irsst","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments","rotameter","field_calibrator"]];
+  const rows = [["event","sample_no","trainKind","status","code","contaminant","pump","dosimeter","cassette","media","mode","who_or_where","sex","dob","occupation","occupation_code","company","seg","location_code","irsst","start","stop","minutes","startFlow","endFlow","avgFlow","volume_L","rejectCode","rejectReason","rpdWorn","hpdWorn","comments","rotameter","field_calibrator","time_start_capture","time_stop_capture","time_edit_reasons","not_used"]];   /* v48.3 */
   trainsOf(eventId).forEach(t => {
     const who = isStatic(t) ? t.location : [t.person?.first, t.person?.last].filter(Boolean).join(" ");
     const c = contam(t.contaminantId);
-    rows.push([ev.code, t.sampleNo || t.pouch, t.trainKind || "", displayStatus(t), c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.person?.dob || "", t.person?.occupation || "", t.occupationCode || t.person?.occupationCode || "", t.person?.company || "", t.seg || "", t.locationCode || "", t.irsstCat || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments, t.rotameter || "", t.fieldCalibrator || ""]);
+    rows.push([ev.code, t.sampleNo || t.pouch, t.trainKind || "", displayStatus(t), c?.code || "", c?.name || "", t.pumpSerial || "", t.dosimeterSerial || "", t.headId, t.mediaId, t.mode, who, t.person?.sex || "", t.person?.dob || "", t.person?.occupation || "", t.occupationCode || t.person?.occupationCode || "", t.person?.company || "", t.seg || "", t.locationCode || "", t.irsstCat || "", t.startAt, t.endAt, runtimeMinutes(t) ?? "", t.startFlow, t.endFlow, avgFlow(t) ?? "", volumeLitres(t) ?? "", t.rejectCode || "", t.rejectReason, t.rpd?.worn || "", t.hpd?.worn || "", t.comments, t.rotameter || "", t.fieldCalibrator || "", ...(window.v483 ? v483.exportCols(t) : ["", "", "", ""])]);
   });
   const csv = rows.map(r => r.map(x => `"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   download(new Blob([csv], { type: "text/csv" }), ev.code + "-ENVSS-Field.csv");
@@ -8196,6 +8198,28 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     return "Other";
   }
 
+  /* v48.3: fuller device detail for John's usage reports (no UI for staff). */
+  function uaInfo() {
+    var ua = navigator.userAgent || "";
+    var m, os = "Other", osv = "", br = browserLabel(), brv = "";
+    if (/CrOS/i.test(ua)) { os = "ChromeOS"; m = /CrOS \S+ ([\d.]+)/.exec(ua); osv = m ? m[1] : ""; }
+    else if (/Android/i.test(ua)) { os = "Android"; m = /Android ([\d.]+)/.exec(ua); osv = m ? m[1] : ""; }
+    else if (/iPhone|iPad|iPod/i.test(ua)) { os = "iOS"; m = /OS (\d+[_\d]*)/.exec(ua); osv = m ? m[1].replace(/_/g, ".") : ""; }
+    else if (/Windows/i.test(ua)) { os = "Windows"; m = /Windows NT ([\d.]+)/.exec(ua); osv = m ? m[1] : ""; }
+    else if (/Mac OS X|Macintosh/i.test(ua)) { os = "macOS"; m = /Mac OS X (\d+[_\d]*)/.exec(ua); osv = m ? m[1].replace(/_/g, ".") : ""; }
+    else if (/Linux/i.test(ua)) os = "Linux";
+    m = br === "Edge" ? /Edg\/([\d.]+)/.exec(ua) : br === "Chrome" ? /Chrome\/([\d.]+)/.exec(ua) : br === "Firefox" ? /Firefox\/([\d.]+)/.exec(ua) : br === "Safari" ? /Version\/([\d.]+)/.exec(ua) : null;
+    brv = m ? m[1] : "";
+    var mobile = !/CrOS/i.test(ua) && /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    var type = /CrOS/i.test(ua) ? "chromebook" : /iPad|Tablet/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua)) ? "tablet" : mobile ? "phone" : "laptop";
+    var standalone = false;
+    try { standalone = !!(window.matchMedia && (window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: fullscreen)").matches || window.matchMedia("(display-mode: minimal-ui)").matches)) || navigator.standalone === true; } catch (e) {}
+    var scr = ""; try { scr = (screen.width || 0) + "x" + (screen.height || 0) + "@" + (window.devicePixelRatio || 1); } catch (e) {}
+    return { device_type: type, os: os, os_version: osv, browser_version: brv, display_mode: standalone ? "standalone" : "browser_tab", screen: scr };
+  }
+  var hiOs = null;   /* Client Hints give the real Windows / macOS / Android version where the browser allows it */
+  try { if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) navigator.userAgentData.getHighEntropyValues(["platformVersion", "fullVersionList", "model"]).then(function (v) { hiOs = v || null; }).catch(function () {}); } catch (e) {}
+
   function newClientEventId() {
     try {
       if (crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -8258,6 +8282,11 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       app_version: (typeof APP_VERSION !== "undefined" ? APP_VERSION : "45e"),
       client_event_id: newClientEventId()
     };
+    try {   /* v48.3: extra detail; only sent through envss_log_app_open (see work/loginlog_v48_3_01_app_open.sql) */
+      var x = uaInfo();
+      if (hiOs) { if (hiOs.platformVersion) x.os_version_hint = String(hiOs.platformVersion); if (hiOs.model) x.model = String(hiOs.model).slice(0, 60); }
+      row.ext = x;
+    } catch (e) {}
     if (!row.user_id) delete row.user_id; /* DB default auth.uid() when online insert */
     return row;
   }
@@ -8272,17 +8301,44 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     saveQueue(q);
   }
 
+  /* v48.3: send through the envss_log_app_open function first (records every staff open, with device detail; it does not
+     depend on the admin-only SELECT policy). If that function is not on the database yet (404), fall back to the v45e
+     table insert without the ignore-duplicates upsert (a 409 duplicate counts as stored). */
+  var RPC_MISSING_KEY = "envss-field-login-log-rpc-missing";
+  var DIAG_KEY = "envss-field-login-log-diag";
+  function diag(d) { try { localStorage.setItem(DIAG_KEY, JSON.stringify(Object.assign({ at: new Date().toISOString(), v: (typeof APP_VERSION !== "undefined" ? APP_VERSION : "") }, d))); } catch (e) {} }
+  function rpcMissing() { try { var t = Number(localStorage.getItem(RPC_MISSING_KEY) || 0); return t && Date.now() - t < 6 * 3600e3; } catch (e) { return false; } }
+  async function postRpc(c, row) {
+    var x = row.ext || {};
+    var res = await sbFetch(c.supabaseUrl + "/rest/v1/rpc/envss_log_app_open", {
+      method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ p: {
+        event: row.event, occurred_at: row.occurred_at, local_date: row.local_date, full_name: row.full_name || null,
+        device: row.device, browser: row.browser, user_agent: row.user_agent, app_version: row.app_version, client_event_id: row.client_event_id,
+        device_type: x.device_type || null, os: x.os || null, os_version: x.os_version_hint || x.os_version || null, browser_version: x.browser_version || null,
+        display_mode: x.display_mode || null, extra: { screen: x.screen || "", model: x.model || "", os_version_ua: x.os_version || "" } } })
+    });
+    if (res.status === 200 || res.status === 204 || res.status === 201) return "ok";
+    if (res.status === 404) { try { localStorage.setItem(RPC_MISSING_KEY, String(Date.now())); } catch (e) {} return "missing"; }
+    var txt = ""; try { txt = await res.text(); } catch (e) {}
+    if (/PGRST202|Could not find the function/i.test(txt)) { try { localStorage.setItem(RPC_MISSING_KEY, String(Date.now())); } catch (e) {} return "missing"; }
+    var err = new Error("login-log rpc " + res.status + (txt ? ": " + txt.slice(0, 200) : "")); err.status = res.status; throw err;
+  }
   async function postOne(row) {
     var c = typeof sbCfg === "function" ? sbCfg() : null;
     if (!c || !c.supabaseUrl) throw new Error("no supabase");
     if (typeof hasSession === "function" && !hasSession()) throw new Error("no session");
-    var body = Object.assign({}, row);
+    if (typeof accessToken === "function" && !accessToken() && typeof ensureFreshSession === "function") { try { await ensureFreshSession(); } catch (e) {} }
+    if (!rpcMissing()) { var rr = await postRpc(c, row); if (rr === "ok") return "ok"; }
+    if (row.event === "app_open" || row.event === "app_resume") return "skip";   /* the v45e table only takes sign_in / daily_open / sign_out */
+    var body = Object.assign({}, row); delete body.ext; delete body.tries;
+    if (row.ext && row.ext.browser_version) body.browser = row.browser + " " + String(row.ext.browser_version).split(".")[0];
     /* Prefer server auth.uid() — omit blank user_id so default applies */
     if (!body.user_id) delete body.user_id;
     var res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_login_log", {
       method: "POST",
       headers: {
-        Prefer: "resolution=ignore-duplicates,return=minimal",
+        Prefer: "return=minimal",
         "Content-Type": "application/json"
       },
       body: JSON.stringify(body)
@@ -8311,11 +8367,17 @@ window.HIRE_CATALOG = HIRE_CATALOG;
         try {
           await postOne(row);
         } catch (e) {
-          /* Keep for retry. If the table is missing (404), stop this pass to avoid hammering. */
+          diag({ status: e && e.status || 0, msg: String(e && e.message || e).slice(0, 240), event: row && row.event });
+          var st = e && e.status;
+          /* v48.3: a row the server refuses outright (400 / 403 / 422) no longer blocks every row behind it.
+             It is retried a few times, then dropped. Offline / auth / server trouble keeps the queue and stops this pass. */
+          if (st === 400 || st === 403 || st === 422) {
+            row.tries = (row.tries || 0) + 1;
+            if (row.tries < 5) kept.push(row);
+            continue;
+          }
           kept.push(row);
           for (var j = i + 1; j < q.length; j++) kept.push(q[j]);
-          if (e && (e.status === 404 || e.status === 503)) break;
-          /* other errors: keep remaining and stop this pass */
           break;
         }
       }
@@ -8394,6 +8456,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
                 if (c && tok && navigator.onLine) {
                   var bodyObj = Object.assign({}, row);
                   if (!bodyObj.user_id) delete bodyObj.user_id;
+                  delete bodyObj.ext; delete bodyObj.tries;   /* v48.3: extra detail goes only through the function */
                   fetch(c.supabaseUrl + "/rest/v1/envss_login_log", {
                     method: "POST",
                     keepalive: true,
@@ -8401,7 +8464,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
                       apikey: c.supabaseAnonKey,
                       Authorization: "Bearer " + tok,
                       "Content-Type": "application/json",
-                      Prefer: "resolution=ignore-duplicates,return=minimal"
+                      Prefer: "return=minimal"
                     },
                     body: JSON.stringify(bodyObj)
                   }).then(function (res) {
@@ -8430,8 +8493,15 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   /* Boot: first open of the Perth day (even when already signed in) */
   setTimeout(function () {
     try { maybeDailyOpen(); } catch (e) {}
+    try { if (typeof hasSession === "function" && hasSession()) recordLoginEvent("app_open"); } catch (e3) {}   /* v48.3: every app open */
     try { flushLoginLogQueue(); } catch (e2) {}
   }, 800);
+  var hiddenAt = 0;   /* v48.3: back to the app after 30 min or more in the background counts as an open */
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    try { if (hiddenAt && Date.now() - hiddenAt >= 30 * 60e3 && typeof hasSession === "function" && hasSession()) recordLoginEvent("app_resume"); } catch (e) {}
+    hiddenAt = 0;
+  });
   window.addEventListener("online", function () {
     try { flushLoginLogQueue(); } catch (e) {}
   });
@@ -10782,6 +10852,421 @@ function fixOpen(ts) {
   window.afmCocBlocked = function (ev) { return !cocExists(ev) && afmEventChecks(ev).some(x => x.severity === "hard"); };
   window.afmCocExists = cocExists;
   window.paintAfmChecks = paintAfmChecks;
+})();
+</script>
+
+<script>
+/* ===== v48.3: time capture lock + COC / Mark complete gate (John, 12 Nov 2026 AWST, usage report points 1 and 2) =====
+   1. Start / stop times come from START / STOP. The time boxes are read-only. "Edit time" asks for a reason and keeps the
+      pressed time, new time, reason, who, when and device in the sample's audit trail (entry.te). A time entered without
+      START / STOP ever being pressed (e.g. from the paper field sheet) needs a reason, is marked "manual time", and moves
+      the sample to running / stopped so it no longer sits at "prepped".
+   2. START / STOP on a laptop or desktop warns "Field capture should be on your phone." (warn, not block).
+   3. A pressed STOP more than 15 min after the expected end (start + shift hours) offers to enter the actual stop time.
+   4. Existing samples: stored times are never rewritten. Typed times from before v48.3 are only labelled
+      "manual (pre-v48.3)" / "edited (pre-v48.3)", derived from the audit trail on display.
+   5. Create COC (new ones only) and Mark event complete are blocked while a sample is prepped or started-not-stopped,
+      with a list of the blocking samples and ways out: open it (START / STOP), enter times with a reason, mark not used /
+      void with a reason (record kept, left off the COC), or reject with a reason.
+   Data: everything lives in the existing sample JSON (status "not_used", notUsedReason, audit entries). No schema change. */
+(function () {
+  const V = "48.3";
+  const MOBILE = (function () { const ua = navigator.userAgent || ""; if (/CrOS/i.test(ua)) return false;
+    try { if (navigator.userAgentData && typeof navigator.userAgentData.mobile === "boolean" && navigator.userAgentData.mobile) return true; } catch (e) {}
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua); })();
+  const LATE_MIN = 15;
+  const EDIT_REASONS = [["forgot_press", "Forgot to press at the pump"], ["pump_fault", "Pump fault"], ["phone_flat", "Phone flat / no signal"], ["wrong_press", "Correcting a wrong press"], ["other", "Other (type the reason)"]];
+  const MANUAL_REASONS = [["paper_sheet", "Entered from paper field sheet"], ["forgot_press", "Forgot to press START / STOP at the pump"], ["phone_flat", "Phone flat / no signal"], ["pump_fault", "Pump fault"], ["other", "Other (type the reason)"]];
+  const VOID_REASONS = [["spare", "Spare: prepped but not deployed"], ["blank_unused", "Field blank not used"], ["no_task", "Worker / task did not go ahead"], ["duplicate", "Duplicate created in error"], ["other", "Other (type the reason)"]];
+  const DONE = new Set(["rejected", "fault", "not_used", "uploaded"]);
+  const W = k => (k === "start" ? "startAt" : "endAt");
+  const WORD = k => (k === "start" ? "START" : "STOP");
+  const esc2 = s => (typeof esc === "function" ? esc(s) : String(s == null ? "" : s));
+  const ms = iso => { const d = iso ? new Date(iso).getTime() : NaN; return isNaN(d) ? null : d; };
+  const awst2 = iso => (typeof window.awst === "function" ? window.awst(iso) : String(iso || ""));
+  const hm = iso => (typeof toLocalInput === "function" ? toLocalInput(iso) : "");
+  const localDate = iso => { const d = new Date(iso); const p = n => String(n).padStart(2, "0"); return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); };
+  function isFib(t) { try { return isFibreTrain(t); } catch (e) { return false; } }
+  function isFibEv(ev) { try { return isFibreEvent(ev); } catch (e) { return false; } }
+
+  /* ---------- reading the audit trail ---------- */
+  function presses(t, which) { const re = new RegExp("^" + WORD(which) + " pressed"); return (t.audit || []).filter(a => a && re.test(a.action || "")); }
+  function lastPress(t, which) { const p = presses(t, which); return p.length ? p[p.length - 1] : null; }
+  function edits(t, which) { return (t.audit || []).filter(a => a && a.te && (!which || a.te.which === which)); }
+  /* pressed | edited | manual | legacy_manual | legacy_edited | none */
+  function capture(t, which) {
+    if (!t || !t[W(which)]) return "none";
+    const p = lastPress(t, which), e = edits(t, which); const le = e[e.length - 1];
+    if (le && !(p && ms(p.at) > ms(le.at))) return le.te.manual ? "manual" : "edited";
+    if (!p) return "legacy_manual";
+    const after = ms(p.at) + 5000;
+    const typed = (t.audit || []).some(a => a && a.field === W(which) && /^Changed /.test(a.action || "") && ms(a.at) > after
+      && ms(a.from) != null && ms(a.to) != null && Math.abs(ms(a.from) - ms(a.to)) > 60000);
+    return typed ? "legacy_edited" : "pressed";
+  }
+  const CHIP = { edited: ["time edited", "te-edit"], manual: ["manual time", "te-manual"], legacy_manual: ["manual (pre-v" + V + ")", "te-legacy"], legacy_edited: ["edited (pre-v" + V + ")", "te-legacy"] };
+  function timeFlag(t) {
+    if (!t || isBlank(t)) return "";
+    const a = capture(t, "start"), b = capture(t, "stop");
+    for (const k of ["manual", "edited", "legacy_manual", "legacy_edited"]) if (a === k || b === k) return k;
+    return "";
+  }
+  function chipHtml(k, extra) { const c = CHIP[k]; return c ? `<span class="te-chip ${c[1]}"${extra || ""}>${esc2(c[0])}</span>` : ""; }
+  function reasonsText(t) { return edits(t).map(a => (a.te.which === "start" ? "start" : "stop") + ": " + (a.te.reasonLabel || a.te.reason) + (a.te.reasonText ? " (" + a.te.reasonText + ")" : "")).join("; "); }
+  function exportCols(t) {
+    const lab = k => ({ pressed: "pressed", edited: "edited", manual: "manual", legacy_manual: "manual (pre-v" + V + ")", legacy_edited: "edited (pre-v" + V + ")", none: "" })[k] || "";
+    return [lab(capture(t, "start")), lab(capture(t, "stop")), reasonsText(t), t.status === "not_used" ? ("NOT USED: " + (t.notUsedReason || "")) : ""];
+  }
+  function whoNow() { try { return whoText(); } catch (e) { return ""; } }
+  function dev() { try { return deviceLabel(); } catch (e) { return "Browser"; } }
+  function derivedStatus(t) { return t.endAt ? "ended" : t.startAt ? "running" : "prepped"; }
+
+  /* ---------- expected end (start + shift hours on this person, else the usual shift hours on this shift) ---------- */
+  function shiftHours(t) {
+    const h = parseFloat((t.person || {}).hours);
+    if (h > 0.5 && h <= 24) return h;
+    const day = t.shiftDate || ""; const xs = trainsOf(t.eventId).filter(x => x !== t && (x.shiftDate || "") === day).map(x => parseFloat((x.person || {}).hours)).filter(v => v > 0.5 && v <= 24);
+    if (!xs.length) return null;
+    const c = {}; xs.forEach(v => { c[v] = (c[v] || 0) + 1; }); return Number(Object.keys(c).sort((a, b) => c[b] - c[a])[0]);
+  }
+  function expectedEnd(t) { const s = ms(t.startAt), h = shiftHours(t); return s != null && h ? { at: new Date(s + h * 3600e3).toISOString(), hours: h } : null; }
+
+  /* ---------- modal ---------- */
+  function modal(html) {
+    const w = document.createElement("div"); w.className = "v483-modal"; w.innerHTML = `<div class="v483-dialog" role="dialog" aria-modal="true">${html}</div>`;
+    document.body.appendChild(w); return w;
+  }
+  function reasonPicker(list, pre) {
+    return `<div class="v483-reasons">${list.map(([c, l]) => `<label class="v483-reason"><input type="radio" name="v483r" value="${c}" ${pre === c ? "checked" : ""}> ${esc2(l)}</label>`).join("")}</div>
+      <label for="v483rText" class="v483-lab">Details <span class="muted" id="v483rHint">(optional)</span></label><input id="v483rText" maxlength="240" placeholder="e.g. times from the paper field sheet">`;
+  }
+  function readReason(w, list) {
+    const r = w.querySelector('input[name="v483r"]:checked'); const txt = (w.querySelector("#v483rText").value || "").trim();
+    if (!r) return { err: "Pick a reason." };
+    if (r.value === "other" && txt.length < 3) return { err: "Type the reason." };
+    return { reason: r.value, reasonLabel: (list.find(x => x[0] === r.value) || [])[1] || r.value, reasonText: txt };
+  }
+
+  /* ---------- Edit / enter time ---------- */
+  /* which: "start" | "stop" | "both" */
+  function openTimeDialog(t, which, opts) {
+    opts = opts || {};
+    if (!t) return;
+    if (which === "stop" && !t.startAt) which = "both";
+    const ks = which === "both" ? ["start", "stop"] : [which];
+    const manualOf = k => !lastPress(t, k);
+    const anyManual = ks.some(k => manualOf(k) || !t[W(k)]);
+    const list = ks.every(k => manualOf(k)) ? MANUAL_REASONS : EDIT_REASONS;
+    const pre = opts.reason || (list === MANUAL_REASONS ? "paper_sheet" : "");
+    const defDate = t.shiftDate || (eventById(t.eventId) || {}).date || localDate(new Date().toISOString());
+    const row = k => { const cur = t[W(k)]; const p = lastPress(t, k);
+      return `<div class="v483-trow"><div><label class="v483-lab">${k === "start" ? "Start" : "Stop"} date</label><input type="date" id="v483d-${k}" value="${esc2(cur ? localDate(cur) : (k === "stop" && t.startAt ? localDate(t.startAt) : defDate))}"></div>
+        <div><label class="v483-lab">${k === "start" ? "Start" : "Stop"} time</label><input type="time" id="v483t-${k}" value="${esc2(cur ? hm(cur) : "")}"></div></div>
+        <p class="help">${p ? WORD(k) + " was pressed " + esc2(awst2(p.at)) + (p.who ? " · " + esc2(String(p.who).split("·").pop().trim()) : "") : WORD(k) + " was never pressed on this sample" + (cur ? "; the current time was typed in" : "")}.</p>`; };
+    const title = anyManual && ks.every(k => manualOf(k)) ? "Enter " + (which === "both" ? "start and stop times" : which + " time") + " without " + ks.map(WORD).join("/") : "Edit " + (which === "both" ? "start and stop times" : which + " time");
+    const w = modal(`<h3 style="margin:0 0 6px">${esc2(title)}</h3><p class="help">${esc2(displayNo(t))} · ${esc2(kindLabel(t))}. The time you enter is saved with your reason, your name, this device and the original pressed time.</p>
+      ${ks.map(row).join("")}<p class="help" style="margin:10px 0 4px"><strong>Reason</strong></p>${reasonPicker(list, pre)}
+      <p class="help v483-err" id="v483Err" role="alert"></p>
+      <div class="row" style="gap:10px;justify-content:flex-end;margin-top:12px"><button type="button" class="btn ghost" id="v483Cancel">Cancel</button><button type="button" class="btn green" id="v483Save">Save time</button></div>`);
+    w.setAttribute("data-v483", "time");
+    const err = m => { w.querySelector("#v483Err").textContent = m; };
+    w.querySelector("#v483Cancel").onclick = () => { w.remove(); if (opts.onDone) opts.onDone(false); };
+    w.querySelector("#v483Save").onclick = () => {
+      const rr = readReason(w, list); if (rr.err) return err(rr.err);
+      const vals = {};
+      for (const k of ks) {
+        const d = w.querySelector("#v483d-" + k).value, tm = w.querySelector("#v483t-" + k).value;
+        if (!tm) { if (k === "stop" && which === "both") continue; return err("Enter the " + k + " time."); }
+        const iso = combineShiftTime(d, tm, false);
+        if (!iso) return err("That " + k + " time is not valid.");
+        vals[k] = iso;
+      }
+      let s = vals.start || t.startAt, e = vals.stop || (which === "both" ? "" : t.endAt);
+      if (vals.stop && s && ms(vals.stop) <= ms(s) && !(which === "both" && w.querySelector("#v483d-stop").value !== w.querySelector("#v483d-start").value)) {
+        /* stop earlier than start on the same date: night shift, roll the stop to the next day */
+        const nx = new Date(ms(vals.stop) + 86400e3).toISOString(); if (ms(nx) > ms(s)) { vals.stop = nx; e = nx; }
+      }
+      if (s && e && ms(e) <= ms(s)) return err("The stop time must be after the start time.");
+      const fut = Date.now() + 5 * 60e3;
+      if ((vals.start && ms(vals.start) > fut) || (vals.stop && ms(vals.stop) > fut)) return err("That time is in the future.");
+      if (s && e && ms(e) - ms(s) > 24 * 3600e3 && !confirm("That is a run of more than 24 hours. Save anyway?")) return;
+      const at = nowIso(), who = whoNow(), device = dev();
+      t.audit = t.audit || [];
+      Object.keys(vals).forEach(k => {
+        const prev = t[W(k)] || ""; const p = lastPress(t, k); const manual = !p;
+        if (prev && ms(prev) === ms(vals[k]) && !manual) return;   /* unchanged pressed time: nothing to record */
+        t[W(k)] = vals[k];
+        t.audit.push({ at, who, action: (k === "start" ? "Start" : "Stop") + " time " + (manual ? "entered manually" : "edited"), field: "", from: "", to: "",
+          detail: (prev ? awst2(prev) : "(empty)") + " → " + awst2(vals[k]) + " · reason: " + rr.reasonLabel + (rr.reasonText ? " (" + rr.reasonText + ")" : "") + (p ? " · pressed " + awst2(p.at) : " · " + WORD(k) + " never pressed") + " · " + device,
+          te: { v: V, which: k, from: prev, to: vals[k], pressedAt: p ? p.at : null, reason: rr.reason, reasonLabel: rr.reasonLabel, reasonText: rr.reasonText, manual, who, device, mobile: MOBILE, at } });
+      });
+      if (!DONE.has(t.status)) t.status = derivedStatus(t);
+      if (vals.stop) { try { const chk = flowCheck(t); if (chk && chk.ok === false && chk.pct != null) t.audit.push({ at, who, action: "Flow outside tolerance", detail: chk.pct.toFixed(1) + "% vs ±" + chk.tol + "%" }); } catch (e2) {} }
+      t.updatedAt = at;
+      w.remove(); save();
+      if (opts.onDone) opts.onDone(true);
+    };
+    return w;
+  }
+
+  /* ---------- Not used / void, reject ---------- */
+  function openVoidDialog(t, onDone) {
+    const list = VOID_REASONS;
+    const w = modal(`<h3 style="margin:0 0 6px">Mark ${esc2(displayNo(t))} as not used / void</h3><p class="help">The record is kept (nothing is deleted). It is left off new COCs and no longer holds the event back. You can undo this on the sample.</p>
+      ${reasonPicker(list, isBlank(t) ? "blank_unused" : "spare")}<p class="help v483-err" id="v483Err" role="alert"></p>
+      <div class="row" style="gap:10px;justify-content:flex-end;margin-top:12px"><button type="button" class="btn ghost" id="v483Cancel">Cancel</button><button type="button" class="btn orange" id="v483Save">Mark not used</button></div>`);
+    w.setAttribute("data-v483", "void");
+    w.querySelector("#v483Cancel").onclick = () => { w.remove(); if (onDone) onDone(false); };
+    w.querySelector("#v483Save").onclick = () => {
+      const rr = readReason(w, list); if (rr.err) { w.querySelector("#v483Err").textContent = rr.err; return; }
+      const at = nowIso(); t.notUsedPrev = t.status || ""; t.status = "not_used"; t.notUsedReason = rr.reasonLabel + (rr.reasonText ? " (" + rr.reasonText + ")" : "");
+      t.audit = t.audit || []; t.audit.push({ at, who: whoNow(), action: "Marked not used / void", detail: t.notUsedReason + " · " + dev(), nu: { reason: rr.reason, reasonText: rr.reasonText, device: dev() } });
+      t.updatedAt = at; w.remove(); save(); if (onDone) onDone(true);
+    };
+  }
+  function undoNotUsed(t) {
+    if (!t || t.status !== "not_used") return;
+    const prev = t.notUsedPrev && t.notUsedPrev !== "not_used" ? t.notUsedPrev : (isBlank(t) ? "field_blank" : derivedStatus(t));
+    t.status = prev; t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoNow(), action: "Not used / void undone", detail: "was: " + (t.notUsedReason || "") + " · " + dev() });
+    t.notUsedReason = ""; t.updatedAt = nowIso(); save();
+  }
+  function openRejectDialog(t, onDone) {
+    const list = (rejectList(t) || []).map(r => [r.code, r.label]).concat([["other_note", "Other (type the reason)"]]);
+    const w = modal(`<h3 style="margin:0 0 6px">${isNoise(t) ? "Fault" : "Reject"} ${esc2(displayNo(t))}</h3><p class="help">${isNoise(t) ? "The sample is marked as a fault." : "Rejected samples stay on the COC marked \"voided needs clean and return\"."}</p>
+      <div class="v483-reasons">${list.map(([c, l]) => `<label class="v483-reason"><input type="radio" name="v483r" value="${esc2(c)}"> ${esc2(l)}</label>`).join("")}</div>
+      <label for="v483rText" class="v483-lab">Details <span class="muted">(optional)</span></label><input id="v483rText" maxlength="240">
+      <p class="help v483-err" id="v483Err" role="alert"></p>
+      <div class="row" style="gap:10px;justify-content:flex-end;margin-top:12px"><button type="button" class="btn ghost" id="v483Cancel">Cancel</button><button type="button" class="btn orange" id="v483Save">${isNoise(t) ? "Mark fault" : "Reject sample"}</button></div>`);
+    w.setAttribute("data-v483", "reject");
+    w.querySelector("#v483Cancel").onclick = () => { w.remove(); if (onDone) onDone(false); };
+    w.querySelector("#v483Save").onclick = () => {
+      const r = w.querySelector('input[name="v483r"]:checked'); const txt = (w.querySelector("#v483rText").value || "").trim();
+      if (!r) { w.querySelector("#v483Err").textContent = "Pick a reason."; return; }
+      if (r.value === "other_note" && txt.length < 3) { w.querySelector("#v483Err").textContent = "Type the reason."; return; }
+      const codes = (rejectList(t) || []).map(x => x.code);
+      t.rejectAsked = "yes"; t.rejectCode = r.value === "other_note" ? (codes.includes("other") ? "other" : (codes[codes.length - 1] || "other")) : r.value;
+      t.rejectReason = ((list.find(x => x[0] === r.value) || [])[1] || "") + (txt ? " — " + txt : ""); if (r.value === "other_note") t.rejectReason = txt;
+      t.status = isNoise(t) ? "fault" : "rejected";
+      t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoNow(), action: isNoise(t) ? "Fault" : "Rejected", detail: t.rejectCode + (t.rejectReason ? " · " + t.rejectReason : "") + " · from the COC / complete check · " + dev() });
+      t.updatedAt = nowIso(); w.remove(); save(); if (onDone) onDone(true);
+    };
+  }
+
+  /* ---------- COC / Mark complete gate ---------- */
+  function blockReason(t) {
+    if (!t || DONE.has(t.status)) return "";
+    if (typeof cocRejected === "function" && cocRejected(t)) return "";
+    if (isBlank(t)) return displayStatus(t) === "sample_complete" ? "" : "Field blank details missing (cassette / analyses)";
+    if (t.status === "running") return "Started " + (t.startAt ? hm(t.startAt) : "") + ", never stopped";
+    if (t.status === "prepped" && (t.startAt || t.endAt)) return "Times typed, START / STOP never pressed (still prepped)";
+    if (t.status === "prepped" || !t.status) return "Never started (still prepped)";
+    if (!t.endAt && t.status !== "ended" && t.status !== "sample_stopped" && t.startAt) return "Started, never stopped";
+    return "";
+  }
+  function blockers(ev, scope) { return trainsOf(ev.id).filter(t => (scope === "coc" ? !isNoise(t) : true) && blockReason(t)); }
+  function showGate(ev, scope) {
+    const old = document.querySelector('.v483-modal[data-v483="gate"]'); if (old) old.remove();
+    const list = blockers(ev, scope);
+    const what = scope === "coc" ? "Create COC" : "Mark event complete";
+    const whatLow = scope === "coc" ? "create the COC" : "mark the event complete";
+    const body = list.length ? `<p class="help">${list.length} sample${list.length === 1 ? " is" : "s are"} not finished. Sort ${list.length === 1 ? "it" : "each one"} out, then ${whatLow} again.</p>
+      <ul class="v483-gate">${list.map(t => {
+        const running = t.status === "running";
+        return `<li data-gate="${esc2(t.id)}"><div class="v483-gtitle"><button type="button" class="linkish" data-g="open" data-id="${esc2(t.id)}">${esc2(displayNo(t))} · ${esc2(kindLabel(t))}</button><span class="muted"> — ${esc2(blockReason(t))}</span></div>
+          <div class="v483-gbtns">
+            <button type="button" class="btn mid" data-g="open" data-id="${esc2(t.id)}">${isBlank(t) ? "Open sample" : running ? "Open (press STOP)" : "Open (press START)"}</button>
+            ${isBlank(t) ? "" : `<button type="button" class="btn ghost" data-g="times" data-id="${esc2(t.id)}">${running ? "Enter stop time" : "Enter times"}</button>`}
+            <button type="button" class="btn ghost" data-g="void" data-id="${esc2(t.id)}">Not used / void</button>
+            ${isBlank(t) ? "" : `<button type="button" class="btn ghost" data-g="reject" data-id="${esc2(t.id)}">${isNoise(t) ? "Fault" : "Reject"}</button>`}
+          </div></li>`; }).join("")}</ul>`
+      : `<p class="help" id="v483GateClear">All samples are sorted. You can ${whatLow} now.</p>`;
+    const w = modal(`<h3 style="margin:0 0 6px">${list.length ? "Can't " + whatLow + " yet" : what}</h3>${body}
+      <div class="row" style="gap:10px;justify-content:flex-end;margin-top:12px"><button type="button" class="btn ghost" id="v483GateClose">Close</button>${list.length ? "" : `<button type="button" class="btn green" id="v483GateGo">${esc2(what)}</button>`}</div>`);
+    w.setAttribute("data-v483", "gate");
+    const again = () => setTimeout(() => showGate(ev, scope), 0);
+    w.querySelector("#v483GateClose").onclick = () => w.remove();
+    const go = w.querySelector("#v483GateGo"); if (go) go.onclick = () => { w.remove(); view.eventId = ev.id; if (scope === "coc") createCoc(); else markEventUpload(ev.id); };
+    w.querySelectorAll("[data-g]").forEach(b => b.onclick = () => {
+      const t = db.trains.find(x => x.id === b.dataset.id); if (!t) return;
+      const g = b.dataset.g;
+      if (g === "open") { w.remove(); openTrain(t.id); return; }
+      w.style.display = "none";
+      const back = ok => { w.remove(); again(); };
+      if (g === "times") openTimeDialog(t, t.status === "running" ? "stop" : "both", { onDone: back });
+      else if (g === "void") openVoidDialog(t, back);
+      else if (g === "reject") openRejectDialog(t, back);
+    });
+    return w;
+  }
+  window.v483 = { capture, timeFlag, exportCols, reasonsText, blockers, blockReason, showGate, openTimeDialog, openVoidDialog, undoNotUsed, expectedEnd, MOBILE, version: V };
+
+  /* Create COC: new COCs only (already-made COCs are files and are not touched). Not-used samples are left off. */
+  const _coc483 = createCoc;
+  createCoc = async function () {
+    const ev = eventById(view.eventId);
+    if (ev && !isFibEv(ev)) { const b = blockers(ev, "coc"); if (b.length) { showGate(ev, "coc"); try { v42EvLog && v42EvLog(ev, "Create COC blocked", b.length + " sample(s) not finished: " + b.map(displayNo).join(", ")); saveQuiet(); } catch (e) {} return false; } }
+    window._v483CocScope = true;
+    try { return await _coc483.apply(this, arguments); } finally { window._v483CocScope = false; }
+  };
+  window.createCoc = createCoc;
+  const _trainsOf483 = trainsOf;
+  trainsOf = function (eventId) { const r = _trainsOf483.apply(this, arguments); return window._v483CocScope ? r.filter(t => t.status !== "not_used") : r; };
+  window.trainsOf = trainsOf;
+
+  const _mark483 = markEventUpload;
+  markEventUpload = function (id) {
+    const ev = eventById(id);
+    if (ev) { const b = blockers(ev, "complete"); if (b.length) { showGate(ev, "complete"); return; } }
+    return _mark483.apply(this, arguments);
+  };
+  window.markEventUpload = markEventUpload;
+
+  /* not-used: own status, counts as finished, no START */
+  const _ds483 = displayStatus;
+  displayStatus = function (t) { if (t && typeof t === "object" && t.status === "not_used") return "not_used"; return _ds483.apply(this, arguments); };
+  window.displayStatus = displayStatus;
+  const _fu483 = followUpComplete;
+  followUpComplete = function (t) { if (t && t.status === "not_used") return true; return _fu483.apply(this, arguments); };
+  window.followUpComplete = followUpComplete;
+  const _gsf483 = window.sampleFlag;   /* event status leaves not-used samples out, like rejected / fault */
+  if (typeof _gsf483 === "function") { window.sampleFlag = function (t) { if (t && t.status === "not_used") return "not_used"; return _gsf483.apply(this, arguments); }; }
+  const _sg483 = startGaps;
+  startGaps = function (t) { if (t && t.status === "not_used") return ["Marked not used / void (undo it on the sample first)"]; return _sg483.apply(this, arguments); };
+  window.startGaps = startGaps;
+  const _badge483 = badge;
+  badge = function (status) { if (status === "not_used") return `<span class="badge s-not_used">Not used / void</span>`; return _badge483.apply(this, arguments); };
+  window.badge = badge;
+
+  /* times never change by re-reading the (read-only) boxes: only START / STOP and Edit time change them */
+  const _collect483 = collectTrain;
+  collectTrain = function (t) {
+    if (!t) return _collect483.apply(this, arguments);
+    const a = t.startAt, b = t.endAt;
+    const r = _collect483.apply(this, arguments);
+    t.startAt = a; t.endAt = b;
+    return r;
+  };
+  window.collectTrain = collectTrain;
+
+  /* ---------- START / STOP: laptop warning, late STOP check ---------- */
+  function curT() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function watchPress(which, ids, clickAt, laptop) {
+    let n = 0;
+    const iv = setInterval(() => {
+      n++;
+      const ts = ids.map(id => db.trains.find(x => x.id === id)).filter(Boolean);
+      const hit = ts.filter(t => { const p = lastPress(t, which); return p && ms(p.at) >= clickAt - 1500; });
+      if (hit.length || n > 100) clearInterval(iv);
+      if (!hit.length) return;
+      if (laptop) { hit.forEach(t => { t.audit.push({ at: nowIso(), who: whoNow(), action: WORD(which) + " pressed on a " + dev(), detail: "Warned: field capture should be on the phone. Continued.", lap: true }); }); saveQuiet(); }
+      if (which === "stop") setTimeout(() => lateStop(hit[0]), 350);
+    }, 200);
+  }
+  function lateStop(t) {
+    if (!t || !t.endAt) return;
+    const x = expectedEnd(t); if (!x) return;
+    const late = Math.round((ms(t.endAt) - ms(x.at)) / 60000);
+    if (late <= LATE_MIN) return;
+    const hh = Math.floor(late / 60), mm = late % 60;
+    const w = modal(`<h3 style="margin:0 0 6px">STOP pressed ${hh ? hh + " h " : ""}${mm} min after the expected end</h3>
+      <p class="help">${esc2(displayNo(t))} started ${esc2(hm(t.startAt))} on a ${esc2(x.hours)} h shift, so it was expected to stop about ${esc2(hm(x.at))}. STOP was pressed at ${esc2(hm(t.endAt))}.</p>
+      <p class="help">If the pump was actually switched off earlier, enter the real stop time with a reason.</p>
+      <div class="row" style="gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn ghost" id="v483LateOk">${esc2(hm(t.endAt))} is right</button><button type="button" class="btn green" id="v483LateFix">Enter actual stop time</button></div>`);
+    w.setAttribute("data-v483", "late");
+    w.querySelector("#v483LateOk").onclick = () => { w.remove(); t.audit.push({ at: nowIso(), who: whoNow(), action: "Late STOP confirmed", detail: late + " min after the expected end " + awst2(x.at) + " · " + dev() }); saveQuiet(); };
+    w.querySelector("#v483LateFix").onclick = () => { w.remove(); openTimeDialog(t, "stop", { reason: "forgot_press" }); };
+  }
+  document.addEventListener("click", e => {
+    const b = e.target && e.target.closest && e.target.closest("#btnStart, #btnStop, #btnStartAll");
+    if (!b || b.disabled) return;
+    const t = curT(); if (!t) return;
+    const which = b.id === "btnStop" ? "stop" : "start";
+    if (which === "start" && t.status === "not_used") return;   /* startGaps explains */
+    let laptop = false;
+    if (!MOBILE) {
+      if (!confirm("Field capture should be on your phone.\n\n" + WORD(which) + " on a " + dev() + " records the time without the pump's GPS location, and it's often pressed late.\n\nPress " + WORD(which) + " on this " + dev() + " anyway? (This is noted on the sample.)")) {
+        e.preventDefault(); e.stopImmediatePropagation(); return;
+      }
+      laptop = true;
+    }
+    let ids = [t.id];
+    if (b.id === "btnStartAll") { try { ids = ids.concat((window.v46 && v46.siblings ? v46.siblings(t) : []).map(x => x.id)); } catch (e2) {} }
+    watchPress(which, ids, Date.now(), laptop);
+  }, true);
+
+  /* ---------- sample screen + lists ---------- */
+  function paintTrain() {
+    const t = curT(); if (!t) return;
+    const s = document.getElementById("startAt"), en = document.getElementById("endAt");
+    if (t.status === "not_used") {
+      const app = document.getElementById("app");
+      if (app && !document.getElementById("v483NotUsed")) {
+        const h = document.querySelector("#app h2") || app.firstElementChild;
+        const div = document.createElement("div"); div.id = "v483NotUsed"; div.className = "card v483-nu";
+        div.innerHTML = `<strong>Not used / void</strong><p class="help" style="margin:4px 0">${esc2(t.notUsedReason || "")}. Left off new COCs; the record is kept.</p><button type="button" class="btn ghost" id="v483Undo">Undo not used</button>`;
+        if (h && h.parentNode) h.insertAdjacentElement("afterend", div); else app.prepend(div);
+        div.querySelector("#v483Undo").onclick = () => undoNotUsed(t);
+      }
+      const st = document.getElementById("btnStart"); if (st) st.disabled = true;
+    }
+    if (!s && !en) return;
+    [[s, "start"], [en, "stop"]].forEach(([inp, k]) => {
+      if (!inp) return;
+      inp.readOnly = true; inp.classList.add("v483-locked"); inp.setAttribute("aria-readonly", "true"); inp.tabIndex = -1;
+      inp.title = "Set by pressing " + WORD(k) + ". Use Edit time to change it.";
+      if (inp.parentElement && inp.parentElement.querySelector(".v483-edit[data-k='" + k + "']")) return;
+      const wrap = document.createElement("div"); wrap.className = "v483-under";
+      const cap = capture(t, k);
+      const canEnter = k === "start" || !!t.startAt;
+      const label = t[W(k)] ? "Edit time" : (canEnter ? "Enter time without " + WORD(k) : "");
+      wrap.innerHTML = chipHtml(cap, ` data-cap="${k}"`) + (label && !isBlank(t) ? `<button type="button" class="btn ghost v483-edit" data-k="${k}">${esc2(label)}</button>` : "");
+      inp.insertAdjacentElement("afterend", wrap);
+      const btn = wrap.querySelector(".v483-edit"); if (btn) btn.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openTimeDialog(t, k); };
+    });
+    document.querySelectorAll("#app p.help").forEach(p => { if (/Accidental START\/STOP/.test(p.textContent || "")) { p.textContent = "Times come from pressing START and STOP at the pump. To change one, tap Edit time and give a reason. Location is stored when START or STOP gets a GPS fix."; p.classList.add("v483-help"); } });
+    if (!MOBILE && !document.getElementById("v483Laptop") && !isBlank(t) && t.status !== "not_used" && !t.endAt) {
+      const ss = document.querySelector("#app .startstop") || (document.getElementById("btnStart") || {}).parentElement;
+      if (ss) ss.insertAdjacentHTML("afterend", `<p class="help v483-laptop" id="v483Laptop">You're on a ${esc2(dev())}. Field capture should be on your phone: press START and STOP there, at the pump.</p>`);
+    }
+    if (!isBlank(t) && t.status === "prepped" && !t.startAt && !document.getElementById("v483VoidBtn")) {
+      const ss = document.querySelector("#app .startstop") || (document.getElementById("btnStart") || {}).parentElement;
+      if (ss) { ss.insertAdjacentHTML("afterend", `<div class="row" style="margin:6px 0"><button type="button" class="btn ghost" id="v483VoidBtn">Not used / void…</button></div>`); document.getElementById("v483VoidBtn").onclick = () => openVoidDialog(t); }
+    }
+    if (isBlank(t) && t.status !== "not_used" && !document.getElementById("v483VoidBtn")) {
+      const del = document.getElementById("btnDelete"); const anchor = del ? (del.closest(".footer-actions") || del) : null;
+      if (anchor) { anchor.insertAdjacentHTML("beforebegin", `<div class="row" style="margin:6px 0"><button type="button" class="btn ghost" id="v483VoidBtn">Field blank not used / void…</button></div>`); document.getElementById("v483VoidBtn").onclick = () => openVoidDialog(t); }
+    }
+    const bd = document.querySelector("#app .badge"); const f = timeFlag(t);
+    if (bd && f && !document.getElementById("v483HeadChip")) bd.insertAdjacentHTML("afterend", chipHtml(f, ' id="v483HeadChip"'));
+  }
+  function paintRows() {
+    document.querySelectorAll('#app .train[onclick^="openTrain("]').forEach(row => {
+      if (row.querySelector(".te-chip")) return;
+      const m = /openTrain\('([^']+)'\)/.exec(row.getAttribute("onclick") || ""); if (!m) return;
+      const t = db.trains.find(x => x.id === m[1]); if (!t) return;
+      const f = timeFlag(t); if (!f) return;
+      const title = row.querySelector(".row-title"); if (title) title.insertAdjacentHTML("beforeend", " " + chipHtml(f));
+    });
+  }
+  const _render483 = render;
+  render = function () { const r = _render483.apply(this, arguments); try { if (view.page === "train") paintTrain(); else paintRows(); } catch (e) { console.warn("v48.3 paint", e); } return r; };
+  window.render = render;
+
+  const st = document.createElement("style");
+  st.textContent = ".v483-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10000;padding:12px}"
+    + ".v483-dialog{background:var(--panel,#1B2340);color:var(--text,#fff);border-radius:14px;padding:16px;max-width:560px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)}"
+    + ".v483-dialog input[type=time],.v483-dialog input[type=date],.v483-dialog #v483rText{width:100%;box-sizing:border-box}"
+    + ".v483-trow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.v483-lab{display:block;font-weight:700;margin:6px 0 2px}"
+    + ".v483-reasons{display:flex;flex-direction:column;gap:6px}.v483-reason{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid #3A4258;border-radius:10px;cursor:pointer}.v483-reason{justify-content:flex-start;text-align:left;font-weight:600;margin:0}.v483-reason input[type=radio]{width:20px!important;height:20px!important;min-width:20px;flex:0 0 20px;margin:0;padding:0;box-shadow:none;accent-color:#3DBE8B}"
+    + ".v483-err{color:#ff8a80;font-weight:700;min-height:1em}.v483-under{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}"
+    + "input.v483-locked{opacity:1;cursor:default;background:rgba(255,255,255,.04);border-style:dashed}"
+    + ".te-chip{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;white-space:nowrap}"
+    + ".te-edit{background:#6B5A2E;color:#FFE7A8}.te-manual{background:#7A3B1A;color:#FFD2B8}.te-legacy{background:#3A4258;color:#D7DCEA}"
+    + ".v483-gate{list-style:none;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:10px}.v483-gate li{border:1px solid #3A4258;border-radius:12px;padding:10px}"
+    + ".v483-gbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.v483-gbtns .btn{padding:8px 10px;font-size:14px}.linkish{background:none;border:0;color:inherit;font-weight:700;padding:0;text-decoration:underline;cursor:pointer;font-size:15px}"
+    + ".badge.s-not_used{background:#3A4258;color:#D7DCEA}.v483-nu{border:2px solid #6B7590;margin:8px 0}.v483-laptop{color:#FFC46B}";
+  document.head.appendChild(st);
+  render();
 })();
 </script>
 
