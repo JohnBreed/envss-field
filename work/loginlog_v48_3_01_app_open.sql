@@ -1,12 +1,12 @@
 -- loginlog_v48_3_01_app_open.sql
--- DRAFT ONLY. DO NOT APPLY until John approves. Written 2026-11-12 (AWST). Project luyprcmjyruznluboyms.
+-- APPLIED 12 Nov 2026 ~22:38 AWST on John's approval (voice call 10:35 pm) as migration loginlog_v48_3_01_app_open.
+-- Before snapshot taken 22:37:31 AWST (3 rows, all John's). Written 2026-11-12 (AWST). Project luyprcmjyruznluboyms.
 -- Rollback: work/loginlog_v48_3_01_app_open_rollback.sql
 -- Why: envss_login_log only ever received John's rows (3 rows, 11-12 Nov). Staff have live sessions (auth.sessions
---   refreshed 12 Nov) and run v46+, but none of their rows arrived. Likely cause (not proven): the v45e client posts with
---   Prefer: resolution=ignore-duplicates (INSERT ... ON CONFLICT DO NOTHING); John is the only member of envss_admins,
---   i.e. the only account that also passes the SELECT policy. One refused row also blocked each device's whole queue.
---   v48.3 sends through the function below instead (no dependence on the SELECT policy) and no longer lets one bad row
---   block the queue. Until this file is applied, v48.3 falls back to a plain insert (no ignore-duplicates).
+--   refreshed 12 Nov) and run v46+, but none of their rows arrived. A rolled-back test after applying showed the database
+--   DOES accept a staff insert (plain and ON CONFLICT DO NOTHING), so the cause is on the device side (rows never sent or
+--   stuck in the on-device queue; one refused row blocked the whole queue). v48.3 sends through the function below, logs
+--   every open, no longer lets one bad row block the queue, and keeps a silent on-device diagnostic.
 -- What it does (additive only):
 --   1. adds device detail columns to envss_login_log (all nullable);
 --   2. allows two new event values: app_open (every app start while signed in) and app_resume (back after 30+ min);

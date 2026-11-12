@@ -105,35 +105,30 @@ const chip = await page.evaluate(() => [...document.querySelectorAll(".te-chip")
 check("'time edited' badge on the sample", chip.includes("time edited"), JSON.stringify(chip));
 await shot(page, "chromebook-3-time-edited-badge");
 
-/* 3. laptop warning on START (cancel = nothing happens, OK = pressed + noted) */
+/* 3. laptop / Chromebook START: never blocked, friendly reminder pops up after, device noted */
 await page.evaluate(() => openTrain("tB")); await sleep(300);
-const gapsB = await page.evaluate(() => startGaps(db.trains.find(x => x.id === "tB")));
 const lapLine = await page.evaluate(() => (document.getElementById("v483Laptop") || {}).textContent || "");
-check("laptop note shown on the sample screen", /Field capture should be on your phone/.test(lapLine), lapLine);
-page.t.setAccept(false); page.t.dialogs.length = 0;
-await page.click("#btnStart"); await sleep(400);
-const b1 = await T(page, "tB");
-check("laptop START warning shown; Cancel leaves it prepped", page.t.dialogs.some(d => /Field capture should be on your phone/.test(d)) && b1.status === "prepped" && !b1.startAt, JSON.stringify({ d: page.t.dialogs, s: b1.status, gaps: gapsB }));
-page.t.setAccept(true); page.t.dialogs.length = 0;
+check("laptop note shown on the sample screen", /belong on your phone/.test(lapLine), lapLine);
+page.t.dialogs.length = 0;
 await page.click("#btnStart"); await sleep(900);
 const b2 = await T(page, "tB");
-check("laptop START allowed after the warning and noted on the sample", b2.status === "running" && b2.audit.some(a => a.action === "START pressed") && b2.audit.some(a => a.lap && /START pressed on a Chromebook/.test(a.action)), JSON.stringify({ s: b2.status, gaps: gapsB, a: b2.audit.map(a => a.action) }));
+const nudge = await page.evaluate(() => { const m = document.querySelector('.v483-modal[data-v483="laptop"]'); return m ? m.querySelector("#v483NudgeText").textContent : ""; });
+check("laptop START is not blocked (no confirm) and the sample starts", b2.status === "running" && b2.audit.some(a => a.action === "START pressed") && !page.t.dialogs.some(d => /laptop|phone/i.test(d)), JSON.stringify({ s: b2.status, d: page.t.dialogs }));
+check("cheeky reminder pops up after the press", nudge === "Hold up — that's a laptop, not a pump! 📱 Grab your phone and press START at the pump next time. (We'll let it slide... this once.)", nudge);
+check("device noted on the sample", b2.audit.some(a => a.lap && /START pressed on a Chromebook/.test(a.action)), JSON.stringify(b2.audit.map(a => a.action)));
+await shot(page, "chromebook-4-laptop-reminder");
+await page.click("#v483NudgeOk"); await sleep(150);
+check("reminder closes with Got it", !(await page.$('.v483-modal[data-v483="laptop"]')));
 
-/* 4. late STOP (tA started 10 h ago on an 8 h shift) */
+/* 4. STOP on a long-running sample: no late-STOP prompt any more (finish times are estimates) */
 await page.evaluate(() => openTrain("tA")); await sleep(300);
-page.t.dialogs.length = 0;
-await page.click("#btnStop"); await sleep(1200);
-const late = await page.evaluate(() => { const m = document.querySelector('.v483-modal[data-v483="late"]'); return m ? m.innerText : ""; });
-check("STOP > 15 min after the expected end offers the actual stop time", /after the expected end/.test(late) && /Enter actual stop time/.test(late), late.slice(0, 200));
-await shot(page, "chromebook-4-late-stop");
-await page.click("#v483LateFix"); await sleep(200);
-const pre = await page.evaluate(() => (document.querySelector('.v483-modal input[name="v483r"]:checked') || {}).value);
-check("late STOP opens Edit time with 'forgot to press' preselected", pre === "forgot_press", pre);
-const a1 = await T(page, "tA"); const actual = new Date(new Date(a1.startAt).getTime() + 8 * H);
-await page.evaluate((d, t) => { document.getElementById("v483d-stop").value = d; document.getElementById("v483t-stop").value = t; }, ld(actual.getTime()), pad(actual.getHours()) + ":" + pad(actual.getMinutes()));
-await page.click("#v483Save"); await sleep(300);
-const a2 = await T(page, "tA"); const teA = a2.audit.filter(a => a.te).pop().te;
-check("actual stop time saved as an edit of the pressed STOP", a2.status === "ended" && teA.which === "stop" && teA.manual === false && teA.pressedAt && teA.reason === "forgot_press", JSON.stringify(teA));
+await page.click("#btnStop"); await sleep(1500);
+const a2 = await T(page, "tA");
+const lateM = await page.evaluate(() => !!document.querySelector('.v483-modal[data-v483="late"]') || /expected end/.test(document.body.innerText));
+const nudgeStop = await page.evaluate(() => (document.querySelector("#v483NudgeText") || {}).textContent || "");
+check("STOP 10 h after an 8 h start: stops, no late-STOP prompt", a2.status === "ended" && !lateM && typeof (await page.evaluate(() => window.v483.expectedEnd)) === "undefined", JSON.stringify({ s: a2.status, lateM }));
+check("STOP on a laptop gets the same reminder with STOP", /press STOP at the pump next time/.test(nudgeStop), nudgeStop);
+await page.evaluate(() => document.querySelectorAll(".v483-modal").forEach(m => m.remove()));
 
 /* 5. COC gate */
 await page.evaluate(() => { openEvent("e483"); }); await sleep(300);
@@ -141,6 +136,7 @@ await page.evaluate(() => { window._v34LastCoc = undefined; createCoc(); }); awa
 const gate = await page.evaluate(() => { const m = document.querySelector('.v483-modal[data-v483="gate"]'); return m ? { ids: [...m.querySelectorAll("li[data-gate]")].map(l => l.dataset.gate), text: m.innerText } : null; });
 check("Create COC blocked with a list of unfinished samples", gate && gate.ids.length > 0, JSON.stringify(gate && gate.ids));
 check("COC list = typed-never-pressed (tC), blank missing details (tE), started-not-stopped (tB, tH); not noise, not finished", gate && JSON.stringify(gate.ids.slice().sort()) === JSON.stringify(["tB", "tC", "tE", "tH"]), JSON.stringify(gate && gate.ids));
+check("COC gate holds no noise samples (noise has nothing to do with the COC)", await page.evaluate(() => { db.trains.find(x => x.id === "tF").status = "running"; db.trains.find(x => x.id === "tF").startAt = new Date().toISOString(); const r = v483.blockers(eventById("e483"), "coc").every(t => !isNoise(t)); db.trains.find(x => x.id === "tF").status = "prepped"; db.trains.find(x => x.id === "tF").startAt = ""; return r; }));
 check("nothing downloaded while blocked", await page.evaluate(() => window._v34LastCoc === undefined && window.__dl.length === 0));
 const evLog = await page.evaluate(() => (eventById("e483").audit || []).map(a => a.action));
 check("blocked COC noted on the event audit", evLog.includes("Create COC blocked"), JSON.stringify(evLog));
