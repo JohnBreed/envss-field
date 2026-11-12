@@ -8788,12 +8788,19 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     };
     if (keys.length) await grab("source_key=in.(" + keys.map(k => '"' + String(k).replace(/"/g, "") + '"').join(",") + ")");
     if (ev && ev.code) await grab("event_code=eq." + encodeURIComponent(ev.code));
+    const toSave = [];
     items.forEach(it => {
       const r = remote[it.sourceKey];
       if (!r) return;
+      const prev = String(it.status || "") + "\0" + String(it.message || "") + "\0" + String(it.driveFileId || "");
       it.status = r.status; it.message = r.message || ""; it.driveFileId = r.drive_file_id || ""; it.driveUrl = r.drive_url || "";
       if (r.drive_file_id) { it.blob = undefined; }
+      const next = String(it.status || "") + "\0" + String(it.message || "") + "\0" + String(it.driveFileId || "");
+      if (prev !== next) toSave.push(it);
     });
+    for (const it of toSave) {
+      await putItem(Object.assign({}, it));
+    }
   }
   async function runDrive() {
     if (running) return; running = true;
