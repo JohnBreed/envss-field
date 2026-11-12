@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
+<!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
 <!-- ENVSS Field v36 single-file build v44 (field.html, live; v44d: photos shrunk, kept in IndexedDB and uploaded to the private field-photos bucket, record keeps references only; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v46</title>
+  <title>ENVSS Field v48</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -390,7 +390,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v46</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -406,12 +406,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=46"></script>
+  <script src="config.js?v=48"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "46"; /* 2026-11-11 (AWST): v46 = merge of v45d.1 (PR #1) + v45e login log (PR #2) + section B + A14 core sync + noise.js split. */
+const APP_VERSION = "48"; /* 2026-11-12 (AWST): v48 quick fixes on v46 + noise.js 47.0. Numbering unchanged (not A001/N001). */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -794,6 +794,12 @@ function baseLoad(parsed) {
   d.catalogs.pumps = (d.catalogs.pumps || []).filter(p => p && p.serial !== "123456" && p.serial !== "234567");
   if (!Array.isArray(d.catalogs.fleetPumps)) d.catalogs.fleetPumps = [];
   if (!d.catalogs.contaminants?.some(c => c.code === "INH")) d.catalogs.contaminants = DEFAULT.catalogs.contaminants;
+  (d.catalogs.contaminants || []).forEach(c => {
+    if (!c || String(c.code || c.id).toUpperCase() !== "INH") return;
+    const tol = Number(c.flowTolPct);
+    if (!Number.isFinite(tol) || tol < 10) c.flowTolPct = 10;
+    if (!c.defaultFlow) c.defaultFlow = "2.0";
+  });
   if (!Array.isArray(d.deletions)) d.deletions = [];
   if (!Array.isArray(d.hires)) d.hires = [];
   (d.trains || []).forEach(t => { if (!t.audit) t.audit = []; });
@@ -1265,12 +1271,19 @@ function volumeLitres(t) {
   return mins * q;
 }
 function flowCheck(t) {
+  /* v48: post-flow is checked against the set flow (contaminant default, else start flow).
+     Inhalable dust (INH) allows up to and including ±10% (e.g. 1.8–2.2 L/min at 2.0). */
+  if (!t) return { ok: true, tol: 5, pct: null, set: null };
   const c = contam(t.contaminantId);
-  const tol = c?.flowTolPct ?? 5;
-  const a = num(t.startFlow), b = num(t.endFlow);
-  if (a == null || b == null || a === 0) return { ok: true, tol, pct: null };
-  const pct = Math.abs(b - a) / a * 100;
-  return { ok: pct <= tol, tol, pct };
+  let tol = Number(c && c.flowTolPct);
+  if (!Number.isFinite(tol) || tol <= 0) tol = 5;
+  const code = String((c && (c.code || c.id)) || t.contaminantId || "").toUpperCase();
+  if (code === "INH" && tol < 10) tol = 10;
+  const start = num(t.startFlow), end = num(t.endFlow);
+  const set = num(c && c.defaultFlow) != null ? num(c.defaultFlow) : start;
+  if (set == null || end == null || set === 0) return { ok: true, tol, pct: null, set };
+  const pct = Math.abs(end - set) / Math.abs(set) * 100;
+  return { ok: pct <= tol + 1e-9, tol, pct, set };
 }
 
 /* v42: event status = its least-progressed sample. Prepped < Running < Needs fields < Samples complete < Event complete.
@@ -1696,8 +1709,9 @@ function trainHtml() {
       <input type="hidden" id="mode" value="${esc(t.mode || "personal")}">
       <div class="grid2">
         <div>
-          <label>${isNoise(t) ? "Noise Sample Number" : "Sample No."}</label>
-          <input id="pouch" value="${esc(String(t.sampleNo || t.pouch || ""))}">
+          <label>${isNoise(t) ? "Noise sample number" : "Sample number"}</label>
+          <input id="pouch" value="${esc(String(t.sampleNo || t.pouch || ""))}" readonly disabled aria-readonly="true">
+          <p class="help">Assigned when this sample was created. It does not change.</p>
           <label>Contaminant</label>
           ${isNoise(t) ? `<input value="NOISE — Noise dose" disabled>` : `<div class="combo">
             <input id="contam" value="${esc(c ? c.code + " — " + c.name : "")}" placeholder="INH, SIL, DP, WLD, ASB">
@@ -1756,7 +1770,7 @@ function trainHtml() {
         </div>
       </div>
       ${!isBlank(t) && !isNoise(t) && chk.pct != null ? `<p class="${chk.ok ? "muted" : ""}" style="${chk.ok ? "" : "color:var(--danger);font-weight:700"}">
-        End flow is ${chk.pct.toFixed(1)}% from start. Tolerance ±${chk.tol}%.
+        End flow is ${chk.pct.toFixed(1)}% from the set flow${chk.set != null ? " (" + chk.set + " L/min)" : ""}. Tolerance ±${chk.tol}%.
         ${chk.ok ? "Within tolerance." : "Outside tolerance — reject unless you have a documented reason."}
       </p>` : ""}
       <div id="modeFields">${isBlank(t) ? "" : modeFields(t)}</div>
@@ -1927,18 +1941,18 @@ function mineCodesHtml(t) {
   const on = !!(t.mineCodesOn || t.seg || t.occupationCode || t.locationCode || t.irsstCat);
   const p = t.person || {};
   return `<label class="check-row"><input type="checkbox" id="mineOn" ${on ? "checked" : ""}> SRS fields (optional)</label>
-    <p class="help">SEG, occupation code, location code and IRSST. Never required to start, stop or complete.</p>
+    <p class="help">${isNoise(t) ? "SEG, occupation code and location code." : "SEG, occupation code, location code and IRSST."} Never required to start, stop or complete.</p>
     <div id="mineBox" style="${on ? "" : "display:none"}">
       <div class="grid2">
         <div><label>SEG</label><input id="seg" value="${esc(t.seg || "")}" placeholder="e.g. 4 - Mobile plant"></div>
         <div><label>Occupation code</label><input id="occCode" value="${esc(t.occupationCode || p.occupationCode || "")}" placeholder="e.g. 346000"></div>
         <div><label>Location code</label><input id="locCode" value="${esc(t.locationCode || "")}" placeholder="e.g. 210"></div>
-        <div><label>IRSST category</label>
+        ${isNoise(t) ? "" : `<div><label>IRSST category</label>
           <select id="irsst">
             <option value="">—</option>
             ${[1,2,3,4].map(n => `<option value="${n}" ${String(t.irsstCat)===String(n)?"selected":""}>${n}</option>`).join("")}
           </select>
-        </div>
+        </div>`}
       </div>
     </div>`;
 }
@@ -2322,9 +2336,7 @@ function captureLocation() {
 
 function collectTrain(t) {
   const g = id => document.getElementById(id);
-  t.pouch = g("pouch")?.value.trim() || t.pouch;
-  const sn = parseInt(t.pouch, 10);
-  if (Number.isFinite(sn)) t.sampleNo = sn;
+  /* v48: sample number is locked at creation — never take it from the form */
   if (isBlank(t) && (t.contaminantId || t.headId)) t.status = "field_blank";
   t.pumpSerial = g("pump")?.value.trim() || "";
   t.headId = (g("head")?.value || "").trim().toUpperCase();
@@ -2874,6 +2886,13 @@ window.ENVSS_SRS_CATALOGS = {"version": "2026-10-01c", "occupations": [{"code": 
     });
     db.catalogs.contaminants = order.map(function (k) { return by[k]; });
     db.catalogs._srsVersion = p.version;
+    /* v48: inhalable post-flow tolerance is ±10% of set flow. The inlined SRS row may still say 5%. */
+    (db.catalogs.contaminants || []).forEach(function (c) {
+      if (!c || String(c.code || c.id).toUpperCase() !== "INH") return;
+      var tol = Number(c.flowTolPct);
+      if (!isFinite(tol) || tol < 10) c.flowTolPct = 10;
+      if (!c.defaultFlow) c.defaultFlow = "2.0";
+    });
   } catch (e) { console.warn("[ENVSS] contaminant merge skipped", e); }
 })();
 </script>
@@ -3494,7 +3513,7 @@ function fibreTrainHtml(t, ev) {
       </div>
       <p class="muted" id="runtimeOut">${mins != null ? "Runtime " + Math.round(mins) + " min" : (running ? elapsedLabel(t.startAt) : "")}</p>
       ${vol != null && vol < 360 ? `<p class="help" id="volWarn" style="color:var(--danger);font-weight:700">Volume ${vol.toFixed(1)} L is under 360 L. The limit of detection rises (0.01 f/mL).</p>` : ""}
-      ${chk.pct != null && !chk.ok ? `<p class="help" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from start (tolerance ±${chk.tol}%).</p>` : ""}
+      ${chk.pct != null && !chk.ok ? `<p class="help" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from the set flow${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%).</p>` : ""}
       <p class="help">Accidental START/STOP: edit the times. Location is stored when START or STOP gets a GPS fix.</p>
       ${gpsLines(t)}
       ${rejectBlockHtml(t)}`;
@@ -4384,13 +4403,50 @@ if (typeof render === "function") render();
     b.textContent = missing.length ? missing.length + " of " + req.length + " needed before START: " + missing.map(m => m.label).join(", ") : "Ready to start ✓";
     return missing;
   }
-  /* v40: same-day clash warning for noise dosimeter / meter serials (soft warning only, never blocks) */
-  function dayOf(x) { const d = x.startAt || x.shiftDate || (eventById(x.eventId) || {}).date || ""; return String(d).slice(0, 10); }
+  /* v40 / v48: equipment clash is a soft warning only, never blocks.
+     v48: warn only for the same shift/day (same local shift date and shift kind) or an actual time overlap.
+     A pump or dosimeter used on a previous day's or previous shift's event does not warn. Dates use Australia/Perth, not UTC. */
+  function localDay(iso) {
+    if (!iso) return "";
+    const s = String(iso).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const d = new Date(s);
+    if (isNaN(d)) return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : "";
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Perth", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
+    const g = typ => (parts.find(p => p.type === typ) || {}).value || "";
+    return g("year") && g("month") && g("day") ? g("year") + "-" + g("month") + "-" + g("day") : "";
+  }
+  function sampleDay(x) {
+    if (!x) return "";
+    return localDay(x.shiftDate) || localDay(x.startAt) || localDay((eventById(x.eventId) || {}).date) || "";
+  }
+  function timesOverlap(a, b) {
+    if (!a || !b || !a.startAt || !b.startAt) return null;
+    const a0 = new Date(a.startAt), a1 = a.endAt ? new Date(a.endAt) : null;
+    const b0 = new Date(b.startAt), b1 = b.endAt ? new Date(b.endAt) : null;
+    if (isNaN(a0) || isNaN(b0)) return null;
+    const aEnd = a1 && !isNaN(a1) ? a1 : a0;
+    const bEnd = b1 && !isNaN(b1) ? b1 : b0;
+    return a0 < bEnd && b0 < aEnd;
+  }
+  function dayOf(x) { return sampleDay(x); }
   function clashHits(field, serial, t) {
     serial = String(serial || "").trim().toUpperCase(); if (!serial || !t) return [];
-    const day = dayOf(t);
-    return db.trains.filter(x => x.id !== t.id && String(x[field] || "").trim().toUpperCase() === serial && dayOf(x) === day
-      && !(db.deletions || []).some(d => d.trainId === x.id) && x.status !== "rejected" && x.status !== "fault");
+    const day = sampleDay(t);
+    const kind = t.shiftKind || "day";
+    return (db.trains || []).filter(x => {
+      if (!x || x.id === t.id) return false;
+      if (String(x[field] || "").trim().toUpperCase() !== serial) return false;
+      if ((db.deletions || []).some(d => d.trainId === x.id)) return false;
+      if (x.status === "rejected" || x.status === "fault") return false;
+      const overlap = timesOverlap(t, x);
+      if (overlap === true) return true;
+      const xd = sampleDay(x);
+      if (!day || !xd || day !== xd) return false;
+      const xk = x.shiftKind || "day";
+      if (overlap === false && kind !== xk) return false;
+      return kind === xk;
+    });
   }
   window.v40ClashHits = clashHits;
   function clashOne(inputId, field, boxId) {
@@ -4400,14 +4456,14 @@ if (typeof render === "function") render();
     const serial = String(inp.value || "").trim().toUpperCase(); const hits = clashHits(field, serial, t);
     if (!hits.length) { if (w) w.remove(); return; }
     if (!w) { w = document.createElement("div"); w.id = boxId; w.className = "pump-warn clash-warn"; (inp.closest(".combo") || inp).insertAdjacentElement("afterend", w); }
-    w.textContent = "⚠ " + serial + " is also on " + hits.map(x => displayNo(x) + " (" + ((eventById(x.eventId) || {}).code || "") + ")").join(", ") + " on " + dayOf(t) + ". Check the serial.";
+    w.textContent = "⚠ " + serial + " is also on " + hits.map(x => displayNo(x) + " (" + ((eventById(x.eventId) || {}).code || "") + ")").join(", ") + " on the same shift/day" + (dayOf(t) ? " (" + dayOf(t) + ")" : "") + ". Check the serial.";
   }
   function markPumpList() {
     const box = document.getElementById("sug-pump"); const t = curTrain(); if (!box || !t) return;
     box.querySelectorAll("[data-v]").forEach(d => {
       const hit = clashHits("pumpSerial", d.dataset.v, t).length > 0;
       let m = d.querySelector(".clash-tag");
-      if (hit && !m) { m = document.createElement("span"); m.className = "clash-tag"; m.textContent = "in use today"; d.appendChild(m); }
+      if (hit && !m) { m = document.createElement("span"); m.className = "clash-tag"; m.textContent = "in use this shift"; d.appendChild(m); }
       if (!hit && m) m.remove();
     });
   }
@@ -4678,7 +4734,7 @@ followUpComplete = function (t) {
   render = function () { const r = _render41.apply(this, arguments); try { paint(); } catch (e) { console.warn("v41 status", e); } return r; };
   window.render = render;
   document.addEventListener("click", e => { if (e.target.closest && e.target.closest("[data-yn],[data-rq],[data-rej],#seg-sex")) setTimeout(paint, 60); });
-  document.addEventListener("input", e => { if (e.target && /^(equipNote|comments|rpdModel|hpdModel|hpdStyle|hpdClass|endFlow|rotameter|fieldCal|dobD|dobM|dobY|occupation|occSearch|company|hours|daysOn|daysOff|locSearch|seg)$/.test(e.target.id)) paint(); });
+  document.addEventListener("input", e => { if (e.target && /^(equipNote|comments|rpdModel|hpdModel|hpdStyle|hpdClass|endFlow|rotameter|fieldCal|dobD|dobM|dobY|occupation|occSearch|company|hours|daysOn|daysOff|locSearch|seg|nzLAeq)$/.test(e.target.id)) paint(); });
   paint();
 })();
 </script>
@@ -4963,7 +5019,7 @@ followUpComplete = function (t) {
     if (document.getElementById(id + "All")) return;
     const after = document.getElementById(id + "Note") || input.closest(".combo") || input;
     const wrap = document.createElement("div"); wrap.className = "v44-all";
-    wrap.innerHTML = `<button type="button" class="btn ghost" id="${id}All">Use for all ${GROUP[id]} samples in this event</button><div class="pump-note" id="${id}AllNote"></div>`;
+    wrap.innerHTML = `<button type="button" class="btn ghost" id="${id}All">${id === "rotameter" ? "Use this Rotameter for all airborne samples on this event." : "Use for all " + GROUP[id] + " samples in this event"}</button><div class="pump-note" id="${id}AllNote"></div>`;
     after.insertAdjacentElement("afterend", wrap);
     const b = wrap.querySelector("button");
     const sync = () => { b.disabled = !input.value.trim(); };
@@ -9750,6 +9806,59 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     + ".v46-unsync{display:inline-block;margin-left:8px;font-size:12px;font-weight:700;color:#FFC861}.v46-noproj{margin-top:10px}";
   document.head.appendChild(st);
   try { paintSyncBar(); render(); } catch (e) {}
+})();
+</script>
+
+<script>
+/* ===== v48: add-sample confirm, same-view scroll restore on toggle, locked sample number style =====
+   Scroll is restored only when the current view (page + ids) is unchanged, so navigation still
+   starts at the top. Confirm wraps addTrain last so fibre auto-add and type-card clicks both
+   get one prompt, and later addTrain wrappers still run after Yes. */
+(function () {
+  const _add48 = typeof addTrain === "function" ? addTrain : null;
+  if (_add48) {
+    addTrain = function (eventId, trainKind) {
+      if (!confirm("Are you sure you want to add a new sample?")) return;
+      return _add48.apply(this, arguments);
+    };
+    window.addTrain = addTrain;
+  }
+
+  function viewKey() {
+    try {
+      const v = (typeof view === "object" && view) || {};
+      return [v.page || "", v.trainId || "", v.eventId || "", v.projectId || ""].join(":");
+    } catch (e) { return ""; }
+  }
+  function scrollY() {
+    const el = document.scrollingElement || document.documentElement;
+    return window.scrollY || (el && el.scrollTop) || document.body.scrollTop || 0;
+  }
+  function setScrollY(y) {
+    const el = document.scrollingElement || document.documentElement;
+    if (el) el.scrollTop = y;
+    if (document.body) document.body.scrollTop = y;
+    window.scrollTo(0, y);
+  }
+  if (typeof render === "function") {
+    const _render48 = render;
+    render = function () {
+      const before = viewKey();
+      const y = scrollY();
+      const r = _render48.apply(this, arguments);
+      if (viewKey() === before && before) {
+        setScrollY(y);
+        requestAnimationFrame(() => setScrollY(y));
+      }
+      return r;
+    };
+    window.render = render;
+  }
+
+  const st = document.createElement("style");
+  st.textContent = "#pouch[readonly],#pouch[disabled]{opacity:1;background:var(--surf,#151b2b);color:var(--text,#e8eefc);cursor:default}"
+    + "#pouch[readonly]:focus,#pouch[disabled]:focus{outline:none}";
+  document.head.appendChild(st);
 })();
 </script>
 

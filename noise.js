@@ -22,10 +22,14 @@
      A10 Save or share a photo to the device.  A11 Photos shrunk by envssPhotos.  A12 Crop guide before saving.
      A13/G25 Every audit entry on a noise sample also keeps login, GPS and device (existing collapsed audit log).
      A14 Saved with the sample / event, so the core offline queue and sync carry it.
-     A15 Possible duplicate flagged within the same event only. */
+     A15 Possible duplicate flagged within the same event only.
+
+   v48 (12 Nov 2026 AWST): LAeq "required" clears once a value is entered (REQ-010).
+     Dose-badge UI hides the Noise readings heading, badge type, firmware, LCeq and the
+     Spectrum Table prompt (REQ-012/015/033). Existing stored values are left intact. */
 (function (g) {
   "use strict";
-  const NOISE_VERSION = "47.0";
+  const NOISE_VERSION = "48.0";
   const C = () => g.envssCore || {};
   const esc = s => (C().esc || g.esc)(s);
 
@@ -211,8 +215,8 @@
     if (d != null && (d <= 0 || d > 24 * 60)) f.push({ k: "dur", sev: "bad", text: "Duration looks wrong (" + (Math.round(d * 10) / 10) + " min)." });
     if (isSlm(t) && str(n.duration).trim() && d == null) f.push({ k: "dur", sev: "bad", text: "Duration not understood. Use mm:ss or seconds." });
     if (pk != null && ce != null && pk < ce) f.push({ k: "peak", sev: "bad", text: "LCpeak (" + pk + ") is below LCeq (" + ce + "). Re-check the reading." });
-    if (pk != null && pk >= 140) f.push({ k: "p140", sev: "warn", text: "LCpeak at or above 140 dB(C). Take a Spectrum Table photo." });
-    if (la != null && la > 110) f.push({ k: "l110", sev: "warn", text: "LAeq above 110 dB(A). Take a Spectrum Table photo." });
+    if (isSlm(t) && pk != null && pk >= 140) f.push({ k: "p140", sev: "warn", text: "LCpeak at or above 140 dB(C). Take a Spectrum Table photo." });
+    if (isSlm(t) && la != null && la > 110) f.push({ k: "l110", sev: "warn", text: "LAeq above 110 dB(A). Take a Spectrum Table photo." });
     if (C().isStatic(t) && la != null && la >= 85 && !(str(n.extent).trim() && str(n.extentDistance).trim())) f.push({ k: "a85", sev: "warn", text: "Area LAeq at or above 85 dB(A). Record the affected-area extent and distance." });
     const cs = calState(t);
     if ((t.startAt || la != null) && !cs.c.start) f.push({ k: "calS", sev: "bad", text: "No start-of-day calibration recorded for " + dayOf(t) + "." });
@@ -331,7 +335,8 @@
   }
   function valueRow(t, k) {
     const n = nz(t), x = n.values[k] || {};
-    const req = k === "LAeq";
+    const filled = String(x.v == null ? "" : x.v).trim() !== "";
+    const req = k === "LAeq" && !filled;
     if (n.entry === "photo") {
       const shown = x.v ? esc2(x.v) : "—";
       return `<div class="nz-val" data-nz-row="${k}"><label>${VAL[k]}${req ? ' <span class="nz-req">required</span>' : ""}</label>
@@ -360,7 +365,11 @@
   }
   function panelHtml(t) {
     const n = nz(t), stat = C().isStatic(t), slm = isSlm(t);
-    let h = `<div class="card nz-card" id="nzPanel"><h3 class="brand-type nz-h">Noise readings <span class="nz-ver">noise module v${NOISE_VERSION}</span></h3>`;
+    /* v48: dose-badge UI hides the "Noise readings" heading, badge type, firmware, LCeq and spectrum prompt.
+       Stored values (including those hidden fields) are left intact. */
+    let h = `<div class="card nz-card" id="nzPanel">`;
+    if (slm) h += `<h3 class="brand-type nz-h">Noise readings <span class="nz-ver">noise module v${NOISE_VERSION}</span></h3>`;
+    else h += `<span class="nz-ver" hidden>noise module v${NOISE_VERSION}</span>`;
     if (stat) h += `<label>Measured with${n.method ? "" : ' <span class="nz-req">needs answer</span>'}</label><div class="filters">${[["slm", "Sound level meter (area / task)"], ["dose", "Dose badge at a location"]].map(([v, l]) => `<button type="button" class="chip ${n.method === v ? "on" : ""}" data-nz-method="${v}">${l}</button>`).join("")}</div>`;
     else h += `<p class="help">Personal reading on a dose badge (serial above).</p>`;
     if (stat && !n.method) return h + "</div>";
@@ -370,7 +379,7 @@
       <label>Measurement position</label>${inp("position", n.position, "e.g. operator's ear, 1.5 m, left of machine")}
       <label>Duration (mm:ss)</label>${inp("duration", n.duration, "e.g. 1:00")}${n.durationSrc === "ocr" ? '<p class="help">Read from the photo.</p>' : ""}
       <div class="nz-grid2"><div><label>Microphone serial</label>${inp("micSerial", n.micSerial, "e.g. 4189 SN")}</div><div><label>SLM make / model</label>${inp("slmModel", n.slmModel, "e.g. B&K 2250")}</div></div>`;
-    else h += `<div class="nz-grid2"><div><label>Badge type</label>${inp("badgeType", n.badgeType, "e.g. 4448 A")}</div><div><label>Firmware</label>${inp("firmware", n.firmware, "optional")}</div></div>`;
+    /* v48: badge type and firmware stay in t.noise if already stored; they are not shown for a dose badge */
     h += `<label>How are the values entered?${n.entry ? "" : ' <span class="nz-req">needs answer</span>'}</label><div class="filters">${[["photo", "From a photo of the screen"], ["manual", "Type them in"]].map(([v, l]) => `<button type="button" class="chip ${n.entry === v ? "on" : ""}" data-nz-entry="${v}">${l}</button>`).join("")}</div>
       <p class="help">One or the other, never both. Switching clears the values from the other way (kept in the audit log).</p>`;
     if (n.entry === "photo") {
@@ -381,10 +390,10 @@
       else if (os.state === "none") h += `<p class="nz-warn" id="nzOcrState">No values found on the photo. Retake it closer, or Enter each value from the photo.</p>`;
       if (n.photo && os.state !== "reading") h += `<button type="button" class="btn ghost" id="nzReadAgain">Read photo again</button>`;
     }
-    if (n.entry) h += Object.keys(VAL).map(k => valueRow(t, k)).join("");
+    if (n.entry) h += Object.keys(VAL).filter(k => slm || k !== "LCeq").map(k => valueRow(t, k)).join("");
     if (n.entry && slm) h += `<details class="nz-oct" ${OCTAVES.some(o => str(n.octave[o]).trim()) ? "open" : ""}><summary>Octave bands (optional, dB)</summary><div class="nz-grid7">${OCTAVES.map(o => `<div><label>${o === "1000" ? "1k" : o === "2000" ? "2k" : o === "4000" ? "4k" : o === "8000" ? "8k" : o}</label>${inp("octave." + o, n.octave[o], "", 'inputmode="decimal"')}</div>`).join("")}</div></details>`;
     const la = num(val(t, "LAeq")), pk = num(val(t, "LCpeak"));
-    if ((pk != null && pk >= 140) || (la != null && la > 110)) h += `<div class="nz-prompt" id="nzSpectrum"><strong>Spectrum Table photo needed</strong><p class="help">${pk != null && pk >= 140 ? "LCpeak ≥ 140 dB(C). " : ""}${la != null && la > 110 ? "LAeq > 110 dB(A). " : ""}Photograph the meter's Spectrum Table.</p>${photoBox(t, "spectrum", n.spectrumPhoto, "Take Spectrum Table photo")}</div>`;
+    if (slm && ((pk != null && pk >= 140) || (la != null && la > 110))) h += `<div class="nz-prompt" id="nzSpectrum"><strong>Spectrum Table photo needed</strong><p class="help">${pk != null && pk >= 140 ? "LCpeak ≥ 140 dB(C). " : ""}${la != null && la > 110 ? "LAeq > 110 dB(A). " : ""}Photograph the meter's Spectrum Table.</p>${photoBox(t, "spectrum", n.spectrumPhoto, "Take Spectrum Table photo")}</div>`;
     if (stat && la != null && la >= 85) h += `<div class="nz-prompt" id="nzExtent"><strong>Affected area (LAeq ≥ 85 dB(A))</strong><div class="nz-grid2"><div><label>Extent of affected area</label>${inp("extent", n.extent, "e.g. entire bay / around the fan")}</div><div><label>Distance (m)</label>${inp("extentDistance", n.extentDistance, "e.g. 2", 'inputmode="decimal"')}</div></div></div>`;
     if (n.entry && stat) {
       const lc = num(val(t, "LCeq"));
@@ -421,7 +430,19 @@
     const n = nz(t, true);
     if (el.dataset.nz) {
       const path = el.dataset.nz;
-      if (path.startsWith("values.")) { const k = path.slice(7); n.values[k] = { v: el.value.trim(), src: "manual" }; }
+      if (path.startsWith("values.")) {
+        const k = path.slice(7); n.values[k] = { v: el.value.trim(), src: "manual" };
+        if (k === "LAeq") {
+          const row = el.closest(".nz-val");
+          const lab = row && row.querySelector("label");
+          let badge = row && row.querySelector(".nz-req");
+          if (el.value.trim()) { if (badge) badge.style.display = "none"; }
+          else if (lab) {
+            if (!badge) { badge = document.createElement("span"); badge.className = "nz-req"; badge.textContent = "required"; lab.appendChild(document.createTextNode(" ")); lab.appendChild(badge); }
+            else badge.style.display = "";
+          }
+        }
+      }
       else { setPath(n, path, el.value); if (path === "duration") n.durationSrc = "manual"; }
     } else if (el.dataset.nzCal) {
       const [which, key] = el.dataset.nzCal.split(".");
