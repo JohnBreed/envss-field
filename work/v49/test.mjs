@@ -1,4 +1,4 @@
-/* v49 AFM field-app draft checks. Mock Supabase only (no production writes).
+/* v48.2 AFM field-app checks. Mock Supabase only (no production writes).
    Usage: ROOT=/workspace/afm-build node work/v49/test.mjs <chromebook|pixel7> */
 process.env.ROOT = process.env.ROOT || "/workspace/afm-build";
 import { serve, launch, VIEWPORTS, mockSupabase, sleep, SESSION } from "../v46/harness.mjs";
@@ -42,7 +42,7 @@ const boot = await ev(() => ({
   legacy: typeof LEGACY_KEY === "string" ? LEGACY_KEY : "",
   fibre: typeof isFibreTrain === "function" && typeof cowlValid === "function"
 }));
-ok("boot: app v49", boot.v === "v49", boot.v);
+ok("boot: app v48.2", boot.v === "v48.2", boot.v);
 ok("boot: IndexedDB/local key unchanged (envss-field-next-v32)", boot.key === "envss-field-next-v32", boot.key);
 ok("boot: legacy key unchanged (envss-field-v04)", boot.legacy === "envss-field-v04", boot.legacy);
 ok("boot: AFM helpers present", boot.fibre);
@@ -234,6 +234,16 @@ const volLo = await ev(id => {
 }, id1);
 ok("volume 332 L (< 333) warns", volLo.vol === 332 && volLo.warn, JSON.stringify(volLo));
 ok("short volume does not block startGaps (warning only)", !volLo.gaps.some(g => /volume/i.test(g)), JSON.stringify(volLo.gaps));
+const volNote = await ev(() => {
+  const el = document.getElementById("volWarn");
+  const rec = db.trains.find(x => x.id === view.trainId) || {};
+  const audit = (rec.audit || []).map(a => [a.action, a.detail].join(" "));
+  return { text: (el && el.textContent) || "", style: (el && el.getAttribute("style")) || "", audit };
+});
+ok("short volume is a soft note, never a reject", /soft note/i.test(volNote.text) && /not a reject/i.test(volNote.text), volNote.text);
+ok("short volume has no danger styling and no audit reject line",
+  !/danger/i.test(volNote.style) && !volNote.audit.some(a => /333|volume/i.test(a) && /reject/i.test(a)),
+  JSON.stringify(volNote));
 await shot("volume-warn");
 
 await ev(id => {
@@ -339,6 +349,132 @@ const reuse = await ev(id => ({
 }), id1);
 ok("AFM previous-night pump shows clean-before-use warning", /previous shift/i.test(reuse.text) && /clean before use/i.test(reuse.text), reuse.text);
 await shot("night-reuse");
+
+
+/* 9. live irregularity checks during the day + COC block on hard duplicates */
+await ev(() => {
+  if (!db.projects.some(p => p.id === "p-afm-new")) db.projects.push({ id: "p-afm-new", number: "0019400", name: "AFM new event fixture", status: "Active", active: true });
+  const evn = { id: "e-afm-chk", projectId: "p-afm-new", type: "fibre", stage: "planned", date: "2026-11-12",
+    code: "ENVSS-HYG-AFM-0019400-CHK-20261112", multiDay: false, notes: "", uploadReady: false,
+    operators: [], protocol: "control", taskDesc: "Checks", tat: "next_0700", rotameter: "4430", audit: [] };
+  const blank = fibreTrainRecord(evn, 0, "blank");
+  blank.cowlNo = "11001"; blank.mediaId = "11001";
+  const p1 = fibreTrainRecord(evn, 1, "fibre_static");
+  p1.cowlNo = "11001"; p1.mediaId = "ENVSS11001"; p1.pumpSerial = "191560"; p1.location = "North fence";
+  p1.startFlow = "2.0"; p1.endFlow = "2.5"; p1.status = "running";
+  p1.startAt = "2026-11-12T07:00:00+08:00"; p1.rotameter = "4430";
+  p1.podioAfm = { plannedStart: "2026-11-12T07:00:00+08:00", plannedEnd: "2026-11-12T08:00:00+08:00" };
+  const p2 = fibreTrainRecord(evn, 2, "fibre_static");
+  p2.cowlNo = "11002"; p2.mediaId = "11002"; p2.pumpSerial = "191560"; p2.location = "South fence";
+  p2.startFlow = ""; p2.status = "running"; p2.startAt = "2026-11-12T07:05:00+08:00"; p2.rotameter = "9999";
+  const p4 = fibreTrainRecord(evn, 4, "fibre_static");
+  p4.cowlNo = "12"; p4.mediaId = "12"; p4.pumpSerial = "88473"; p4.location = "West"; p4.startFlow = "2.0"; p4.status = "prepped"; p4.rotameter = "4430";
+  const failed = fibreTrainRecord(evn, 5, "fibre_static");
+  failed.cowlNo = "11005"; failed.mediaId = "11005"; failed.pumpSerial = "70001"; failed.location = "East";
+  failed.startFlow = "2.0"; failed.status = "rejected"; failed.rejectCode = ""; failed.rejectReason = "";
+  db.events.push(evn);
+  db.trains.push(blank, p1, p2, p4, failed);
+  save();
+  openEvent("e-afm-chk");
+});
+await sleep(400);
+const chkPanel = await ev(() => {
+  const evn = db.events.find(e => e.id === "e-afm-chk");
+  const items = (typeof afmEventChecks === "function") ? afmEventChecks(evn) : [];
+  const panel = document.getElementById("afmChecksPanel");
+  return {
+    codes: items.map(x => x.code).sort(),
+    hard: items.filter(x => x.severity === "hard").map(x => x.code).sort(),
+    texts: items.map(x => x.text),
+    panel: !!(panel),
+    panelText: (panel && panel.textContent) || "",
+    blocked: typeof afmCocBlocked === "function" ? afmCocBlocked(evn) : null
+  };
+});
+ok("checks helper is present", chkPanel.codes.length > 0, JSON.stringify(chkPanel.codes));
+ok("checks: duplicate cowl (bare 5 digits, ENVSS ignored) is a hard finding", chkPanel.hard.includes("dup_cowl") && chkPanel.texts.some(x => /Cowl 11001 is already on/i.test(x)), JSON.stringify(chkPanel.texts));
+ok("checks: duplicate pump is a hard finding", chkPanel.hard.includes("dup_pump") && chkPanel.texts.some(x => /Pump 191560 is on/i.test(x)), JSON.stringify(chkPanel.texts));
+ok("checks: cowl not 5 digits is flagged", chkPanel.codes.includes("cowl_digits") && chkPanel.texts.some(x => /exactly 5 digits/i.test(x) && /12/.test(x)), JSON.stringify(chkPanel.texts));
+ok("checks: missing start flow is flagged", chkPanel.codes.includes("missing_start_flow"));
+ok("checks: end flow outside this sample's start-flow tolerance is flagged", chkPanel.codes.includes("flow_tol"));
+ok("checks: pump still running long after planned end is flagged", chkPanel.codes.includes("overrun"));
+ok("checks: rotameter mismatch is flagged", chkPanel.codes.includes("rotameter"));
+ok("checks: failed sample with no reason is flagged", chkPanel.codes.includes("reject_reason"));
+ok("checks: out-of-sequence sample numbers (missing Pump 3) is flagged", chkPanel.codes.includes("sample_seq") && chkPanel.texts.some(x => /Pump 3/.test(x)), JSON.stringify(chkPanel.texts));
+ok("checks: event panel is visible with hard-block wording", chkPanel.panel && /Create COC is blocked/i.test(chkPanel.panelText) && /11001/.test(chkPanel.panelText), chkPanel.panelText.slice(0, 400));
+ok("checks: COC is blocked while hard duplicates stand", chkPanel.blocked === true);
+await shot("afm-checks-panel");
+
+/* two field blanks / no field blank */
+const blankCounts = await ev(() => {
+  const evn = db.events.find(e => e.id === "e-afm-chk");
+  const extra = fibreTrainRecord(evn, 0, "blank");
+  extra.id = "t-blank-2"; extra.cowlNo = "11999"; extra.mediaId = "11999";
+  db.trains.push(extra);
+  const two = afmEventChecks(evn).filter(x => x.code === "blank_count");
+  db.trains = db.trains.filter(x => x.id !== "t-blank-2");
+  const savedBlanks = trainsOf("e-afm-chk").filter(t => isBlank(t));
+  savedBlanks.forEach(t => { t._keep = t.trainKind; t.trainKind = "fibre_static"; t.sampleNo = 8; t.pouch = "8"; });
+  const none = afmEventChecks(evn).filter(x => x.code === "blank_count");
+  savedBlanks.forEach(t => { t.trainKind = "blank"; t.sampleNo = 0; t.pouch = "0"; });
+  return { two: two.map(x => x.text), none: none.map(x => x.text) };
+});
+ok("checks: more than one field blank is flagged", blankCounts.two.some(x => /more than one field blank/i.test(x)), JSON.stringify(blankCounts.two));
+ok("checks: no field blank is flagged", blankCounts.none.some(x => /no field blank/i.test(x)), JSON.stringify(blankCounts.none));
+
+/* inline on the affected sample + re-check after save */
+await ev(() => openTrain(trainsOf("e-afm-chk").find(t => sampleNoOf(t) === 1).id));
+await sleep(300);
+const inline = await ev(() => {
+  const box = document.getElementById("afmSampleChecks");
+  return { show: !!(box && !box.hidden && (box.textContent || "").trim()), text: (box && box.textContent) || "" };
+});
+ok("checks: inline warnings show on the affected sample", inline.show && /11001/.test(inline.text) && /191560/.test(inline.text), inline.text.slice(0, 400));
+await shot("afm-checks-sample");
+
+/* Create COC blocked, with a way to fix; already-existing COC is not blocked (AFM still explains Lifetree). */
+dialogs.length = 0;
+await ev(() => { view.eventId = "e-afm-chk"; view.page = "event"; });
+const coc1 = await ev(async () => { const r = await createCoc(); return r; });
+ok("checks: Create COC returns false when hard duplicates stand", coc1 === false);
+ok("checks: Create COC names the clash and how to fix it",
+  dialogs.some(d => /Can't create the COC yet/i.test(d) && /11001/.test(d) && /Open /i.test(d)),
+  dialogs.join(" | ").slice(0, 500));
+await ev(() => openEvent("e-afm-chk"));
+await sleep(300);
+await shot("afm-checks-coc-block");
+
+dialogs.length = 0;
+const coc2 = await ev(async () => {
+  const evn = db.events.find(e => e.id === "e-afm-chk");
+  evn.audit = evn.audit || [];
+  evn.audit.push({ at: nowIso(), who: "Test", action: "Create COC", detail: "already downloaded", field: "event" });
+  const blocked = afmCocBlocked(evn);
+  const r = await createCoc();
+  return { blocked, r, exists: afmCocExists(evn) };
+});
+ok("checks: an existing COC is not blocked by the hard-duplicate gate", coc2.exists === true && coc2.blocked === false, JSON.stringify(coc2));
+ok("checks: existing-COC path does not show the hard-duplicate alert", !dialogs.some(d => /Can't create the COC yet/i.test(d)), dialogs.join(" | ").slice(0, 300));
+
+/* re-check on save: fix the pump clash and the panel drops that hard item */
+const afterSave = await ev(() => {
+  const evn = db.events.find(e => e.id === "e-afm-chk");
+  const p2 = trainsOf("e-afm-chk").find(t => sampleNoOf(t) === 2);
+  p2.pumpSerial = "191599";
+  if (typeof collectTrain === "function") try { collectTrain(p2); } catch (e) {}
+  save();
+  if (typeof paintAfmChecks === "function") paintAfmChecks();
+  openEvent("e-afm-chk");
+  const items = afmEventChecks(evn);
+  return { pumps: items.filter(x => x.code === "dup_pump").length, stillCowl: items.some(x => x.code === "dup_cowl") };
+});
+await sleep(250);
+const afterUi = await ev(() => {
+  const text = (document.getElementById("afmChecksPanel") || {}).textContent || "";
+  return { text, hasPump: /191560/.test(text) && /Pump 191560 is on/i.test(text) };
+});
+ok("checks: re-run after save drops the fixed pump duplicate", afterSave.pumps === 0 && afterSave.stillCowl === true, JSON.stringify(afterSave));
+ok("checks: event panel updates after save", !afterUi.hasPump, afterUi.text.slice(0, 300));
 
 /* 8. hygiene event still has no AFM cowl field; page errors */
 await ev(id => openTrain(id), hid);

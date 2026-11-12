@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v49 draft (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). Not live until approved. v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
+<!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
+<!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
+<!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
 <!-- ENVSS Field v36 single-file build v44 (field.html, live; v44d: photos shrunk, kept in IndexedDB and uploaded to the private field-photos bucket, record keeps references only; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48</title>
+  <title>ENVSS Field v48.2</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -390,7 +392,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.2</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -406,12 +408,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48"></script>
+  <script src="config.js?v=48.2"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "49"; /* 2026-11-12 (AWST): v49 draft AFM field-app changes on v48. AFM exempt from A001/N001 (0, then Pump 1…). Not live until approved. */
+const APP_VERSION = "48.2"; /* 2026-11-12 (AWST): v48.2 = v48.1 + AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks, read-only Podio pull). v48.1: end flow vs the sample's own start flow. v48 quick fixes on v46 + noise.js 47.0. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -1279,19 +1281,31 @@ function volumeLitres(t) {
   return mins * q;
 }
 function flowCheck(t) {
-  /* v48: post-flow is checked against the set flow (contaminant default, else start flow).
-     Inhalable dust (INH) allows up to and including ±10% (e.g. 1.8–2.2 L/min at 2.0). */
-  if (!t) return { ok: true, tol: 5, pct: null, set: null };
+  /* v48.1: post/end flow is checked against THIS sample's own start (set) flow, i.e. the flow the pump was
+     actually set to at START/pre-cal. Only when no start flow is recorded do we fall back to the contaminant
+     default, and then it is a soft note (ok stays true, noStart: true) rather than a reject.
+     Tolerance is unchanged from v48: INH up to and including ±10%, others use the catalog flowTolPct (default 5%).
+     Computed on every render, so existing samples re-evaluate on load; no stored data is rewritten. */
+  if (!t) return { ok: true, tol: 5, pct: null, set: null, noStart: false };
   const c = contam(t.contaminantId);
   let tol = Number(c && c.flowTolPct);
   if (!Number.isFinite(tol) || tol <= 0) tol = 5;
   const code = String((c && (c.code || c.id)) || t.contaminantId || "").toUpperCase();
   if (code === "INH" && tol < 10) tol = 10;
   const start = num(t.startFlow), end = num(t.endFlow);
-  const set = num(c && c.defaultFlow) != null ? num(c.defaultFlow) : start;
-  if (set == null || end == null || set === 0) return { ok: true, tol, pct: null, set };
-  const pct = Math.abs(end - set) / Math.abs(set) * 100;
-  return { ok: pct <= tol + 1e-9, tol, pct, set };
+  if (start != null && start !== 0) {
+    if (end == null) return { ok: true, tol, pct: null, set: start, noStart: false };
+    const pct = Math.abs(end - start) / Math.abs(start) * 100;
+    return { ok: pct <= tol + 1e-9, tol, pct, set: start, noStart: false };
+  }
+  const def = num(c && c.defaultFlow);
+  if (end == null || def == null || def === 0) return { ok: true, tol, pct: null, set: null, noStart: end != null };
+  const pct = Math.abs(end - def) / Math.abs(def) * 100;
+  return { ok: true, tol, pct, set: def, noStart: true, soft: true };
+}
+function flowNoStartNote(chk) {
+  /* v48.1: soft note only, never a reject. */
+  return "No start flow recorded" + (chk && chk.set != null ? " — compared with the method default " + chk.set + " L/min" + (chk.pct != null ? " (" + chk.pct.toFixed(1) + "% from it)" : "") : "") + ". Enter the start flow if it was measured.";
 }
 
 /* v42: event status = its least-progressed sample. Prepped < Running < Needs fields < Samples complete < Event complete.
@@ -1777,7 +1791,7 @@ function trainHtml() {
           </div>`}
         </div>
       </div>
-      ${!isBlank(t) && !isNoise(t) && chk.pct != null ? `<p class="${chk.ok ? "muted" : ""}" style="${chk.ok ? "" : "color:var(--danger);font-weight:700"}">
+      ${!isBlank(t) && !isNoise(t) && chk.noStart ? `<p class="muted flow-nostart">${esc(flowNoStartNote(chk))}</p>` : !isBlank(t) && !isNoise(t) && chk.pct != null ? `<p class="${chk.ok ? "muted" : ""}" style="${chk.ok ? "" : "color:var(--danger);font-weight:700"}">
         End flow is ${chk.pct.toFixed(1)}% from the set flow${chk.set != null ? " (" + chk.set + " L/min)" : ""}. Tolerance ±${chk.tol}%.
         ${chk.ok ? "Within tolerance." : "Outside tolerance — reject unless you have a documented reason."}
       </p>` : ""}
@@ -3456,9 +3470,10 @@ flowCheck = function (t) {
      Hygiene INH ±10% and other contaminant tolerances are unchanged. */
   if (!isFibreTrain(t) || isBlank(t)) return _flowCheckFibre(t);
   const start = num(t.startFlow), end = num(t.endFlow), tol = 10;
-  if (start == null || end == null || start === 0) return { ok: true, tol, pct: null, set: start };
+  if (start == null || start === 0) return { ok: true, tol, pct: null, set: start, noStart: end != null };
+  if (end == null) return { ok: true, tol, pct: null, set: start, noStart: false };
   const pct = Math.abs(end - start) / Math.abs(start) * 100;
-  return { ok: pct <= tol + 1e-9, tol, pct, set: start };
+  return { ok: pct <= tol + 1e-9, tol, pct, set: start, noStart: false };
 };
 const _rejectList33 = rejectList;
 rejectList = function (t) {
@@ -3565,8 +3580,8 @@ function fibreTrainHtml(t, ev) {
         <div><label>Volume (L)</label><input id="volumeOut" value="${vol != null ? vol.toFixed(1) : "—"}" disabled></div>
       </div>
       <p class="muted" id="runtimeOut">${mins != null ? "Runtime " + Math.round(mins) + " min" : (running ? elapsedLabel(t.startAt) : "")}</p>
-      ${vol != null && vol < 333 ? `<p class="help" id="volWarn" style="color:var(--danger);font-weight:700">Volume ${vol.toFixed(1)} L is under 333 L. This is a warning only, using the ~333 L figure from the 12 Nov AFM spec, pending confirmation of the exact NOHSC:3003(2005) minimum for a &lt; 0.01 f/mL report. It does not block the sample.</p>` : ""}
-      ${chk.pct != null && !chk.ok ? `<p class="help" id="flowWarn" style="color:var(--danger);font-weight:700">Start and end flow differ by ${chk.pct.toFixed(1)}% (tolerance ±${chk.tol}% under NOHSC:3003). This is a warning — flag a flow fault if the pump was not held at the set flow.</p>` : ""}
+      ${vol != null && vol < 333 ? `<p class="help muted" id="volWarn">Note: volume ${vol.toFixed(1)} L is under 333 L. This is a soft note only (not a reject, and it is not taken from a government document). It does not block the sample.</p>` : ""}
+      ${chk.noStart ? `<p class="help muted flow-nostart">${esc(flowNoStartNote(chk))}</p>` : chk.pct != null && !chk.ok ? `<p class="help" id="flowWarn" style="color:var(--danger);font-weight:700">End flow is ${chk.pct.toFixed(1)}% from this sample's start flow${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%). This is a warning — flag a flow fault if the pump was not held at the set flow.</p>` : ""}
       ${t.startAt && t.endAt && new Date(t.endAt) < new Date(t.startAt) ? `<p class="help" id="timeOrderWarn" style="color:var(--danger);font-weight:700">Stop time is before start time. Check the times.</p>` : ""}
       <p class="help">Accidental START/STOP: edit the times. Location is stored when START or STOP gets a GPS fix.</p>
       ${gpsLines(t)}
@@ -10025,7 +10040,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
    Fill-blanks only: a value already captured in the field app is never overwritten. Every value that came
    from Podio is listed on the event ("From Podio (AFM)") and on the sample. IndexedDB names are unchanged;
    the downloaded Podio copy is kept in localStorage under its own key (envss-podio-afm-v49).
-   SQL for the two views: work/afm_v49_01_afm_podio_views.sql (NOT applied; needs John's approval). */
+   SQL for the two views: work/afm_v49_01_afm_podio_views.sql (rollback kept). Applied with the v48.2 publish. */
 (function () {
   const CACHE = "envss-podio-afm-v49";
   const st = { busy: false, note: "", err: "", at: 0 };
@@ -10450,6 +10465,323 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   document.addEventListener("click", e => { if (e.target && e.target.id === "btnPodioRefresh" && !e.target.disabled) pull().catch(() => {}); }, true);
 
   window.envssAfmPodio = { map: M, pull, start: startFromPodio, refill: refillEvent, apply, cache: readCache, state: () => Object.assign({}, st) };
+})();
+</script>
+
+
+<script>
+/* ===== v48.2: AFM live irregularity checks during the day.
+   Re-run whenever a sample is saved (commit) and whenever the event or sample is painted.
+   Hard duplicates (same cowl, or same pump on a running sample) block Create COC unless a COC already exists.
+   Podio pull already leaves a duplicate cowl blank and reports it; these live checks use the same wording. ===== */
+(function () {
+  function live(t) {
+    if (!t) return false;
+    if (t.status === "rejected" || t.status === "fault" || t.status === "void" || t.status === "not_used") return false;
+    if (typeof fibreRejected === "function" && fibreRejected(t)) return false;
+    if ((db.deletions || []).some(d => d.trainId === t.id)) return false;
+    return true;
+  }
+  function runningOf(t) {
+    if (!live(t) || (typeof isBlank === "function" && isBlank(t))) return false;
+    return t.status === "running" || (!!t.startAt && !t.endAt);
+  }
+  function pumpKey(t) { return String((t && t.pumpSerial) || "").trim().toUpperCase(); }
+  function labelOf(t) { return (typeof displayNo === "function") ? displayNo(t) : String((t && (t.sampleNo != null ? t.sampleNo : t.pouch)) || ""); }
+  function listLabels(arr) { return arr.map(labelOf).join(", "); }
+  function parseWhen(s, evDate) {
+    s = String(s || "").trim();
+    if (!s) return null;
+    const direct = new Date(s);
+    if (!isNaN(direct.getTime())) return direct;
+    const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (m && evDate) {
+      const d = new Date(String(evDate).slice(0, 10) + "T" + String(m[1]).padStart(2, "0") + ":" + m[2] + ":" + (m[3] || "00"));
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }
+  function plannedEndOf(t, ev) {
+    const raw = (t && t.podioAfm && (t.podioAfm.plannedEnd || t.podioAfm.planned_end)) || ev && ev.podioAfm && ev.podioAfm.plannedEnd;
+    return parseWhen(raw, (t && t.shiftDate) || (ev && ev.date));
+  }
+function fixOpen(ts) {
+    const names = ts.map(labelOf);
+    if (!names.length) return "Open the sample and correct it.";
+    if (names.length === 1) return "Open " + names[0] + " and correct it.";
+    return "Open " + names.join(" or ") + " and correct the clash.";
+  }
+  function cocExists(ev) {
+    if (!ev) return false;
+    if (ev.cocCreated || ev.cocCreatedAt || ev.cocAt || ev.cocFile || ev.cocName) return true;
+    const audit = ev.audit || [];
+    if (audit.some(a => /create\s*coc/i.test(String(a.action || "")) || /form 302 downloaded/i.test(String(a.detail || "")))) return true;
+    return false;
+  }
+
+  function afmEventChecks(ev) {
+    const items = [];
+    if (!ev || typeof isFibreEvent !== "function" || !isFibreEvent(ev)) return items;
+    const trains = (typeof trainsOf === "function" ? trainsOf(ev.id) : (db.trains || []).filter(x => x.eventId === ev.id));
+    const shown = trains.filter(t => !(db.deletions || []).some(d => d.trainId === t.id));
+    const active = shown.filter(live);
+
+    /* Cowls: not 5 digits, and duplicates (bare 5 digits, ENVSS/ESS already stripped by cowlDigits). */
+    const cowlGroups = {};
+    active.forEach(t => {
+      const raw = (t.cowlNo || t.mediaId || "");
+      const d = cowlDigits(raw);
+      if (!d) {
+        items.push({ code: "cowl_digits", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: labelOf(t) + " has no cowl number. Enter the 5-digit cowl.",
+          fix: "Open " + labelOf(t) + " and enter a 5-digit cowl." });
+        return;
+      }
+      if (!cowlValid(d)) {
+        items.push({ code: "cowl_digits", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: "Cowl on " + labelOf(t) + " must be exactly 5 digits (ENVSS/ESS prefixes are ignored). It is currently " + d + ".",
+          fix: "Open " + labelOf(t) + " and enter a 5-digit cowl." });
+        return;
+      }
+      (cowlGroups[d] = cowlGroups[d] || []).push(t);
+    });
+    Object.keys(cowlGroups).forEach(d => {
+      const g = cowlGroups[d];
+      if (g.length < 2) return;
+      items.push({ code: "dup_cowl", severity: "hard", sampleIds: g.map(x => x.id), samples: g,
+        text: "Cowl " + d + " is already on " + listLabels(g) + " in this event. Each sample, including the field blank, needs its own cowl.",
+        fix: fixOpen(g) + " Create COC is blocked until this is fixed." });
+    });
+
+    /* Duplicate pump serials (non-blank). Hard when any of the clashing samples is running. */
+    const pumpGroups = {};
+    active.filter(t => !isBlank(t)).forEach(t => {
+      const k = pumpKey(t);
+      if (!k) return;
+      (pumpGroups[k] = pumpGroups[k] || []).push(t);
+    });
+    Object.keys(pumpGroups).forEach(k => {
+      const g = pumpGroups[k];
+      if (g.length < 2) return;
+      items.push({ code: "dup_pump", severity: "hard", sampleIds: g.map(x => x.id), samples: g,
+        text: "Pump " + k + " is on " + listLabels(g) + " in this event. Each running sample needs its own pump.",
+        fix: fixOpen(g) + " Create COC is blocked until this is fixed." });
+    });
+
+    /* Field blank: exactly one sample 0 / blank. */
+    const blanks = shown.filter(t => isBlank(t) || sampleNoOf(t) === 0);
+    if (blanks.length === 0) {
+      items.push({ code: "blank_count", severity: "warn", sampleIds: [], samples: [],
+        text: "This event has no field blank (sample 0). Add a field blank.",
+        fix: "Add a field blank (sample 0) to the event." });
+    } else if (blanks.length > 1) {
+      items.push({ code: "blank_count", severity: "warn", sampleIds: blanks.map(x => x.id), samples: blanks,
+        text: "This event has more than one field blank (sample 0): " + listLabels(blanks) + ". Keep only one.",
+        fix: "Open the extra field blank and mark it not used, or delete it if you are an admin." });
+    }
+
+    /* Duplicate or out-of-sequence sample numbers. */
+    const nos = {};
+    shown.forEach(t => {
+      const n = sampleNoOf(t);
+      (nos[n] = nos[n] || []).push(t);
+    });
+    Object.keys(nos).forEach(n => {
+      const g = nos[n];
+      if (g.length < 2) return;
+      items.push({ code: "dup_sample_no", severity: "warn", sampleIds: g.map(x => x.id), samples: g,
+        text: "Sample number " + n + " is used more than once (" + listLabels(g) + ").",
+        fix: "Open the extra sample and use the next free number." });
+    });
+    const have = new Set(shown.map(sampleNoOf));
+    const miss = [];
+    if (have.size) {
+      const max = Math.max.apply(null, Array.from(have));
+      for (let i = 0; i <= max; i++) if (!have.has(i)) miss.push(i);
+      if (miss.length) {
+        items.push({ code: "sample_seq", severity: "warn", sampleIds: [], samples: [],
+          text: "Sample numbers are out of sequence (missing " + miss.map(n => (n === 0 ? "0" : "Pump " + n)).join(", ") + "). Numbers should run 0, then Pump 1, Pump 2 and so on.",
+          fix: "Add the missing sample, or check that a sample was not numbered ahead." });
+      }
+    }
+
+    /* Missing start flow, end flow vs this sample's own start flow, overrun, rotameter, failed with no reason. */
+    const rotaVals = [];
+    shown.forEach(t => {
+      if (!live(t) && !(t.status === "rejected" || t.status === "fault" || (typeof fibreRejected === "function" && fibreRejected(t)))) return;
+      if ((t.status === "rejected" || t.status === "fault" || (typeof fibreRejected === "function" && fibreRejected(t))) &&
+          !String(t.rejectReason || "").trim() && !String(t.rejectCode || "").trim()) {
+        items.push({ code: "reject_reason", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: labelOf(t) + " is failed or rejected but has no reason.",
+          fix: "Open " + labelOf(t) + " and enter a reject reason." });
+      }
+      if (!live(t) || isBlank(t)) return;
+      if (num(t.startFlow) == null) {
+        items.push({ code: "missing_start_flow", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: labelOf(t) + " has no start flow.",
+          fix: "Open " + labelOf(t) + " and enter the start flow." });
+      }
+      const chk = typeof flowCheck === "function" ? flowCheck(t) : { ok: true };
+      if (chk && chk.pct != null && !chk.ok) {
+        items.push({ code: "flow_tol", severity: "warn", sampleIds: [t.id], samples: [t],
+          text: "End flow on " + labelOf(t) + " is " + chk.pct.toFixed(1) + "% from this sample's start flow" + (chk.set != null ? " (" + chk.set + " L/min)" : "") + " (tolerance ±" + chk.tol + "%).",
+          fix: "Open " + labelOf(t) + " and check the end flow, or flag a flow fault if the pump was not held at the set flow." });
+      }
+      if (runningOf(t)) {
+        const planned = plannedEndOf(t, ev);
+        const start = t.startAt ? new Date(t.startAt) : null;
+        const cutoff = planned ? new Date(planned.getTime() + 60 * 60e3) : (start && !isNaN(start.getTime()) ? new Date(start.getTime() + 12 * 60 * 60e3) : null);
+        if (cutoff && Date.now() > cutoff.getTime()) {
+          items.push({ code: "overrun", severity: "warn", sampleIds: [t.id], samples: [t],
+            text: labelOf(t) + " is still running long after " + (planned ? "the planned end (" + planned.toLocaleString() + ")" : "a 12-hour run") + ". Stop the pump or enter the stop time.",
+            fix: "Open " + labelOf(t) + " and press STOP, or enter the stop time." });
+        }
+      }
+      const rota = String(t.rotameter || "").trim();
+      if (rota) rotaVals.push({ t, rota: rota.toUpperCase(), raw: rota });
+    });
+    const evRota = String(ev.rotameter || "").trim();
+    const rotaSet = Array.from(new Set(rotaVals.map(x => x.rota).concat(evRota ? [evRota.toUpperCase()] : [])));
+    if (rotaSet.length > 1) {
+      const affected = rotaVals.map(x => x.t);
+      items.push({ code: "rotameter", severity: "warn", sampleIds: affected.map(x => x.id), samples: affected,
+        text: "Rotameter does not match across this event" + (evRota ? " (event rotameter " + evRota + ")" : "") + ". One rotameter is used for the event.",
+        fix: "Set the event rotameter, or open the sample that differs and correct it." });
+    }
+
+    return items;
+  }
+
+  function panelHtml(ev) {
+    const items = afmEventChecks(ev);
+    const hard = items.filter(x => x.severity === "hard");
+    const warn = items.filter(x => x.severity !== "hard");
+    let h = '<div class="card" id="afmChecksPanel" style="margin-top:10px">';
+    h += '<h3 class="brand-type" style="margin:0 0 6px">Checks during the day</h3>';
+    if (!items.length) {
+      h += '<p class="help" id="afmChecksClear">No irregularity checks flagged.</p></div>';
+      return h;
+    }
+    if (hard.length) {
+      h += '<p class="help" id="afmChecksHard" style="color:var(--danger);font-weight:700">Create COC is blocked until these are fixed:</p><ul id="afmChecksHardList">';
+      hard.forEach(it => {
+        h += '<li style="color:var(--danger);font-weight:700">' + esc(it.text) + (it.fix ? ' <span class="help" style="font-weight:600">' + esc(it.fix) + "</span>" : "") + "</li>";
+      });
+      h += "</ul>";
+    }
+    if (warn.length) {
+      h += '<ul id="afmChecksWarnList">';
+      warn.forEach(it => {
+        h += "<li>" + esc(it.text) + (it.fix ? ' <span class="help">' + esc(it.fix) + "</span>" : "") + "</li>";
+      });
+      h += "</ul>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function inlineHtml(t, ev) {
+    const items = afmEventChecks(ev).filter(it => (it.sampleIds || []).indexOf(t.id) >= 0);
+    if (!items.length) return '<div id="afmSampleChecks" hidden></div>';
+    let h = '<div id="afmSampleChecks" class="card" style="margin:8px 0">';
+    h += '<p class="help" style="margin:0 0 6px;font-weight:700">Checks on this sample</p><ul style="margin:0">';
+    items.forEach(it => {
+      const col = it.severity === "hard" ? "color:var(--danger);font-weight:700" : "";
+      h += "<li" + (col ? ' style="' + col + '"' : "") + ">" + esc(it.text) + (it.fix ? " " + esc(it.fix) : "") + "</li>";
+    });
+    h += "</ul></div>";
+    return h;
+  }
+
+  function paintAfmChecks() {
+    const ev = (view && view.eventId) ? eventById(view.eventId) : null;
+    const t = (view && view.trainId) ? (db.trains || []).find(x => x.id === view.trainId) : null;
+    const evFor = ev || (t && eventById(t.eventId));
+    if (!evFor || typeof isFibreEvent !== "function" || !isFibreEvent(evFor)) return;
+    const panel = document.getElementById("afmChecksPanel");
+    if (panel) {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = panelHtml(evFor);
+      const next = wrap.firstElementChild;
+      if (next) panel.replaceWith(next);
+    }
+    const box = document.getElementById("afmSampleChecks");
+    if (box && t && isFibreTrain(t)) {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = inlineHtml(t, evFor);
+      const next = wrap.firstElementChild;
+      if (next) box.replaceWith(next);
+    }
+  }
+
+  if (typeof eventHtml === "function") {
+    const _eh = eventHtml;
+    eventHtml = function () {
+      let html = _eh.apply(this, arguments);
+      const ev = eventById(view.eventId);
+      if (ev && isFibreEvent(ev) && html.indexOf('id="afmChecksPanel"') === -1) {
+        const panel = panelHtml(ev);
+        if (html.indexOf('id="fibreEventBox"') >= 0) html = html.replace('<div class="card" id="fibreEventBox"', panel + '<div class="card" id="fibreEventBox"');
+        else html = html.replace("</h2>", "</h2>" + panel);
+      }
+      return html;
+    };
+    window.eventHtml = eventHtml;
+  }
+  if (typeof fibreTrainHtml === "function") {
+    const _fh = fibreTrainHtml;
+    fibreTrainHtml = function (t, ev) {
+      let html = _fh.apply(this, arguments);
+      if (t && ev && html.indexOf('id="afmSampleChecks"') === -1) {
+        const block = inlineHtml(t, ev);
+        if (html.indexOf('id="cowlDup"') >= 0) html = html.replace(/<\/p>(\s*<label>Cassette manufacturer serial)/, "</p>" + block + "$1");
+        else html = html.replace("</h2>", "</h2>" + block);
+      }
+      return html;
+    };
+    window.fibreTrainHtml = fibreTrainHtml;
+  }
+  if (typeof createCoc === "function") {
+    const _coc = createCoc;
+    createCoc = async function () {
+      const ev = eventById(view.eventId);
+      if (ev && isFibreEvent(ev) && !cocExists(ev)) {
+        const hard = afmEventChecks(ev).filter(x => x.severity === "hard");
+        if (hard.length) {
+          const msg = "Can't create the COC yet.\n\n" + hard.map(h => h.text + (h.fix ? "\n" + h.fix : "")).join("\n\n");
+          alert(msg);
+          if (view.page !== "event") { try { openEvent(ev.id); } catch (e) { render(); } }
+          else render();
+          return false;
+        }
+      }
+      return _coc.apply(this, arguments);
+    };
+    window.createCoc = createCoc;
+  }
+  if (typeof commit === "function") {
+    const _commit = commit;
+    commit = function () {
+      const r = _commit.apply(this, arguments);
+      try { paintAfmChecks(); } catch (e) { console.warn("v48.2 afm checks", e); }
+      return r;
+    };
+    window.commit = commit;
+  }
+  if (typeof render === "function") {
+    const _r = render;
+    render = function () {
+      const r = _r.apply(this, arguments);
+      try { paintAfmChecks(); } catch (e) { console.warn("v48.2 afm checks", e); }
+      return r;
+    };
+    window.render = render;
+  }
+
+  window.afmEventChecks = afmEventChecks;
+  window.afmCocBlocked = function (ev) { return !cocExists(ev) && afmEventChecks(ev).some(x => x.severity === "hard"); };
+  window.afmCocExists = cocExists;
+  window.paintAfmChecks = paintAfmChecks;
 })();
 </script>
 

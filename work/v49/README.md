@@ -1,6 +1,6 @@
-# v49 draft — AFM field-app changes
+# v48.2 — AFM field-app changes
 
-Draft only. Do not merge or publish until John approves.
+AFM field-app update on v48.1, including live irregularity checks during the day.
 
 Run checks (Supabase is mocked; no production writes):
 
@@ -20,7 +20,7 @@ The app reads two new **views** over the existing Podio mirror (`public.podio_it
 | `v_field_afm_events` | 21120412 **AFM Event** | Open AFM events (final report not generated/sent/invoiced/cancelled), start date from 30 days ago |
 | `v_field_afm_samples` | 21120488 **AFM Samples** | Samples linked (`job-site`) to those events. No signatures or lab results |
 
-SQL: `work/afm_v49_01_afm_podio_views.sql` (rollback `work/afm_v49_01_afm_podio_views_rollback.sql`). **Not applied — needs John's approval.** Until it is applied the app says "AFM from Podio isn't switched on yet" and AFM fieldwork works as before.
+SQL: `work/afm_v49_01_afm_podio_views.sql` (rollback `work/afm_v49_01_afm_podio_views_rollback.sql`). SQL is applied with the v48.2 publish (rollback file kept). Until the views exist the app says "AFM from Podio isn't switched on yet" and AFM fieldwork works as before.
 
 On a project: **AFM planned in Podio** lists the open AFM events for the job with **Start AFM from Podio**. On a linked AFM event: **From Podio (AFM)** shows what came from Podio, what was kept, and **Fill blanks from Podio**.
 
