@@ -1,0 +1,196 @@
+{
+  "passed": 38,
+  "failed": 0,
+  "results": [
+    {
+      "name": "[chromebook] version 48.4",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sample order = event list order (by sample number, noise last)",
+      "ok": true,
+      "detail": "[\"h1\",\"h2\",\"h3\",\"h4\",\"h5\",\"hB\",\"hN\"]"
+    },
+    {
+      "name": "first sample: '1 of 7', Prev disabled, no left side arrow, Next shown",
+      "ok": true,
+      "detail": "{\"page\":\"train\",\"train\":\"h1\",\"ev\":\"eH\",\"pos\":\"1 of 7\",\"prevDis\":true,\"nextDis\":false,\"sidePrev\":false,\"sideNext\":true}"
+    },
+    {
+      "name": "right-hand side arrow opens the next sample (h2, '2 of 7')",
+      "ok": true,
+      "detail": "{\"page\":\"train\",\"train\":\"h2\",\"ev\":\"eH\",\"pos\":\"2 of 7\",\"prevDis\":false,\"nextDis\":false,\"sidePrev\":true,\"sideNext\":true}"
+    },
+    {
+      "name": "side arrows are big (>=64x120) and cover no input or button (incl. START / STOP)",
+      "ok": true,
+      "detail": "{\"L\":[24,100,76,132],\"R\":[1266,1342,76,132],\"overlapL\":false,\"overlapR\":false,\"startStop\":[690,1219]}"
+    },
+    {
+      "name": "pending edit saved before moving (same as ← Event): in memory and in local storage",
+      "ok": true,
+      "detail": "{\"train\":\"h3\",\"h2\":\"note typed then arrow\",\"stored\":\"note typed then arrow\"}"
+    },
+    {
+      "name": "edit queued / synced like the back button (mock Supabase saw it or it is queued)",
+      "ok": true,
+      "detail": "false"
+    },
+    {
+      "name": "last sample: '7 of 7', Next disabled, no right side arrow",
+      "ok": true,
+      "detail": "{\"page\":\"train\",\"train\":\"hN\",\"ev\":\"eH\",\"pos\":\"7 of 7\",\"prevDis\":false,\"nextDis\":true,\"sidePrev\":true,\"sideNext\":false}"
+    },
+    {
+      "name": "Next at the end does nothing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "arrows do nothing while the Edit time dialog is open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "walking every sample with the arrows changes no START / STOP time or status",
+      "ok": true,
+      "detail": "[[\"h1\",\"2026-11-11T23:00:00.000Z\",\"2026-11-12T07:00:00.000Z\",\"ended\"],[\"h2\",\"2026-11-13T00:49:13.705Z\",\"\",\"running\"],[\"h3\",\"\",\"\",\"prepped\"],[\"h4\",\"2026-11-12T16:30:00.000Z\",\"2026-11-12T16:31:00.000Z\",\"ended\"],[\"h5\",\"2026-11-12T15:59:00.000Z\",\"2026-11-12T16:20:00.000Z\",\"ended\"],[\"hB\",\"\",\"\",\"field_bla"
+    },
+    {
+      "name": "time boxes still read-only after arriving by arrow (v48.3 lock intact)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "AFM blank '0': '1 of 4', next is Pump 1",
+      "ok": true,
+      "detail": "{\"page\":\"train\",\"train\":\"a0\",\"ev\":\"eH\",\"pos\":\"1 of 4\",\"prevDis\":true,\"nextDis\":false,\"sidePrev\":false,\"sideNext\":true}"
+    },
+    {
+      "name": "AFM: arrows reach Pump 3 ('4 of 4') and the duplicate-cowl check still shows",
+      "ok": true,
+      "detail": "{\"h2\":\"Pump 3\",\"dup\":\"Cowl 12399 is already on Pump 2 in this event. Each sample, including the field blank, needs its own cowl.\",\"checks\":true}"
+    },
+    {
+      "name": "COC gate still blocks the event with a running sample",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "AFM COC block on hard duplicates unchanged",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "name": "event order: date then event code (no-date last)",
+      "ok": true,
+      "detail": "[\"eY\",\"eH\",\"eA\",\"eT\",\"eN\"]"
+    },
+    {
+      "name": "first event: '1 of 5 events in this project', Prev disabled",
+      "ok": true,
+      "detail": "{\"page\":\"event\",\"train\":\"h2\",\"ev\":\"eY\",\"pos\":\"1 of 5 events in this project\",\"prevDis\":true,\"nextDis\":false,\"sidePrev\":false,\"sideNext\":true}"
+    },
+    {
+      "name": "right-hand arrow opens the next event (eH)",
+      "ok": true,
+      "detail": "{\"page\":\"event\",\"train\":\"h2\",\"ev\":\"eH\",\"pos\":\"2 of 5 events in this project\",\"prevDis\":false,\"nextDis\":false,\"sidePrev\":true,\"sideNext\":true}"
+    },
+    {
+      "name": "event box edit (rotameter) saved before moving to the next event",
+      "ok": true,
+      "detail": "{\"page\":\"event\",\"train\":\"h2\",\"ev\":\"eT\",\"pos\":\"4 of 5 events in this project\",\"prevDis\":false,\"nextDis\":false,\"sidePrev\":true,\"sideNext\":true}"
+    },
+    {
+      "name": "last event: Next disabled, no right arrow",
+      "ok": true,
+      "detail": "{\"page\":\"event\",\"train\":\"h2\",\"ev\":\"eN\",\"pos\":\"5 of 5 events in this project\",\"prevDis\":false,\"nextDis\":true,\"sidePrev\":true,\"sideNext\":false}"
+    },
+    {
+      "name": "Perth midnight boundary: 23:59:59 AWST is the 12th, 00:00 AWST is the 13th; today/yesterday/tomorrow roll at Perth midnight",
+      "ok": true,
+      "detail": "[\"2026-11-12\",\"2026-11-13\",\"2026-11-13\",\"2026-11-12\",\"2026-11-14\",\"2026-11-12\"]"
+    },
+    {
+      "name": "sample day: shift date first, else Perth date of START (00:30 AWST = today, 23:59 AWST = yesterday), no date = none",
+      "ok": true,
+      "detail": "{\"h1\":\"2026-11-12\",\"h2\":\"2026-11-13\",\"h3\":\"2026-11-14\",\"h4\":\"2026-11-13\",\"h5\":\"2026-11-12\",\"hB\":\"2026-11-13\",\"hN\":\"2026-11-13\",\"n1\":\"\"}"
+    },
+    {
+      "name": "event screen shows Yesterday / Today / Tomorrow chips beside the status filters, with counts",
+      "ok": true,
+      "detail": "[{\"on\":false,\"text\":\"Yesterday 2\"},{\"on\":false,\"text\":\"Today 4\"},{\"on\":false,\"text\":\"Tomorrow 1\"}]"
+    },
+    {
+      "name": "Today chip is a big target (>=110x44)",
+      "ok": true,
+      "detail": "[120,44]"
+    },
+    {
+      "name": "Today shows every sample for today regardless of status (running, ended, blank, noise) with badges",
+      "ok": true,
+      "detail": "[\"h2\",\"h4\",\"hB\",\"hN\"]"
+    },
+    {
+      "name": "day + status combine (Today AND Running = h2 only); status counts follow the day",
+      "ok": true,
+      "detail": "[\"h2\"]"
+    },
+    {
+      "name": "Yesterday = h1 (shift date) + h5 (started 23:59 AWST)",
+      "ok": true,
+      "detail": "[\"h1\",\"h5\"]"
+    },
+    {
+      "name": "Tomorrow = h3",
+      "ok": true,
+      "detail": "[\"h3\"]"
+    },
+    {
+      "name": "tapping the lit day chip again clears the day filter (all 7 back)",
+      "ok": true,
+      "detail": "[\"h1\",\"h2\",\"h3\",\"h4\",\"h5\",\"hB\",\"hN\"]"
+    },
+    {
+      "name": "with Today on, sample arrows step through today's samples only ('1 of 4 · Today')",
+      "ok": true,
+      "detail": "{\"page\":\"train\",\"train\":\"h2\",\"ev\":\"eH\",\"pos\":\"1 of 4 · Today\",\"prevDis\":true,\"nextDis\":false,\"sidePrev\":false,\"sideNext\":true}"
+    },
+    {
+      "name": "next under Today skips tomorrow's h3 and goes to h4",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sample with no date: listed under no day filter, never under a day (empty message)",
+      "ok": true,
+      "detail": "[{\"rows\":1,\"today\":\"Today 0\"},{\"rows\":0,\"empty\":\"No samples today.\"}]"
+    },
+    {
+      "name": "project screen: Today = events dated today (eH, eA); Yesterday = eY + eH (has yesterday's samples); tap again clears",
+      "ok": true,
+      "detail": "{\"all5\":[\"eA\",\"eH\",\"eN\",\"eT\",\"eY\"],\"pt\":[\"eA\",\"eH\"],\"py\":[\"eH\",\"eY\"],\"pc\":[\"eA\",\"eH\",\"eN\",\"eT\",\"eY\"]}"
+    },
+    {
+      "name": "day filter writes nothing (times / statuses unchanged)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no page errors (chromebook)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "device in another time zone: today / sample days still Perth (AWST)",
+      "ok": true,
+      "detail": "[\"2026-11-13\",\"2026-11-13\",\"2026-11-12\"]"
+    },
+    {
+      "name": "no page errors (tz)",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}
