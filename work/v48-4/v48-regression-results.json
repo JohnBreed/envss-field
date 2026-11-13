@@ -1,0 +1,223 @@
+{
+  "passed": 43,
+  "failed": 0,
+  "results": [
+    {
+      "name": "version is 48.4",
+      "ok": true,
+      "detail": "{\"app\":\"48.4\",\"title\":\"ENVSS Field v48.4\",\"header\":\"v48.4\",\"noise\":\"48.0\"}"
+    },
+    {
+      "name": "noise module is 48.0",
+      "ok": true,
+      "detail": "48.0"
+    },
+    {
+      "name": "REQ-009 catalog: stale INH 5% raised to 10 on load, SIL stays 5",
+      "ok": true,
+      "detail": "{\"inhTol\":10,\"silTol\":5,\"inhFlow\":2}"
+    },
+    {
+      "name": "REQ-009 1.8 L/min at set 2.0 is within ±10%",
+      "ok": true,
+      "detail": "{\"ok\":true,\"tol\":10,\"pct\":9.999999999999998,\"set\":2,\"noStart\":false}"
+    },
+    {
+      "name": "REQ-009 2.2 L/min at set 2.0 is within ±10%",
+      "ok": true,
+      "detail": "{\"ok\":true,\"tol\":10,\"pct\":10.000000000000009,\"set\":2,\"noStart\":false}"
+    },
+    {
+      "name": "REQ-009 1.79 L/min at set 2.0 is outside ±10%",
+      "ok": true,
+      "detail": "{\"ok\":false,\"tol\":10,\"pct\":10.499999999999998,\"set\":2,\"noStart\":false}"
+    },
+    {
+      "name": "REQ-009 2.21 L/min at set 2.0 is outside ±10%",
+      "ok": true,
+      "detail": "{\"ok\":false,\"tol\":10,\"pct\":10.499999999999998,\"set\":2,\"noStart\":false}"
+    },
+    {
+      "name": "REQ-009 SIL 2.0 vs set 2.2 still uses 5% and fails",
+      "ok": true,
+      "detail": "{\"ok\":false,\"tol\":5,\"pct\":9.090909090909099,\"set\":2.2,\"noStart\":false}"
+    },
+    {
+      "name": "REQ-029 sample number 7 shown read-only",
+      "ok": true,
+      "detail": "{\"pouchValue\":\"7\",\"pouchRo\":true,\"flowMsg\":\"End flow is 10.0% from the set flow (2 L/min). Tolerance ±10%.\\n        Within tolerance.\",\"flowDanger\":false,\"rotaText\":\"Use this Rotameter for all airborne samples on this event.\",\"irsst\":true,\"sampleNo\":7,\"irsstCat\":\"3\"}"
+    },
+    {
+      "name": "REQ-009 UI: 1.8 vs 2.0 is within tolerance (no error)",
+      "ok": true,
+      "detail": "End flow is 10.0% from the set flow (2 L/min). Tolerance ±10%.\n        Within tolerance."
+    },
+    {
+      "name": "REQ-026 rotameter button wording",
+      "ok": true,
+      "detail": "Use this Rotameter for all airborne samples on this event."
+    },
+    {
+      "name": "airborne still has IRSST (only hidden on dose-badge)",
+      "ok": true,
+      "detail": "{\"irsst\":true,\"cat\":\"3\"}"
+    },
+    {
+      "name": "REQ-029 collectTrain does not rewrite locked sample number",
+      "ok": true,
+      "detail": "{\"before\":{\"sampleNo\":7,\"pouch\":\"7\",\"irsstCat\":\"3\",\"comments\":\"upgrade fixture\"},\"after\":{\"sampleNo\":7,\"pouch\":\"7\",\"irsstCat\":\"3\",\"comments\":\"upgrade fixture\"}}"
+    },
+    {
+      "name": "live data: IRSST on airborne still 3 after collect",
+      "ok": true,
+      "detail": "{\"sampleNo\":7,\"pouch\":\"7\",\"irsstCat\":\"3\",\"comments\":\"upgrade fixture\"}"
+    },
+    {
+      "name": "REQ-009 UI: 1.7 vs 2.0 shows outside tolerance",
+      "ok": true,
+      "detail": "End flow is 15.0% from the set flow (2 L/min). Tolerance ±10%.\n        Outside tolerance — reject unless you have a documented reason."
+    },
+    {
+      "name": "REQ-028 pump used yesterday does not warn",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "REQ-028 pump on same shift/day does warn",
+      "ok": true,
+      "detail": "[\"tair-peer\"]"
+    },
+    {
+      "name": "REQ-028 night shift same calendar day without overlap does not warn",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "REQ-028/NEW-B dosimeter used yesterday does not warn",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "REQ-028/NEW-B dosimeter on same shift/day does warn",
+      "ok": true,
+      "detail": "[\"tnoise-peer\"]"
+    },
+    {
+      "name": "REQ-028 pump clash UI mentions same shift/day",
+      "ok": true,
+      "detail": "⚠ 88473 is also on Sample 8 (0019321-002) on the same shift/day (2026-11-12). Check the serial."
+    },
+    {
+      "name": "REQ-017 method checkbox toggle does not jump scroll (>8px)",
+      "ok": true,
+      "detail": "{\"beforeY\":870,\"afterY\":870,\"beforeTop\":372.90625,\"afterTop\":372.90625,\"dy\":0,\"dTop\":0,\"boxShown\":true,\"checked\":true}"
+    },
+    {
+      "name": "REQ-017 method box still opens after toggle",
+      "ok": true,
+      "detail": "{\"beforeY\":870,\"afterY\":870,\"beforeTop\":372.90625,\"afterTop\":372.90625,\"dy\":0,\"dTop\":0,\"boxShown\":true,\"checked\":true}"
+    },
+    {
+      "name": "REQ-012 heading 'Noise readings' hidden on dose badge",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "REQ-012 badge type and firmware hidden",
+      "ok": true,
+      "detail": "{\"labels\":[\"How are the values entered?\",\"LAeq dB(A)\",\"LCpeak dB(C)\",\"Field note about these checks\"]}"
+    },
+    {
+      "name": "REQ-012 LCeq hidden, LAeq shown",
+      "ok": true,
+      "detail": "{\"hasLCeq\":false,\"hasLAeq\":true}"
+    },
+    {
+      "name": "REQ-012 spectrum prompt hidden",
+      "ok": true,
+      "detail": "spectrum=false"
+    },
+    {
+      "name": "REQ-015 IRSST hidden on dose-badge SEG",
+      "ok": true,
+      "detail": "irsst in DOM=false"
+    },
+    {
+      "name": "REQ-010 LAeq 'required' not shown when value present",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "stored hidden dose-badge values intact",
+      "ok": true,
+      "detail": "{\"badgeType\":\"4448 A\",\"firmware\":\"1.2.3\",\"LCeq\":\"90.9\",\"spectrum\":\"kept-spectrum-ref\",\"irsstCat\":\"2\",\"sampleNo\":3}"
+    },
+    {
+      "name": "REQ-029 noise sample number 3 read-only",
+      "ok": true,
+      "detail": "{\"value\":\"3\",\"ro\":true}"
+    },
+    {
+      "name": "REQ-010 required appears when LAeq cleared",
+      "ok": true,
+      "detail": "[\"required\"]"
+    },
+    {
+      "name": "REQ-010 required hides as soon as LAeq is typed",
+      "ok": true,
+      "detail": "{\"reqEmpty\":[\"required\"],\"reqFilled\":[],\"q\":\"5 to answer: Fault?, ENVSS equipment damaged?, Comments?, Hearing protection worn?, Sex · 5 details blank\",\"v\":{\"v\":\"85.1\",\"src\":\"manual\"}}"
+    },
+    {
+      "name": "REQ-010 still-to-answer does not list LAeq after entry",
+      "ok": true,
+      "detail": "5 to answer: Fault?, ENVSS equipment damaged?, Comments?, Hearing protection worn?, Sex · 5 details blank"
+    },
+    {
+      "name": "REQ-002 cancel confirm does not add a sample",
+      "ok": true,
+      "detail": "before=6 after cancel=6"
+    },
+    {
+      "name": "REQ-002 accept confirm adds a sample",
+      "ok": true,
+      "detail": "{\"n\":7,\"kind\":\"airborne_personal\",\"sampleNo\":9,\"pouch\":\"9\",\"dialogs\":0,\"current\":\"9\"}"
+    },
+    {
+      "name": "REQ-002 confirm wording",
+      "ok": true,
+      "detail": "[\"Are you sure you want to add a new sample?\",\"Are you sure you want to add a new sample?\"]"
+    },
+    {
+      "name": "REQ-029 new sample gets next number (not A001) and is locked",
+      "ok": true,
+      "detail": "{\"n\":7,\"kind\":\"airborne_personal\",\"sampleNo\":9,\"pouch\":\"9\",\"dialogs\":0,\"current\":\"9\"}"
+    },
+    {
+      "name": "IndexedDB envss-field-v46 name unchanged (no v48 DB)",
+      "ok": true,
+      "detail": "[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\"]"
+    },
+    {
+      "name": "IndexedDB backup holds existing sample numbers and hidden fields",
+      "ok": true,
+      "detail": "{\"names\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\"],\"hasV46\":true,\"hasNewName\":false,\"appVersionInSnap\":\"48.4\",\"air\":{\"sampleNo\":7,\"irsstCat\":\"3\",\"endFlow\":\"1.8\"},\"nz\":{\"sampleNo\":3,\"badgeType\":\"4448 A\",\"LCeq\":{\"v\":\"90.9\",\"src\":\"manual\"},\"irsstCat\":\"2\"}}"
+    },
+    {
+      "name": "upgrade restore from IndexedDB keeps existing samples",
+      "ok": true,
+      "detail": "{\"r\":\"current\",\"noiseNo\":3,\"airNo\":7,\"LCeq\":{\"v\":\"90.9\",\"src\":\"manual\"},\"badge\":\"4448 A\",\"app\":\"48.4\"}"
+    },
+    {
+      "name": "pixel7: dose-badge hides heading and IRSST; sample no locked; no required",
+      "ok": true,
+      "detail": "{\"heading\":[],\"required\":[],\"irsst\":false,\"pouchRo\":true,\"ver\":\"v48.4\"}"
+    },
+    {
+      "name": "no page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "errors": [],
+  "at": "Fri Nov 13 2026 10:50:31 GMT+0800 (Australian Western Standard Time)"
+}

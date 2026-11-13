@@ -1,0 +1,301 @@
+{
+  "passed": 59,
+  "failed": 0,
+  "results": [
+    {
+      "name": "[chromebook] version 48.4",
+      "ok": true,
+      "detail": "ENVSS Field v48.4"
+    },
+    {
+      "name": "existing samples: stored times and statuses unchanged after load + render",
+      "ok": true,
+      "detail": "[[\"tA\",\"2026-11-12T16:49:42.629Z\",\"\",\"running\"],[\"tB\",\"\",\"\",\"prepped\"],[\"tC\",\"2026-11-12T17:49:42.629Z\",\"2026-11-13T01:49:42.629Z\",\"prepped\"],[\"tD\",\"2026-11-12T18:19:42.629Z\",\"2026-11-13T01:49:42.629Z\",\"ended\"],[\"tE\",null,null,\"field_blank\"],[\"tF\",\"\",\"\",\"prepped\"],[\"tG\",\"2026-11-12T17:49:42.629Z\",\"2026-11-13T01:50:12.629Z\",\"ended\"],[\"tH\",\"2026-11-13T00:49:42.629Z\",\"\",\"running\"]]"
+    },
+    {
+      "name": "typed-never-pressed sample flagged manual (pre-v48.3)",
+      "ok": true,
+      "detail": "[[\"tA\",\"pressed\",\"none\",\"\"],[\"tC\",\"legacy_manual\",\"legacy_manual\",\"legacy_manual\"],[\"tD\",\"legacy_edited\",\"pressed\",\"legacy_edited\"],[\"tG\",\"pressed\",\"pressed\",\"\"]]"
+    },
+    {
+      "name": "pressed-then-typed sample flagged edited (pre-v48.3)",
+      "ok": true,
+      "detail": "[\"tD\",\"legacy_edited\",\"pressed\",\"legacy_edited\"]"
+    },
+    {
+      "name": "pressed sample has no flag",
+      "ok": true,
+      "detail": "[[\"tA\",\"pressed\",\"none\",\"\"],[\"tG\",\"pressed\",\"pressed\",\"\"]]"
+    },
+    {
+      "name": "event list shows legacy chips on rows",
+      "ok": true,
+      "detail": "[\"manual (pre-v48.3)\",\"edited (pre-v48.3)\"]"
+    },
+    {
+      "name": "legacy flag is display only (no audit / data written)",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "start / stop boxes are read-only with Edit time buttons",
+      "ok": true,
+      "detail": "{\"s\":true,\"e\":true,\"edits\":[\"Edit time\",\"Edit time\"],\"help\":\"Times come from pressing START and STOP at the pump. To change one, tap Edit time and give a reason. Location is stored when START or STOP gets a GPS fix.\",\"laptop\":false}"
+    },
+    {
+      "name": "help text says times come from START / STOP",
+      "ok": true,
+      "detail": "Times come from pressing START and STOP at the pump. To change one, tap Edit time and give a reason. Location is stored when START or STOP gets a GPS fix."
+    },
+    {
+      "name": "forcing a value into the box and saving does not change the stored time",
+      "ok": true,
+      "detail": "2026-11-12T17:49:42.629Z vs 2026-11-12T17:49:42.629Z"
+    },
+    {
+      "name": "edit dialog offers the five edit reasons",
+      "ok": true,
+      "detail": "[\"forgot_press\",\"pump_fault\",\"phone_flat\",\"wrong_press\",\"other\"]"
+    },
+    {
+      "name": "edit dialog shows when START was pressed",
+      "ok": true,
+      "detail": "Edit start time\n\nSample 6 · Airborne · personal. The time you enter is saved with your reason, your name, this device and the original pressed time.\n\nStart date\nStart time\n\nSTART was pressed 13 Nov, 01:49:42 am AWST · Android.\n\nReason\n\nForgot to press at the pump\nPump fault\nPhone flat / no signal\nCo"
+    },
+    {
+      "name": "saving without a reason is refused",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Other needs typed text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "edited start time saved",
+      "ok": true,
+      "detail": "2026-11-12T17:34:00.000Z"
+    },
+    {
+      "name": "audit keeps pressed time, old time, new time, reason, who, device",
+      "ok": true,
+      "detail": "{\"v\":\"48.3\",\"which\":\"start\",\"from\":\"2026-11-12T17:49:42.629Z\",\"to\":\"2026-11-12T17:34:00.000Z\",\"pressedAt\":\"2026-11-12T17:49:42.629Z\",\"reason\":\"wrong_press\",\"reasonLabel\":\"Correcting a wrong press\",\"reasonText\":\"pressed late, pump on 15 min earlier\",\"manual\":false,\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"device\":\"Chromebook\",\"mobile\":false,\"at\":\"2026-11-13T02:49:47.856Z\"}"
+    },
+    {
+      "name": "'time edited' badge on the sample",
+      "ok": true,
+      "detail": "[\"time edited\",\"time edited\"]"
+    },
+    {
+      "name": "laptop note shown on the sample screen",
+      "ok": true,
+      "detail": "You're on a Chromebook. START and STOP belong on your phone, at the pump 📱"
+    },
+    {
+      "name": "laptop START is not blocked (no confirm) and the sample starts",
+      "ok": true,
+      "detail": "{\"s\":\"running\",\"d\":[]}"
+    },
+    {
+      "name": "cheeky reminder pops up after the press",
+      "ok": true,
+      "detail": "Hold up — that's a laptop, not a pump! 📱 Grab your phone and press START at the pump next time. (We'll let it slide... this once.)"
+    },
+    {
+      "name": "device noted on the sample",
+      "ok": true,
+      "detail": "[\"START pressed\",\"Changed Status\",\"Changed Start time\",\"Changed Mode\",\"Start location\",\"START pressed on a Chromebook\"]"
+    },
+    {
+      "name": "reminder closes with Got it",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "STOP 10 h after an 8 h start: stops, no late-STOP prompt",
+      "ok": true,
+      "detail": "{\"s\":\"ended\",\"lateM\":false}"
+    },
+    {
+      "name": "STOP on a laptop gets the same reminder with STOP",
+      "ok": true,
+      "detail": "Hold up — that's a laptop, not a pump! 📱 Grab your phone and press STOP at the pump next time. (We'll let it slide... this once.)"
+    },
+    {
+      "name": "Create COC blocked with a list of unfinished samples",
+      "ok": true,
+      "detail": "[\"tB\",\"tC\",\"tE\",\"tH\"]"
+    },
+    {
+      "name": "COC list = typed-never-pressed (tC), blank missing details (tE), started-not-stopped (tB, tH); not noise, not finished",
+      "ok": true,
+      "detail": "[\"tB\",\"tC\",\"tE\",\"tH\"]"
+    },
+    {
+      "name": "COC gate holds no noise samples (noise has nothing to do with the COC)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "nothing downloaded while blocked",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "blocked COC noted on the event audit",
+      "ok": true,
+      "detail": "[\"Sample 6: changed\",\"Sample 2: START, changed\",\"Sample 1: STOP, changed\",\"Create COC blocked\"]"
+    },
+    {
+      "name": "Mark event complete blocked; list includes the prepped noise sample",
+      "ok": true,
+      "detail": "[\"tB\",\"tC\",\"tE\",\"tF\",\"tH\"]"
+    },
+    {
+      "name": "Enter times on a never-pressed sample uses the manual reasons, 'paper field sheet' preselected, current times prefilled",
+      "ok": true,
+      "detail": "{\"reasons\":[\"paper_sheet\",\"forgot_press\",\"phone_flat\",\"pump_fault\",\"other\"],\"checked\":\"paper_sheet\",\"s\":\"01:49\",\"e\":\"09:49\",\"title\":\"Enter start and stop times without START/STOP\"}"
+    },
+    {
+      "name": "paper times: sample moves out of prepped to ended; times kept; marked manual",
+      "ok": true,
+      "detail": "{\"s\":\"ended\",\"a\":[\"Start time entered manually\",\"Stop time entered manually\"]}"
+    },
+    {
+      "name": "gate list refreshes after each fix",
+      "ok": true,
+      "detail": "[\"tB\",\"tE\",\"tH\"]"
+    },
+    {
+      "name": "field blank: Not used / void keeps the record with reason",
+      "ok": true,
+      "detail": "{\"s\":\"not_used\",\"r\":\"Field blank not used\"}"
+    },
+    {
+      "name": "Reject with reason from the gate",
+      "ok": true,
+      "detail": "{\"s\":\"rejected\",\"c\":\"pump_fault\",\"r\":\"Pump fault / equipment failure — tube kinked\"}"
+    },
+    {
+      "name": "stop time entered (STOP never pressed → manual) and gate clears with a Create COC button",
+      "ok": true,
+      "detail": "{\"s\":\"ended\",\"clear\":{\"clear\":true,\"go\":true}}"
+    },
+    {
+      "name": "Create COC continues to the turnaround step once clear",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "COC made without the not-used blank (6 lab rows: tA,tB,tC,tD,tG,tH)",
+      "ok": true,
+      "detail": "{\"event\":\"0019483-001\",\"rows\":6,\"analytes\":[\"INH\"],\"turnaround\":\"standard\",\"size\":17306}"
+    },
+    {
+      "name": "trainsOf back to normal after COC (not-used still listed in the event)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "samples CSV has time capture columns and reasons",
+      "ok": true,
+      "detail": "\"daily_log_status\",\"daily_log_ref\",\"photo_paths\",\"time_start_capture\",\"time_stop_capture\",\"time_edit_reasons\",\"not_used\""
+    },
+    {
+      "name": "COC CSV: not-used blank left off; time_flag column shows edits",
+      "ok": true,
+      "detail": "6 lines"
+    },
+    {
+      "name": "flat CSV has time capture columns",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Undo not used restores the sample and logs it",
+      "ok": true,
+      "detail": "field_blank"
+    },
+    {
+      "name": "no page errors (chromebook)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] phone: read-only time, no laptop note, 'Enter time without START' and Not used offered",
+      "ok": true,
+      "detail": "{\"ro\":true,\"laptop\":false,\"mobile\":true,\"enter\":[\"Enter time without START\"],\"voidBtn\":true}"
+    },
+    {
+      "name": "[pixel7] START on the phone: no laptop warning, recorded as pressed",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "[pixel7] COC gate fits the phone screen",
+      "ok": true,
+      "detail": "{\"ids\":5,\"w\":388,\"fits\":true}"
+    },
+    {
+      "name": "[pixel7] tap-through opens the blocking sample",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] noise sample: time boxes read-only with Edit / Enter time",
+      "ok": true,
+      "detail": "{\"s\":true,\"e\":true,\"b\":1}"
+    },
+    {
+      "name": "[pixel7] AFM sample: time boxes read-only too",
+      "ok": true,
+      "detail": "{\"s\":true,\"b\":[\"Enter time without START\"]}"
+    },
+    {
+      "name": "no page errors (pixel7)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sign-in log: app open sent through envss_log_app_open with device detail",
+      "ok": true,
+      "detail": "{\"event\":\"app_open\",\"occurred_at\":\"2026-11-13T02:50:02.644Z\",\"local_date\":\"2026-11-13\",\"full_name\":\"V46 Test\",\"device\":\"Android\",\"browser\":\"Chrome\",\"user_agent\":\"Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36\",\"app_version\":\"48.4\",\"client_event_id\":\"e0b88a11-5811-4211-9c7d-f34a2533791f\",\"device_type\":\"phone\",\"os\":\"Android\",\"os_version\":\"14\",\"browser_version\":\"156.0.0.0\",\"display_mode\":\"browser_tab\",\"extra\":{\"screen\":\"412x915@2.625\",\"model\":\"\",\"os_version_ua\":\"14\"}}"
+    },
+    {
+      "name": "sign-in log: daily_open also sent",
+      "ok": true,
+      "detail": "daily_open,app_open"
+    },
+    {
+      "name": "sign-in log: no new staff-facing UI",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "fallback: rpc missing → plain insert, no ignore-duplicates, no extra field",
+      "ok": true,
+      "detail": "[{\"rpc\":1},{\"table\":1,\"prefer\":\"return=minimal\",\"event\":\"daily_open\",\"ext\":false,\"id\":\"bad-row\"},{\"table\":1,\"prefer\":\"return=minimal\",\"event\":\"daily_open\",\"ext\":false,\"browser\":\"Chrome 156\",\"id\":\"6b97dc69-eb31-46b3-a230-def965d43dad\"}]"
+    },
+    {
+      "name": "fallback: a refused row no longer blocks the rows behind it",
+      "ok": true,
+      "detail": "[\"bad-row:daily_open\",\"6b97dc69-eb31-46b3-a230-def965d43dad:daily_open\"]"
+    },
+    {
+      "name": "fallback: app_open is not forced into the old table; browser carries the major version",
+      "ok": true,
+      "detail": "[null,\"Chrome 156\"]"
+    },
+    {
+      "name": "fallback: refused row kept for a limited retry (tries counted)",
+      "ok": true,
+      "detail": "[\"bad-row:1\"]"
+    },
+    {
+      "name": "no page errors (sign-in log)",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

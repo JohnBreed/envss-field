@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48.3 (12 Nov 2026 AWST): times from START/STOP only (Edit time needs a reason, kept in the audit trail); COC and Mark event complete blocked while samples are prepped / not stopped; not used / void status. -->
+<!-- ENVSS Field v48.4 (13 Nov 2026 AWST): next / previous arrows on sample screens (within the event) and on event screens (within the project). v48.3 (12 Nov 2026 AWST): times from START/STOP only (Edit time needs a reason, kept in the audit trail); COC and Mark event complete blocked while samples are prepped / not stopped; not used / void status. -->
 <!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
 <!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
 <!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
@@ -9,7 +9,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.3</title>
+  <title>ENVSS Field v48.4</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -393,7 +393,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.3</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.4</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -409,12 +409,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.3"></script>
+  <script src="config.js?v=48.4"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.3"; /* 2026-11-12 (AWST): v48.3 = v48.2 + time capture lock (START/STOP or Edit time with a reason), COC / Mark complete gate for unfinished samples, not used / void status. v48.2 = v48.1 + AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks, read-only Podio pull). v48.1: end flow vs the sample's own start flow. v48 quick fixes on v46 + noise.js 47.0. */
+const APP_VERSION = "48.4"; /* 2026-11-13 (AWST): v48.4 = v48.3 + next / previous arrows (samples within an event, events within a project). v48.3 = v48.2 + time capture lock (START/STOP or Edit time with a reason), COC / Mark complete gate for unfinished samples, not used / void status. v48.2 = v48.1 + AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks, read-only Podio pull). v48.1: end flow vs the sample's own start flow. v48 quick fixes on v46 + noise.js 47.0. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -11242,6 +11242,187 @@ function fixOpen(ts) {
     + ".v483-gate{list-style:none;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:10px}.v483-gate li{border:1px solid #3A4258;border-radius:12px;padding:10px}"
     + ".v483-gbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.v483-gbtns .btn{padding:8px 10px;font-size:14px}.linkish{background:none;border:0;color:inherit;font-weight:700;padding:0;text-decoration:underline;cursor:pointer;font-size:15px}"
     + ".badge.s-not_used{background:#3A4258;color:#D7DCEA}.v483-nu{border:2px solid #6B7590;margin:8px 0}.v483-laptop{color:#FFC46B}.v483-nudge{font-size:17px;font-weight:700;line-height:1.4;margin:0}";
+  document.head.appendChild(st);
+  render();
+})();
+</script>
+
+<script>
+/* ===== v48.4: next / previous arrows (John, 13 Nov 2026 AWST, voice) =====
+   1. Sample screens (AFM, hygiene, noise, blank: any view.page === "train"): previous / next sample in the same event,
+      in the same order as the event list (trainsOf: by sample number, noise after airborne), with "3 of 11".
+   2. Event screens (a project's events): previous / next event of the same project, by date then event code.
+   Moving saves exactly like the "← Event" back button (blur the focused box so its change handler runs, then
+   collectTrain + commit), so the v48.3 time lock (collectTrain wrapper), COC / Mark complete gate and the v48.2 AFM
+   checks (repainted on commit / render) all still apply. No data is written by the arrows themselves.
+   Wide screens (Chromebook) also get big arrows in the empty side margins; narrow screens get the inline bar only,
+   so nothing covers an input or START / STOP. */
+(function () {
+  if (typeof render !== "function") return;
+  const esc4 = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c]);
+  function curTrain() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function sampleList(t) { return t ? trainsOf(t.eventId) : []; }
+  function evKey(e) { return String(e.date || "9999-99-99"); }
+  function eventList(ev) {
+    if (!ev) return [];
+    return db.events.filter(e => e.projectId === ev.projectId).slice().sort((a, b) => {
+      const d = evKey(a).localeCompare(evKey(b)); if (d) return d;
+      return String(a.code || "").localeCompare(String(b.code || ""), undefined, { numeric: true }) || String(a.id).localeCompare(String(b.id));
+    });
+  }
+  function neighbours() {
+    if (view.page === "train") {
+      const t = curTrain(); if (!t) return null;
+      let list = sampleList(t); let dayNote = "";
+      const dk = (view.dFilter || {})[t.eventId] || "";
+      if (dk) { const ymd = dayYmd(dk); const sub = list.filter(x => sampleDay(x) === ymd); if (sub.some(x => x.id === t.id)) { list = sub; dayNote = " · " + DAYS.find(x => x[0] === dk)[1]; } }
+      const i = list.findIndex(x => x.id === t.id); if (i < 0) return null;
+      return { kind: "sample", dayNote, i, n: list.length, prev: list[i - 1] || null, next: list[i + 1] || null,
+        label: x => (typeof displayNo === "function" ? displayNo(x) : ("Sample " + (x.sampleNo || ""))) };
+    }
+    if (view.page === "event") {
+      const ev = eventById(view.eventId); if (!ev) return null;
+      const list = eventList(ev); const i = list.findIndex(x => x.id === ev.id); if (i < 0) return null;
+      return { kind: "event", i, n: list.length, prev: list[i - 1] || null, next: list[i + 1] || null, label: x => String(x.code || "Event") };
+    }
+    return null;
+  }
+  function blocked() { return !!document.querySelector(".v483-modal"); }
+  function flushFocused() {
+    const a = document.activeElement;
+    if (a && a !== document.body && typeof a.blur === "function" && document.getElementById("app") && document.getElementById("app").contains(a)) a.blur();
+  }
+  function goSample(id) {
+    if (blocked()) return;
+    if (!db.trains.some(x => x.id === id)) return;
+    flushFocused();
+    const t = curTrain();
+    if (t) { collectTrain(t); commit(); }   /* same as leaveSample (the "← Event" button) */
+    openTrain(id);
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  function goEvent(id) {
+    if (blocked()) return;
+    if (!eventById(id)) return;
+    flushFocused();   /* event boxes (rotameter, protocol, TAT) save on change */
+    openEvent(id);
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  function go(dir) {
+    const nb = neighbours(); if (!nb) return;
+    const target = dir < 0 ? nb.prev : nb.next; if (!target) return;
+    if (nb.kind === "sample") goSample(target.id); else goEvent(target.id);
+  }
+  function barHtml(nb) {
+    const what = nb.kind === "sample" ? "sample" : "event";
+    const pos = (nb.i + 1) + " of " + nb.n + (nb.kind === "event" ? " events in this project" : (nb.dayNote || ""));
+    return `<div class="v484-nav" id="v484Nav" data-kind="${nb.kind}">
+      <button type="button" class="btn ghost v484-btn" id="v484Prev" data-dir="-1" ${nb.prev ? "" : "disabled"} aria-label="Previous ${what}">‹ ${nb.prev ? esc4(nb.label(nb.prev)) : "Prev"}</button>
+      <span class="v484-pos" id="v484Pos">${esc4(pos)}</span>
+      <button type="button" class="btn ghost v484-btn" id="v484Next" data-dir="1" ${nb.next ? "" : "disabled"} aria-label="Next ${what}">${nb.next ? esc4(nb.label(nb.next)) : "Next"} ›</button>
+    </div>`;
+  }
+  function paint() {
+    document.querySelectorAll(".v484-side").forEach(x => x.remove());
+    const nb = neighbours(); if (!nb || nb.n < 2) return;
+    const app = document.getElementById("app"); if (!app || document.getElementById("v484Nav")) return;
+    const back = app.querySelector(".wrap > button.btn.ghost");
+    const tmp = document.createElement("div"); tmp.innerHTML = barHtml(nb);
+    const bar = tmp.firstElementChild;
+    if (back) back.insertAdjacentElement("afterend", bar); else (app.querySelector(".wrap") || app).prepend(bar);
+    bar.querySelectorAll(".v484-btn").forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); go(+b.dataset.dir); });
+    const what = nb.kind === "sample" ? "sample" : "event";
+    [[-1, nb.prev, "‹", "left"], [1, nb.next, "›", "right"]].forEach(([dir, target, sym, side]) => {
+      if (!target) return;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "v484-side v484-" + side; b.id = dir < 0 ? "v484SidePrev" : "v484SideNext";
+      b.setAttribute("aria-label", (dir < 0 ? "Previous " : "Next ") + what + ": " + nb.label(target));
+      b.title = (dir < 0 ? "Previous " : "Next ") + what + ": " + nb.label(target);
+      b.innerHTML = `<span class="v484-sym">${sym}</span><span class="v484-lab">${esc4(nb.label(target))}</span>`;
+      b.onclick = e => { e.preventDefault(); e.stopPropagation(); go(dir); };
+      document.body.appendChild(b);
+    });
+  }
+  /* ---------- v48.4 day filter: Yesterday / Today / Tomorrow (John, 13 Nov 2026 10:39 AWST, voice) ----------
+     Sample day (Perth): shift date (the planned day; a night shift that runs past midnight stays on its shift day)
+     -> else the Perth date of START -> else the event date -> else no day (only shown under no day filter).
+     Day filter AND status filter combine (the status chip counts follow the chosen day). Tap the lit day chip to clear it. */
+  const PERTH = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Perth", year: "numeric", month: "2-digit", day: "2-digit" });
+  function perthYmd(ms) { const d = new Date(ms); if (isNaN(d)) return ""; const p = {}; PERTH.formatToParts(d).forEach(x => p[x.type] = x.value); return p.year + "-" + p.month + "-" + p.day; }
+  function addDays(ymd, n) { const d = new Date(ymd + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  const DAYS = [["yesterday", "Yesterday", -1], ["today", "Today", 0], ["tomorrow", "Tomorrow", 1]];
+  function dayYmd(key, nowMs) { const r = DAYS.find(x => x[0] === key); return r ? addDays(perthYmd(nowMs == null ? Date.now() : nowMs), r[2]) : ""; }
+  const okYmd = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s || "").trim());
+  function sampleDay(t) {
+    if (!t) return "";
+    if (okYmd(t.shiftDate)) return String(t.shiftDate).trim();
+    if (t.startAt) { const y = perthYmd(t.startAt); if (y) return y; }
+    const ev = eventById(t.eventId); if (ev && okYmd(ev.date)) return String(ev.date).trim();
+    return "";
+  }
+  function eventOnDay(e, ymd) { if (okYmd(e.date) && String(e.date).trim() === ymd) return true; return trainsOf(e.id).some(t => sampleDay(t) === ymd); }
+  const curDay = () => view.page === "event" ? ((view.dFilter || {})[view.eventId] || "") : view.page === "project" ? ((view.pDay || {})[view.projectId] || "") : "";
+  function dayChips(attr, active, countFor) {
+    return `<div class="v484-days" id="${attr === "data-v484day" ? "sampleDayFilters" : "eventDayFilters"}">` + DAYS.map(([k, l]) =>
+      `<button type="button" class="chip v484-day ${k === "today" ? "v484-today" : ""} ${active === k ? "on" : ""}" ${attr}="${k}" aria-pressed="${active === k}">${l} <span class="chip-n">${countFor(dayYmd(k))}</span></button>`).join("")
+      + (active ? `<span class="v484-dayhint">Showing ${esc4(DAYS.find(x => x[0] === active)[1].toLowerCase())} (${esc4(dayYmd(active))}, Perth) · tap again to show all days</span>` : "") + `</div>`;
+  }
+  const _elh = eventListHtml;
+  eventListHtml = function (ts) {
+    if (!ts || !ts.length) return _elh.apply(this, arguments);
+    const d = curDay();
+    const chips = dayChips("data-v484day", d, ymd => ts.filter(t => sampleDay(t) === ymd).length);
+    let list = ts;
+    if (d) { const ymd = dayYmd(d); list = ts.filter(t => sampleDay(t) === ymd); }
+    if (!list.length) {
+      const f = (view.sFilter || {})[view.eventId] || "all";
+      return chips + sampleFilterHtml(list, f) + `<div class="empty" id="v484DayEmpty">No samples ${esc4(DAYS.find(x => x[0] === d)[1].toLowerCase())}.</div>`;
+    }
+    return chips + _elh.call(this, list);
+  };
+  window.eventListHtml = eventListHtml;
+  const _emf = eventMatchesFilter;
+  eventMatchesFilter = function (e, f) {
+    if (!_emf.apply(this, arguments)) return false;
+    const d = view.page === "project" ? ((view.pDay || {})[view.projectId] || "") : "";
+    return !d || eventOnDay(e, dayYmd(d));
+  };
+  window.eventMatchesFilter = eventMatchesFilter;
+  document.addEventListener("click", e => {
+    const b = e.target.closest && e.target.closest("[data-v484day],[data-v484pday]"); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (b.hasAttribute("data-v484day")) { view.dFilter = view.dFilter || {}; const k = b.dataset.v484day; view.dFilter[view.eventId] = view.dFilter[view.eventId] === k ? "" : k; }
+    else { view.pDay = view.pDay || {}; const k = b.dataset.v484pday; view.pDay[view.projectId] = view.pDay[view.projectId] === k ? "" : k; }
+    render();
+  }, true);
+  function paintProjectDays() {
+    const sd = document.getElementById("sampleDayFilters"), sf = document.getElementById("sampleFilters");
+    if (sd && sf && sd.nextElementSibling !== sf) sf.insertAdjacentElement("beforebegin", sd);   /* keep the day chips right above the status chips */
+    if (view.page !== "project" || document.getElementById("eventDayFilters")) return;
+    const p = project(view.projectId); if (!p) return;
+    const filters = document.querySelector('#app .filters [data-filter]'); const row = filters && filters.closest(".filters"); if (!row) return;
+    const evs = db.events.filter(e => e.projectId === p.id);
+    row.insertAdjacentHTML("beforebegin", dayChips("data-v484pday", curDay(), ymd => evs.filter(e => eventOnDay(e, ymd)).length));
+  }
+  const _render484 = render;
+  render = function () { const r = _render484.apply(this, arguments); try { paintProjectDays(); } catch (e) { console.warn("v48.4 days", e); } try { paint(); } catch (e) { console.warn("v48.4 nav", e); } return r; };
+  window.render = render;
+  window.v484 = { neighbours, eventList, go, goSample, goEvent, sampleDay, perthYmd, dayYmd, eventOnDay };
+
+  const st = document.createElement("style");
+  st.textContent = ".v484-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 2px;flex-wrap:nowrap}"
+    + ".v484-btn{min-height:48px;min-width:96px;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42%}"
+    + ".v484-btn[disabled]{opacity:.35;cursor:default}"
+    + ".v484-pos{font-weight:700;opacity:.85;text-align:center;flex:1 1 auto;white-space:nowrap}"
+    + ".v484-side{position:fixed;top:50%;transform:translateY(-50%);z-index:60;width:76px;min-height:132px;border:2px solid var(--edge,#3A4258);border-radius:16px;"
+    + "background:rgba(27,35,64,.92);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:8px 4px;box-shadow:0 6px 18px rgba(0,0,0,.35)}"
+    + ".v484-side:hover,.v484-side:focus-visible{background:#2B3A6B;outline:none}.v484-left{left:24px}.v484-right{right:24px}"
+    + ".v484-sym{font-size:44px;line-height:1;font-weight:700}.v484-lab{font-size:12px;font-weight:700;text-align:center;line-height:1.2;word-break:break-word}"
+    + ".v484-days{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 6px}"
+    + ".v484-day{min-height:44px;font-weight:700}.v484-today{min-width:120px;font-size:17px;border-width:2px}"
+    + ".v484-dayhint{align-self:center;font-size:13px;opacity:.8;margin-left:4px}"
+    + "@media (max-width:1279px){.v484-side{display:none}}"
+    + "@media print{.v484-side,.v484-nav{display:none}}";
   document.head.appendChild(st);
   render();
 })();
