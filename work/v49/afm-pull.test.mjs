@@ -1,7 +1,10 @@
-/* v48.2: read-only AFM pull from Podio (mirror views) — checks with mocked Supabase only.
-   Usage: ROOT=/workspace/afm-build node work/v49/afm-pull.test.mjs <chromebook|pixel7>
-   Fixture: work/v49/fixtures/podio-afm-20261113.json (real mirror rows for 0017889, 0018637, 0019299 on 13 Nov 2026;
-   contact names/phones/emails replaced because the repo is public). No production reads or writes. */
+/* v48.5: read-only AFM pull from Podio (mirror views) — checks with mocked Supabase only.
+   Usage: ROOT=/workspace/time-lock node work/v49/afm-pull.test.mjs chromebook
+   Fixture: work/v49/fixtures/podio-afm-20261113.json (sanitised mirror rows for all 9 AFM events at
+   Podio "Report not sent" / "Final Report not Generated" as of 13 Nov 2026 AWST, including 0018811,
+   0019353, 14 Nov follow-ons and 0019438 on 16 Nov). Contact names/phones/emails replaced because
+   the repo is public. 0019438 is omitted from envss_projects to check the read-only stub.
+   No production reads or writes. */
 process.env.ROOT = process.env.ROOT || "/workspace/afm-build";
 import { serve, launch, VIEWPORTS, mockSupabase, sleep, SESSION } from "../v46/harness.mjs";
 import fs from "fs";
@@ -42,7 +45,7 @@ const shot = n => page.screenshot({ path: path.join(shotDir, `${vp}-podio-${n}.p
 /* 0. boot + storage names */
 const boot = await ev(() => ({ v: (document.getElementById("appVersion") || {}).textContent, key: KEY, legacy: LEGACY_KEY, api: !!window.envssAfmPodio,
   src: document.documentElement.innerHTML }));
-ok("boot: app v48.2", boot.v === "v48.2", boot.v);
+ok("boot: app v48.5", boot.v === "v48.5", boot.v);
 ok("storage: local key unchanged (envss-field-next-v32)", boot.key === "envss-field-next-v32");
 ok("storage: legacy key unchanged (envss-field-v04)", boot.legacy === "envss-field-v04");
 ok("storage: IndexedDB names unchanged (photos, drive, v46)", boot.src.includes("envss-field-photos") && boot.src.includes("envss-field-drive") && boot.src.includes("envss-field-v46"));
@@ -64,16 +67,22 @@ const pure = await ev(fx => {
   const evs = fx.v_field_afm_events.map(M.event);
   const sm = fx.v_field_afm_samples.map(M.sample);
   const by = id => sm.filter(s => s.eventItemId === id).sort((a, b) => a.sampleNo - b.sampleNo);
-  return { evs, counts: Object.fromEntries(evs.map(e => [e.jobNumber, by(e.itemId).length])), s: Object.fromEntries(evs.map(e => [e.jobNumber, by(e.itemId)])),
+  const sFirst = {};
+  evs.forEach(e => { if (!sFirst[e.jobNumber]) sFirst[e.jobNumber] = by(e.itemId); });
+  return { evs, counts: Object.fromEntries(evs.map(e => [e.jobNumber, by(e.itemId).length])), s: sFirst,
+    byItemCount: Object.fromEntries(evs.map(e => [e.itemId, by(e.itemId).length])),
     cow: [M.cowl("ENVSS12577"), M.cowl("ESS 01850"), M.cowl("", 1850), M.cowl("12 582")] };
 }, fx);
 const E = j => pure.evs.find(e => e.jobNumber === j);
-ok("map: three events found with job numbers 0017889/0018637/0019299", ["0017889", "0018637", "0019299"].every(j => E(j)), pure.evs.map(e => e.jobNumber).join(","));
-ok("map: references kept", E("0017889").reference === "ENVSS-HAZ-AFM-0017889-0011-20261113" && E("0018637").reference === "ENVSS-HAZ-AFM-0018637-0011-20261113" && E("0019299").reference === "ENVSS-HAZ-AFM-0019299-0010-20261113");
-ok("map: date 2026-11-13 07:00, Next Day 0700 → next_0700, task Earthworks", pure.evs.every(e => e.date === "2026-11-13" && e.startTime === "07:00" && e.tat === "next_0700" && e.task === "Earthworks"));
-ok("map: all three are open (report not generated)", pure.evs.every(e => e.open));
-ok("map: site address from Podio location", E("0019299").siteAddress === "Camfield Dr, Burswood WA 6100, Australia" && E("0018637").siteAddress === "PESP-CMC/PWD", E("0018637").siteAddress);
-ok("map: Podio sample counts 11 / 9 / 5", pure.counts["0017889"] === 11 && pure.counts["0018637"] === 9 && pure.counts["0019299"] === 5, JSON.stringify(pure.counts));
+const byItem = Object.fromEntries(pure.evs.map(e => [e.itemId, e]));
+const E13 = (j, d) => pure.evs.find(e => e.jobNumber === j && e.date === d);
+ok("map: nine Report-not-sent events, not a fixed set of three", pure.evs.length === 9 && ["0017889", "0018637", "0019299", "0018811", "0019353", "0019438"].every(j => E(j)), pure.evs.map(e => e.reference).join(", "));
+ok("map: original 13 Nov references kept", E13("0017889", "2026-11-13").reference === "ENVSS-HAZ-AFM-0017889-0011-20261113" && E13("0018637", "2026-11-13").reference === "ENVSS-HAZ-AFM-0018637-0011-20261113" && E13("0019299", "2026-11-13").reference === "ENVSS-HAZ-AFM-0019299-0010-20261113");
+ok("map: 13 Nov Earthworks events are 07:00 next_0700", ["0017889", "0018637", "0019299"].every(j => { const e = E13(j, "2026-11-13"); return e.date === "2026-11-13" && e.startTime === "07:00" && e.tat === "next_0700" && e.task === "Earthworks"; }));
+ok("map: all nine are open (Report not sent + Final Report not Generated)", pure.evs.every(e => e.open && e.sendFinal === "Report not sent" && e.reportStatus === "Final Report not Generated"));
+ok("map: later / other-day events included (12, 14 and 16 Nov)", E13("0018811", "2026-11-12") && E13("0017889", "2026-11-14") && E13("0018637", "2026-11-14") && E13("0019438", "2026-11-16") && E13("0019353", "2026-11-13"), pure.evs.map(e => e.reference + "@" + e.date).join(", "));
+ok("map: site address from Podio location", E13("0019299", "2026-11-13").siteAddress === "Camfield Dr, Burswood WA 6100, Australia" && E13("0018637", "2026-11-13").siteAddress === "PESP-CMC/PWD", E13("0018637", "2026-11-13").siteAddress);
+ok("map: Podio sample counts 11 / 9 / 5 on the original 13 Nov events", (pure.byItemCount["3393177640"] === 11 && pure.byItemCount["3393177499"] === 9 && pure.byItemCount["3393177423"] === 5), JSON.stringify(pure.byItemCount));
 ok("map: sample 0 is the field blank on each event", Object.values(pure.s).every(l => l[0].sampleNo === 0 && l[0].blank && !l[0].pumpSerial));
 ok("map: 0019299 Pump 1 = pump 101587, cowl 12577, rotameter 4435, flow 2, location stripped", (s => s.pumpSerial === "101587" && s.cowl === "12577" && s.rotameter === "4435" && s.startFlow === 2 && s.location === "Exclusion Zone – Northern Boundary (West)")(pure.s["0019299"][1]), JSON.stringify(pure.s["0019299"][1]));
 ok("map: 0018637 blank cowl 12581, Pump 8 cowl 12589", pure.s["0018637"][0].cowl === "12581" && pure.s["0018637"][8].cowl === "12589");
@@ -173,10 +182,37 @@ opts.tableStatus = { v_field_afm_events: 404 };
 await ev(() => { openProject("podio-3387717386"); });
 await sleep(200);
 const r404 = await ev(async () => { const r = await envssAfmPodio.pull(); return { r, note: envssAfmPodio.state().note, cached: envssAfmPodio.cache().events.length }; });
-ok("views missing (404): note shown, cached Podio copy kept", r404.r === false && /isn't switched on yet/.test(r404.note) && r404.cached === 3, JSON.stringify(r404));
+ok("views missing (404): note shown, cached Podio copy kept", r404.r === false && /isn't switched on yet/.test(r404.note) && r404.cached === 9, JSON.stringify(r404));
 await sleep(200);
 await shot("views-missing");
 delete opts.tableStatus;
+
+/* 9b. mapper: a sent report is not open, even if a stale field says Report not sent */
+const closed = await ev(() => envssAfmPodio.map.event({ item_id: 1, title: "x", fields: { "reference-3": "ENVSS-HAZ-AFM-0019999-001-20261113", "generate-final-report": "Report Sent to Client", "send-final-report-to-client": "Report not sent" } }));
+ok("map: stale Report not sent + Report Sent to Client is closed", closed && closed.open === false && closed.jobNumber === "0019999");
+
+/* 9c. jobs missing from envss_projects still appear after the AFM pull */
+await ev(() => { if (typeof goDash === "function") goDash(); else { view.page = "dash"; view.projectId = null; render(); } });
+await sleep(300);
+const stub = await ev(() => {
+  const p = (db.projects || []).find(x => x.number === "0019438" || String(x.id) === "podio-afm-job-0019438");
+  const card = document.body.innerText || "";
+  return { id: p && p.id, name: p && p.name, stub: !!(p && p.afmFromPodio), shown: /0019438/.test(card), count: (db.projects || []).filter(x => x.number === "0019438").length };
+});
+ok("dash: 0019438 appears as a read-only stub (not in envss_projects)", stub.stub && stub.id === "podio-afm-job-0019438" && stub.shown && stub.count === 1, JSON.stringify(stub));
+await ev(id => openProject(id), stub.id);
+await sleep(300);
+const stubCard = await ev(() => ({ html: (document.getElementById("afmPodioPlan") || {}).innerText || "", btn: !!document.querySelector("[data-afm-start='3393691658']") }));
+ok("0019438 project: AFM card lists 16 Nov event and Start AFM from Podio", /ENVSS-HAZ-AFM-0019438-001-20261116/.test(stubCard.html) && stubCard.btn && /not yet on the usual project list/.test(stubCard.html), stubCard.html.slice(0, 240));
+await ev(() => document.querySelector("[data-afm-start='3393691658']").click());
+await sleep(400);
+const e9438 = await ev(() => {
+  const e = db.events.find(x => x.podioAfmItemId === "3393691658");
+  const ts = e ? trainsOf(e.id) : [];
+  return { code: e && e.code, date: e && e.date, n: ts.length, cowls: ts.map(t => t.cowlNo), pumps: ts.map(t => t.pumpSerial) };
+});
+ok("start 0019438: code, date 2026-11-16, 5 samples, cowls 13063–13067", e9438.code === "ENVSS-HAZ-AFM-0019438-001-20261116" && e9438.date === "2026-11-16" && e9438.n === 5 && e9438.cowls.join(",") === "13063,13064,13065,13066,13067", JSON.stringify(e9438));
+await shot("project-0019438-stub");
 
 /* 10. read only: only GETs to the AFM views, nothing to Podio */
 const afmReq = log.filter(l => /v_field_afm_/.test(l));
