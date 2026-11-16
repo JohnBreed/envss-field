@@ -2,7 +2,7 @@
 
 The field app keeps the local download. It also queues a copy. This Apps Script, signed in as **developer@envss.com.au**, creates **new** files in `{job}_Field-App` inside the job’s project folder on the Current Projects shared drives. It runs every 5 minutes.
 
-It does **not** edit, move, rename, or delete existing files in a job folder. The only file it updates is `manifest.csv` inside `{job}_Field-App`, and only the copy it created itself. If a name is already taken it uploads `name_2`, `name_3`, and so on. Each queued item is copied once (`drive_file_id` is stored).
+It does **not** edit, move, rename, or delete existing files in a job folder. The only file it updates is the `manifest.csv` (or a uniquely named `manifest_2.csv` if that name is already taken) inside `{job}_Field-App`, and only the copy it created itself (tagged `envssManifest=1`). If a name is already taken it uploads `name_2`, `name_3`, and so on. Each queued item is copied once: a `source_key` that already has a file in that folder is not uploaded again, and `drive_file_id` is stored. Queue status updates always patch by row id.
 
 The Supabase key is the Script Property **`drive-worker`**. It is a dedicated secret API key with that same name, not the service-role key. It is not in the app and not in git.
 
