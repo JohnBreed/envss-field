@@ -194,8 +194,14 @@ function appendManifest_(folderId, line, sourceKey) {
     return;
   }
   if (!existing.appProperties || existing.appProperties.envssManifest !== "1") return;
-  var got = Drive.Files.get(existing.id, { alt: "media", supportsAllDrives: true });
-  var text = got.getDataAsString();
+  // Drive.Files.get(..., {alt: "media"}) in the advanced service throws "Response Code: 200" with the
+  // file body as the message, so read the manifest bytes with a plain authorised GET instead.
+  var got = UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(existing.id) + "?alt=media&supportsAllDrives=true", {
+    headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  });
+  if (got.getResponseCode() >= 300) throw new Error("manifest read " + got.getResponseCode());
+  var text = got.getContentText();
   if (text.indexOf(sourceKey) >= 0) return;
   var updated = text.replace(/\s*$/, "") + "\n" + line + "\n";
   Drive.Files.update({}, existing.id, Utilities.newBlob(updated, "text/csv", existing.name || "manifest.csv"), { supportsAllDrives: true });
