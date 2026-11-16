@@ -32,6 +32,15 @@ function envssIsProjectRoot_(name, job) {
 }
 function envssMatchJobFolders_(job, folders) {
   var hits = (folders || []).filter(function (f) { return f && envssIsProjectRoot_(f.name, job); });
+  // Subfolders such as "0019321_MEGA Resources_Admin" sit inside the project folder and also start
+  // with the job number. Keep only the outermost match: drop any hit whose parent is another hit.
+  if (hits.length > 1) {
+    var ids = {};
+    hits.forEach(function (f) { ids[f.id] = 1; });
+    hits = hits.filter(function (f) {
+      return !(f.parents || []).some(function (p) { return ids[p]; });
+    });
+  }
   if (hits.length === 1) return { ok: true, folder: hits[0] };
   if (!hits.length) return { ok: false, status: "stopped", message: "job folder not found" };
   return { ok: false, status: "stopped", message: "job folder not unique" };
@@ -300,10 +309,14 @@ function testFolderMatch() {
     { id: "18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4", name: "0019032 Applied Safety & Risk Management" },
     { id: "admin", name: "0019032_Admin" },
     { id: "lab", name: "0019032_Lab" },
-    { id: "longer", name: "00193330 other job" }
+    { id: "longer", name: "00193330 other job" },
+    { id: "R321", name: "0019321-MEGA Resources-HYG-DMIRS-SRS-Rama Gold Project", parents: ["shared"] },
+    { id: "A321", name: "0019321_MEGA Resources_Admin", parents: ["R321"] },
+    { id: "L321", name: "0019321_MEGA Resources_HYG_Lab", parents: ["R321"] }
   ];
   Logger.log(JSON.stringify(envssMatchJobFolders_("0019333", folders)));
   Logger.log(JSON.stringify(envssMatchJobFolders_("0019032", folders)));
+  Logger.log(JSON.stringify(envssMatchJobFolders_("0019321", folders)));
   Logger.log(envssPhotoFileName_("0019333-001", false, 3, "filter", 1));
   Logger.log(envssUniqueDriveName_(["0019333-001_Laboratory_COC.xlsx"], "0019333-001_Laboratory_COC.xlsx"));
 }
