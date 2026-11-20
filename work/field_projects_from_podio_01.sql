@@ -1,7 +1,8 @@
 -- field_projects_from_podio_01.sql
--- DRAFT, NOT EXECUTED. Project luyprcmjyruznluboyms. Written 2026-11-20 (AWST).
--- Apply only after John approves. This file only CREATES a function; it does not
--- insert or update any rows. After the file is applied, run a dry-run with:
+-- Project luyprcmjyruznluboyms. Written and applied 2026-11-20 (AWST).
+-- Function was later corrected so ON CONFLICT does not clash with the plpgsql
+-- `id` output column. This file CREATES the function; it does not insert or
+-- update any rows by itself. After apply, dry-run with:
 --   select * from public.sync_envss_projects_from_podio(true);
 -- and only then, after a second OK from John:
 --   select * from public.sync_envss_projects_from_podio(false);
@@ -43,6 +44,7 @@ language plpgsql
 security definer
 set search_path to 'public', 'pg_temp'
 as $fn$
+#variable_conflict use_column
 declare
   writer constant text := 'field-projects-from-podio';
 begin
@@ -159,17 +161,17 @@ begin
     return;
   end if;
 
-  insert into public.envss_projects (id, payload, updated_at, updated_by)
+  insert into public.envss_projects as ep (id, payload, updated_at, updated_by)
   select p.row_id, p.new_payload, now(), writer
   from pg_temp._sync_envss_projects_plan p
   where p.planned_action in ('insert', 'update')
-  on conflict (id) do update
+  on conflict on constraint envss_projects_pkey do update
     set payload = excluded.payload,
         updated_at = excluded.updated_at,
         updated_by = excluded.updated_by
-    where envss_projects.id like 'podio-%'
-      and coalesce(envss_projects.payload->>'source', '') = 'podio'
-      and envss_projects.payload is distinct from excluded.payload;
+    where ep.id like 'podio-%'
+      and coalesce(ep.payload->>'source', '') = 'podio'
+      and ep.payload is distinct from excluded.payload;
 end;
 $fn$;
 
