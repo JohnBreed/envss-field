@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48.4 (13 Nov 2026 AWST): next / previous arrows on sample screens (within the event) and on event screens (within the project). v48.3 (12 Nov 2026 AWST): times from START/STOP only (Edit time needs a reason, kept in the audit trail); COC and Mark event complete blocked while samples are prepped / not stopped; not used / void status. -->
+<!-- ENVSS Field v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
 <!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
 <!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
 <!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
@@ -9,7 +9,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.4</title>
+  <title>ENVSS Field v48.5</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -393,7 +393,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.4</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.5</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -409,12 +409,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.4"></script>
+  <script src="config.js?v=48.5"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.4"; /* 2026-11-13 (AWST): v48.4 = v48.3 + next / previous arrows (samples within an event, events within a project). v48.3 = v48.2 + time capture lock (START/STOP or Edit time with a reason), COC / Mark complete gate for unfinished samples, not used / void status. v48.2 = v48.1 + AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live checks, read-only Podio pull). v48.1: end flow vs the sample's own start flow. v48 quick fixes on v46 + noise.js 47.0. */
+const APP_VERSION = "48.5"; /* 2026-11-13 (AWST): v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -10104,13 +10104,16 @@ window.HIRE_CATALOG = HIRE_CATALOG;
 </script>
 
 <script>
-/* ===== v49 draft: AFM read-only pull from Podio (via the Supabase podio_items mirror). =====
+/* ===== v48.5: AFM read-only pull from Podio (via the Supabase podio_items mirror). =====
    Reads views v_field_afm_events (Podio app 21120412 "AFM Event") and v_field_afm_samples (Podio app 21120488
    "AFM Samples"). The app never calls Podio and never writes to Podio; nothing here sends Podio anything.
-   Fill-blanks only: a value already captured in the field app is never overwritten. Every value that came
-   from Podio is listed on the event ("From Podio (AFM)") and on the sample. IndexedDB names are unchanged;
-   the downloaded Podio copy is kept in localStorage under its own key (envss-podio-afm-v49).
-   SQL for the two views: work/afm_v49_01_afm_podio_views.sql (rollback kept). Applied with the v48.2 publish. */
+   Active = Send Final Report to Client is "Report not sent" and AFM Event Final Report Status is
+   "Final Report not Generated" (the Podio stage). Until the v48.5 view SQL is applied, the live
+   v48.2 views already return those events (30-day window + status regex); the client still treats
+   them as open, and also surfaces a read-only project stub when a job has an open AFM event but
+   is not yet in envss_projects. Fill-blanks only. IndexedDB names are unchanged; the downloaded
+   Podio copy is kept in localStorage under envss-podio-afm-v49.
+   SQL: work/afm_v48_5_01_afm_report_not_sent.sql (rollback kept). NOT APPLIED until John approves. */
 (function () {
   const CACHE = "envss-podio-afm-v49";
   const st = { busy: false, note: "", err: "", at: 0 };
@@ -10185,9 +10188,13 @@ window.HIRE_CATALOG = HIRE_CATALOG;
         poc, totalSamples: num(f.calculation),
         cocStatus: text(f["generate-report"]), cocSend: text(f["send-report"]), reportStatus: text(f["generate-final-report"]),
         sitePlanLink: linkIn(f["editable-site-plan-link"]),
-        lastEdit: row.last_edit_on || "", syncedAt: row.synced_at || ""
+        lastEdit: row.last_edit_on || "", syncedAt: row.synced_at || "",
+        sendFinal: text(f["send-final-report-to-client"])
       };
-      out.open = !CLOSED_REPORT.test(out.reportStatus) && !/cancel/i.test(out.cocStatus);
+      /* v48.5: "Report not sent" is the Podio stage (Send Final Report to Client). Until the
+         v48.5 view SQL is applied, that field may be missing; then fall back to the v48.2 rule. */
+      if (out.sendFinal) out.open = out.sendFinal === "Report not sent" && out.reportStatus === "Final Report not Generated";
+      else out.open = !CLOSED_REPORT.test(out.reportStatus) && !/cancel/i.test(out.cocStatus);
       return out;
     }
     function sample(row) {
@@ -10221,6 +10228,54 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   /* ---------- cache ---------- */
   function readCache() { try { return JSON.parse(localStorage.getItem(CACHE) || "null") || { at: "", events: [], samples: [] }; } catch (e) { return { at: "", events: [], samples: [] }; } }
   function writeCache(c) { try { localStorage.setItem(CACHE, JSON.stringify(c)); } catch (e) {} }
+  /* If an open AFM event's job is not yet in envss_projects, show a read-only stub on the
+     project list so Start AFM from Podio is reachable. Never written to envss_projects or Podio.
+     Removed again when a real project with that job number arrives, or the event leaves the stage. */
+  const AFM_STUB_PREFIX = "podio-afm-job-";
+  function jobKey(p) {
+    const m = String(p && p.number || "").trim().match(/^(\d{7})(?!\d)/);
+    return m ? m[1] : "";
+  }
+  function isAfmStub(p) { return !!p && String(p.id || "").indexOf(AFM_STUB_PREFIX) === 0; }
+  function ensureAfmProjects() {
+    if (typeof db === "undefined" || !db) return 0;
+    const open = readCache().events.filter(e => e.open && e.jobNumber);
+    const jobs = {};
+    open.forEach(e => { (jobs[e.jobNumber] || (jobs[e.jobNumber] = [])).push(e); });
+    const realJobs = new Set((db.projects || []).filter(p => !isAfmStub(p)).map(jobKey).filter(Boolean));
+    let changed = 0;
+    const kept = [];
+    (db.projects || []).forEach(p => {
+      if (!isAfmStub(p)) { kept.push(p); return; }
+      const job = jobKey(p) || String(p.number || "");
+      if (jobs[job] && !realJobs.has(job)) kept.push(p);
+      else changed++;
+    });
+    Object.keys(jobs).forEach(job => {
+      if (realJobs.has(job)) return;
+      if (kept.some(p => isAfmStub(p) && jobKey(p) === job)) return;
+      const evs = jobs[job].slice().sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      const e = evs[evs.length - 1] || evs[0];
+      const company = (e.poc && e.poc.company) || e.projectTitle || "";
+      kept.push({
+        id: AFM_STUB_PREFIX + job,
+        number: job,
+        name: (company ? company + " · " : "") + job + " (AFM from Podio)",
+        client: company,
+        site: e.siteAddress || "",
+        status: "In Progress",
+        source: "podio",
+        active: true,
+        afmFromPodio: true
+      });
+      changed++;
+    });
+    if (changed) {
+      db.projects = kept;
+      try { if (typeof persist === "function") persist(); else if (typeof save === "function") save(); } catch (e) {}
+    }
+    return changed;
+  }
   function eventsForJob(job) { return readCache().events.filter(e => e.jobNumber === job && e.open); }
   function samplesFor(itemId) {
     return readCache().samples.filter(s => s.eventItemId === String(itemId))
@@ -10263,6 +10318,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       let newest = "";
       (evRows || []).concat(smRows || []).forEach(r => { if (r && r.synced_at && r.synced_at > newest) newest = r.synced_at; });
       writeCache({ at: new Date().toISOString(), newest, events, samples });
+      try { if (ensureAfmProjects() && typeof render === "function") render(); } catch (e) { console.warn("v48.5 afm stubs", e); }
       st.at = Date.now(); st.err = "";
       const open = events.filter(e => e.open).length;
       st.note = "Refreshed AFM from Podio: " + open + " open AFM event" + (open === 1 ? "" : "s") + ", " + samples.length + " Podio sample" + (samples.length === 1 ? "" : "s")
@@ -10409,6 +10465,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const rows = job ? eventsForJob(job) : [];
     const c = readCache();
     let h = '<div class="card" id="afmPodioPlan"><h3 class="brand-type" style="margin:0 0 6px">AFM planned in Podio</h3>';
+    if (p && (p.afmFromPodio || isAfmStub(p))) h += '<p class="help">This job is shown because it has an AFM event in Podio at Report not sent. It is not yet on the usual project list. Nothing is sent to Podio.</p>';
     if (!job) h += '<p class="help">This project has no 7-digit job number, so Podio AFM events cannot be matched.</p>';
     else if (!rows.length) h += '<p class="help">No open Podio AFM events on this job' + (c.at ? "" : " on this device yet") + ".</p>";
     rows.forEach(r => {
@@ -10534,7 +10591,19 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   /* The top-bar "Refresh from Podio" also refreshes AFM (the hygiene refresh itself is unchanged). */
   document.addEventListener("click", e => { if (e.target && e.target.id === "btnPodioRefresh" && !e.target.disabled) pull().catch(() => {}); }, true);
 
-  window.envssAfmPodio = { map: M, pull, start: startFromPodio, refill: refillEvent, apply, cache: readCache, state: () => Object.assign({}, st) };
+  if (typeof pullProjects === "function") {
+    const _pp = pullProjects;
+    pullProjects = async function () {
+      const r = await _pp.apply(this, arguments);
+      try {
+        if (ensureAfmProjects() && typeof render === "function" && (view.page === "dash" || view.page === "project" || !view.page)) render();
+      } catch (e) { console.warn("v48.5 afm stubs after projects", e); }
+      return r;
+    };
+    window.pullProjects = pullProjects;
+  }
+
+  window.envssAfmPodio = { map: M, pull, start: startFromPodio, refill: refillEvent, apply, cache: readCache, state: () => Object.assign({}, st), ensureProjects: ensureAfmProjects };
 })();
 </script>
 

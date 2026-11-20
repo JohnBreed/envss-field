@@ -32,3 +32,22 @@ Mapping (fill blanks only; a value already in the field app is kept and listed a
 - A sample number deleted in the field app is not re-added. A Podio cowl already used on another sample in the event is left blank and reported.
 
 Checks: `ROOT=/workspace/afm-build node work/v49/afm-pull.test.mjs chromebook|pixel7` (fixture `work/v49/fixtures/podio-afm-20261113.json`: real mirror rows for 13 Nov 2026 jobs 0017889, 0018637, 0019299; client contact details replaced because the repo is public).
+
+
+## v48.5 — every AFM event at "Report not sent" (draft, 13 Nov 2026 AWST)
+
+John confirmed active means the Podio stage **Send Final Report to Client = Report not sent** (field `send-final-report-to-client`) and **AFM Event Final Report Status = Final Report not Generated** (`generate-final-report`). On 13 Nov 2026 that stage had 9 events in the mirror.
+
+The live v48.2 views already return those same 9 events (status regex + 30-day window). There is no hard-coded list of three jobs in `field.html` or the views. The three-job set was only in the 12 Nov one-off Perth plan and in the original test fixture.
+
+This draft:
+
+- Tightens the views to that exact Podio stage and drops the 30-day window (SQL in `work/afm_v48_5_01_afm_report_not_sent.sql`, rollback kept). **SQL is not applied until John approves.**
+- Keeps the client working against the current views until then (falls back to the v48.2 open rule when `send-final-report-to-client` is not on the row).
+- Surfaces a read-only project stub when a job has an open AFM event but is not yet in `envss_projects` (this is the live gap: 0019438 is in the AFM and Occ Hygiene mirror but missing from the project list). Stubs are never written to `envss_projects` or Podio.
+
+```
+ROOT=/workspace/time-lock node work/v49/afm-pull.test.mjs chromebook
+```
+
+Chromebook viewport is 1366×768. Supabase is mocked. Fixture contact details remain placeholders (`poc@example.com`, `0400 000 000`).
