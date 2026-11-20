@@ -37,6 +37,13 @@ where pi.app_id = 21120412
   and coalesce(pi.fields->>'generate-report', '') !~* 'cancel'
   and public.is_envss_staff();
 
+-- AFM timeout fix (applied live 20 Nov 2026 ~12:15 AWST, John approved). Already exists on
+-- luyprcmjyruznluboyms, so this is a no-op there. On a fresh DB prefer running it alone with
+-- CONCURRENTLY outside a transaction.
+create index if not exists podio_items_afm_sample_event_idx
+  on public.podio_items (((fields -> 'job-site') ->> 'item_id'))
+  where app_id = 21120488 and not coalesce(is_deleted_in_source, false);
+
 create or replace view public.v_field_afm_samples with (security_invoker = false, security_barrier = true) as
 select s.item_id, (s.fields->'job-site'->>'item_id') as event_item_id, s.title, s.last_edit_on, s.synced_at,
        jsonb_build_object(
@@ -48,11 +55,18 @@ select s.item_id, (s.fields->'job-site'->>'item_id') as event_item_id, s.title, 
          'sample-start-2', s.fields->'sample-start-2', 'sample-end-2', s.fields->'sample-end-2',
          'sample-by', s.fields->'sample-by', 'pump-failed', s.fields->'pump-failed', 'referenece', s.fields->'referenece'
        ) as fields
-from public.podio_items s
-where s.app_id = 21120488
-  and not coalesce(s.is_deleted_in_source, false)
-  and (s.fields->'job-site'->>'item_id') in (select e.item_id::text from public.v_field_afm_events e)
-  and public.is_envss_staff();
+from public.v_field_afm_events e
+cross join lateral (
+  -- Per-event lookup on podio_items_afm_sample_event_idx. OFFSET 0 stops the planner
+  -- flattening this into a full scan of all ~16k samples (the 8 s staff timeout, 20 Nov 2026).
+  select si.item_id, si.title, si.last_edit_on, si.synced_at, si.fields
+  from public.podio_items si
+  where si.app_id = 21120488
+    and not coalesce(si.is_deleted_in_source, false)
+    and (si.fields->'job-site'->>'item_id') = e.item_id::text
+  offset 0
+) s
+where public.is_envss_staff();
 
 revoke all on public.v_field_afm_events, public.v_field_afm_samples from public, anon;
 revoke insert, update, delete, truncate, references, trigger on public.v_field_afm_events, public.v_field_afm_samples from authenticated;

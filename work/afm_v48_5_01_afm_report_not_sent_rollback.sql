@@ -1,5 +1,6 @@
 -- Rollback for work/afm_v48_5_01_afm_report_not_sent.sql.
 -- Restores the v48.2 view definitions (open = regex on generate-final-report, samples-date from 30 days ago).
+-- Keeps the 20 Nov 2026 AFM timeout fix (index + per-event samples lookup); the index is not dropped.
 -- NOT APPLIED. Does not drop the views and does not touch any table rows or Podio.
 
 create or replace view public.v_field_afm_events with (security_invoker = false, security_barrier = true) as
@@ -35,11 +36,18 @@ select s.item_id, (s.fields->'job-site'->>'item_id') as event_item_id, s.title, 
          'sample-start-2', s.fields->'sample-start-2', 'sample-end-2', s.fields->'sample-end-2',
          'sample-by', s.fields->'sample-by', 'pump-failed', s.fields->'pump-failed', 'referenece', s.fields->'referenece'
        ) as fields
-from public.podio_items s
-where s.app_id = 21120488
-  and not coalesce(s.is_deleted_in_source, false)
-  and (s.fields->'job-site'->>'item_id') in (select e.item_id::text from public.v_field_afm_events e)
-  and public.is_envss_staff();
+from public.v_field_afm_events e
+cross join lateral (
+  -- Per-event lookup on podio_items_afm_sample_event_idx. OFFSET 0 stops the planner
+  -- flattening this into a full scan of all ~16k samples (the 8 s staff timeout, 20 Nov 2026).
+  select si.item_id, si.title, si.last_edit_on, si.synced_at, si.fields
+  from public.podio_items si
+  where si.app_id = 21120488
+    and not coalesce(si.is_deleted_in_source, false)
+    and (si.fields->'job-site'->>'item_id') = e.item_id::text
+  offset 0
+) s
+where public.is_envss_staff();
 
 comment on view public.v_field_afm_events is 'ENVSS Field v49: read-only open AFM Events (Podio app 21120412) from the podio_items mirror. Staff only. Never written back to Podio.';
 comment on view public.v_field_afm_samples is 'ENVSS Field v49: read-only AFM Samples (Podio app 21120488) linked to open AFM Events, from the podio_items mirror. Staff only. Never written back to Podio.';
