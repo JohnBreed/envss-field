@@ -9257,7 +9257,12 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       const jobNumber = jobNumberFrom(reference, projectTitle, f["job-number"]);
       const turnaroundLabel = textOf(f.selection);
       const lab = relOf(f["which-laboratory-is-processing-samples"]);
-      const attended = relOf(f["report-submitted-by"]);
+      function peopleOf(v) {
+        const arr = Array.isArray(v) ? v : (v == null ? [] : [v]);
+        return arr.map(function (x) { return relOf(x).title; }).filter(Boolean);
+      }
+      const attendedNames = peopleOf(f["report-submitted-by"]);
+      const attended = { title: attendedNames.join(", "), itemId: relOf(f["report-submitted-by"]).itemId };
       const taskRaw = f["task-description"];
       const equipRaw = f["equipment-details"];
       const payload = {
@@ -10183,6 +10188,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
         task: text(f["task-description"]), tatLabel: text(f.selection), tat: tat(text(f.selection)),
         protocol: proto(text(f["monitoring-type"])), rotameter: rel(f.rotameter).title,
         collectedBy: list(f["samples-collected-by"]).join(", "),
+        attendedBy: list(f["report-submitted-by"]).join(", "),
         siteContact: text(f["site-contact-namephone"]),
         siteAddress: loc && typeof loc === "object" ? clean(loc.address || "") : text(loc),
         poc, totalSamples: num(f.calculation),

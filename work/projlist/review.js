@@ -27,6 +27,7 @@
     ".plr-title{overflow-wrap:anywhere}",
     ".plr-status{font-size:12px;opacity:.8;text-align:right;max-width:140px}",
     ".plr-empty{opacity:.75;font-size:13px;margin:0 0 8px}",
+    ".plr-fallback{font-style:italic;opacity:.9}",
     ".plr-chev{min-width:44px;min-height:44px;border-radius:10px;align-self:flex-end}"
   ].join("");
   document.head.appendChild(st);
@@ -116,6 +117,12 @@
     return p.shortName || String(p.name || "").replace(/^\d{7}[-_ ]*/, "") || p.number;
   }
   function typeLab(t) { return t === "fibre" ? "AFM" : "Hygiene"; }
+  function nameOf(ev, p) {
+    const att = ev && String(ev.attendee || "").trim();
+    if (att) return { text: att, fallback: false };
+    if (p && String(p.controller || "").trim()) return { text: "Controller: " + p.controller.trim(), fallback: true };
+    return { text: "No controller", fallback: true };
+  }
 
   function cardHtml(p, evs, today, expanded) {
     const cur = pickCurrent(evs, today);
@@ -127,12 +134,15 @@
     if (n > 1) sum = done + " of " + n + " events done";
     else if (n === 1 && cur) sum = typeLab(cur.type) + " · " + (cur.stage || "Planned");
     else sum = "No field events yet";
-    const sub = [p.controller || "No controller", p.status || ""].filter(Boolean).join(" · ");
-    const evBlock = (expanded && n) ? '<div class="plr-ev">' + evs.map(e =>
-      '<div class="plr-evrow"><div><div class="brand-type" style="font-weight:700;font-size:14px">' + esc(e.code) + "</div>"
-      + '<div class="muted">' + esc(typeLab(e.type) + " · " + niceDate(e.date, today)) + "</div></div>"
-      + badgeFor(e.stage) + "</div>"
-    ).join("") + "</div>" : "";
+    const who = nameOf(cur, p);
+    const sub = [who.text, p.status || ""].filter(Boolean).join(" · ");
+    const evBlock = (expanded && n) ? '<div class="plr-ev">' + evs.map(e => {
+      const w = nameOf(e, p);
+      return '<div class="plr-evrow"><div><div class="brand-type" style="font-weight:700;font-size:14px">' + esc(e.code) + "</div>"
+        + '<div class="muted">' + esc(typeLab(e.type) + " · " + niceDate(e.date, today)) + "</div>"
+        + '<div class="muted' + (w.fallback ? " plr-fallback" : "") + '">' + esc(w.text) + "</div></div>"
+        + badgeFor(e.stage) + "</div>";
+    }).join("") + "</div>" : "";
     const chev = n > 1 ? '<button type="button" class="btn ghost plr-chev" data-plr-expand="' + esc(p.id) + '" aria-label="Show events">' + (expanded ? "▴" : "▾") + "</button>" : "";
     return '<div class="card open-project plr-card" data-project="' + esc(p.id) + '" style="display:block;width:100%;text-align:left">'
       + '<div class="row"><div class="grow">'
@@ -151,7 +161,7 @@
 
   function listForMode() {
     const fx = window.ENVSS_PROJLIST_FIXTURE || {};
-    const mode = Number(window.ENVSS_PROJLIST_REVIEW || 0);
+    const mode = Number(window.ENVSS_PROJLIST_REVIEW == null ? 1 : window.ENVSS_PROJLIST_REVIEW);
     const today = todayYmd();
     const projects = (fx.mockupProjects || []).slice();
     const hideNone = !!view.plrHideNone;
@@ -211,7 +221,8 @@
 
   const _dash = dashHtml;
   dashHtml = function () {
-    if (!Number(window.ENVSS_PROJLIST_REVIEW || 0)) return _dash.apply(this, arguments);
+    const mode = Number(window.ENVSS_PROJLIST_REVIEW == null ? 1 : window.ENVSS_PROJLIST_REVIEW);
+    if (!mode) return _dash.apply(this, arguments);
     try { return reviewHtml(); } catch (e) { console.warn("projlist review", e); return _dash.apply(this, arguments); }
   };
 
@@ -239,5 +250,9 @@
         render();
       };
     });
+  };
+
+  window.envssProjlist = {
+    todayYmd, nameOf, groupOf, nextDate, pickCurrent, evsOf, listForMode, GROUPS
   };
 })();

@@ -80,6 +80,11 @@ for (const vp of ["pixel7", "chromebook"]) {
   if (ev2) await ev2.evaluate(el => el.scrollIntoView({ block: "center" }));
   await sleep(200);
   await shot(page, `a-${vp}-expanded-8637`, false);
+  await setMode(page, 1, "podio-job-0019219");
+  const ev21 = await page.$('[data-project="podio-job-0019219"]');
+  if (ev21) await ev21.evaluate(el => el.scrollIntoView({ block: "center" }));
+  await sleep(200);
+  await shot(page, `a-${vp}-9219`, false);
 
   await setMode(page, 2);
   await shot(page, `b-${vp}`, false);

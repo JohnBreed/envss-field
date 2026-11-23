@@ -1345,15 +1345,8 @@
         "type": "fibre",
         "stage": "Prepped",
         "done": false,
+        "attendee": "",
         "source": "field"
-      },
-      {
-        "code": "ENVSS-HAZ-AFM-0017889-0019",
-        "date": "2026-11-23",
-        "type": "fibre",
-        "stage": "Planned",
-        "done": false,
-        "source": "afm"
       },
       {
         "code": "ENVSS-HAZ-AFM-0017889-0020",
@@ -1361,6 +1354,7 @@
         "type": "fibre",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "afm"
       }
     ],
@@ -1373,14 +1367,7 @@
         "type": "fibre",
         "stage": "Planned",
         "done": false,
-        "source": "afm"
-      },
-      {
-        "code": "ENVSS-HAZ-AFM-0018637-0019",
-        "date": "2026-11-23",
-        "type": "fibre",
-        "stage": "Planned",
-        "done": false,
+        "attendee": "Marisabel Cuspoca",
         "source": "afm"
       },
       {
@@ -1389,6 +1376,7 @@
         "type": "fibre",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "afm"
       }
     ],
@@ -1400,6 +1388,7 @@
         "type": "hygiene",
         "stage": "Needs fields",
         "done": false,
+        "attendee": "Sarah Weber",
         "source": "field"
       }
     ],
@@ -1411,6 +1400,7 @@
         "type": "hygiene",
         "stage": "Needs fields",
         "done": false,
+        "attendee": "",
         "source": "field"
       }
     ],
@@ -1422,6 +1412,7 @@
         "type": "hygiene",
         "stage": "Needs fields",
         "done": false,
+        "attendee": "Minah Munshi",
         "source": "field"
       }
     ],
@@ -1436,6 +1427,7 @@
         "type": "fibre",
         "stage": "Planned",
         "done": false,
+        "attendee": "Jerico Sanchez",
         "source": "hyg"
       },
       {
@@ -1444,6 +1436,7 @@
         "type": "fibre",
         "stage": "Planned",
         "done": false,
+        "attendee": "Jerico Sanchez",
         "source": "hyg"
       },
       {
@@ -1452,6 +1445,7 @@
         "type": "fibre",
         "stage": "Planned",
         "done": false,
+        "attendee": "Sarah Weber",
         "source": "hyg"
       },
       {
@@ -1460,6 +1454,7 @@
         "type": "fibre",
         "stage": "Planned",
         "done": false,
+        "attendee": "Sarah Weber",
         "source": "hyg"
       }
     ],
@@ -1470,6 +1465,7 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "hyg"
       }
     ],
@@ -1480,6 +1476,7 @@
         "type": "hygiene",
         "stage": "Prepped",
         "done": false,
+        "attendee": "",
         "source": "field"
       }
     ],
@@ -1490,6 +1487,7 @@
         "type": "hygiene",
         "stage": "Running",
         "done": false,
+        "attendee": "Marisabel Cuspoca, Talis Powdrill",
         "source": "field"
       }
     ],
@@ -1505,6 +1503,7 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "hyg"
       }
     ],
@@ -1517,6 +1516,7 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "field"
       },
       {
@@ -1525,6 +1525,7 @@
         "type": "hygiene",
         "stage": "Event complete",
         "done": true,
+        "attendee": "",
         "source": "field"
       },
       {
@@ -1533,6 +1534,7 @@
         "type": "hygiene",
         "stage": "Samples complete",
         "done": true,
+        "attendee": "",
         "source": "field"
       },
       {
@@ -1541,6 +1543,7 @@
         "type": "hygiene",
         "stage": "Needs fields",
         "done": false,
+        "attendee": "",
         "source": "field"
       },
       {
@@ -1549,6 +1552,7 @@
         "type": "hygiene",
         "stage": "Samples complete",
         "done": true,
+        "attendee": "",
         "source": "field"
       }
     ],
@@ -1559,6 +1563,7 @@
         "type": "hygiene",
         "stage": "Prepped",
         "done": false,
+        "attendee": "Sarah Weber",
         "source": "field"
       }
     ],
@@ -1569,6 +1574,7 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "hyg"
       }
     ],
@@ -1580,6 +1586,7 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "Ben Adcock",
         "source": "hyg"
       }
     ],
@@ -1591,6 +1598,7 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "hyg"
       }
     ],
@@ -1601,6 +1609,7 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "hyg"
       }
     ],
@@ -1617,6 +1626,7 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "Minah Munshi",
         "source": "hyg"
       }
     ],
@@ -1632,35 +1642,47 @@
         "type": "hygiene",
         "stage": "Planned",
         "done": false,
+        "attendee": "",
         "source": "hyg"
       }
     ],
-    "podio-job-0019422": [
+    "podio-job-0019422": [],
+    "podio-job-0019438": [
       {
-        "code": "ENVSS-HAZ-AFM-0019422-001",
-        "date": "2026-11-23",
+        "code": "0019438-16 Nov",
+        "date": "2026-11-16",
         "type": "fibre",
         "stage": "Planned",
         "done": false,
-        "source": "afm"
-      }
-    ],
-    "podio-job-0019438": [
+        "attendee": "Jerico Sanchez",
+        "source": "hyg"
+      },
+      {
+        "code": "0019438-17 Nov",
+        "date": "2026-11-17",
+        "type": "fibre",
+        "stage": "Planned",
+        "done": false,
+        "attendee": "Jerico Sanchez",
+        "source": "hyg"
+      },
       {
         "code": "ENVSS-HAZ-AFM-0019438-003",
         "date": "2026-11-18",
         "type": "fibre",
         "stage": "Planned",
         "done": false,
+        "attendee": "Jerico Sanchez",
         "source": "afm"
       },
       {
-        "code": "ENVSS-HAZ-AFM-0019438-005",
+        "code": "0019438-23 Nov",
         "date": "2026-11-23",
         "type": "fibre",
         "stage": "Planned",
         "done": false,
-        "source": "afm"
+        "attendee": "Jerico Sanchez",
+        "source": "hyg"
       },
       {
         "code": "ENVSS-HAZ-AFM-0019438-006",
@@ -1668,12 +1690,27 @@
         "type": "fibre",
         "stage": "Planned",
         "done": false,
+        "attendee": "Jerico Sanchez",
         "source": "afm"
       }
     ],
-    "podio-job-0019467": [],
+    "podio-job-0019467": [
+      {
+        "code": "ENVSS-HAZ-AFM-0019467-001",
+        "date": "2026-11-24",
+        "type": "fibre",
+        "stage": "Planned",
+        "done": false,
+        "attendee": "Daryle Van Geest",
+        "source": "afm"
+      }
+    ],
     "podio-job-0019472": [],
-    "podio-job-140709558786496": [],
     "podio-3378235642": []
+  },
+  "attendeeField": {
+    "label": "Site Works Attended by",
+    "externalId": "report-submitted-by",
+    "staffAppId": "21061319"
   }
 }
