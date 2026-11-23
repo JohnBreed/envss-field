@@ -1,38 +1,33 @@
-# Project list Layout A (23 Nov 2026 AWST)
+# v48.6 project list Layout A (23 Nov 2026 AWST)
 
-Draft only. Not published. Branch: `feat/project-list-review` at `/workspace/envss-projlist` (from main `ef2874a` / v48.5).
+Published with v48.6. Branch: `feat/project-list-review`. Rollback tag: `rollback-v48.5` on main `ef2874a`.
 
 Layout A: grouped by when work is happening, one card per job number, no-date and test jobs collapsed.
 
 Name on the card:
 
 - Hygiene events: Podio **Site Works Attended by** (`report-submitted-by`) for the next/current event. If that is empty, **Controller: {name}**.
-- AFM events: distinct **Sample Submitted by** names from that event's AFM samples (`sample-by` on app 21120488). This already comes through `v_field_afm_samples` and the app's `sampledBy` mapping. Do **not** use `report-submitted-by` on the AFM event. If every sample is empty, fall back to **Controller: {name}**. Expanded multi-event cards show each event's own name.
+- AFM events: distinct **Sample Submitted by** names from that event's AFM samples (`sample-by` on app 21120488), already exposed by `v_field_afm_samples`. Do **not** use `report-submitted-by` on the AFM event. If every sample is empty, fall back to **Controller: {name}**. Expanded multi-event cards show each event's own name.
 
-The earlier draft `afm_view_add_attended_by.sql` (adding `report-submitted-by` to `v_field_afm_events`) was dropped. No SQL change is needed, and none was applied.
+Live data comes from `db.projects` / `db.events`, the hygiene Podio cache (`envss-podio-events-v45d`), and the AFM cache (`envssAfmPodio.cache()`). Tests still inject `window.ENVSS_PROJLIST_FIXTURE`. No SQL was applied. No Podio writes.
+
+Note: open drafts #14–#17 are still titled v48.6 / v48.7 and will be renumbered later.
 
 ## Tests
 
 `ROOT=/workspace/envss-projlist node work/projlist/test.mjs`
 
-36 passed (Pixel 7 + Chromebook). Supabase is mocked in memory; production is not written to.
+Plus the v48 regression suite (version asserts updated to 48.6):
+
+```
+ROOT=/workspace/envss-projlist node work/v48-4/v48-regression.mjs
+ROOT=/workspace/envss-projlist node work/v48-4/v48-3-suite.mjs
+ROOT=/workspace/envss-projlist node work/v48-4/test.mjs
+ROOT=/workspace/envss-projlist node work/v49/afm-pull.test.mjs chromebook
+```
+
+Supabase is mocked in memory; production is not written to.
 
 ## Screenshots
 
-All under `work/projlist/shots/`.
-
-Current v48.5 list (for comparison): `current-pixel7.png`, `current-chromebook.png`, plus `-full`.
-
-Layout A:
-
-- `a-pixel7.png` / `a-chromebook.png` — On site today
-- `a-pixel7-full.png` / `a-chromebook-full.png`
-- `a-pixel7-9219.png` / `a-chromebook-9219.png` — 0019219 hygiene, both attendees, expanded
-- `a-pixel7-expanded-8637.png` / `a-chromebook-expanded-8637.png` — 0018637 AFM, Marisabel on 0018 and Talis on 0020 from sample-by
-- `a-pixel7-9467-afm.png` / `a-chromebook-9467-afm.png` — 0019467 single-event AFM card, sampler Daryle Van Geest
-- `a-pixel7-7889-afm.png` / `a-chromebook-7889-afm.png` — 0017889 AFM card, next event sampler Talis Powdrill
-- `a-pixel7-expanded-9321.png` / `a-chromebook-expanded-9321.png` — 0019321, 3 of 5 events done
-
-Preview B shots are leftover from the earlier review and are not the proposed layout.
-
-Re-take: `ROOT=/workspace/envss-projlist node work/projlist/shot.mjs` (Supabase mocked).
+Mocked Layout A shots are under `work/projlist/shots/` (including AFM cards `*-9467-afm.png` and `*-7889-afm.png`). Live verification shots are taken after publish against https://field.envss.com.au/field.html.

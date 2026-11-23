@@ -79,8 +79,8 @@ for (const vp of ["pixel7", "chromebook"]) {
   });
   info.errs = page.errs;
 
-  check(`[${vp}] app is v48.5`, info.version === "48.5", info.version);
-  check(`[${vp}] Layout A is showing`, /grouped by when work is happening/.test(info.banner) && /Projects/.test(info.heading), info.heading + " | " + info.banner);
+  check(`[${vp}] app is v48.6`, info.version === "48.6", info.version);
+  check(`[${vp}] Layout A is showing`, /Projects/.test(info.heading) && info.groups.some(g => g.key === "today") && info.groups.some(g => g.key === "week"), info.heading + " | " + JSON.stringify(info.groups.map(g => g.key)));
   check(`[${vp}] no page errors`, page.errs.length === 0, page.errs.join(" | "));
   check(`[${vp}] no Supabase writes`, writes(page).length === 0, writes(page).join(" | "));
 

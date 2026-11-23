@@ -1,4 +1,4 @@
-/* v48.5: read-only AFM pull from Podio (mirror views) — checks with mocked Supabase only.
+/* v48.6 / v48.5: read-only AFM pull from Podio (mirror views) — checks with mocked Supabase only.
    Usage: ROOT=/workspace/time-lock node work/v49/afm-pull.test.mjs chromebook
    Fixture: work/v49/fixtures/podio-afm-20261113.json (sanitised mirror rows for all 9 AFM events at
    Podio "Report not sent" / "Final Report not Generated" as of 13 Nov 2026 AWST, including 0018811,
@@ -45,7 +45,7 @@ const shot = n => page.screenshot({ path: path.join(shotDir, `${vp}-podio-${n}.p
 /* 0. boot + storage names */
 const boot = await ev(() => ({ v: (document.getElementById("appVersion") || {}).textContent, key: KEY, legacy: LEGACY_KEY, api: !!window.envssAfmPodio,
   src: document.documentElement.innerHTML }));
-ok("boot: app v48.5", boot.v === "v48.5", boot.v);
+ok("boot: app v48.6", boot.v === "v48.6", boot.v);
 ok("storage: local key unchanged (envss-field-next-v32)", boot.key === "envss-field-next-v32");
 ok("storage: legacy key unchanged (envss-field-v04)", boot.legacy === "envss-field-v04");
 ok("storage: IndexedDB names unchanged (photos, drive, v46)", boot.src.includes("envss-field-photos") && boot.src.includes("envss-field-drive") && boot.src.includes("envss-field-v46"));
