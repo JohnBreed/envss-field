@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
+<!-- ENVSS Field v48.7 draft (23 Nov 2026 AWST): own saves never clash with themselves; second tab read-only. v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
 <!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
 <!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
 <!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
@@ -9,7 +9,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.5</title>
+  <title>ENVSS Field v48.7</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -393,7 +393,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.5</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.7</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -409,12 +409,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.5"></script>
+  <script src="config.js?v=48.7"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.5"; /* 2026-11-13 (AWST): v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.7"; /* 2026-11-23 (AWST): v48.7 draft = v48.5 + same-device save clash fix (a pull can no longer undo or out-date this device's own save; merges keep every list entry from both sides) + second tab on the same device is read-only with a banner and "Use this tab instead". v48.6 (linked samples, PR #14) is a separate draft. 2026-11-13 (AWST): v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -828,6 +828,7 @@ function load() {
   }
 }
 function persist() {
+  if (window.envssReadOnly) return false;   /* v48.7: a second tab on this device never writes the device copy */
   const referenced = new Set((db.events || []).map(e => e.projectId));
   const projects = (db.projects || []).filter(p => keepProjectLocally(p, referenced));
   const keepIds = new Set(projects.map(p => p.id));
@@ -1110,7 +1111,7 @@ async function sendOne(p) {
   return sent;
 }
 async function flushQueue() {
-  if (!sbCfg()) return;
+  if (!sbCfg() || window.envssReadOnly) return;   /* v48.7: a second tab on this device never sends */
   if (flushing) { flushAgain = true; return; }
   if (!pendingCount()) { paintSyncBar(); return; }
   flushing = true; paintSyncBar();
@@ -1122,9 +1123,10 @@ async function flushQueue() {
       const sent = await sendOne(p);
       const cur = findRec(p.coll, p.id);
       if (sent) setSnap(p.coll, Object.assign({ id: p.id }, sent));
-      delete syncState.pending[key];
       syncState.lastPushAt = new Date().toISOString();
-      if (cur && snapOf(p.coll, cur) !== snapOf(p.coll, Object.assign({ id: p.id }, sent || {}))) flushAgain = true;
+      /* v48.7: changed again while it was being sent -> stays queued straight away, so a pull in the gap can't replace it */
+      if (cur && p.coll !== "projects" && snapOf(p.coll, cur) !== snapOf(p.coll, Object.assign({ id: p.id }, sent || {}))) { syncState.pending[key] = { coll: p.coll, id: p.id, tries: 0, since: syncState.lastPushAt }; flushAgain = true; }
+      else { delete syncState.pending[key]; if (cur && snapOf(p.coll, cur) !== snapOf(p.coll, Object.assign({ id: p.id }, sent || {}))) flushAgain = true; }
     } catch (e) {
       failed++;
       p.tries = (p.tries || 0) + 1;
@@ -9733,11 +9735,13 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   let backupTimer = null, lastBackupAt = "", backupErr = "";
   function backupNow() {
     clearTimeout(backupTimer);
+    if (window.envssReadOnly) return Promise.resolve();   /* v48.7: second tab: no IndexedDB writes */
     const snap = { savedAt: db._savedAt || nowIso(), db: JSON.parse(JSON.stringify(db)), sync: JSON.parse(JSON.stringify(syncState)), appVersion: APP_VERSION };
     return idbPut("state", snap).then(() => { lastBackupAt = snap.savedAt; backupErr = ""; }).catch(e => { backupErr = String(e && e.message || e); });
   }
   const _persist46 = persist;
   persist = function () {
+    if (window.envssReadOnly) return false;
     db._savedAt = nowIso();
     const ok = _persist46.apply(this, arguments);
     clearTimeout(backupTimer); backupTimer = setTimeout(backupNow, ok ? 250 : 0);
@@ -9779,7 +9783,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   const MERGE = { events: 1, trains: 1 };
   let bases = { events: {}, trains: {} }, baseH = { events: {}, trains: {} }, baseTimer = null;
   idbGet("bases").then(b => { if (b && typeof b === "object") ["events", "trains"].forEach(c => { bases[c] = Object.assign({}, b[c] || {}, bases[c]); }); }).catch(() => {});
-  function saveBases() { clearTimeout(baseTimer); baseTimer = setTimeout(() => { idbPut("bases", bases).catch(e => { backupErr = String(e && e.message || e); }); }, 800); }
+  function saveBases() { clearTimeout(baseTimer); if (window.envssReadOnly) return; baseTimer = setTimeout(() => { idbPut("bases", bases).catch(e => { backupErr = String(e && e.message || e); }); }, 800); }
   function cleanRec(rec) { const o = JSON.parse(JSON.stringify(rec || {})); delete o.updatedAt; delete o.syncedAt; return o; }
   function setBase(coll, id, payload) {
     if (!MERGE[coll] || !id || !payload) return;
@@ -9804,6 +9808,18 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     return f;
   }
   const hits = (set, at) => { for (const f of set) if (f === at || f.startsWith(at + ".") || at.startsWith(f + ".")) return true; return false; };
+  /* v48.7: list entries are matched by code / id / serial (else by value). This device's entries first, then the other
+     device's extra ones. An entry on both sides with different details keeps this device's copy and logs a conflict. */
+  function itemKey(x) {
+    if (isObj(x)) for (const k of ["code", "id", "serial", "key"]) if (x[k] != null && x[k] !== "") return k + ":" + x[k];
+    return "v:" + stableStringify(x);
+  }
+  function unionList(l, s, at, conflicts) {
+    const out = [], idx = new Map();
+    l.forEach(x => { const k = itemKey(x); if (!idx.has(k)) { idx.set(k, x); out.push(x); } });
+    s.forEach(x => { const k = itemKey(x); if (!idx.has(k)) { idx.set(k, x); out.push(x); } else if (!same(idx.get(k), x)) conflicts.push({ k: at + "[" + k + "]", local: asText(idx.get(k)), server: asText(x) }); });
+    return out;
+  }
   function merge3(b, l, s, path, conflicts, theirs, tl, ts) {
     const out = {};
     new Set(Object.keys(l || {}).concat(Object.keys(s || {}))).forEach(k => {
@@ -9814,6 +9830,10 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       else if (same(lv, sv)) v = lv;
       else if (b && same(lv, bv)) { v = sv; theirs.push(at); }      // changed only on the other device
       else if (b && same(sv, bv)) v = lv;                            // changed only here
+      else if (Array.isArray(lv) && Array.isArray(sv)) {             // v48.7: both changed a list (e.g. analyses): keep every entry from both
+        v = unionList(lv, sv, at, conflicts);
+        if (!same(v, lv)) theirs.push(at + " (entries from both kept)");
+      }
       else if (isObj(lv) && isObj(sv)) v = merge3(b ? (isObj(bv) ? bv : {}) : null, lv, sv, at, conflicts, theirs, tl, ts);
       else if (!b && hits(ts, at) && !hits(tl, at)) { v = sv; theirs.push(at); }  // no base: the other device's audit shows it changed this
       else if (!b && hits(tl, at) && !hits(ts, at)) v = lv;                        // no base: this device's audit shows it changed this
@@ -9834,6 +9854,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const server = cleanRec(row.payload);
     const known = syncState.hash[p.coll][p.id];
     if (known !== undefined && snapOf(p.coll, server) === known) return;          // nobody else changed it since our last sync
+    /* v48.7: Supabase holds one of this device's own recent saves (its sync note was lost or overwritten): not a clash */
+    const own = (syncState.own && syncState.own[p.coll + ":" + p.id]) || [];
+    if (own.indexOf(snapOf(p.coll, server)) >= 0) { syncState.hash[p.coll][p.id] = snapOf(p.coll, server); setBase(p.coll, p.id, Object.assign({ id: p.id }, server)); return; }
     const local = cleanRec(rec);
     if (same(local, server)) return;
     const base = bases[p.coll][p.id] || null;
@@ -9842,7 +9865,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     Object.keys(rec).forEach(k => { if (k !== "updatedAt" && !(k in merged)) delete rec[k]; });
     Object.assign(rec, merged);
     rec.audit = Array.isArray(rec.audit) ? rec.audit : [];
-    const other = row.updated_by || "another device";
+    const other = (row.updated_by && row.updated_by === whoText() ? "This account on another device or browser tab (" + row.updated_by + ")" : row.updated_by) || "another device";
     rec.audit.push({ at: nowIso(), who: whoText(), action: "Merged with a newer copy from another device", field: "", from: "", to: "",
       detail: other + " changed this " + (p.coll === "events" ? "event" : "sample") + " too. Kept from the other device: " + (theirs.join(", ") || "audit entries only") + (conflicts.length ? ". Both changed: " + conflicts.map(x => x.k).join(", ") + " (this device's value kept, the other value is in the next audit entries)" : "") + (base ? "" : ". (No earlier synced copy on this device: blanks were filled from the other device.)") });
     conflicts.forEach(x => rec.audit.push({ at: nowIso(), who: whoText(), action: "Sync conflict: kept this device's value", field: x.k, from: x.server, to: x.local, detail: "the other device (" + other + ") had: " + x.server }));
@@ -9859,7 +9882,12 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   sendOne = async function (p) {
     if (p && MERGE[p.coll]) await reconcile(p);                                  // throws (stays queued) if Supabase cannot be read
     const sent = await _sendOne46.apply(this, arguments);
-    if (sent && p && MERGE[p.coll]) setBase(p.coll, p.id, Object.assign({ id: p.id }, sent));
+    if (sent && p && MERGE[p.coll]) {
+      setBase(p.coll, p.id, Object.assign({ id: p.id }, sent));
+      /* v48.7: remember this device's last few saves of the record so its own copy is never mistaken for another device's */
+      const k = p.coll + ":" + p.id, h = snapOf(p.coll, Object.assign({ id: p.id }, sent));
+      syncState.own = syncState.own || {}; const list = (syncState.own[k] || []).filter(x => x !== h); list.push(h); syncState.own[k] = list.slice(-5);
+    }
     return sent;
   };
   window.sendOne = sendOne;
@@ -11494,6 +11522,146 @@ function fixOpen(ts) {
     + "@media print{.v484-side,.v484-nav{display:none}}";
   document.head.appendChild(st);
   render();
+})();
+</script>
+
+<script>
+/* ===== v48.7 (item 23): this device's own saves never clash with themselves =====
+   Root cause (Supabase audit trail, 20–23 Nov 2026): the 8-second pull (and the pull on returning to the app) runs at
+   the same time as sending. A pull that read Supabase just before a save landed could answer just after the save
+   finished, so the old copy replaced the sample on the device (the edit vanished from the screen) and became the
+   "last synced" copy. The next save then saw its own earlier save in Supabase as "another device" and merged, and a
+   re-entered list (analyses) replaced the one already in Supabase.
+   Fix: every bulk pull is numbered; a pulled row is ignored for a record that was being sent while that pull was out,
+   or was sent after it left, or has a change on this device not yet sent (the send + merge path handles those).
+   The merge itself now keeps every list entry from both sides and recognises this device's own recent saves.
+   ===== v48.7 (item 22): second tab or window on this device =====
+   Only one tab edits at a time (navigator.locks; BroadcastChannel fallback). Any other tab shows a banner and is
+   read-only: nothing it does is saved to the device copy or Supabase. "Use this tab instead" moves editing over. */
+(function () {
+  let seq = 0; const inflight = {}, doneAt = {}; let skipped = 0;
+  const _get487 = sbGet;
+  sbGet = async function (table) {
+    const s = ++seq; const rows = await _get487.apply(this, arguments);
+    if (Array.isArray(rows)) try { Object.defineProperty(rows, "_v487", { value: s }); } catch (e) {}
+    return rows;
+  };
+  window.sbGet = sbGet;
+  const _send487 = sendOne;
+  sendOne = async function (p) {
+    const k = p && p.coll && p.id ? p.coll + ":" + p.id : "";
+    if (k) inflight[k] = (inflight[k] || 0) + 1;
+    try { return await _send487.apply(this, arguments); }
+    finally { if (k) { inflight[k]--; doneAt[k] = ++seq; } }
+  };
+  window.sendOne = sendOne;
+  const GUARD = { events: 1, trains: 1, hires: 1 };
+  const _merge487 = mergeRemote;
+  mergeRemote = function (coll, rows, normalize) {
+    if (GUARD[coll] && Array.isArray(rows)) {
+      const s = rows._v487;
+      rows = rows.filter(r => {
+        const id = r && ((r.payload && r.payload.id) || r.id); if (!id) return true;
+        const k = coll + ":" + id;
+        if (inflight[k] || (s && doneAt[k] && doneAt[k] > s)) { skipped++; return false; }          // older than this device's own save
+        const cur = findRec(coll, id), known = syncState.hash[coll] && syncState.hash[coll][id];
+        if (cur && known !== undefined && snapOf(coll, cur) !== known) { skipped++; return false; }   // unsent change here: never overwritten by a pull
+        return true;
+      });
+    }
+    return _merge487.call(this, coll, rows, normalize);
+  };
+  window.mergeRemote = mergeRemote;
+  window.v487Sync = { skipped: () => skipped, seq: () => seq };
+
+  /* ---------- item 22: one editing tab per device ---------- */
+  const LOCK = "envss-field-editor", tabId = Math.random().toString(36).slice(2);
+  let bc = null; try { bc = new BroadcastChannel("envss-field-tabs"); } catch (e) {}
+  let releaseLock = null, waiting = false, state = "main";
+  window.envssReadOnly = false;
+  function banner() {
+    let el = document.getElementById("v487Tab");
+    if (state === "main") { if (el) el.remove(); document.body.classList.remove("v487-ro"); return; }
+    document.body.classList.add("v487-ro");
+    if (!el) { el = document.createElement("div"); el.id = "v487Tab"; el.className = "v487-tab"; el.setAttribute("role", "alert"); document.body.insertBefore(el, document.body.firstChild); }
+    const msg = state === "moved" ? "<strong>Editing moved to another tab.</strong> This tab is read-only now, so the two can't clash. Changes here are not saved."
+      : state === "free" ? "<strong>The other tab was closed.</strong> This tab is still read-only until you reload it."
+      : "<strong>ENVSS Field is already open in another tab or window on this device.</strong> This tab is read-only so the two can't clash. Changes here are not saved.";
+    const btn = state === "free" ? '<button type="button" class="btn orange" id="v487Take">Edit in this tab</button>'
+      : '<button type="button" class="btn orange" id="v487Take">Use this tab instead</button>';
+    el.innerHTML = '<div class="v487-msg">' + msg + '</div><div class="v487-btns">' + btn + "</div>";
+    document.getElementById("v487Take").onclick = takeOver;
+  }
+  function setState(s) {
+    state = s; window.envssReadOnly = s !== "main";
+    if (s !== "main") { try { clearTimeout(flushTimer); clearTimeout(retryTimer); } catch (e) {} }
+    try { banner(); } catch (e) {}
+    try { paintSyncBar(); } catch (e) {}
+  }
+  function holdLock(lock) { return new Promise(res => { releaseLock = res; }); }
+  function waitForLock() {
+    if (waiting || !navigator.locks) return; waiting = true;
+    navigator.locks.request(LOCK, lock => { waiting = false; if (state !== "main") setState("free"); return holdLock(lock); }).catch(() => { waiting = false; });
+  }
+  function claim() {
+    if (navigator.locks && navigator.locks.request) {
+      navigator.locks.request(LOCK, { ifAvailable: true }, lock => {
+        if (!lock) { setState("open"); waitForLock(); return null; }
+        setState("main"); return holdLock(lock);
+      }).catch(e => console.warn("v48.7 lock", e));
+    } else if (bc) {
+      bc.postMessage({ t: "hello", id: tabId });     /* fallback: an existing editing tab answers "here" */
+    }
+  }
+  async function takeOver() {
+    if (state === "free") { location.reload(); return; }
+    const b = document.getElementById("v487Take"); if (b) { b.disabled = true; b.textContent = "Moving…"; }
+    if (bc) bc.postMessage({ t: "takeover", id: tabId });
+    setTimeout(() => location.reload(), bc ? 4000 : 0);   /* the editing tab answers "released" sooner; this is the backstop */
+  }
+  async function handOver(to) {
+    /* finish what is being sent, write the device copy, then stop editing here */
+    const t0 = Date.now();
+    while (typeof flushing !== "undefined" && flushing && Date.now() - t0 < 3000) await new Promise(r => setTimeout(r, 100));
+    try { persist(); } catch (e) {}
+    setState("moved");
+    if (releaseLock) { const r = releaseLock; releaseLock = null; r(); }
+    setTimeout(waitForLock, 1500);
+    if (bc) bc.postMessage({ t: "released", id: tabId, to });
+  }
+  if (bc) bc.onmessage = ev => {
+    const m = ev.data || {};
+    if (m.t === "takeover" && state === "main") handOver(m.id);
+    else if (m.t === "released" && m.to === tabId) location.reload();
+    else if (m.t === "hello" && state === "main" && !navigator.locks) bc.postMessage({ t: "here", id: tabId, to: m.id });
+    else if (m.t === "here" && m.to === tabId && !navigator.locks) setState("open");
+    else if (m.t === "bye" && state !== "main" && !navigator.locks) setState("free");
+  };
+  window.addEventListener("pagehide", () => { if (bc && state === "main") try { bc.postMessage({ t: "bye", id: tabId }); } catch (e) {} });
+  /* a change typed in a read-only tab is not kept: the screen goes back to the device copy and says why */
+  const _commit487 = commit;
+  commit = function () {
+    if (!window.envssReadOnly) return _commit487.apply(this, arguments);
+    try { const raw = localStorage.getItem(KEY); if (raw) db = baseLoad(JSON.parse(raw)); } catch (e) {}
+    try { const el = document.getElementById("v487Tab"); if (el) { el.classList.remove("v487-flash"); void el.offsetWidth; el.classList.add("v487-flash"); el.scrollIntoView({ block: "nearest" }); } } catch (e) {}
+    setTimeout(() => { try { render(); } catch (e) {} }, 0);
+  };
+  window.commit = commit;
+  const _paint487 = paintSyncBar;
+  paintSyncBar = function () {
+    const r = _paint487.apply(this, arguments);
+    try { const s = document.getElementById("v46Safe"); if (s && window.envssReadOnly) { s.textContent = "Read-only tab · the other tab on this device saves"; s.classList.remove("ok"); } } catch (e) {}
+    return r;
+  };
+  window.paintSyncBar = paintSyncBar;
+  const st = document.createElement("style");
+  st.textContent = ".v487-tab{position:sticky;top:0;z-index:10000;background:#5A1E12;color:#fff;border-bottom:3px solid #FF7A45;padding:10px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:16px;line-height:1.35}"
+    + ".v487-tab .btn{min-height:44px;white-space:nowrap}.v487-msg{flex:1 1 260px}"
+    + "body.v487-ro #app input,body.v487-ro #app select,body.v487-ro #app textarea{opacity:.6}"
+    + "@keyframes v487f{0%{background:#C0391B}100%{background:#5A1E12}}.v487-flash{animation:v487f .9s ease-out}";
+  document.head.appendChild(st);
+  claim();
+  window.v487Tabs = { state: () => state };
 })();
 </script>
 

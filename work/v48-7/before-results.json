@@ -1,0 +1,162 @@
+[
+  {
+    "name": "[before pixel7] 1a own save reached Supabase (RES)",
+    "ok": true,
+    "detail": "RES"
+  },
+  {
+    "name": "[before pixel7] 1b a pull that left before the save does not undo it on the device",
+    "ok": false,
+    "detail": "device now shows analyses=(none)"
+  },
+  {
+    "name": "[before pixel7] 1c no 'Merged with a newer copy from another device' from its own save",
+    "ok": false,
+    "detail": "1 merge entries: [\"Merged with a newer copy from another device  Ben Test <field.test@envss.com.au> · Android changed this sample too. Kept from the other device: contaminantId. Both changed: analyses (this device's value kept, the other value is in the next audit entries)\",\"Sync conflict: kept this device's value analyses the other device (Ben Test <field.test@envss.com.au> · Android) had: [{\\\"code\\\":\\\"RES\\\",\\\"name\\\":\\\"Respirable dust\\\"}]\"]"
+  },
+  {
+    "name": "[before pixel7] 1d RES is still on the sample in Supabase (no analyses lost)",
+    "ok": false,
+    "detail": "Supabase analyses=SIL"
+  },
+  {
+    "name": "[before pixel7] 1e device and Supabase agree",
+    "ok": true,
+    "detail": "SIL vs SIL"
+  },
+  {
+    "name": "[before pixel7] 1f no page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[before pixel7] 2a 10 quick edits with overlapping pulls: no self-merge",
+    "ok": false,
+    "detail": "5 merge entries"
+  },
+  {
+    "name": "[before pixel7] 2b last values kept on device and in Supabase",
+    "ok": true,
+    "detail": "[\"GPLA Room v4\",\"3.4\",\"GPLA Room v4\",\"3.4\"]"
+  },
+  {
+    "name": "[before pixel7] 3a genuine two-device edit is merged (audited)",
+    "ok": true,
+    "detail": "1"
+  },
+  {
+    "name": "[before pixel7] 3b both analyses kept (RES from the other device + SIL from this one)",
+    "ok": false,
+    "detail": "SIL"
+  },
+  {
+    "name": "[before pixel7] 3c both devices' audit entries kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[before pixel7] 4a own earlier save is recognised (no merge with itself)",
+    "ok": false,
+    "detail": "1 Kitchen 2.5"
+  },
+  {
+    "name": "[before pixel7] 5a second tab warns it is already open elsewhere and is read-only",
+    "ok": false,
+    "detail": "{\"banner\":\"\",\"ro\":false,\"cls\":false}"
+  },
+  {
+    "name": "[before pixel7] 5b first tab stays editable with no banner",
+    "ok": true,
+    "detail": "{\"banner\":\"\",\"ro\":false}"
+  },
+  {
+    "name": "[before pixel7] 5c second tab writes nothing (device copy and Supabase untouched)",
+    "ok": false,
+    "detail": ""
+  },
+  {
+    "name": "[before pixel7] 5d 'Use this tab instead' button shown",
+    "ok": false,
+    "detail": "no take-over button (no second-tab guard)"
+  },
+  {
+    "name": "[before chromebook] 1a own save reached Supabase (RES)",
+    "ok": true,
+    "detail": "RES"
+  },
+  {
+    "name": "[before chromebook] 1b a pull that left before the save does not undo it on the device",
+    "ok": false,
+    "detail": "device now shows analyses=(none)"
+  },
+  {
+    "name": "[before chromebook] 1c no 'Merged with a newer copy from another device' from its own save",
+    "ok": false,
+    "detail": "1 merge entries: [\"Merged with a newer copy from another device  Ben Test <field.test@envss.com.au> · Android changed this sample too. Kept from the other device: contaminantId. Both changed: analyses (this device's value kept, the other value is in the next audit entries)\",\"Sync conflict: kept this device's value analyses the other device (Ben Test <field.test@envss.com.au> · Android) had: [{\\\"code\\\":\\\"RES\\\",\\\"name\\\":\\\"Respirable dust\\\"}]\"]"
+  },
+  {
+    "name": "[before chromebook] 1d RES is still on the sample in Supabase (no analyses lost)",
+    "ok": false,
+    "detail": "Supabase analyses=SIL"
+  },
+  {
+    "name": "[before chromebook] 1e device and Supabase agree",
+    "ok": true,
+    "detail": "SIL vs SIL"
+  },
+  {
+    "name": "[before chromebook] 1f no page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[before chromebook] 2a 10 quick edits with overlapping pulls: no self-merge",
+    "ok": false,
+    "detail": "5 merge entries"
+  },
+  {
+    "name": "[before chromebook] 2b last values kept on device and in Supabase",
+    "ok": true,
+    "detail": "[\"GPLA Room v4\",\"3.4\",\"GPLA Room v4\",\"3.4\"]"
+  },
+  {
+    "name": "[before chromebook] 3a genuine two-device edit is merged (audited)",
+    "ok": true,
+    "detail": "1"
+  },
+  {
+    "name": "[before chromebook] 3b both analyses kept (RES from the other device + SIL from this one)",
+    "ok": false,
+    "detail": "SIL"
+  },
+  {
+    "name": "[before chromebook] 3c both devices' audit entries kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[before chromebook] 4a own earlier save is recognised (no merge with itself)",
+    "ok": false,
+    "detail": "1 Kitchen 2.5"
+  },
+  {
+    "name": "[before chromebook] 5a second tab warns it is already open elsewhere and is read-only",
+    "ok": false,
+    "detail": "{\"banner\":\"\",\"ro\":false,\"cls\":false}"
+  },
+  {
+    "name": "[before chromebook] 5b first tab stays editable with no banner",
+    "ok": true,
+    "detail": "{\"banner\":\"\",\"ro\":false}"
+  },
+  {
+    "name": "[before chromebook] 5c second tab writes nothing (device copy and Supabase untouched)",
+    "ok": false,
+    "detail": ""
+  },
+  {
+    "name": "[before chromebook] 5d 'Use this tab instead' button shown",
+    "ok": false,
+    "detail": "no take-over button (no second-tab guard)"
+  }
+]

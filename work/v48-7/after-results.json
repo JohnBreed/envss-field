@@ -1,0 +1,192 @@
+[
+  {
+    "name": "[after pixel7] 1a own save reached Supabase (RES)",
+    "ok": true,
+    "detail": "RES"
+  },
+  {
+    "name": "[after pixel7] 1b a pull that left before the save does not undo it on the device",
+    "ok": true,
+    "detail": "device now shows analyses=RES"
+  },
+  {
+    "name": "[after pixel7] 1c no 'Merged with a newer copy from another device' from its own save",
+    "ok": true,
+    "detail": "0 merge entries: []"
+  },
+  {
+    "name": "[after pixel7] 1d RES is still on the sample in Supabase (no analyses lost)",
+    "ok": true,
+    "detail": "Supabase analyses=RES+SIL"
+  },
+  {
+    "name": "[after pixel7] 1e device and Supabase agree",
+    "ok": true,
+    "detail": "RES+SIL vs RES+SIL"
+  },
+  {
+    "name": "[after pixel7] 1f no page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[after pixel7] 2a 10 quick edits with overlapping pulls: no self-merge",
+    "ok": true,
+    "detail": "0 merge entries"
+  },
+  {
+    "name": "[after pixel7] 2b last values kept on device and in Supabase",
+    "ok": true,
+    "detail": "[\"GPLA Room v4\",\"3.4\",\"GPLA Room v4\",\"3.4\"]"
+  },
+  {
+    "name": "[after pixel7] 3a genuine two-device edit is merged (audited)",
+    "ok": true,
+    "detail": "1"
+  },
+  {
+    "name": "[after pixel7] 3b both analyses kept (RES from the other device + SIL from this one)",
+    "ok": true,
+    "detail": "RES+SIL"
+  },
+  {
+    "name": "[after pixel7] 3c both devices' audit entries kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[after pixel7] 4a own earlier save is recognised (no merge with itself)",
+    "ok": true,
+    "detail": "0 Kitchen 2.5"
+  },
+  {
+    "name": "[after pixel7] 5a second tab warns it is already open elsewhere and is read-only",
+    "ok": true,
+    "detail": "{\"banner\":\"ENVSS Field is already open in another tab or window on this device. This tab is read-only so the two can't clash. Changes here are not saved.\\nUse this tab instead\",\"ro\":true,\"cls\":true}"
+  },
+  {
+    "name": "[after pixel7] 5b first tab stays editable with no banner",
+    "ok": true,
+    "detail": "{\"banner\":\"\",\"ro\":false}"
+  },
+  {
+    "name": "[after pixel7] 5c second tab writes nothing (device copy and Supabase untouched)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[after pixel7] 5d 'Use this tab' moves editing: new tab editable, old tab read-only with a banner",
+    "ok": true,
+    "detail": "{\"bAfter\":{\"ro\":false,\"banner\":\"\"},\"aAfter\":{\"ro\":true,\"banner\":\"Editing moved to another tab. This tab is read-only now, so the two can't clash. Changes here are not saved.\\nUse this tab instead\"}}"
+  },
+  {
+    "name": "[after pixel7] 5e edits save from the tab that took over",
+    "ok": true,
+    "detail": "Edited after take over"
+  },
+  {
+    "name": "[after pixel7] 5f when the editing tab closes, the remaining tab can edit again",
+    "ok": true,
+    "detail": "{\"ro\":true,\"banner\":\"The other tab was closed. This tab is still read-only until you reload it.\\nEdit in this tab\"}"
+  },
+  {
+    "name": "[after pixel7] 5g no page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[after chromebook] 1a own save reached Supabase (RES)",
+    "ok": true,
+    "detail": "RES"
+  },
+  {
+    "name": "[after chromebook] 1b a pull that left before the save does not undo it on the device",
+    "ok": true,
+    "detail": "device now shows analyses=RES"
+  },
+  {
+    "name": "[after chromebook] 1c no 'Merged with a newer copy from another device' from its own save",
+    "ok": true,
+    "detail": "0 merge entries: []"
+  },
+  {
+    "name": "[after chromebook] 1d RES is still on the sample in Supabase (no analyses lost)",
+    "ok": true,
+    "detail": "Supabase analyses=RES+SIL"
+  },
+  {
+    "name": "[after chromebook] 1e device and Supabase agree",
+    "ok": true,
+    "detail": "RES+SIL vs RES+SIL"
+  },
+  {
+    "name": "[after chromebook] 1f no page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[after chromebook] 2a 10 quick edits with overlapping pulls: no self-merge",
+    "ok": true,
+    "detail": "0 merge entries"
+  },
+  {
+    "name": "[after chromebook] 2b last values kept on device and in Supabase",
+    "ok": true,
+    "detail": "[\"GPLA Room v4\",\"3.4\",\"GPLA Room v4\",\"3.4\"]"
+  },
+  {
+    "name": "[after chromebook] 3a genuine two-device edit is merged (audited)",
+    "ok": true,
+    "detail": "1"
+  },
+  {
+    "name": "[after chromebook] 3b both analyses kept (RES from the other device + SIL from this one)",
+    "ok": true,
+    "detail": "RES+SIL"
+  },
+  {
+    "name": "[after chromebook] 3c both devices' audit entries kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[after chromebook] 4a own earlier save is recognised (no merge with itself)",
+    "ok": true,
+    "detail": "0 Kitchen 2.5"
+  },
+  {
+    "name": "[after chromebook] 5a second tab warns it is already open elsewhere and is read-only",
+    "ok": true,
+    "detail": "{\"banner\":\"ENVSS Field is already open in another tab or window on this device. This tab is read-only so the two can't clash. Changes here are not saved.\\nUse this tab instead\",\"ro\":true,\"cls\":true}"
+  },
+  {
+    "name": "[after chromebook] 5b first tab stays editable with no banner",
+    "ok": true,
+    "detail": "{\"banner\":\"\",\"ro\":false}"
+  },
+  {
+    "name": "[after chromebook] 5c second tab writes nothing (device copy and Supabase untouched)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[after chromebook] 5d 'Use this tab' moves editing: new tab editable, old tab read-only with a banner",
+    "ok": true,
+    "detail": "{\"bAfter\":{\"ro\":false,\"banner\":\"\"},\"aAfter\":{\"ro\":true,\"banner\":\"Editing moved to another tab. This tab is read-only now, so the two can't clash. Changes here are not saved.\\nUse this tab instead\"}}"
+  },
+  {
+    "name": "[after chromebook] 5e edits save from the tab that took over",
+    "ok": true,
+    "detail": "Edited after take over"
+  },
+  {
+    "name": "[after chromebook] 5f when the editing tab closes, the remaining tab can edit again",
+    "ok": true,
+    "detail": "{\"ro\":true,\"banner\":\"The other tab was closed. This tab is still read-only until you reload it.\\nEdit in this tab\"}"
+  },
+  {
+    "name": "[after chromebook] 5g no page errors",
+    "ok": true,
+    "detail": ""
+  }
+]
