@@ -19,6 +19,8 @@ const item = (id, job, title, start, status, extra) => ({ item_id: id, title, la
     "which-laboratory-is-processing-samples": { title: "Test Lab", item_id: 5 }, "generate-final-report": "Pending" }, (extra && extra.fields) || {}) });
 const ev = (id, job, code, date, extra) => ({ id, payload: Object.assign({ id, projectId: "podio-p" + job, type: "hygiene", stage: "planned", date, code, multiDay: false, operators: [], audit: [] }, extra || {}), updated_at: NOW, updated_by: "Other Device <minah@envss.com.au>" });
 
+const REPORT_DONE_FIX = [[9021, "Invoiced"], [9022, "No Report Required"], [9023, "Canceled"], [9024, "Final Report Generated"], [9025, "*Send final Report to Client"],
+  [9026, "Report Sent"], [9027, "Event Canceled"], [9032, "Cancelled"], [9033, "Report Generated - Not Sent"], [9034, "Report Sent to Client"]];
 function remoteFixture() {
   return {
     envss_projects: new Map([proj("0019500", "Auto A"), proj("0019501", "Auto no date"), proj("0019502", "Old backlog"), proj("0019503", "Deleted before"),
@@ -32,13 +34,20 @@ function remoteFixture() {
       item(9006, "0019401", "Lake MacLeod", D(12), "Site Works Start Date is Tentative"),
       item(9008, "0019508", "Moved site", D(6), "Site Works Start Date is now Confirmed"),
       item(9010, "0019510", "Race site", D(4), "Site Works Start Date is now Confirmed"),
-      item(9011, "0019500", "Not required", D(3), "Site Works Start Date is Not Required")
+      item(9011, "0019500", "Not required", D(3), "Site Works Start Date is Not Required"),
+      /* report stage at or after Final Report Generated, all inside the date window -> never auto-created */
+      ...REPORT_DONE_FIX.map(([id, rs]) => item(id, "0019500", "Done " + id, D(1), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": rs } })),
+      item(9028, "0019500", "Site works not required", D(1), "Site Works Not Required"),
+      item(9029, "0019500", "Pending report", D(1), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": "Pending" } }),
+      item(9030, "0019500", "Report drafted", D(1), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": "Report Drafted" } }),
+      item(9031, "0019508", "Cancelled later", D(9), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": "Canceled" } })
     ].map(r => [String(r.item_id), r])),
     envss_events: new Map([
       ev("e-podio-9004", "0019503", "0019503-001", D(1), { podioItemId: "9004", podioAuto: true }),
       ev("eHand", "0019401", "0019401-001", D(12), { podioUnplanned: true, podioLinked: false, minesAct: true }),
       ev("e-podio-9008", "0019508", "0019508-001", D(5), { podioItemId: "9008", podioAuto: true, podioLinked: true, podioSeen: { startDate: D(5), startStatus: "Confirmed", jobNumber: "0019508", reference: "x" } }),
-      ev("eOld9009", "0019509", "0019509-001", D(2), { podioItemId: "9009", podioLinked: true })
+      ev("eOld9009", "0019509", "0019509-001", D(2), { podioItemId: "9009", podioLinked: true }),
+      ev("e-podio-9031", "0019508", "0019508-002", D(9), { podioItemId: "9031", podioAuto: true, podioLinked: true, podioSeen: { startDate: D(9), startStatus: "Site Works Start Date is now Confirmed", reportStatus: "Pending", jobNumber: "0019508", reference: "x" } })
     ].map(r => [r.id, r])),
     envss_deletions: new Map([["e-podio-9004", { id: "e-podio-9004", payload: { id: "e-podio-9004", tombstone: "event", deletedEventId: "e-podio-9004", eventId: "e-podio-9004", projectId: "podio-p0019503", code: "0019503-001", type: "hygiene", at: NOW, detail: "event deleted" }, updated_at: NOW }]]),
     envss_trains: new Map(), envss_hires: new Map()
@@ -92,10 +101,20 @@ async function run(vp) {
   check(`[${vp}] event deleted here (tombstone) is NOT re-created`, byItem(list, "9004").length === 0 && !list.some(e => e.id === "e-podio-9004"));
   check(`[${vp}] AFM-only HYG item is skipped (AFM flow owns it)`, byItem(list, "9005").length === 0);
   check(`[${vp}] Podio 'Not required' item is not created`, byItem(list, "9011").length === 0);
+  const doneMade = REPORT_DONE_FIX.map(([id, rs]) => [rs, byItem(list, id).length]).filter(x => x[1]);
+  check(`[${vp}] report stage Invoiced / No Report Required / Canceled / Cancelled / Final Report Generated / Send final / Report Sent / legacy texts: none auto-created`, !doneMade.length, JSON.stringify(doneMade));
+  check(`[${vp}] start status 'Site Works Not Required' (exact Podio option) is not created`, byItem(list, "9028").length === 0);
+  check(`[${vp}] earlier report stages still count as planned: Pending and Report Drafted are created`, byItem(list, "9029").length === 1 && byItem(list, "9030").length === 1);
+  const unit = await page.evaluate(() => { const P = (rs, st, coc) => envssPodio.map.isPlanned({ reportStatus: rs, startStatus: st || "Site Works Start Date is now Confirmed", cocStatus: coc || "" });
+    return { invoiced: P("Invoiced"), nrr: P("No Report Required"), canceled: P("Canceled"), cancelled: P("Cancelled"), cancelledCase: P(" cancelled "), frg: P("Final Report Generated"), send: P("*Send final Report to Client"),
+      sent: P("Report Sent"), legacyCancel: P("Event Canceled"), legacyNotSent: P("Report Generated - Not Sent"), legacySent: P("Report Sent to Client"), swnr: P("", "Site Works Not Required"), lab: P("", "", "Lab Results Received"),
+      pending: P("Pending"), drafted: P("Report Drafted"), review: P("Report in Review"), authorise: P("I have conducted a review and authorise the report to be sent to client once Pdf'd"), blank: P(""), tentative: P("", "Site Works Start Date is Tentative"), nostatus: P("", "") }; });
+  const off = ["invoiced", "nrr", "canceled", "cancelled", "cancelledCase", "frg", "send", "sent", "legacyCancel", "legacyNotSent", "legacySent", "swnr", "lab"], on = ["pending", "drafted", "review", "authorise", "blank", "tentative", "nostatus"];
+  check(`[${vp}] isPlanned on exact Podio option texts: done stages false, earlier stages true`, off.every(k => unit[k] === false) && on.every(k => unit[k] === true), JSON.stringify(unit));
   check(`[${vp}] hand-made 0019401-001 on the same job + date blocks a duplicate: link offered instead`, byItem(list, "9006").length === 0 && JSON.stringify((await page.evaluate(() => envssAuto.offers()))["9006"]) === '["eHand"]', JSON.stringify(await page.evaluate(() => envssAuto.offers())));
   check(`[${vp}] already-linked events are not duplicated (9008 stays one event)`, byItem(list, "9008").length === 1);
   const last = await page.evaluate(() => envssAuto.last());
-  check(`[${vp}] run summary created 3 (9001, 9002, 9010)`, last.created.length === 3, JSON.stringify(last));
+  check(`[${vp}] run summary created 5 (9001, 9002, 9010, 9029, 9030)`, last.created.length === 5, JSON.stringify(last));
   await waitFor(page, () => !syncState.pending["events:e-podio-9001"] && !syncState.pending["events:e-podio-9010"]);
   check(`[${vp}] auto-created events reach Supabase (mock) as upserts`, store.envss_events.has("e-podio-9001") && store.envss_events.get("e-podio-9001").payload.podioItemId === "9001" && store.envss_events.get("e-podio-9001").project_id === "podio-p0019500");
 
@@ -162,6 +181,13 @@ async function run(vp) {
   await page.click('[data-v487-usedate="e-podio-9008"]'); await sleep(400);
   const m2 = (await evs(page)).find(e => e.id === "e-podio-9008");
   check(`[${vp}] Use Podio date (staff tap, confirmed) changes the date and audits it; flag clears`, m2.date === D(6) && m2.audit.some(a => a.action === "Date changed to match Podio" && a.from === D(5) && a.to === D(6)) && !(await page.evaluate(() => !!document.getElementById("v487Flags"))), JSON.stringify(m2.audit));
+
+  /* 7b. Podio report status changed to Canceled after the field event was made -> flagged, not changed */
+  await page.evaluate(() => openEvent("e-podio-9031")); await sleep(400);
+  const canc = await page.evaluate(() => (document.getElementById("v487Flags") || {}).textContent || "");
+  const c9031 = (await evs(page)).find(e => e.id === "e-podio-9031");
+  check(`[${vp}] linked event later Canceled in Podio: 'Marked Canceled in Podio' flag, event untouched`, /Marked Canceled in Podio/.test(canc) && c9031 && c9031.date === D(9) && c9031.stage === "planned", canc);
+  await page.evaluate(() => window.scrollTo(0, 0)); await shot(page, "10-event-cancelled-flag", false);
 
   /* 8. deleted in Podio -> flagged, Keep as is */
   await page.evaluate(() => openEvent("eOld9009")); await sleep(400);

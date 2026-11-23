@@ -9240,11 +9240,16 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       return "";
     }
 
+    /* v48.7: Report Status (generate-final-report) options at or after "Final Report Generated" = the field visit is over.
+       Exact option texts from Podio app 24280319 (read 23 Nov 2026 AWST): active 67-72 plus the deleted legacy texts still on old items.
+       "Cancelled" is accepted as well as Podio's "Canceled". Earlier stages (Pending, drafting, review) still count as planned. */
+    const REPORT_DONE = new Set(["Final Report Generated", "*Send final Report to Client", "Report Sent", "Canceled", "Cancelled", "No Report Required", "Invoiced",
+      "Report Generated - Not Sent", "Report Sent to Client", "Event Canceled", "Event Cancelled"].map(s => s.toLowerCase()));
     function isPlanned(p) {
       const start = String(p.startStatus || "");
-      if (/not required/i.test(start)) return false;
+      if (start === "Site Works Not Required" || /not required/i.test(start)) return false;   /* exact Podio option 3, plus older wording */
       if (p.cocStatus === "Lab Results Received") return false;
-      if (p.reportStatus === "Report Sent") return false;
+      if (REPORT_DONE.has(String(p.reportStatus || "").trim().toLowerCase())) return false;   /* v48.7: report stage at or after Final Report Generated */
       if (!start) return true;
       return /tentative|confirmed/i.test(start);
     }
@@ -9293,7 +9298,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       payload.planned = isPlanned(payload);
       return payload;
     }
-    return { mapItem };
+    return { mapItem, isPlanned };
   })();
   const COOL_KEY = "envss-podio-cooldown-v46";
   let mirrorAt = 0;
@@ -11525,6 +11530,7 @@ function fixOpen(ts) {
    and an existing row (made by another device, edited, or deleted) always wins; nothing is overwritten. Nothing is
    deleted. No Podio calls or writes. ===== */
 (function () {
+  const PodioMapIsPlanned = p => window.envssPodio && envssPodio.map && envssPodio.map.isPlanned ? envssPodio.map.isPlanned(p) : true;
   const ALL_KEY = "envss-podio-hyg-all-v487", GONE_KEY = "envss-podio-deleted-items-v487", MADE_KEY = "envss-auto-made-v487";
   const BACK_DAYS = 7;            /* Podio start date at most 7 days ago (older backlog keeps Start fieldwork) */
   const NODATE_EDIT_DAYS = 60;    /* no start date in Podio: only if the Podio item was edited in the last 60 days */
@@ -11594,7 +11600,8 @@ function fixOpen(ts) {
         || (pl.startDate && e.date && Math.abs(dayDiff(e.date, pl.startDate)) <= MATCH_DAYS)
         || (!pl.startDate && (!e.date || e.date >= addDays(t, -BACK_DAYS)))));
   }
-  function seenOf(pl) { return { startDate: pl.startDate || "", startStatus: pl.startStatus || "", jobNumber: pl.jobNumber || "", reference: pl.reference || "", at: nowIso() }; }
+  function seenOf(pl) { return { startDate: pl.startDate || "", startStatus: pl.startStatus || "", reportStatus: pl.reportStatus || "", jobNumber: pl.jobNumber || "", reference: pl.reference || "", at: nowIso() }; }
+  const isCancelled = v => /^(event )?cancel+ed$/i.test(String(v || "").trim());
   function codeFor(p, pl, tb) {
     const codes = new Set((db.events || []).map(e => e.code).concat([...tb.codes]));
     if (pl.fieldCode && !codes.has(pl.fieldCode)) return pl.fieldCode;
@@ -11686,6 +11693,7 @@ function fixOpen(ts) {
     const proj = project(ev.projectId), baseJob = (seen && seen.jobNumber) || jobOf(proj);
     if (pl.jobNumber && baseJob && pl.jobNumber !== baseJob) out.push({ kind: "job", text: "Moved to job " + pl.jobNumber + " in Podio (this event is on " + baseJob + ")." });
     if (/not required/i.test(pl.startStatus || "") && !(seen && /not required/i.test(seen.startStatus || ""))) out.push({ kind: "status", text: "Marked Not required in Podio." });
+    if (isCancelled(pl.reportStatus) && !(seen && isCancelled(seen.reportStatus))) out.push({ kind: "status", text: "Marked Canceled in Podio." });
     return out;
   }
   function allFlagged() {
@@ -11908,7 +11916,7 @@ function fixOpen(ts) {
     + "#v487Flags .btn,.v487-offer .btn{margin:4px 6px 0 0}#v487Dash{margin:10px 0}#v487Dash .sync-link{font-weight:700;margin:0 4px}";
   document.head.appendChild(st);
   window.envssAuto = { run, card, startManual, idFor, flagsFor, allFlagged, link, separate, review, eligible, isAfmOnly,
-    offers: () => JSON.parse(JSON.stringify(offers)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
+    isPlanned: p => PodioMapIsPlanned(p), offers: () => JSON.parse(JSON.stringify(offers)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
 })();
 </script>
 

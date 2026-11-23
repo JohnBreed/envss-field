@@ -97,11 +97,16 @@ export function mapTurnaround(label) {
   return "";
 }
 
+/* v48.7: Report Status (generate-final-report) options at or after "Final Report Generated" = the field visit is over.
+   Exact option texts from Podio app 24280319 (read 23 Nov 2026 AWST): active 67-72 plus the deleted legacy texts still on old items.
+   "Cancelled" is accepted as well as Podio's "Canceled". Earlier stages (Pending, drafting, review) still count as planned. */
+const REPORT_DONE = new Set(["Final Report Generated", "*Send final Report to Client", "Report Sent", "Canceled", "Cancelled", "No Report Required", "Invoiced",
+  "Report Generated - Not Sent", "Report Sent to Client", "Event Canceled", "Event Cancelled"].map(s => s.toLowerCase()));
 export function isPlanned(p) {
   const start = String(p.startStatus || "");
-  if (/not required/i.test(start)) return false;
+  if (start === "Site Works Not Required" || /not required/i.test(start)) return false;   /* exact Podio option 3, plus older wording */
   if (p.cocStatus === "Lab Results Received") return false;
-  if (p.reportStatus === "Report Sent") return false;
+  if (REPORT_DONE.has(String(p.reportStatus || "").trim().toLowerCase())) return false;   /* v48.7: report stage at or after Final Report Generated */
   if (!start) return true;
   return /tentative|confirmed/i.test(start);
 }
