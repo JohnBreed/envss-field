@@ -1,0 +1,432 @@
+[
+ {
+  "name": "[pixel7] app is v48.7 with STOP limit 14 h in warn mode",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] test operator is admin (for the approval card)",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (a) end flow is read-only before STOP, with 'unlocks when you press STOP'",
+  "ok": true,
+  "detail": "{\"ro\":true,\"help\":true}"
+ },
+ {
+  "name": "[pixel7] (b) STOP 15 h after START shows the 14 h warning and does not stop yet",
+  "ok": true,
+  "detail": "Run over 14 hours\n\nSample 2 started 23 Nov, 3:41 am AWST. Stopping now makes a run of 15.0 h, over the 14 h a normal shift runs. That usually means START or STOP was on the wrong day.\n\nIf the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.\n\nCancel\nStop anyway"
+ },
+ {
+  "name": "[pixel7] (b) Cancel leaves the sample running",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (b) 'Stop anyway' stops it and keeps the confirmation in the audit trail",
+  "ok": true,
+  "detail": "[\"STOP more than 14 h after START — confirmed\",\"STOP pressed\",\"Changed Status\",\"Changed Stop time\",\"Stop location\"]"
+ },
+ {
+  "name": "[pixel7] (a) end flow unlocks after STOP (empty box, no reason needed)",
+  "ok": true,
+  "detail": "{\"ro\":false,\"lock\":false}"
+ },
+ {
+  "name": "[pixel7] (a) end flow exactly = start flow asks 'is that right?'",
+  "ok": true,
+  "detail": "End flow is the same as start flow\n\nSample 2: start 2.0 L/min, end 2.0 L/min. Pumps nearly always drift a little. Is 2.0 L/min what the rotameter read after STOP?\n\nRe-enter\nYes, it's correct"
+ },
+ {
+  "name": "[pixel7] (a) confirming keeps 2.0, logs it, and shows the inline warning",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-23T10:41:31.739Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-23T10:41:32.268Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed End flow\",\"field\":\"endFlow\",\"from\":\"\",\"to\":\"2.0\",\"detail\":\"(empty) → 2.0\"},{\"at\":\"2026-11-23T10:41:32.831Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"End flow equals start flow — confirmed\",\"detail\":\"2.0 L/min · Android\",\"v487ef\":\"2.0\"}]"
+ },
+ {
+  "name": "[pixel7] (g) stopped sample shows the lock banner; filled Location locked; empty Comments free",
+  "ok": true,
+  "detail": "{\"banner\":true,\"locRo\":true,\"locLock\":true,\"comLock\":false}"
+ },
+ {
+  "name": "[pixel7] (g) filling an empty box on a stopped sample needs no reason",
+  "ok": true,
+  "detail": "{\"c\":\"Filter looked fine\",\"m\":null,\"dom\":[\"TEXTAREA\",\"Filter looked fine\",false,false]}"
+ },
+ {
+  "name": "[pixel7] (g) changing an answered Yes / No (Sample rejected? No -> Yes) asks for a reason first",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (g) tapping a filled box asks 'Why change a stopped sample?'",
+  "ok": true,
+  "detail": "Why change a stopped sample?\n\nSample 3 has been stopped (23 Nov, 5:41 pm AWST). You tapped Static location. Give a reason to unlock it. The reason, your name and this device go in the audit trail.\n\nCorrecting a typo / wrong entry\nDetails received after the shift\nOffice / lab correction\nOther (type the reason)\nDetails (optional)\n\nCancel\nUnlock to edit"
+ },
+ {
+  "name": "[pixel7] (g) a reason is required",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (g) Cancel keeps it locked and unchanged",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (g) with a reason the sample unlocks and the banner shows the reason",
+  "ok": true,
+  "detail": "{\"ro\":false,\"banner\":\"Editing unlocked\\n\\nReason: Correcting a typo / wrong entry (wrong bay). Changes are kept in the audit trail. It locks again when you leave this sample.\"}"
+ },
+ {
+  "name": "[pixel7] (g) the change saves and the reason is in the audit trail",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-23T10:41:33.922Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"comments\",\"from\":\"\",\"to\":\"Filter looked fine\",\"detail\":\"(empty) → Filter looked fine\"},{\"at\":\"2026-11-23T10:41:36.014Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Edit after STOP unlocked\",\"detail\":\"Correcting a typo / wrong entry (wrong bay) · Android\",\"v487edit\":{\"reason\":\"typo\",\"reasonText\":\"wrong bay\",\"device\":\"Android\",\"mobile\":true}},{\"at\":\"2026-11-23T10:41:36.427Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Location\",\"field\":\"location\",\"from\":\"Crusher west\",\"to\":\"Crusher east\",\"detail\":\"Crusher west → Crusher east\"}]"
+ },
+ {
+  "name": "[pixel7] (g) leaving and coming back locks it again",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (c) inline warning: head IESS01 already running on 0019488-001 sample 1",
+  "ok": true,
+  "detail": "⚠ Sample head IESS01 is already running on Sample 1 (0019488-001, started 23 Nov, 4:41 pm AWST). Each running sample needs its own head. Check the head ID."
+ },
+ {
+  "name": "[pixel7] (c) START asks 'Start anyway?' and has not started",
+  "ok": true,
+  "detail": "Sample head already running\n\nSample 1: Sample head IESS01 is already running on Sample 1 (0019488-001, started 23 Nov, 4:41 pm AWST). Each running sample needs its own head.\n\nIf the other sample has really finished, press STOP on it first. Otherwise check the head ID.\n\nCancel\nStart anyway"
+ },
+ {
+  "name": "[pixel7] (c) Cancel: still prepped",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (c) Start anyway: running, confirmation logged",
+  "ok": true,
+  "detail": "[\"START with head already running — confirmed\",\"Changed Sex picked\",\"START pressed\",\"Changed Status\",\"Changed Start time\",\"Start location\"]"
+ },
+ {
+  "name": "[pixel7] (f) START on a phone is not flagged",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (d) Company is a picklist: project client first, other companies, Other",
+  "ok": true,
+  "detail": "{\"opts\":[\"\",\"Acme Mining\",\"BHP Contractors\",\"Downer\",\"__other\"],\"sel\":\"\",\"inpHidden\":true}"
+ },
+ {
+  "name": "[pixel7] (d) picking Downer saves person.company",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (d) Other: typed company saves",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (d) a typed company joins the list and is selected next time",
+  "ok": true,
+  "detail": "Newco Scaffolding"
+ },
+ {
+  "name": "[pixel7] (e) noise sample without today's calibration: START gap + notice",
+  "ok": true,
+  "detail": "{\"gaps\":[\"Start-of-day calibration (2026-11-23)\"],\"gate\":\"START is locked until today's start-of-day field calibration (2026-11-23) is recorded: calibrator level and meter reading. Go to Calibration\"}"
+ },
+ {
+  "name": "[pixel7] (e) START refused with the calibration listed",
+  "ok": true,
+  "detail": "[\"Cannot start until these are filled:\\n• Start-of-day calibration (2026-11-23)\"]"
+ },
+ {
+  "name": "[pixel7] (e) once calibrated the gap and notice go",
+  "ok": true,
+  "detail": "{\"gaps\":[],\"gate\":false}"
+ },
+ {
+  "name": "[pixel7] (e) noise START works after calibration",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (c) AFM: cowl 13469 already running on 0019488-AFM-004",
+  "ok": true,
+  "detail": "⚠ Cowl 13469 is already running on Pump 4 (0019488-AFM-004, started 23 Nov, 3:41 pm AWST). Each running sample needs its own cowl. Check the cowl number."
+ },
+ {
+  "name": "[pixel7] (c) AFM START asks first",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (c+a) AFM started; end flow read-only while running",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] (b) Enter times 15.5 h apart warns before saving",
+  "ok": true,
+  "detail": "Run over 14 hours\n\nSample 6 started 22 Nov, 6:00 am AWST. These times make a run of 15.5 h, over the 14 h a normal shift runs. That usually means START or STOP was on the wrong day.\n\nIf the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.\n\nGo back\nSave anyway"
+ },
+ {
+  "name": "[pixel7] (b) Save anyway saves both times with the confirmation",
+  "ok": true,
+  "detail": "[\"Times more than 14 h apart — confirmed\",\"Start time entered manually\",\"Stop time entered manually\",\"Changed Status\",\"Changed Start time\",\"Changed Stop time\"]"
+ },
+ {
+  "name": "[pixel7] (f) times typed on a phone are not flagged",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] reload keeps the saved values",
+  "ok": true,
+  "detail": "h1:running:::Acme Mining: h2:ended:2.0:Bay 2:: h3:ended:1.9:Crusher east:Filter looked fine: h4:prepped:::Newco Scaffolding: n1:running:::Acme Mining: f1:running::North boundary::"
+ },
+ {
+  "name": "[pixel7] other samples untouched",
+  "ok": true,
+  "detail": "[[\"running\",\"\",0,false],[\"ended\",\"2.1\",0,false],[\"running\",\"\",0,false]]"
+ },
+ {
+  "name": "[pixel7] no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] no unexpected native alerts (only the existing 'Cannot start until' list)",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] app is v48.7 with STOP limit 14 h in warn mode",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] test operator is admin (for the approval card)",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (a) end flow is read-only before STOP, with 'unlocks when you press STOP'",
+  "ok": true,
+  "detail": "{\"ro\":true,\"help\":true}"
+ },
+ {
+  "name": "[chromebook] (b) STOP 15 h after START shows the 14 h warning and does not stop yet",
+  "ok": true,
+  "detail": "Run over 14 hours\n\nSample 2 started 23 Nov, 3:41 am AWST. Stopping now makes a run of 15.0 h, over the 14 h a normal shift runs. That usually means START or STOP was on the wrong day.\n\nIf the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.\n\nCancel\nStop anyway"
+ },
+ {
+  "name": "[chromebook] (b) Cancel leaves the sample running",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (b) 'Stop anyway' stops it and keeps the confirmation in the audit trail",
+  "ok": true,
+  "detail": "[\"STOP more than 14 h after START — confirmed\",\"STOP pressed\",\"Changed Status\",\"Changed Stop time\",\"Stop location\",\"STOP pressed on a Chromebook\",\"STOP pressed on a Chromebook\",\"STOP pressed on a Chromebook\"]"
+ },
+ {
+  "name": "[chromebook] (a) end flow unlocks after STOP (empty box, no reason needed)",
+  "ok": true,
+  "detail": "{\"ro\":false,\"lock\":false}"
+ },
+ {
+  "name": "[chromebook] (a) end flow exactly = start flow asks 'is that right?'",
+  "ok": true,
+  "detail": "End flow is the same as start flow\n\nSample 2: start 2.0 L/min, end 2.0 L/min. Pumps nearly always drift a little. Is 2.0 L/min what the rotameter read after STOP?\n\nRe-enter\nYes, it's correct"
+ },
+ {
+  "name": "[chromebook] (a) confirming keeps 2.0, logs it, and shows the inline warning",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-23T10:41:57.286Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed End flow\",\"field\":\"endFlow\",\"from\":\"\",\"to\":\"2.0\",\"detail\":\"(empty) → 2.0\"},{\"at\":\"2026-11-23T10:41:57.296Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Needs Office Approval\",\"field\":\"needsOfficeApproval\",\"from\":\"\",\"to\":\"true\",\"detail\":\"(empty) → true\"},{\"at\":\"2026-11-23T10:41:57.772Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"End flow equals start flow — confirmed\",\"detail\":\"2.0 L/min · Chromebook\",\"v487ef\":\"2.0\"}]"
+ },
+ {
+  "name": "[chromebook] (g) stopped sample shows the lock banner; filled Location locked; empty Comments free",
+  "ok": true,
+  "detail": "{\"banner\":true,\"locRo\":true,\"locLock\":true,\"comLock\":false}"
+ },
+ {
+  "name": "[chromebook] (g) filling an empty box on a stopped sample needs no reason",
+  "ok": true,
+  "detail": "{\"c\":\"Filter looked fine\",\"m\":null,\"dom\":[\"TEXTAREA\",\"Filter looked fine\",false,false]}"
+ },
+ {
+  "name": "[chromebook] (g) changing an answered Yes / No (Sample rejected? No -> Yes) asks for a reason first",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (g) tapping a filled box asks 'Why change a stopped sample?'",
+  "ok": true,
+  "detail": "Why change a stopped sample?\n\nSample 3 has been stopped (23 Nov, 5:41 pm AWST). You tapped Static location. Give a reason to unlock it. The reason, your name and this device go in the audit trail.\n\nCorrecting a typo / wrong entry\nDetails received after the shift\nOffice / lab correction\nOther (type the reason)\nDetails (optional)\n\nCancel\nUnlock to edit"
+ },
+ {
+  "name": "[chromebook] (g) a reason is required",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (g) Cancel keeps it locked and unchanged",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (g) with a reason the sample unlocks and the banner shows the reason",
+  "ok": true,
+  "detail": "{\"ro\":false,\"banner\":\"Editing unlocked\\n\\nReason: Correcting a typo / wrong entry (wrong bay). Changes are kept in the audit trail. It locks again when you leave this sample.\"}"
+ },
+ {
+  "name": "[chromebook] (g) the change saves and the reason is in the audit trail",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-23T10:41:58.730Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"comments\",\"from\":\"\",\"to\":\"Filter looked fine\",\"detail\":\"(empty) → Filter looked fine\"},{\"at\":\"2026-11-23T10:42:00.693Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Edit after STOP unlocked\",\"detail\":\"Correcting a typo / wrong entry (wrong bay) · Chromebook\",\"v487edit\":{\"reason\":\"typo\",\"reasonText\":\"wrong bay\",\"device\":\"Chromebook\",\"mobile\":false}},{\"at\":\"2026-11-23T10:42:01.107Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Location\",\"field\":\"location\",\"from\":\"Crusher west\",\"to\":\"Crusher east\",\"detail\":\"Crusher west → Crusher east\"}]"
+ },
+ {
+  "name": "[chromebook] (g) leaving and coming back locks it again",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (c) inline warning: head IESS01 already running on 0019488-001 sample 1",
+  "ok": true,
+  "detail": "⚠ Sample head IESS01 is already running on Sample 1 (0019488-001, started 23 Nov, 4:41 pm AWST). Each running sample needs its own head. Check the head ID."
+ },
+ {
+  "name": "[chromebook] (c) START asks 'Start anyway?' and has not started",
+  "ok": true,
+  "detail": "Sample head already running\n\nSample 1: Sample head IESS01 is already running on Sample 1 (0019488-001, started 23 Nov, 4:41 pm AWST). Each running sample needs its own head.\n\nIf the other sample has really finished, press STOP on it first. Otherwise check the head ID.\n\nCancel\nStart anyway"
+ },
+ {
+  "name": "[chromebook] (c) Cancel: still prepped",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (c) Start anyway: running, confirmation logged",
+  "ok": true,
+  "detail": "[\"START with head already running — confirmed\",\"Changed Sex picked\",\"START pressed\",\"Changed Status\",\"Changed Start time\",\"Start location\",\"START pressed on a Chromebook\",\"Changed Needs Office Approval\",\"START pressed on a Chromebook\",\"START pressed on a Chromebook\"]"
+ },
+ {
+  "name": "[chromebook] (f) START on a Chromebook flags 'needs office approval' (nothing blocked)",
+  "ok": true,
+  "detail": "{\"f\":true,\"a\":[\"START with head already running — confirmed\",\"Changed Sex picked\",\"START pressed\",\"Changed Status\",\"Changed Start time\",\"Start location\",\"START pressed on a Chromebook\",\"Changed Needs Office Approval\",\"START pressed on a Chromebook\",\"START pressed on a Chromebook\"]}"
+ },
+ {
+  "name": "[chromebook] (f) admin sees the approval card with the laptop press",
+  "ok": true,
+  "detail": "Needs office approval\n\nSTART / STOP or times were entered on a laptop or Chromebook, not at the pump. Check them, then approve.\n\nSTART pressed on a Chromebook · 23 Nov, 6:42 pm AWST\nApprove times (office)"
+ },
+ {
+  "name": "[chromebook] (f) event list shows the chip and a count for admin",
+  "ok": true,
+  "detail": "{\"chip\":2,\"line\":\"2 samples need office approval (laptop / Chromebook START, STOP or typed times).\"}"
+ },
+ {
+  "name": "[chromebook] (f) Approve clears the flag and keeps who / when",
+  "ok": true,
+  "detail": "{\"at\":\"2026-11-23T10:42:06.808Z\",\"by\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"device\":\"Chromebook\",\"count\":3,\"v\":\"48.7\"}"
+ },
+ {
+  "name": "[chromebook] (d) Company is a picklist: project client first, other companies, Other",
+  "ok": true,
+  "detail": "{\"opts\":[\"\",\"Acme Mining\",\"BHP Contractors\",\"Downer\",\"__other\"],\"sel\":\"\",\"inpHidden\":true}"
+ },
+ {
+  "name": "[chromebook] (d) picking Downer saves person.company",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (d) Other: typed company saves",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (d) a typed company joins the list and is selected next time",
+  "ok": true,
+  "detail": "Newco Scaffolding"
+ },
+ {
+  "name": "[chromebook] (e) noise sample without today's calibration: START gap + notice",
+  "ok": true,
+  "detail": "{\"gaps\":[\"Start-of-day calibration (2026-11-23)\"],\"gate\":\"START is locked until today's start-of-day field calibration (2026-11-23) is recorded: calibrator level and meter reading. Go to Calibration\"}"
+ },
+ {
+  "name": "[chromebook] (e) START refused with the calibration listed",
+  "ok": true,
+  "detail": "[\"Cannot start until these are filled:\\n• Start-of-day calibration (2026-11-23)\"]"
+ },
+ {
+  "name": "[chromebook] (e) once calibrated the gap and notice go",
+  "ok": true,
+  "detail": "{\"gaps\":[],\"gate\":false}"
+ },
+ {
+  "name": "[chromebook] (e) noise START works after calibration",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (c) AFM: cowl 13469 already running on 0019488-AFM-004",
+  "ok": true,
+  "detail": "⚠ Cowl 13469 is already running on Pump 4 (0019488-AFM-004, started 23 Nov, 3:41 pm AWST). Each running sample needs its own cowl. Check the cowl number."
+ },
+ {
+  "name": "[chromebook] (c) AFM START asks first",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (c+a) AFM started; end flow read-only while running",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] (b) Enter times 15.5 h apart warns before saving",
+  "ok": true,
+  "detail": "Run over 14 hours\n\nSample 6 started 22 Nov, 6:00 am AWST. These times make a run of 15.5 h, over the 14 h a normal shift runs. That usually means START or STOP was on the wrong day.\n\nIf the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.\n\nGo back\nSave anyway"
+ },
+ {
+  "name": "[chromebook] (b) Save anyway saves both times with the confirmation",
+  "ok": true,
+  "detail": "[\"Times more than 14 h apart — confirmed\",\"Start time entered manually\",\"Stop time entered manually\",\"Changed Status\",\"Changed Start time\",\"Changed Stop time\",\"Changed Needs Office Approval\"]"
+ },
+ {
+  "name": "[chromebook] (f) times typed on a Chromebook are flagged for office approval",
+  "ok": true,
+  "detail": "true"
+ },
+ {
+  "name": "[chromebook] reload keeps the saved values",
+  "ok": true,
+  "detail": "h1:running:::Acme Mining: h2:ended:2.0:Bay 2::NOA h3:ended:1.9:Crusher east:Filter looked fine: h4:prepped:::Newco Scaffolding: n1:running:::Acme Mining:NOA f1:running::North boundary::NOA"
+ },
+ {
+  "name": "[chromebook] other samples untouched",
+  "ok": true,
+  "detail": "[[\"running\",\"\",0,false],[\"ended\",\"2.1\",0,false],[\"running\",\"\",0,false]]"
+ },
+ {
+  "name": "[chromebook] no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] no unexpected native alerts (only the existing 'Cannot start until' list)",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "no request left the box except the CDN libraries; every Supabase call was answered by the in-memory mock",
+  "ok": true,
+  "detail": ""
+ }
+]

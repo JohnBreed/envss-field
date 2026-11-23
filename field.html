@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
+<!-- ENVSS Field v48.7 draft (23 Nov 2026 AWST): lock-down guards, see the v48.7 layer at the end. v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
 <!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
 <!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
 <!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
@@ -9,7 +9,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.5</title>
+  <title>ENVSS Field v48.7</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -393,7 +393,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.5</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.7</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -409,12 +409,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.5"></script>
+  <script src="config.js?v=48.7"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.5"; /* 2026-11-13 (AWST): v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.7"; /* 2026-11-23 (AWST): v48.7 draft = v48.5 + lock-down guards (end flow after STOP, 14 h STOP warning, head already running, company picklist, noise calibration before START, laptop times need office approval, reason to change a stopped sample). v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -11492,6 +11492,405 @@ function fixOpen(ts) {
     + ".v484-dayhint{align-self:center;font-size:13px;opacity:.8;margin-left:4px}"
     + "@media (max-width:1279px){.v484-side{display:none}}"
     + "@media print{.v484-side,.v484-nav{display:none}}";
+  document.head.appendChild(st);
+  render();
+})();
+</script>
+
+
+<script>
+/* ===== v48.7 draft: lock-down guards (John, 23 Nov 2026 AWST, open item 3 "lock-down fixes from Sarah's data") =====
+   a. End flow is read-only until STOP is pressed (hygiene airborne + AFM). After STOP, an end flow exactly equal to the
+      start flow gets a warning (inline, plus a one-off "is that right?" prompt). Never blocks.
+   b. STOP more than STOP_LIMIT_H hours after START: a warning the user confirms (John 23 Nov 6:26 pm: warning, not a block).
+      Applies to the STOP button and to Edit time / Enter time (14–24 h; over 24 h keeps the existing v48.3 prompt).
+   c. Sample head (hygiene) or cowl (AFM) already RUNNING on another sample, any event: inline warning, and START asks
+      "start anyway?". Soft only, like the existing pump / dosimeter clash.
+   d. Company / contractor is a picklist: every company already used on a sample plus the project client, with
+      "Other (type it)" for a new one. The value is still stored in person.company as before.
+   e. Noise START is blocked until that day's start-of-day field calibration (calibrator level + meter reading) is
+      recorded on the event (noise.js calState). Added to startGaps, so START, "Start all on this person" and the
+      "needed before START" count all use it.
+   f. START / STOP pressed, or a time typed / edited, on a laptop or Chromebook: the sample is flagged
+      "Needs office approval" (nothing is blocked; the v48.3 phone reminder still shows). Admins see the flag on the
+      sample, in the event list and as a count on the event, and can approve it (kept in the audit trail).
+   g. A stopped sample is locked: empty boxes can still be filled (end flow, post-STOP answers, noise readings), but
+      changing anything already entered needs a reason first. The reason is kept in the audit trail and the sample stays
+      unlocked until you leave it. Edit time keeps its own v48.3 reasons.
+   Data: new keys on the sample JSON only (needsOfficeApproval, officeApproval) and audit entries. No schema change. */
+(function () {
+  if (typeof render !== "function") return;
+  const V = "48.7";
+  const STOP_LIMIT_H = 14;           /* hours from START to STOP before the warning shows */
+  const STOP_LIMIT_MODE = "warn";    /* John 23 Nov 2026 6:26 pm AWST: "warn" (confirm and continue). Also supports "block" or "off". */
+  const INSTALLED_AT = new Date().toISOString();
+  const MOBILE = window.v483 && typeof v483.MOBILE === "boolean" ? v483.MOBILE : (function () { const ua = navigator.userAgent || ""; return !/CrOS/i.test(ua) && /Android|iPhone|iPad|iPod|Mobile/i.test(ua); })();
+  const DONE = new Set(["rejected", "fault", "not_used", "uploaded"]);
+  const e7 = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c]);
+  const ms = iso => { const d = iso ? new Date(iso).getTime() : NaN; return isNaN(d) ? null : d; };
+  const n7 = v => { const n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return Number.isFinite(n) ? n : null; };
+  const hmA = iso => { try { return new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Perth", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) + " AWST"; } catch (e) { return String(iso || ""); } };
+  function who() { try { return whoText(); } catch (e) { return ""; } }
+  function dev() { try { return deviceLabel(); } catch (e) { return "Browser"; } }
+  function note(t, action, detail, extra) { t.audit = t.audit || []; t.audit.push(Object.assign({ at: nowIso(), who: who(), action, detail: detail || "" }, extra || {})); t.updatedAt = nowIso(); }
+  function curT() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function fib(t) { try { return isFibreTrain(t); } catch (e) { return false; } }
+  function blank(t) { try { return isBlank(t); } catch (e) { return false; } }
+  function noise(t) { try { return isNoise(t); } catch (e) { return false; } }
+  function passive(t) { try { return typeof isPassive === "function" && isPassive(t); } catch (e) { return false; } }
+  function deleted(x) { return (db.deletions || []).some(d => d && d.trainId === x.id); }
+  function running(x) { return !!x && !!x.startAt && !x.endAt && !DONE.has(x.status) && !deleted(x); }
+  function ended(t) { return !!t && !blank(t) && t.status !== "not_used" && (!!t.endAt || (typeof isStoppedTrain === "function" && isStoppedTrain(t))); }
+  function flowSample(t) { return !!t && !blank(t) && !noise(t) && !passive(t); }
+  function evCode(x) { return ((typeof eventById === "function" && eventById(x.eventId)) || {}).code || ""; }
+  function dno(x) { try { return displayNo(x); } catch (e) { return "sample " + (x.sampleNo || ""); } }
+
+  /* ---------- modal (same look as v48.3) ---------- */
+  function ask(id, title, body, yes, no, opts) {
+    opts = opts || {};
+    return new Promise(res => {
+      const old = document.querySelector('.v483-modal[data-v487="' + id + '"]'); if (old) old.remove();
+      const w = document.createElement("div"); w.className = "v483-modal"; w.setAttribute("data-v487", id);
+      w.innerHTML = `<div class="v483-dialog" role="dialog" aria-modal="true"><h3 style="margin:0 0 6px" id="v487Title">${e7(title)}</h3>${body}
+        <p class="help v483-err" id="v487Err" role="alert"></p>
+        <div class="row" style="gap:10px;justify-content:flex-end;margin-top:12px">${no ? `<button type="button" class="btn ghost" id="v487No">${e7(no)}</button>` : ""}<button type="button" class="btn ${opts.yesClass || "orange"}" id="v487Yes">${e7(yes)}</button></div></div>`;
+      document.body.appendChild(w);
+      const done = v => { w.remove(); res(v); };
+      if (no) w.querySelector("#v487No").onclick = () => done(false);
+      w.querySelector("#v487Yes").onclick = () => { if (opts.check) { const r = opts.check(w); if (r && r.err) { w.querySelector("#v487Err").textContent = r.err; return; } done(r || true); return; } done(true); };
+    });
+  }
+  /* re-click a button once, skipping our own capture checks */
+  const bypass = new Set();
+  function reclick(btn, key) { bypass.add(key); try { btn.click(); } finally { setTimeout(() => bypass.delete(key), 0); } }
+
+  /* ================= a. end flow locked until STOP + equal-to-start warning ================= */
+  function endFlowSame(t) { const a = n7(t.startFlow), b = n7(t.endFlow); return !!t.endAt && a != null && b != null && a === b; }
+  function paintEndFlow(t) {
+    const ef = document.getElementById("endFlow"); if (!ef || !flowSample(t)) return;
+    if (!t.endAt) {
+      ef.readOnly = true; ef.classList.add("v483-locked", "v487-eflock"); ef.setAttribute("aria-readonly", "true"); ef.tabIndex = -1;
+      ef.title = "End flow unlocks when you press STOP";
+      if (!ef.value) ef.placeholder = "Unlocks after STOP";
+      if (!document.getElementById("v487EfLock")) ef.insertAdjacentHTML("afterend", `<p class="help" id="v487EfLock">End flow unlocks when you press STOP. Read it off the rotameter at the pump, after STOP.</p>`);
+    } else if (endFlowSame(t) && !document.getElementById("v487EfSame")) {
+      ef.insertAdjacentHTML("afterend", `<p class="help v487-warn" id="v487EfSame">⚠ End flow is exactly the same as the start flow (${e7(t.startFlow)} L/min). Re-read the rotameter at the pump. If it really is the same, leave it.</p>`);
+    }
+  }
+  document.addEventListener("change", e => {
+    if (!e.target || e.target.id !== "endFlow") return;
+    setTimeout(async () => {
+      const t = curT(); if (!t || !flowSample(t) || !endFlowSame(t)) return;
+      const val = String(t.endFlow);
+      if ((t.audit || []).some(a => a && a.v487ef === val)) return;   /* already confirmed for this value */
+      const ok = await ask("efsame", "End flow is the same as start flow", `<p class="help" id="v487EfQ">${e7(dno(t))}: start ${e7(t.startFlow)} L/min, end ${e7(val)} L/min. Pumps nearly always drift a little. Is ${e7(val)} L/min what the rotameter read after STOP?</p>`, "Yes, it's correct", "Re-enter", { yesClass: "green" });
+      const t2 = db.trains.find(x => x.id === t.id); if (!t2) return;
+      if (ok) { note(t2, "End flow equals start flow — confirmed", val + " L/min · " + dev(), { v487ef: val }); saveQuiet(); render(); }
+      else { t2.endFlow = ""; note(t2, "End flow cleared to re-enter", "was " + val + " (same as start flow)"); save(); setTimeout(() => { const ef = document.getElementById("endFlow"); if (ef) ef.focus(); }, 50); }
+    }, 60);
+  });
+
+  /* ================= b. STOP more than STOP_LIMIT_H after START ================= */
+  function overLimit(startIso, endIso) { const s = ms(startIso), e = ms(endIso); return s != null && e != null && (e - s) > STOP_LIMIT_H * 3600e3 ? (e - s) / 3600e3 : 0; }
+  function longBody(t, hrs, startIso) {
+    return `<p class="help" id="v487LongQ">${e7(dno(t))} started ${e7(hmA(startIso))}. Stopping now makes a run of <strong>${hrs.toFixed(1)} h</strong>, over the ${STOP_LIMIT_H} h a normal shift runs. That usually means START or STOP was on the wrong day.</p>`
+      + (STOP_LIMIT_MODE === "block" ? `<p class="help">Use Edit time to fix the start time first.</p>` : `<p class="help">If the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.</p>`);
+  }
+  document.addEventListener("click", async e => {
+    const b = e.target && e.target.closest && e.target.closest("#btnStop"); if (!b || b.disabled || STOP_LIMIT_MODE === "off") return;
+    const t = curT(); if (!t || !t.startAt) return;
+    if (bypass.has("stop:" + t.id)) return;
+    const hrs = overLimit(t.startAt, new Date().toISOString()); if (!hrs) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (STOP_LIMIT_MODE === "block") { await ask("long", "Run over " + STOP_LIMIT_H + " hours", longBody(t, hrs, t.startAt), "OK", ""); return; }
+    const ok = await ask("long", "Run over " + STOP_LIMIT_H + " hours", longBody(t, hrs, t.startAt), "Stop anyway", "Cancel");
+    if (!ok) return;
+    note(t, "STOP more than " + STOP_LIMIT_H + " h after START — confirmed", hrs.toFixed(1) + " h · " + dev(), { v487long: +hrs.toFixed(2) });
+    reclick(b, "stop:" + t.id);
+  }, true);
+  /* Edit time / Enter time dialog (v48.3): same check on Save, between STOP_LIMIT_H and 24 h (over 24 h v48.3 already asks) */
+  document.addEventListener("click", async e => {
+    const b = e.target && e.target.closest && e.target.closest('.v483-modal[data-v483="time"] #v483Save'); if (!b || STOP_LIMIT_MODE === "off") return;
+    const w = b.closest(".v483-modal"); const t = curT();
+    if (bypass.has("tsave")) return;
+    const val = k => { const d = w.querySelector("#v483d-" + k), tm = w.querySelector("#v483t-" + k); return d && tm && tm.value ? combineShiftTime(d.value, tm.value, false) : null; };
+    let s = val("start") || (t && t.startAt), en = val("stop");
+    if (!s || !en) return;
+    if (ms(en) <= ms(s) && w.querySelector("#v483d-stop") && w.querySelector("#v483d-start") && w.querySelector("#v483d-stop").value === w.querySelector("#v483d-start").value) en = new Date(ms(en) + 86400e3).toISOString();
+    if (!w.querySelector("#v483d-start") && ms(en) <= ms(s)) en = new Date(ms(en) + 86400e3).toISOString();
+    const hrs = overLimit(s, en); if (!hrs || hrs > 24) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    w.style.visibility = "hidden";
+    const tt = t || { sampleNo: "" };
+    if (STOP_LIMIT_MODE === "block") { await ask("long", "Run over " + STOP_LIMIT_H + " hours", longBody(tt, hrs, s).replace("Stopping now makes", "These times make"), "OK", ""); w.style.visibility = ""; return; }
+    const ok = await ask("long", "Run over " + STOP_LIMIT_H + " hours", longBody(tt, hrs, s).replace("Stopping now makes", "These times make"), "Save anyway", "Go back");
+    w.style.visibility = "";
+    if (!ok) return;
+    if (t) note(t, "Times more than " + STOP_LIMIT_H + " h apart — confirmed", hrs.toFixed(1) + " h · " + dev(), { v487long: +hrs.toFixed(2) });
+    bypass.add("tsave"); try { b.click(); } finally { bypass.delete("tsave"); }
+  }, true);
+
+  /* ================= c. sample head / cowl already running on another sample ================= */
+  function headKey(t) {
+    if (!t || blank(t) || noise(t) || passive(t)) return "";
+    if (fib(t)) { try { return cowlDigits(t.cowlNo || t.mediaId) || ""; } catch (e) { return String(t.cowlNo || "").trim(); } }
+    return String(t.headId || "").trim().toUpperCase();
+  }
+  function headRunning(t, key) {
+    key = key == null ? headKey(t) : key; if (!key) return [];
+    const f = fib(t);
+    return (db.trains || []).filter(x => x && x.id !== t.id && running(x) && fib(x) === f && headKey(x) === key);
+  }
+  function headMsg(t, key, hits) {
+    return (fib(t) ? "Cowl " : "Sample head ") + key + " is already running on " + hits.map(x => dno(x) + " (" + evCode(x) + ", started " + hmA(x.startAt) + ")").join(", ") + ". Each running sample needs its own " + (fib(t) ? "cowl" : "head") + ".";
+  }
+  function paintHead(t) {
+    const old = document.getElementById("v487HeadRun"); if (old) old.remove();
+    if (!t || ended(t)) return;
+    const inp = document.getElementById(fib(t) ? "cowlNo" : "head"); if (!inp) return;
+    let key = String(inp.value || "").trim().toUpperCase();
+    if (fib(t)) { try { key = cowlDigits(inp.value); } catch (e) {} }
+    const hits = headRunning(t, key); if (!hits.length) return;
+    (inp.closest(".combo") || inp).insertAdjacentHTML("afterend", `<div class="pump-warn clash-warn v487-warn" id="v487HeadRun">⚠ ${e7(headMsg(t, key, hits))} Check the ${fib(t) ? "cowl number" : "head ID"}.</div>`);
+  }
+  document.addEventListener("input", e => { if (view.page === "train" && e.target && (e.target.id === "head" || e.target.id === "cowlNo")) paintHead(curT()); });
+  document.addEventListener("change", e => { if (view.page === "train" && e.target && (e.target.id === "head" || e.target.id === "cowlNo")) setTimeout(() => paintHead(curT()), 30); });
+  document.addEventListener("click", async e => {
+    const b = e.target && e.target.closest && e.target.closest("#btnStart, #btnStartAll"); if (!b || b.disabled) return;
+    const t = curT(); if (!t || t.startAt) return;
+    if (bypass.has("start:" + t.id)) return;
+    try { collectTrain(t); } catch (e2) {}
+    let list = [t];
+    if (b.id === "btnStartAll") { try { list = list.concat((window.v46 && v46.siblings ? v46.siblings(t) : []).filter(x => !x.startAt)); } catch (e2) {} }
+    list = list.filter(x => { try { return !startGaps(x).length; } catch (e3) { return true; } });   /* gaps: the START handler already explains */
+    const clashes = list.map(x => ({ x, key: headKey(x), hits: headRunning(x) })).filter(c => c.hits.length);
+    if (!clashes.length) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    const ok = await ask("head", (fib(t) ? "Cowl" : "Sample head") + " already running", clashes.map(c => `<p class="help v487-headq">${e7(dno(c.x))}: ${e7(headMsg(c.x, c.key, c.hits))}</p>`).join("") + `<p class="help">If the other sample has really finished, press STOP on it first. Otherwise check the ${fib(t) ? "cowl number" : "head ID"}.</p>`, "Start anyway", "Cancel");
+    if (!ok) return;
+    clashes.forEach(c => note(c.x, "START with " + (fib(c.x) ? "cowl" : "head") + " already running — confirmed", c.key + " on " + c.hits.map(h => dno(h) + " (" + evCode(h) + ")").join(", ") + " · " + dev()));
+    saveQuiet();
+    reclick(b, "start:" + t.id);
+  }, true);
+
+  /* ================= d. Company picklist ================= */
+  function companies(t) {
+    const seen = new Map(); const add = (s, w) => { s = String(s || "").trim(); if (!s || s.length < 2) return; const k = s.toLowerCase().replace(/\s+/g, " "); const c = seen.get(k); if (c) c.n += w; else seen.set(k, { name: s, n: w }); };
+    (db.trains || []).forEach(x => { if (x && !deleted(x)) add((x.person || {}).company, 1); });
+    (db.projects || []).forEach(p => add(p && p.client, 0));
+    const ev = typeof eventById === "function" ? eventById(t.eventId) : null;
+    const pr = ev && (db.projects || []).find(p => p.id === ev.projectId);
+    const client = String((pr && pr.client) || "").trim();
+    const list = [...seen.values()].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })).map(c => c.name);
+    return { client, list: list.filter(n => n.toLowerCase() !== client.toLowerCase()) };
+  }
+  function paintCompany(t) {
+    const inp = document.getElementById("company"); if (!inp || document.getElementById("v487CoSel")) return;
+    const { client, list } = companies(t);
+    const cur = String(inp.value || "").trim();
+    const all = (client ? [client] : []).concat(list);
+    const match = all.find(n => n.toLowerCase() === cur.toLowerCase());
+    const sel = document.createElement("select"); sel.id = "v487CoSel"; sel.className = "v487-cosel"; sel.setAttribute("aria-label", "Company / contractor");
+    sel.innerHTML = `<option value="">Pick a company…</option>` + (client ? `<option value="${e7(client)}">${e7(client)} (project client)</option>` : "")
+      + list.map(n => `<option value="${e7(n)}">${e7(n)}</option>`).join("") + `<option value="__other">Other (type it)</option>`;
+    sel.value = match ? match : (cur ? "__other" : "");
+    inp.insertAdjacentElement("beforebegin", sel);
+    inp.placeholder = "Type the company name";
+    inp.style.display = sel.value === "__other" ? "" : "none";
+    sel.addEventListener("change", () => {
+      if (sel.value === "__other") { inp.style.display = ""; if (match && inp.value === match) inp.value = ""; inp.focus(); return; }
+      inp.style.display = "none"; inp.value = sel.value;
+      inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); inp.dispatchEvent(new Event("blur"));
+    });
+  }
+
+  /* ================= e. noise START needs that day's start-of-day calibration ================= */
+  function calOk(t) {
+    try { const cs = window.ENVSS_NOISE && ENVSS_NOISE.calState ? ENVSS_NOISE.calState(t) : null; if (!cs) return true; const s = cs.c && cs.c.start; return !!(s && n7(s.ref) != null && n7(s.reading) != null); } catch (e) { return true; }
+  }
+  function calDayText(t) { return String(t.shiftDate || ((typeof eventById === "function" && eventById(t.eventId)) || {}).date || "today").slice(0, 10); }
+  const CAL_GAP = t => "Start-of-day calibration (" + calDayText(t) + ")";
+  const _sg487 = startGaps;
+  startGaps = function (t) {
+    const r = _sg487.apply(this, arguments);
+    try { if (t && noise(t) && !blank(t) && !t.startAt && t.status !== "not_used" && !calOk(t)) r.push(CAL_GAP(t)); } catch (e) {}
+    return r;
+  };
+  window.startGaps = startGaps;
+  function paintCal(t) {
+    if (!t || !noise(t) || blank(t) || t.startAt || calOk(t) || document.getElementById("v487CalGate")) return;
+    const st = document.getElementById("btnStart"); if (!st) return;
+    const row = st.closest(".row, .startstop") || st;
+    row.insertAdjacentHTML("afterend", `<p class="help v487-warn" id="v487CalGate">START is locked until today's start-of-day field calibration (${e7(calDayText(t))}) is recorded: calibrator level and meter reading. <button type="button" class="linkish" id="v487CalGo">Go to Calibration</button></p>`);
+    const go = document.getElementById("v487CalGo"); if (go) go.onclick = () => { const c = document.getElementById("nzCal"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "center" }); const i = c.querySelector("input"); if (i) setTimeout(() => i.focus({ preventScroll: true }), 300); } };
+  }
+
+  /* ================= f. laptop / Chromebook times need office approval ================= */
+  function lapEntries(t) { return (t.audit || []).filter(a => a && (a.lap === true || (a.te && a.te.mobile === false))); }
+  function pendingLap(t) { const since = String((t.officeApproval || {}).at || ""); return lapEntries(t).filter(a => String(a.at || "") > since); }
+  function needsApproval(t) { return !!t && !blank(t) && (t.needsOfficeApproval === true || pendingLap(t).length > 0); }
+  function admin() { try { return isAdmin(); } catch (e) { return false; } }
+  /* the stored flag is set only by a press / time entry made in this session (never by just opening an old sample) */
+  function stampFlag(t) {
+    if (!t || t.needsOfficeApproval === true) return false;
+    if (!pendingLap(t).some(a => String(a.at || "") >= INSTALLED_AT)) return false;
+    t.needsOfficeApproval = true; t.updatedAt = nowIso(); return true;
+  }
+  function approve(t) {
+    const n = pendingLap(t).length;
+    t.needsOfficeApproval = false; t.officeApproval = { at: nowIso(), by: who(), device: dev(), count: n, v: V };
+    note(t, "Laptop / Chromebook times approved by office", n + " entr" + (n === 1 ? "y" : "ies") + " · " + dev());
+    save();
+  }
+  function lapLine(a) { return (a.te ? (a.action || "Time entered") : (a.action || "")) + " · " + hmA(a.at) + (a.te && a.te.device ? " · " + a.te.device : ""); }
+  function paintApproval(t) {
+    if (!t || !needsApproval(t) || !admin() || document.getElementById("v487Approve")) return;
+    const h = document.querySelector("#app h2"); const anchor = h ? (h.closest(".row") || h) : null; if (!anchor) return;
+    const list = pendingLap(t);
+    anchor.insertAdjacentHTML("afterend", `<div class="card v487-appr" id="v487Approve"><strong>Needs office approval</strong>
+      <p class="help" style="margin:4px 0">START / STOP or times were entered on a laptop or Chromebook, not at the pump. Check them, then approve.</p>
+      <ul class="v487-applist">${list.map(a => `<li>${e7(lapLine(a))}</li>`).join("") || "<li>Flagged on this sample</li>"}</ul>
+      <button type="button" class="btn green" id="v487ApproveBtn">Approve times (office)</button></div>`);
+    document.getElementById("v487ApproveBtn").onclick = () => approve(t);
+  }
+  function paintRowsApproval() {
+    if (!admin()) return;
+    document.querySelectorAll('#app .train[onclick^="openTrain("]').forEach(row => {
+      if (row.querySelector(".v487-chip")) return;
+      const m = /openTrain\('([^']+)'\)/.exec(row.getAttribute("onclick") || ""); if (!m) return;
+      const t = db.trains.find(x => x.id === m[1]); if (!t || !needsApproval(t)) return;
+      const title = row.querySelector(".row-title") || row; title.insertAdjacentHTML("beforeend", ` <span class="te-chip v487-chip">needs office approval</span>`);
+    });
+    if (view.page === "event" && view.eventId && !document.getElementById("v487EvAppr")) {
+      const n = (typeof trainsOf === "function" ? trainsOf(view.eventId) : []).filter(needsApproval).length;
+      const h = document.querySelector("#app h2");
+      if (n && h) (h.closest(".row") || h).insertAdjacentHTML("afterend", `<p class="help v487-warn" id="v487EvAppr">${n} sample${n === 1 ? " needs" : "s need"} office approval (laptop / Chromebook START, STOP or typed times).</p>`);
+    }
+  }
+
+  /* ================= g. stopped sample: reason before changing anything already entered ================= */
+  const EDIT_REASONS = [["typo", "Correcting a typo / wrong entry"], ["late_info", "Details received after the shift"], ["office", "Office / lab correction"], ["other", "Other (type the reason)"]];
+  let visit = { id: null, free: new Set(), unlocked: null };
+  function keyOf(el) { return el.id || el.getAttribute("name") || [...el.attributes].filter(a => /^data-nz/.test(a.name)).map(a => a.name + "=" + a.value).join("|") || ""; }
+  function hasVal(el) { if (el.type === "checkbox" || el.type === "radio") return el.checked; const v = String(el.value || "").trim(); return !!v && v !== "N/A"; }
+  function guardable(el) {
+    if (!el || !el.closest("#app") || el.disabled) return false;
+    if (/^(file|button|submit|hidden|reset|image)$/.test(el.type || "")) return false;
+    if (el.classList.contains("v483-locked") && !el.classList.contains("v487-ro")) return false;   /* v48.3 time boxes: Edit time has its own reasons */
+    if (el.closest(".v483-modal")) return false;
+    const id = el.id || "";
+    if (/search/i.test(id) || el.hasAttribute("data-link") || /^(cowlSearch|filter)/i.test(id)) return false;
+    return !!keyOf(el);
+  }
+  function lockPass(t) {
+    if (!t || t.id !== visit.id) visit = { id: t ? t.id : null, free: null, unlocked: null };
+    if (!t || !ended(t)) return;
+    const els = [...document.querySelectorAll("#app input, #app select, #app textarea")].filter(guardable);
+    if (!visit.free) { visit.free = new Set(els.filter(el => !hasVal(el)).map(keyOf)); }
+    if (visit.unlocked) { paintEndedBanner(t); return; }
+    els.forEach(el => {
+      const k = keyOf(el);
+      if (visit.free.has(k) || !hasVal(el)) { if (!hasVal(el)) visit.free.add(k); return; }
+      el.setAttribute("data-v487lock", "1"); el.classList.add("v487-ro");
+      el.dataset.v487old = el.type === "checkbox" || el.type === "radio" ? (el.checked ? "1" : "") : el.value;
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") { if (!el.readOnly) { el.readOnly = true; el.dataset.v487ro = "1"; } }
+    });
+    chipGroups().forEach(g => { if (!g.on) visit.free.add(g.key); });
+    paintEndedBanner(t);
+  }
+  /* Yes / No chips (post-STOP questions, respirator, reject reason): the first answer is free, changing it needs a reason */
+  const CHIP_SEL = "[data-yn],[data-rq],[data-rej]";
+  function chipKey(b) { return b.hasAttribute("data-yn") ? "yn:" + b.dataset.yn : b.hasAttribute("data-rq") ? "rq:" + b.dataset.rq : "rej"; }
+  function chipGroups() { const seen = new Map(); document.querySelectorAll("#app " + CHIP_SEL.split(",").join(",#app ")).forEach(b => { const k = chipKey(b); const g = seen.get(k) || { key: k, on: false }; if (b.classList.contains("on")) g.on = true; seen.set(k, g); }); return [...seen.values()]; }
+  document.addEventListener("click", e => {
+    const b = e.target && e.target.closest && e.target.closest(CHIP_SEL); if (!b || !b.closest("#app") || visit.unlocked) return;
+    const t = curT(); if (!t || !ended(t) || t.id !== visit.id || !visit.free) return;
+    const k = chipKey(b); if (visit.free.has(k) || b.classList.contains("on")) return;
+    const g = chipGroups().find(x => x.key === k); if (!g || !g.on) return;
+    e.preventDefault(); e.stopImmediatePropagation(); askUnlock(t, null);
+  }, true);
+  function paintEndedBanner(t) {
+    if (document.getElementById("v487Ended")) return;
+    const h = document.querySelector("#app h2"); const anchor = h ? (h.closest(".row") || h) : null; if (!anchor) return;
+    const u = visit.unlocked;
+    anchor.insertAdjacentHTML("afterend", u
+      ? `<div class="card v487-ended" id="v487Ended"><strong>Editing unlocked</strong><p class="help" style="margin:4px 0">Reason: ${e7(u.label)}${u.text ? " (" + e7(u.text) + ")" : ""}. Changes are kept in the audit trail. It locks again when you leave this sample.</p></div>`
+      : `<div class="card v487-ended" id="v487Ended"><strong>Stopped sample: answers are locked</strong><p class="help" style="margin:4px 0">Empty boxes can still be filled in. To change something already entered, give a reason first.</p><button type="button" class="btn ghost" id="v487Unlock">Change an answer…</button></div>`);
+    const b = document.getElementById("v487Unlock"); if (b) b.onclick = () => askUnlock(t, null);
+  }
+  let asking = false;
+  async function askUnlock(t, el) {
+    if (asking) return; asking = true;
+    const label = el ? (((el.closest("div") || {}).querySelector && (el.closest("div").querySelector("label") || {}).textContent) || "").replace(/Needs answer|✓|required/g, "").trim() : "";
+    const r = await ask("edit", "Why change a stopped sample?", `<p class="help">${e7(dno(t))} has been stopped${t.endAt ? " (" + e7(hmA(t.endAt)) + ")" : ""}.${label ? " You tapped <strong>" + e7(label) + "</strong>." : ""} Give a reason to unlock it. The reason, your name and this device go in the audit trail.</p>
+      <div class="v483-reasons">${EDIT_REASONS.map(([c, l]) => `<label class="v483-reason"><input type="radio" name="v487r" value="${c}"> ${e7(l)}</label>`).join("")}</div>
+      <label for="v487rText" class="v483-lab">Details <span class="muted">(optional)</span></label><input id="v487rText" maxlength="240" placeholder="e.g. lab confirmed the cassette ID">`,
+      "Unlock to edit", "Cancel", { yesClass: "green", check: w => {
+        const c = w.querySelector('input[name="v487r"]:checked'); const txt = (w.querySelector("#v487rText").value || "").trim();
+        if (!c) return { err: "Pick a reason." }; if (c.value === "other" && txt.length < 3) return { err: "Type the reason." };
+        return { reason: c.value, label: (EDIT_REASONS.find(x => x[0] === c.value) || [])[1], text: txt };
+      } });
+    asking = false;
+    if (!r) return;
+    const t2 = db.trains.find(x => x.id === t.id); if (!t2) return;
+    visit.unlocked = { reason: r.reason, label: r.label, text: r.text, at: nowIso() };
+    note(t2, "Edit after STOP unlocked", r.label + (r.text ? " (" + r.text + ")" : "") + " · " + dev(), { v487edit: { reason: r.reason, reasonText: r.text, device: dev(), mobile: MOBILE } });
+    const k = el ? keyOf(el) : "";
+    saveQuiet(); render();
+    if (k) setTimeout(() => { const n = [...document.querySelectorAll("#app input, #app select, #app textarea")].find(x => keyOf(x) === k); if (n) { try { n.focus(); } catch (e) {} } }, 50);
+  }
+  function lockedTarget(e) { const el = e.target && e.target.closest && e.target.closest("[data-v487lock]"); return el && !visit.unlocked ? el : null; }
+  ["pointerdown", "mousedown"].forEach(type => document.addEventListener(type, e => {
+    const el = lockedTarget(e); if (!el) return;
+    if (el.tagName === "SELECT" || el.type === "checkbox" || el.type === "radio") e.preventDefault();
+  }, true));
+  document.addEventListener("click", e => {
+    const el = lockedTarget(e); if (!el) return;
+    if (el.type === "checkbox" || el.type === "radio") e.preventDefault();
+    const t = curT(); if (t) askUnlock(t, el);
+  }, true);
+  document.addEventListener("keydown", e => {
+    const el = lockedTarget(e); if (!el || e.key === "Tab" || e.key === "Shift") return;
+    e.preventDefault(); const t = curT(); if (t) askUnlock(t, el);
+  }, true);
+  /* anything that still changes a locked box (segmented chips, Yes / No cards, scripts) is put back and asks for a reason */
+  document.addEventListener("change", e => {
+    const el = lockedTarget(e); if (!el) return;
+    const old = el.dataset.v487old || "";
+    if (el.type === "checkbox" || el.type === "radio") el.checked = old === "1"; else el.value = old;
+    e.stopImmediatePropagation();
+    const t = curT(); setTimeout(() => { render(); if (t) askUnlock(t, null); }, 0);
+  }, true);
+
+  /* ================= paint on every render ================= */
+  const _render487 = render;
+  render = function () {
+    const r = _render487.apply(this, arguments);
+    try {
+      if (view.page === "train") {
+        const t = curT();
+        if (t) {
+          if (stampFlag(t)) saveQuiet();
+          paintEndFlow(t); paintHead(t); paintCompany(t); paintCal(t); paintApproval(t);
+        }
+        lockPass(t);
+      } else { visit = { id: null, free: null, unlocked: null }; paintRowsApproval(); }
+    } catch (e) { console.warn("v48.7 paint", e); }
+    return r;
+  };
+  window.render = render;
+  /* a laptop press / typed time lands after the click; flag it as soon as it is in the audit trail */
+  setInterval(() => {
+    if (MOBILE) return;
+    try { let n = 0; (db.trains || []).forEach(t => { if (stampFlag(t)) n++; }); if (n) saveQuiet(); if (view.page === "train") paintApproval(curT()); } catch (e) {}
+  }, 1500);
+
+  window.v487 = { version: V, STOP_LIMIT_H, STOP_LIMIT_MODE, endFlowSame, overLimit, headRunning, headKey, companies, calOk, needsApproval, pendingLap, approve, ended, visit: () => visit };
+
+  const st = document.createElement("style");
+  st.textContent = ".v487-warn{color:#FFC46B;font-weight:700}.v487-appr{border:2px solid #C98A2E;margin:8px 0}.v487-applist{margin:4px 0 8px 18px;padding:0}"
+    + ".v487-chip{background:#6B4A1A;color:#FFE1B0}.v487-ended{border:2px dashed #6B7590;margin:8px 0}"
+    + ".v487-ro{opacity:.85;border-style:dashed!important;cursor:pointer}select.v487-cosel{width:100%;margin-bottom:6px}";
   document.head.appendChild(st);
   render();
 })();
