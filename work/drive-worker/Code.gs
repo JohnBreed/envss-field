@@ -7,8 +7,8 @@
  * Create that secret so it can be revoked on its own. Never put it in git or in the field app.
  *
  * HARD RULE: this script never edits, moves, renames, or deletes an existing file in a job folder.
- * The only Drive.Files.update call is appendManifest_(), and only for manifest.csv that this script created
- * (appProperties.envssManifest = "1") inside {job}_Field-App.
+ * The only Drive.Files.update call is appendManifest_(), and only for the manifest this script created
+ * (appProperties.envssManifest = "1") inside {job}_Field-App. It never updates any other file.
  * New bytes are created with Drive.Files.create only, as children of {job}_Field-App.
  * A name that already exists gets _2, _3, … A source_key that already has a file is not uploaded again.
  */
@@ -32,6 +32,15 @@ function envssIsProjectRoot_(name, job) {
 }
 function envssMatchJobFolders_(job, folders) {
   var hits = (folders || []).filter(function (f) { return f && envssIsProjectRoot_(f.name, job); });
+  // Subfolders such as "0019321_MEGA Resources_Admin" sit inside the project folder and also start
+  // with the job number. Keep only the outermost match: drop any hit whose parent is another hit.
+  if (hits.length > 1) {
+    var ids = {};
+    hits.forEach(function (f) { ids[f.id] = 1; });
+    hits = hits.filter(function (f) {
+      return !(f.parents || []).some(function (p) { return ids[p]; });
+    });
+  }
   if (hits.length === 1) return { ok: true, folder: hits[0] };
   if (!hits.length) return { ok: false, status: "stopped", message: "job folder not found" };
   return { ok: false, status: "stopped", message: "job folder not unique" };
@@ -156,22 +165,28 @@ function createFile_(folderId, name, blob, sourceKey) {
   }, blob, { supportsAllDrives: true, fields: "id,name,webViewLink" });
 }
 
+/** Find the manifest this script created (appProperties.envssManifest = "1"). Never picks a file we did not create. */
 function ourManifest_(folderId) {
-  var hits = childByName_(folderId, "manifest.csv", false).filter(function (f) {
-    return f.appProperties && f.appProperties.envssManifest === "1";
-  });
-  return hits.length === 1 ? hits[0] : null;
+  var hits = driveList_("trashed = false and '" + q_(folderId) + "' in parents and appProperties has { key='envssManifest' and value='1' }", { corpora: "allDrives" });
+  if (hits.length === 1) return hits[0];
+  if (hits.length > 1) return { many: true };
+  return null;
 }
 
-/** The only Drive.Files.update in this project. Refuses any file that is not our manifest. */
+/** The only Drive.Files.update in this project. Refuses any file that is not our manifest.
+ *  If several of our manifests exist, it updates none (does not guess).
+ *  If manifest.csv is already taken by a file we did not create, a new uniquely named file is created instead.
+ *  Existing job-folder files are never edited, moved, renamed, or deleted. */
 function appendManifest_(folderId, line, sourceKey) {
   if (line.indexOf(sourceKey) < 0) throw new Error("manifest line missing source key");
   var header = "copied_at,job_number,event_code,kind,file_name,drive_file_id,source_key,bytes\n";
   var existing = ourManifest_(folderId);
+  if (existing && existing.many) return;
   if (!existing) {
-    var blob = Utilities.newBlob(header + line + "\n", "text/csv", "manifest.csv");
+    var name = envssUniqueDriveName_(namesIn_(folderId), "manifest.csv");
+    var blob = Utilities.newBlob(header + line + "\n", "text/csv", name);
     Drive.Files.create({
-      name: "manifest.csv",
+      name: name,
       parents: [folderId],
       mimeType: "text/csv",
       appProperties: { envssManifest: "1", envssFieldApp: "1" }
@@ -179,24 +194,37 @@ function appendManifest_(folderId, line, sourceKey) {
     return;
   }
   if (!existing.appProperties || existing.appProperties.envssManifest !== "1") return;
-  var got = Drive.Files.get(existing.id, { alt: "media", supportsAllDrives: true });
-  var text = got.getDataAsString();
+  // Drive.Files.get(..., {alt: "media"}) in the advanced service throws "Response Code: 200" with the
+  // file body as the message, so read the manifest bytes with a plain authorised GET instead.
+  var got = UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(existing.id) + "?alt=media&supportsAllDrives=true", {
+    headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  });
+  if (got.getResponseCode() >= 300) throw new Error("manifest read " + got.getResponseCode());
+  var text = got.getContentText();
   if (text.indexOf(sourceKey) >= 0) return;
   var updated = text.replace(/\s*$/, "") + "\n" + line + "\n";
-  Drive.Files.update({}, existing.id, Utilities.newBlob(updated, "text/csv", "manifest.csv"), { supportsAllDrives: true });
+  Drive.Files.update({}, existing.id, Utilities.newBlob(updated, "text/csv", existing.name || "manifest.csv"), { supportsAllDrives: true });
 }
 
 function csv_(v) {
   return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
 }
 
-function patchRow_(id, body) {
+function patchRow_(idOrRow, body) {
+  var id = (idOrRow && typeof idOrRow === "object") ? idOrRow.id : idOrRow;
+  if (!id) throw new Error("patchRow_ missing id");
   body.updated_at = new Date().toISOString();
-  return sbFetch_("patch", "/rest/v1/envss_drive_copies?id=eq." + encodeURIComponent(id), body, "return=minimal");
+  return sbFetch_("patch", "/rest/v1/envss_drive_copies?id=eq." + encodeURIComponent(String(id)), body, "return=minimal");
+}
+
+function requirePatch_(res, what) {
+  if (!res || res.code >= 300) throw new Error((what || "patch") + " " + (res && res.code) + " " + String(res && res.text || "").slice(0, 120));
+  return res;
 }
 
 function stopRow_(row, message) {
-  patchRow_(row.id, { status: "stopped", message: message });
+  requirePatch_(patchRow_(row.id, { status: "stopped", message: message }), "stop patch");
 }
 
 function copyOne_(row) {
@@ -226,11 +254,11 @@ function copyOne_(row) {
       muteHttpExceptions: true
     });
     if (raw.getResponseCode() === 404) {
-      patchRow_(row, { message: "waiting for storage", next_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() });
+      requirePatch_(patchRow_(row.id, { message: "waiting for storage", next_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() }), "storage wait patch");
       return;
     }
     if (raw.getResponseCode() >= 300) {
-      patchRow_(row, { message: "storage " + raw.getResponseCode(), next_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() });
+      requirePatch_(patchRow_(row.id, { message: "storage " + raw.getResponseCode(), next_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() }), "storage err patch");
       return;
     }
     finalName = envssUniqueDriveName_(namesIn_(folderId), row.file_name);
@@ -240,14 +268,14 @@ function copyOne_(row) {
   var line = [new Date().toISOString(), row.job_number, row.event_code || "", row.kind, finalName || file.name, file.id, row.source_key, row.bytes || ""].map(csv_).join(",");
   appendManifest_(folderId, line, row.source_key);
   var url = file.webViewLink || ("https://drive.google.com/file/d/" + file.id + "/view");
-  patchRow_(row, {
+  requirePatch_(patchRow_(row.id, {
     status: "copied",
     drive_file_id: file.id,
     drive_url: url,
     drive_folder_id: folderId,
     file_name: finalName || file.name || row.file_name,
     message: null
-  });
+  }), "copied patch");
 }
 
 function processDriveQueue() {
@@ -287,10 +315,14 @@ function testFolderMatch() {
     { id: "18vWLmc4YG8u7_oYngUaDtv6ppxpGiLb4", name: "0019032 Applied Safety & Risk Management" },
     { id: "admin", name: "0019032_Admin" },
     { id: "lab", name: "0019032_Lab" },
-    { id: "longer", name: "00193330 other job" }
+    { id: "longer", name: "00193330 other job" },
+    { id: "R321", name: "0019321-MEGA Resources-HYG-DMIRS-SRS-Rama Gold Project", parents: ["shared"] },
+    { id: "A321", name: "0019321_MEGA Resources_Admin", parents: ["R321"] },
+    { id: "L321", name: "0019321_MEGA Resources_HYG_Lab", parents: ["R321"] }
   ];
   Logger.log(JSON.stringify(envssMatchJobFolders_("0019333", folders)));
   Logger.log(JSON.stringify(envssMatchJobFolders_("0019032", folders)));
+  Logger.log(JSON.stringify(envssMatchJobFolders_("0019321", folders)));
   Logger.log(envssPhotoFileName_("0019333-001", false, 3, "filter", 1));
   Logger.log(envssUniqueDriveName_(["0019333-001_Laboratory_COC.xlsx"], "0019333-001_Laboratory_COC.xlsx"));
 }

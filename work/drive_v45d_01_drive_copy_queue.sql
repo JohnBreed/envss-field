@@ -1,11 +1,17 @@
 -- drive_v45d_01_drive_copy_queue.sql
 -- DRAFT ONLY. DO NOT APPLY until John approves. Apply before merge, after is_envss_staff() exists.
 -- Project luyprcmjyruznluboyms. Written 2026-11-08 (Australia/Perth).
+-- Reviewed 2026-11-12 (Australia/Perth), still draft: additive only. Does not alter existing tables or rows.
+-- Read-only check on luyprcmjyruznluboyms: is_envss_staff() already exists; envss_drive_copies, its
+-- indexes/function/policies, and the field-exports bucket do not; storage policy name field_exports_staff_insert
+-- does not clash with the existing field_photos_* policies. field-photos is left unchanged.
 -- Purpose: queue of NEW files for the Apps Script worker (developer@envss.com.au) to create
 -- inside {job}_Field-App. The worker uses a dedicated Supabase secret API key named drive-worker
 -- (Project Settings → API Keys), stored only in Apps Script Properties. Not the service-role key.
 -- Staff may insert and read. Staff may not update or delete. That secret key bypasses RLS and is the only updater.
 -- Photos stay in the existing private bucket field-photos. Generated files go to the new private bucket field-exports.
+-- Columns, kind/status checks, and staff insert/select policies match field.html (insert into envss_drive_copies
+-- with status queued; upload generated files under field-exports/g/...).
 
 begin;
 
