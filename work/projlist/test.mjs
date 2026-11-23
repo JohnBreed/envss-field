@@ -101,15 +101,29 @@ for (const vp of ["pixel7", "chromebook"]) {
   const c9219 = info.cards.find(c => c.num === "0019219") || { text: "" };
   const c8637 = info.cards.find(c => c.num === "0018637") || { text: "" };
   const c9467 = info.cards.find(c => c.num === "0019467") || { text: "" };
+  const c7889 = info.cards.find(c => c.num === "0017889") || { text: "" };
   const c9358 = (await page.evaluate(() => {
     /* 0019358 is in Later, so already in the DOM */
     const el = [...document.querySelectorAll(".plr-card")].find(c => (c.querySelector(".brand-type") || {}).textContent === "0019358");
     return el ? el.innerText.replace(/\s+/g, " ").trim() : "";
   }));
-  check(`[${vp}] 0019219 shows both attendees`, /Marisabel Cuspoca, Talis Powdrill/.test(c9219.text) && !/Controller:/.test(c9219.text), c9219.text);
-  check(`[${vp}] 0018637 next event falls back to labelled controller`, /Controller: Candice Shehan/.test(c8637.text), c8637.text);
-  check(`[${vp}] 0019467 shows attendee Daryle, not a controller label`, /Daryle Van Geest/.test(c9467.text) && !/Controller:/.test(c9467.text), c9467.text);
-  check(`[${vp}] 0019358 shows attendee Ben Adcock unlabelled`, /Ben Adcock/.test(c9358) && !/Controller:/.test(c9358), c9358);
+  check(`[${vp}] 0019219 hygiene card shows both Site Works Attended by names`, /Marisabel Cuspoca, Talis Powdrill/.test(c9219.text) && !/Controller:/.test(c9219.text), c9219.text);
+  check(`[${vp}] 0018637 AFM card shows next event sampler Talis, not controller`, /Talis Powdrill/.test(c8637.text) && !/Controller:/.test(c8637.text), c8637.text);
+  check(`[${vp}] 0019467 AFM card shows sampler Daryle Van Geest`, /Daryle Van Geest/.test(c9467.text) && !/Controller:/.test(c9467.text) && /AFM/.test(c9467.text), c9467.text);
+  check(`[${vp}] 0017889 AFM card shows next event sampler Talis Powdrill`, /Talis Powdrill/.test(c7889.text) && !/Controller:/.test(c7889.text) && /0 of 2 events done/.test(c7889.text), c7889.text);
+  check(`[${vp}] 0019358 hygiene card shows attendee Ben Adcock unlabelled`, /Ben Adcock/.test(c9358) && !/Controller:/.test(c9358), c9358);
+
+  /* AFM nameOf uses samplers only — a misleading event-level attendee must be ignored. */
+  const nameLogic = await page.evaluate(() => {
+    const n = window.envssProjlist.nameOf;
+    const ignored = n({ source: "afm", type: "fibre", attendee: "Should Not Appear", samplers: ["Talis Powdrill"] }, { controller: "Candice Shehan" });
+    const joined = n({ source: "afm", type: "fibre", attendee: "Ignored", samplers: ["Jerico Sanchez", "Jerico Sanchez", "Talis Powdrill"] }, { controller: "X" });
+    const empty = n({ source: "afm", type: "fibre", attendee: "Ignored Attendee" }, { controller: "Candice Shehan" });
+    return { ignored, joined, empty };
+  });
+  check(`[${vp}] AFM nameOf ignores event-level attendee and joins distinct samplers`,
+    nameLogic.ignored.text === "Talis Powdrill" && nameLogic.joined.text === "Jerico Sanchez, Talis Powdrill" && nameLogic.empty.text === "Controller: Candice Shehan" && nameLogic.empty.fallback === true,
+    JSON.stringify(nameLogic));
 
   await page.evaluate(() => { view.plrOpen = "podio-job-0018637"; render(); });
   await sleep(200);
@@ -117,8 +131,8 @@ for (const vp of ["pixel7", "chromebook"]) {
     const el = document.querySelector('[data-project="podio-job-0018637"]');
     return el ? el.innerText : "";
   });
-  check(`[${vp}] 0018637 expanded lists Marisabel on 0018 and labelled controller on 0020`,
-    /0018/.test(exp8637) && /Marisabel Cuspoca/.test(exp8637) && /0018637-0020/.test(exp8637) && /Controller: Candice Shehan/.test(exp8637),
+  check(`[${vp}] 0018637 expanded lists Marisabel on 0018 and Talis on 0020 from sample-by`,
+    /0018/.test(exp8637) && /Marisabel Cuspoca/.test(exp8637) && /0018637-0020/.test(exp8637) && /Talis Powdrill/.test(exp8637) && !/Controller:/.test(exp8637),
     exp8637.replace(/\s+/g, " ").slice(0, 500));
 
   await page.evaluate(() => { view.plrOpen = "podio-job-0019321"; render(); });

@@ -1346,7 +1346,10 @@
         "stage": "Prepped",
         "done": false,
         "attendee": "",
-        "source": "field"
+        "source": "field",
+        "samplers": [
+          "Jade Van Schalkwyk"
+        ]
       },
       {
         "code": "ENVSS-HAZ-AFM-0017889-0020",
@@ -1355,7 +1358,10 @@
         "stage": "Planned",
         "done": false,
         "attendee": "",
-        "source": "afm"
+        "source": "afm",
+        "samplers": [
+          "Talis Powdrill"
+        ]
       }
     ],
     "podio-job-0018463": [],
@@ -1368,7 +1374,10 @@
         "stage": "Planned",
         "done": false,
         "attendee": "Marisabel Cuspoca",
-        "source": "afm"
+        "source": "afm",
+        "samplers": [
+          "Marisabel Cuspoca"
+        ]
       },
       {
         "code": "ENVSS-HAZ-AFM-0018637-0020",
@@ -1377,7 +1386,10 @@
         "stage": "Planned",
         "done": false,
         "attendee": "",
-        "source": "afm"
+        "source": "afm",
+        "samplers": [
+          "Talis Powdrill"
+        ]
       }
     ],
     "podio-job-0018920": [],
@@ -1673,7 +1685,10 @@
         "stage": "Planned",
         "done": false,
         "attendee": "Jerico Sanchez",
-        "source": "afm"
+        "source": "afm",
+        "samplers": [
+          "Jerico Sanchez"
+        ]
       },
       {
         "code": "0019438-23 Nov",
@@ -1691,7 +1706,10 @@
         "stage": "Planned",
         "done": false,
         "attendee": "Jerico Sanchez",
-        "source": "afm"
+        "source": "afm",
+        "samplers": [
+          "Jerico Sanchez"
+        ]
       }
     ],
     "podio-job-0019467": [
@@ -1702,7 +1720,10 @@
         "stage": "Planned",
         "done": false,
         "attendee": "Daryle Van Geest",
-        "source": "afm"
+        "source": "afm",
+        "samplers": [
+          "Daryle Van Geest"
+        ]
       }
     ],
     "podio-job-0019472": [],
@@ -1712,5 +1733,93 @@
     "label": "Site Works Attended by",
     "externalId": "report-submitted-by",
     "staffAppId": "21061319"
+  },
+  "samplerField": {
+    "label": "Sample Submitted by",
+    "documentedLabel": "Sampled By",
+    "externalId": "sample-by",
+    "appId": "21120488",
+    "appName": "AFM Samples",
+    "source": "v_field_afm_samples.fields['sample-by'] (already exposed; no SQL change)",
+    "rule": "For AFM events, show distinct sample-by titles across that event's samples. Do not use report-submitted-by on the AFM event."
+  },
+  "openAfmSamplerCoverage": {
+    "asOf": "2026-11-23 20:20 AWST",
+    "openEvents": 7,
+    "eventsWithNamedSamples": 7,
+    "samplesOnOpenEvents": 51,
+    "samplesWithSampleBy": 51,
+    "events": [
+      {
+        "job7": "0017889",
+        "date": "2026-11-24",
+        "reference": "ENVSS-HAZ-AFM-0017889-0020-20261124",
+        "samples": 11,
+        "named": 11,
+        "samplers": [
+          "Talis Powdrill"
+        ]
+      },
+      {
+        "job7": "0018637",
+        "date": "2026-11-21",
+        "reference": "ENVSS-HAZ-AFM-0018637-0018-20261121",
+        "samples": 9,
+        "named": 9,
+        "samplers": [
+          "Marisabel Cuspoca"
+        ]
+      },
+      {
+        "job7": "0018637",
+        "date": "2026-11-24",
+        "reference": "ENVSS-HAZ-AFM-0018637-0020-20261124",
+        "samples": 9,
+        "named": 9,
+        "samplers": [
+          "Talis Powdrill"
+        ]
+      },
+      {
+        "job7": "0018811",
+        "date": "2026-11-20",
+        "reference": "ENVSS-HAZ-AFM-0018811-0026-20261120",
+        "samples": 7,
+        "named": 7,
+        "samplers": [
+          "Ben Adcock"
+        ]
+      },
+      {
+        "job7": "0019438",
+        "date": "2026-11-18",
+        "reference": "ENVSS-HAZ-AFM-0019438-003-20261118",
+        "samples": 5,
+        "named": 5,
+        "samplers": [
+          "Jerico Sanchez"
+        ]
+      },
+      {
+        "job7": "0019438",
+        "date": "2026-11-24",
+        "reference": "ENVSS-HAZ-AFM-0019438-006-20261124",
+        "samples": 5,
+        "named": 5,
+        "samplers": [
+          "Jerico Sanchez"
+        ]
+      },
+      {
+        "job7": "0019467",
+        "date": "2026-11-24",
+        "reference": "ENVSS-HAZ-AFM-0019467-001-20261124",
+        "samples": 5,
+        "named": 5,
+        "samplers": [
+          "Daryle Van Geest"
+        ]
+      }
+    ]
   }
 }

@@ -117,9 +117,30 @@
     return p.shortName || String(p.name || "").replace(/^\d{7}[-_ ]*/, "") || p.number;
   }
   function typeLab(t) { return t === "fibre" ? "AFM" : "Hygiene"; }
+  function isAfmEvent(ev) {
+    return !!(ev && (ev.source === "afm" || (ev.type === "fibre" && ev.source !== "hyg")));
+  }
+  function uniqueNames(list) {
+    const out = [];
+    const seen = new Set();
+    const arr = Array.isArray(list) ? list : String(list == null ? "" : list).split(/,\s*/);
+    arr.forEach(function (n) {
+      const t = String(n || "").trim();
+      const k = t.toLowerCase();
+      if (t && !seen.has(k)) { seen.add(k); out.push(t); }
+    });
+    return out;
+  }
   function nameOf(ev, p) {
-    const att = ev && String(ev.attendee || "").trim();
-    if (att) return { text: att, fallback: false };
+    /* AFM: distinct Sample Submitted by (sample-by) names on that event's samples.
+       Never use report-submitted-by on the AFM event. Hygiene still uses attendee. */
+    if (isAfmEvent(ev)) {
+      const names = uniqueNames(ev.samplers != null ? ev.samplers : ev.sampledBy);
+      if (names.length) return { text: names.join(", "), fallback: false };
+    } else {
+      const att = ev && String(ev.attendee || "").trim();
+      if (att) return { text: att, fallback: false };
+    }
     if (p && String(p.controller || "").trim()) return { text: "Controller: " + p.controller.trim(), fallback: true };
     return { text: "No controller", fallback: true };
   }
@@ -253,6 +274,6 @@
   };
 
   window.envssProjlist = {
-    todayYmd, nameOf, groupOf, nextDate, pickCurrent, evsOf, listForMode, GROUPS
+    todayYmd, nameOf, isAfmEvent, uniqueNames, groupOf, nextDate, pickCurrent, evsOf, listForMode, GROUPS
   };
 })();

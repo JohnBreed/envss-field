@@ -10188,7 +10188,6 @@ window.HIRE_CATALOG = HIRE_CATALOG;
         task: text(f["task-description"]), tatLabel: text(f.selection), tat: tat(text(f.selection)),
         protocol: proto(text(f["monitoring-type"])), rotameter: rel(f.rotameter).title,
         collectedBy: list(f["samples-collected-by"]).join(", "),
-        attendedBy: list(f["report-submitted-by"]).join(", "),
         siteContact: text(f["site-contact-namephone"]),
         siteAddress: loc && typeof loc === "object" ? clean(loc.address || "") : text(loc),
         poc, totalSamples: num(f.calculation),

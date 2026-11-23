@@ -86,6 +86,17 @@ for (const vp of ["pixel7", "chromebook"]) {
   await sleep(200);
   await shot(page, `a-${vp}-9219`, false);
 
+  await setMode(page, 1, "podio-job-0019467");
+  const ev9467 = await page.$('[data-project="podio-job-0019467"]');
+  if (ev9467) await ev9467.evaluate(el => el.scrollIntoView({ block: "center" }));
+  await sleep(200);
+  await shot(page, `a-${vp}-9467-afm`, false);
+  await setMode(page, 1, "podio-job-0017889");
+  const ev7889 = await page.$('[data-project="podio-job-0017889"]');
+  if (ev7889) await ev7889.evaluate(el => el.scrollIntoView({ block: "center" }));
+  await sleep(200);
+  await shot(page, `a-${vp}-7889-afm`, false);
+
   await setMode(page, 2);
   await shot(page, `b-${vp}`, false);
   await shot(page, `b-${vp}-full`, true);
