@@ -3339,7 +3339,7 @@ function deleteEvent(id) {
   const ts = trainsOf(id);
   if (!confirm("Delete event " + ev.code + " and its " + ts.length + " sample" + (ts.length === 1 ? "" : "s") + "? It is hidden everywhere; nothing is removed from the database.")) return;
   ts.forEach(t => v34Tomb({ id: t.id, trainId: t.id, eventId: id, pouch: t.pouch || t.sampleNo, kind: t.trainKind, detail: "event deleted" }));
-  v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: ev.projectId, code: ev.code, type: ev.type || "hygiene", podioItemId: ev.podioItemId ? String(ev.podioItemId) : "", detail: "event deleted" });   /* v48.7: podioItemId so auto-create never brings it back */
+  v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: ev.projectId, code: ev.code, type: ev.type || "hygiene", podioItemId: ev.podioItemId ? String(ev.podioItemId) : "", podioAuto: !!ev.podioAuto, podioUnplanned: !!ev.podioUnplanned, sampleCount: ts.length, detail: "event deleted" });   /* v48.7: podioItemId so auto-create never brings it back; kind + sample count decide whether its code may be reused */
   applyTombstones();
   view.page = "project"; view.projectId = ev.projectId; view.eventId = null;
   commit(); render();
@@ -11545,6 +11545,8 @@ function fixOpen(ts) {
   function writeJson(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
   let snap = readJson(ALL_KEY, null);                    /* last full mirror read: { rows:[{itemId,lastEdit,payload}], complete, at } */
+  const DELINFO_KEY = "envss-deleted-events-v487";
+  let delInfo = readJson(DELINFO_KEY, {});               /* deleted event id -> { podioItemId, podioAuto, podioUnplanned, type, samples } seen on tombstoned rows */
   let goneSet = new Set(readJson(GONE_KEY, []));         /* Podio item ids whose field event was deleted (seen on tombstoned rows) */
   let made = readJson(MADE_KEY, {});                     /* auto-created, not yet confirmed by Supabase: event id -> snapshot hash at creation */
   let deletedInPodio = new Set();                        /* optional view v_field_hyg_deleted (draft SQL); empty until applied */
@@ -11574,8 +11576,11 @@ function fixOpen(ts) {
     });
     return { items, evs, prs, codes };
   }
+  /* events are merged before deletions inside one pull, so tombstone details (Podio item, hand-made, samples) are only complete
+     from the second successful pull on; that second pull is started straight after the first. */
+  let pullsOk = 0;
   function ready() {
-    return typeof activityLoaded !== "undefined" && activityLoaded && typeof projectsLoaded !== "undefined" && projectsLoaded
+    return pullsOk >= 2 && typeof activityLoaded !== "undefined" && activityLoaded && typeof projectsLoaded !== "undefined" && projectsLoaded
       && typeof hasSession === "function" && hasSession() && navigator.onLine !== false && typeof db !== "undefined" && !!db;
   }
   function eligible(r) {
@@ -11602,8 +11607,31 @@ function fixOpen(ts) {
   }
   function seenOf(pl) { return { startDate: pl.startDate || "", startStatus: pl.startStatus || "", reportStatus: pl.reportStatus || "", jobNumber: pl.jobNumber || "", reference: pl.reference || "", at: nowIso() }; }
   const isCancelled = v => /^(event )?cancel+ed$/i.test(String(v || "").trim());
+  /* John, 23 Nov 2026 20:05 AWST: a deleted event's code may be reused by the auto-created Podio event ONLY when the deleted event was a
+     hand-made duplicate on this job (not e-podio-<item>, never linked to Podio, not auto-created, not AFM) with no samples at all.
+     Anything unknown keeps its code reserved. The deleted event itself is never re-created (its id stays tombstoned). */
+  function reusableCodes(p) {
+    const job = jobOf(p) || String(p.number || ""), out = new Set();
+    const withSamples = new Set();
+    (db.deletions || []).forEach(d => { if (d && d.trainId && d.eventId) withSamples.add(d.eventId); });
+    (db.trains || []).forEach(t => { if (t && t.eventId) withSamples.add(t.eventId); });
+    (db.deletions || []).forEach(d => {
+      if (!d || d.tombstone !== "event" || !d.code || !d.deletedEventId) return;
+      const id = d.deletedEventId, known = delInfo[id] || {}, info = Object.assign({}, known, d);
+      if (/^e-podio-/.test(id)) return;
+      if (!String(d.code).startsWith(job + "-")) return;
+      if (info.podioItemId || info.podioAuto || known.podioItemId || known.podioAuto || known.podioLinked) return;
+      if (String(info.type || "hygiene") === "fibre" || /(^|-)AFM-/.test(String(d.code))) return;
+      if (!(d.podioUnplanned === true || known.podioUnplanned === true)) return;   /* must be known to be hand-made */
+      if (withSamples.has(id) || Number(d.sampleCount) > 0 || known.samples) return;
+      if (d.detail === "project deleted") return;
+      out.add(d.code);
+    });
+    return out;
+  }
   function codeFor(p, pl, tb) {
-    const codes = new Set((db.events || []).map(e => e.code).concat([...tb.codes]));
+    const reuse = reusableCodes(p);
+    const codes = new Set((db.events || []).map(e => e.code).concat([...tb.codes].filter(c => !reuse.has(c))));
     if (pl.fieldCode && !codes.has(pl.fieldCode)) return pl.fieldCode;
     const job = jobOf(p) || p.number;
     let n = (db.events || []).filter(e => e.projectId === p.id && !isFibreEvent(e)).length + 1;
@@ -11859,6 +11887,19 @@ function fixOpen(ts) {
         (rows || []).forEach(r => { const p = r && r.payload; const id = p && (p.id || r.id);
           if (p && p.podioItemId && (tb.evs.has(id) || tb.prs.has(p.projectId)) && !goneSet.has(String(p.podioItemId))) { goneSet.add(String(p.podioItemId)); add = true; } });
         if (add) writeJson(GONE_KEY, [...goneSet]);
+        let addI = false;
+        (rows || []).forEach(r => { const p = r && r.payload; const id = p && (p.id || r.id);
+          if (p && id && tb.evs.has(id)) { const v = { podioItemId: p.podioItemId ? String(p.podioItemId) : "", podioAuto: !!p.podioAuto, podioLinked: !!p.podioLinked, podioUnplanned: p.podioUnplanned === true, type: p.type || "hygiene", samples: !!(delInfo[id] && delInfo[id].samples) };
+            if (JSON.stringify(delInfo[id]) !== JSON.stringify(v)) { delInfo[id] = v; addI = true; } } });
+        if (addI) writeJson(DELINFO_KEY, delInfo);
+      } catch (e) {}
+    }
+    if (coll === "trains") {   /* samples of deleted events are filtered out before merge: remember that the event had samples */
+      try {
+        const tb = tombs(); let addS = false;
+        (rows || []).forEach(r => { const p = r && r.payload; const ev = p && p.eventId;
+          if (ev && tb.evs.has(ev) && !(delInfo[ev] && delInfo[ev].samples)) { delInfo[ev] = Object.assign({}, delInfo[ev] || {}, { samples: true }); addS = true; } });
+        if (addS) writeJson(DELINFO_KEY, delInfo);
       } catch (e) {}
     }
     return _mr.apply(this, arguments);
@@ -11895,7 +11936,9 @@ function fixOpen(ts) {
   /* run after each pull (tombstones and other devices' events are known by then) and read the mirror every 15 min */
   const _pa = pullActivity;
   pullActivity = async function () {
+    const before = syncState.lastPullAt;
     const r = await _pa.apply(this, arguments);
+    if (syncState.lastPullAt && syncState.lastPullAt !== before) { pullsOk++; if (pullsOk === 1) setTimeout(() => { try { pullActivity(); } catch (e) {} }, 50); }
     try { if (last.waiting && ready()) run(); } catch (e) { console.warn("v48.7 run", e); }
     return r;
   };
@@ -11916,7 +11959,7 @@ function fixOpen(ts) {
     + "#v487Flags .btn,.v487-offer .btn{margin:4px 6px 0 0}#v487Dash{margin:10px 0}#v487Dash .sync-link{font-weight:700;margin:0 4px}";
   document.head.appendChild(st);
   window.envssAuto = { run, card, startManual, idFor, flagsFor, allFlagged, link, separate, review, eligible, isAfmOnly,
-    isPlanned: p => PodioMapIsPlanned(p), offers: () => JSON.parse(JSON.stringify(offers)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
+    isPlanned: p => PodioMapIsPlanned(p), offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
 })();
 </script>
 

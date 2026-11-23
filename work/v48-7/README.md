@@ -20,6 +20,11 @@ Numbered 48.7 because 48.6 (linked samples, PR #14) is a separate draft. Rebased
 - **Delete:** an admin's Delete event now writes the Podio item id into the tombstone. The app never re-creates a Podio event whose field event
   was deleted (checked on every device, including events deleted before this version: their old rows are recognised on pull).
   The Podio card then says "will not be created again" with a deliberate **Start fieldwork again** (fresh id).
+- **Codes of deleted events (John, 23 Nov 2026 8:05 pm AWST):** a deleted event's code stays reserved, except when the deleted event was a
+  hand-made duplicate on the same job (marked Podio unplanned, never linked to Podio, not auto-created, not `e-podio-…`, not AFM) with no samples
+  at all (no sample rows, no sample tombstones). Then the auto-created Podio event reuses that code (0019401 → 0019401-001). The deleted event
+  itself stays deleted. Anything unknown keeps its code reserved. Delete event now also records hand-made / auto / sample count in the tombstone.
+  Auto-create waits for this device's second successful pull (started straight after the first) so tombstone details are complete.
 - **Podio moved / deleted:** never applied. The event, the project's Podio list and the dashboard show "Changed in Podio. Nothing here was
   changed automatically." with the change (date moved, date set/cleared, job changed, Not required, no longer in Podio) and
   **Use Podio date** / **Keep as is** (both audited). A linked event later set to Canceled in Podio is flagged the same way.
@@ -46,4 +51,6 @@ Supabase mocked in memory, *.supabase.co mapped to a dead port). Results `test-r
 ## Dry run against the live mirror (read only, 23 Nov 2026 ~7:10 pm AWST)
 `/workspace/envss-auto-dryrun/dryrun.mjs` runs this field.html on a read-only copy of podio_items (app 24280319), envss_events,
 envss_deletions and envss_projects, with nothing sent. Day one: 8 events created, 1 link offer (0019185-001), 123 items not planned,
-3 planned but older than 7 days, 2 already linked.
+3 planned but older than 7 days, 2 already linked. Rerun 23 Nov 8:10 pm AWST (copy incl. samples and all tombstones,
+`LIVE=/workspace/envss-auto-dryrun/live-20261123-2010.json`): same 8, with 0019401 now **0019401-001** (Minah's deleted hand-made
+0019401-001 had no samples).

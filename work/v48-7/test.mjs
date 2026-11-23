@@ -24,7 +24,8 @@ const REPORT_DONE_FIX = [[9021, "Invoiced"], [9022, "No Report Required"], [9023
 function remoteFixture() {
   return {
     envss_projects: new Map([proj("0019500", "Auto A"), proj("0019501", "Auto no date"), proj("0019502", "Old backlog"), proj("0019503", "Deleted before"),
-      proj("0019504", "AFM only"), proj("0019401", "Leichhardt hand-made"), proj("0019508", "Moved"), proj("0019509", "Deleted in Podio"), proj("0019510", "Race")].map(p => [p.id, p])),
+      proj("0019504", "AFM only"), proj("0019401", "Leichhardt hand-made"), proj("0019508", "Moved"), proj("0019509", "Deleted in Podio"), proj("0019510", "Race"),
+      proj("0019511", "Reuse hand-made"), proj("0019512", "Hand-made had samples"), proj("0019513", "Deleted auto"), proj("0019514", "Deleted linked"), proj("0019515", "Deleted unknown kind"), proj("0019516", "Deleted here")].map(p => [p.id, p])),
     v_field_hyg_events: new Map([
       item(9001, "0019500", "Site A", D(2), "Site Works Start Date is now Confirmed"),
       item(9002, "0019501", "Site B", "", "Site Works Start Date is Tentative"),
@@ -40,6 +41,11 @@ function remoteFixture() {
       item(9028, "0019500", "Site works not required", D(1), "Site Works Not Required"),
       item(9029, "0019500", "Pending report", D(1), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": "Pending" } }),
       item(9030, "0019500", "Report drafted", D(1), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": "Report Drafted" } }),
+      item(9040, "0019511", "Reuse", D(3), "Site Works Start Date is now Confirmed"),
+      item(9041, "0019512", "Samples", D(3), "Site Works Start Date is now Confirmed"),
+      item(9042, "0019513", "Auto deleted", D(3), "Site Works Start Date is now Confirmed"),
+      item(9043, "0019514", "Linked deleted", D(3), "Site Works Start Date is now Confirmed"),
+      item(9044, "0019515", "Unknown", D(3), "Site Works Start Date is now Confirmed"),
       item(9031, "0019508", "Cancelled later", D(9), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": "Canceled" } })
     ].map(r => [String(r.item_id), r])),
     envss_events: new Map([
@@ -47,10 +53,19 @@ function remoteFixture() {
       ev("eHand", "0019401", "0019401-001", D(12), { podioUnplanned: true, podioLinked: false, minesAct: true }),
       ev("e-podio-9008", "0019508", "0019508-001", D(5), { podioItemId: "9008", podioAuto: true, podioLinked: true, podioSeen: { startDate: D(5), startStatus: "Confirmed", jobNumber: "0019508", reference: "x" } }),
       ev("eOld9009", "0019509", "0019509-001", D(2), { podioItemId: "9009", podioLinked: true }),
+      /* deleted events (tombstoned above): only eHandDel may give its code back */
+      ev("eHandDel", "0019511", "0019511-001", D(3), { podioUnplanned: true, podioLinked: false }),
+      ev("eHandS", "0019512", "0019512-001", D(3), { podioUnplanned: true, podioLinked: false }),
+      ev("e-podio-9099", "0019513", "0019513-001", D(3), { podioItemId: "9099", podioAuto: true, podioLinked: true }),
+      ev("eLinkDel", "0019514", "0019514-001", D(3), { podioItemId: "9098", podioLinked: true }),
+      ev("eUnk", "0019515", "0019515-001", D(3), {}),
       ev("e-podio-9031", "0019508", "0019508-002", D(9), { podioItemId: "9031", podioAuto: true, podioLinked: true, podioSeen: { startDate: D(9), startStatus: "Site Works Start Date is now Confirmed", reportStatus: "Pending", jobNumber: "0019508", reference: "x" } })
     ].map(r => [r.id, r])),
-    envss_deletions: new Map([["e-podio-9004", { id: "e-podio-9004", payload: { id: "e-podio-9004", tombstone: "event", deletedEventId: "e-podio-9004", eventId: "e-podio-9004", projectId: "podio-p0019503", code: "0019503-001", type: "hygiene", at: NOW, detail: "event deleted" }, updated_at: NOW }]]),
-    envss_trains: new Map(), envss_hires: new Map()
+    envss_deletions: new Map([...[["eHandDel", "0019511"], ["eHandS", "0019512"], ["e-podio-9099", "0019513"], ["eLinkDel", "0019514"], ["eUnk", "0019515"]].map(([id, job]) =>
+      [id, { id, payload: { id, tombstone: "event", deletedEventId: id, eventId: id, projectId: "podio-p" + job, code: job + "-001", type: "hygiene", at: NOW, detail: "event deleted" }, updated_at: NOW }]),
+      ["tS1", { id: "tS1", payload: { id: "tS1", trainId: "tS1", eventId: "eHandS", pouch: 1, kind: "airborne_personal", at: NOW, detail: "event deleted" }, updated_at: NOW }],
+      ["e-podio-9004", { id: "e-podio-9004", payload: { id: "e-podio-9004", tombstone: "event", deletedEventId: "e-podio-9004", eventId: "e-podio-9004", projectId: "podio-p0019503", code: "0019503-001", type: "hygiene", at: NOW, detail: "event deleted" }, updated_at: NOW }]]),
+    envss_trains: new Map([["tS1", { id: "tS1", payload: { id: "tS1", eventId: "eHandS", trainKind: "airborne_personal", sampleNo: 1, status: "prepped", pumpSerial: "88001" }, updated_at: NOW }]]), envss_hires: new Map()
   };
 }
 
@@ -114,7 +129,15 @@ async function run(vp) {
   check(`[${vp}] hand-made 0019401-001 on the same job + date blocks a duplicate: link offered instead`, byItem(list, "9006").length === 0 && JSON.stringify((await page.evaluate(() => envssAuto.offers()))["9006"]) === '["eHand"]', JSON.stringify(await page.evaluate(() => envssAuto.offers())));
   check(`[${vp}] already-linked events are not duplicated (9008 stays one event)`, byItem(list, "9008").length === 1);
   const last = await page.evaluate(() => envssAuto.last());
-  check(`[${vp}] run summary created 5 (9001, 9002, 9010, 9029, 9030)`, last.created.length === 5, JSON.stringify(last));
+  check(`[${vp}] run summary created 10 (9001, 9002, 9010, 9029, 9030, 9040-9044)`, last.created.length === 10, JSON.stringify(last));
+  /* code reuse (John, 23 Nov 2026 20:05 AWST) */
+  const codeOf = i => (byItem(list, i)[0] || {}).code;
+  check(`[${vp}] deleted hand-made duplicate with no samples: auto event reuses its code (0019511-001)`, codeOf("9040") === "0019511-001", codeOf("9040"));
+  check(`[${vp}] the deleted hand-made event itself is not re-created`, !list.some(e => e.id === "eHandDel") && store.envss_events.get("eHandDel").payload.podioUnplanned === true && !store.envss_events.get("eHandDel").payload.podioItemId);
+  check(`[${vp}] deleted hand-made event that had samples keeps its code reserved (0019512-002)`, codeOf("9041") === "0019512-002", codeOf("9041"));
+  check(`[${vp}] deleted auto-created event keeps its code reserved (0019513-002)`, codeOf("9042") === "0019513-002", codeOf("9042"));
+  check(`[${vp}] deleted Podio-linked event keeps its code reserved (0019514-002)`, codeOf("9043") === "0019514-002", codeOf("9043"));
+  check(`[${vp}] deleted event of unknown kind (no hand-made flag) keeps its code reserved (0019515-002)`, codeOf("9044") === "0019515-002", codeOf("9044"));
   await waitFor(page, () => !syncState.pending["events:e-podio-9001"] && !syncState.pending["events:e-podio-9010"]);
   check(`[${vp}] auto-created events reach Supabase (mock) as upserts`, store.envss_events.has("e-podio-9001") && store.envss_events.get("e-podio-9001").payload.podioItemId === "9001" && store.envss_events.get("e-podio-9001").project_id === "podio-p0019500");
 
@@ -122,7 +145,7 @@ async function run(vp) {
   await page.evaluate(() => { envssPodio.state(); }); await refresh(page); await page.evaluate(() => envssAuto.run());
   await page.reload({ waitUntil: "networkidle0" }); await sleep(1200); await waitFor(page, () => activityLoaded && projectsLoaded); await refresh(page); await page.evaluate(() => envssAuto.run()); await sleep(600);
   list = await evs(page);
-  const dupes = ["9001", "9002", "9008", "9009", "9010"].map(i => byItem(list, i).length);
+  const dupes = ["9001", "9002", "9008", "9009", "9010", "9040", "9041", "9042", "9043", "9044"].map(i => byItem(list, i).length);
   check(`[${vp}] idempotent: after 3 more runs and a reload, exactly one field event per Podio event`, dupes.every(n => n === 1), JSON.stringify(dupes));
   const evRows = [...store.envss_events.values()].filter(r => r.payload && r.payload.podioItemId === "9001");
   check(`[${vp}] idempotent in Supabase: one envss_events row for Podio 9001`, evRows.length === 1, evRows.length);
@@ -208,8 +231,20 @@ async function run(vp) {
   const fresh = await boot(vp, store);    /* another device, empty storage, same Supabase */
   await waitFor(fresh, () => activityLoaded && projectsLoaded); await refresh(fresh); await fresh.evaluate(() => envssAuto.run()); await sleep(600);
   const fl = await evs(fresh);
+  check(`[${vp}] fresh device: same codes (reuse only for the hand-made one), no new events`, byItem(fl, "9040").length === 1 && byItem(fl, "9040")[0].code === "0019511-001" && byItem(fl, "9041")[0].code === "0019512-002" && !fl.some(e => e.id === "eHandDel" || e.id === "eHandS"), JSON.stringify(["9040", "9041"].map(i => byItem(fl, i).map(e => e.code))));
   check(`[${vp}] fresh device: deleted event not re-created; others not duplicated`, byItem(fl, "9002").length === 0 && byItem(fl, "9004").length === 0 && byItem(fl, "9001").length === 1 && byItem(fl, "9006").length === 1, JSON.stringify(["9001", "9002", "9004", "9006"].map(i => byItem(fl, i).length)));
   await fresh.close();
+
+  /* 9b. hand-made event deleted on THIS device (new tombstone fields), then the Podio event appears -> reuses -001 */
+  await page.evaluate(() => { db.events.push({ id: "eLocalHand", projectId: "podio-p0019516", type: "hygiene", stage: "planned", date: "", code: "0019516-001", multiDay: false, operators: [], audit: [], podioUnplanned: true, podioLinked: false }); commit(); });
+  await sleep(600);
+  await page.evaluate(() => deleteEvent("eLocalHand")); await sleep(800);
+  const lt = await page.evaluate(() => (db.deletions.find(d => d.deletedEventId === "eLocalHand") || {}));
+  check(`[${vp}] local delete tombstone records hand-made + sample count`, lt.podioUnplanned === true && lt.podioAuto === false && lt.sampleCount === 0 && lt.podioItemId === "", JSON.stringify(lt));
+  store.v_field_hyg_events.set("9045", item(9045, "0019516", "Deleted here", D(4), "Site Works Start Date is now Confirmed"));
+  await refresh(page); await page.evaluate(() => envssAuto.run()); await sleep(300);
+  const l16 = await evs(page);
+  check(`[${vp}] after deleting a hand-made event here, the Podio event gets 0019516-001; the deleted one stays deleted`, (byItem(l16, "9045")[0] || {}).code === "0019516-001" && !l16.some(e => e.id === "eLocalHand"), JSON.stringify(byItem(l16, "9045")));
 
   /* 10. race: another device creates + edits the same event between this device's run and its first send -> Supabase wins */
   const race = await boot(vp, store);
