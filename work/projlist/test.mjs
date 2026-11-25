@@ -79,7 +79,7 @@ for (const vp of ["pixel7", "chromebook"]) {
   });
   info.errs = page.errs;
 
-  check(`[${vp}] app is v48.7`, info.version === "48.7", info.version);
+  check(`[${vp}] app is v48.8`, info.version === "48.8", info.version);
   check(`[${vp}] Layout A is showing`, /Projects/.test(info.heading) && info.groups.some(g => g.key === "today") && info.groups.some(g => g.key === "week"), info.heading + " | " + JSON.stringify(info.groups.map(g => g.key)));
   check(`[${vp}] no page errors`, page.errs.length === 0, page.errs.join(" | "));
   check(`[${vp}] no Supabase writes`, writes(page).length === 0, writes(page).join(" | "));

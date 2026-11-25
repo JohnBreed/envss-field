@@ -57,7 +57,7 @@ async function pickReason(page, code, text) { await page.evaluate((c, t) => { co
 /* ================= Chromebook (laptop UA) ================= */
 let page = await boot("chromebook");
 const fx = fixture();
-check("[chromebook] version 48.7", await page.evaluate(() => APP_VERSION === "48.7" && document.title === "ENVSS Field v48.7"), await page.evaluate(() => document.title));
+check("[chromebook] version 48.8", await page.evaluate(() => APP_VERSION === "48.8" && document.title === "ENVSS Field v48.8"), await page.evaluate(() => document.title));
 
 /* 1. stored times untouched on upgrade; legacy labels derived only */
 const before = fx.trains.map(t => [t.id, t.startAt, t.endAt, t.status]);
@@ -122,7 +122,9 @@ check("reminder closes with Got it", !(await page.$('.v483-modal[data-v483="lapt
 
 /* 4. STOP on a long-running sample: no late-STOP prompt any more (finish times are estimates) */
 await page.evaluate(() => openTrain("tA")); await sleep(300);
-await page.click("#btnStop"); await sleep(1500);
+await page.click("#btnStop"); await sleep(300);
+check("STOP on an airborne sample asks about a flow deviation and has not stopped yet", await page.evaluate(() => !!(document.getElementById("v488Modal") && /deviation from the initial flow rate/.test((document.getElementById("v488Q") || {}).textContent || ""))) && (await T(page, "tA")).status === "running");
+await page.click("#v488No"); await sleep(1500);
 const a2 = await T(page, "tA");
 const lateM = await page.evaluate(() => !!document.querySelector('.v483-modal[data-v483="late"]') || /expected end/.test(document.body.innerText));
 const nudgeStop = await page.evaluate(() => (document.querySelector("#v483NudgeText") || {}).textContent || "");
@@ -237,7 +239,7 @@ check("no page errors (pixel7)", !errs.length, errs.join(" | "));
 await sleep(1500);
 const rpc = [...(page.t.store.rpc || new Map()).values()];
 const p = (rpc.find(r => r.p && r.p.event === "app_open") || {}).p || {};
-check("sign-in log: app open sent through envss_log_app_open with device detail", p.app_version === "48.7" && p.device_type === "phone" && p.os === "Android" && p.os_version === "14" && p.browser === "Chrome" && /^156/.test(p.browser_version) && p.display_mode === "browser_tab" && p.client_event_id, JSON.stringify(p));
+check("sign-in log: app open sent through envss_log_app_open with device detail", p.app_version === "48.8" && p.device_type === "phone" && p.os === "Android" && p.os_version === "14" && p.browser === "Chrome" && /^156/.test(p.browser_version) && p.display_mode === "browser_tab" && p.client_event_id, JSON.stringify(p));
 check("sign-in log: daily_open also sent", rpc.some(r => r.p && r.p.event === "daily_open"), rpc.map(r => r.p && r.p.event).join(","));
 check("sign-in log: no new staff-facing UI", !(await page.evaluate(() => !!document.getElementById("btnLoginLog"))));
 await page.close();

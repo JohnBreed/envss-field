@@ -53,7 +53,7 @@ const modal = page => page.evaluate(() => { const m = document.getElementById("v
 async function run(vp) {
   const shot = (page, n, full = true) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const page = await boot(vp);
-  check(`[${vp}] app is v48.7`, await page.evaluate(() => APP_VERSION === "48.7" && document.getElementById("appVersion").textContent === "v48.7" && document.title === "ENVSS Field v48.7"));
+  check(`[${vp}] app is v48.8`, await page.evaluate(() => APP_VERSION === "48.8" && document.getElementById("appVersion").textContent === "v48.8" && document.title === "ENVSS Field v48.8"));
   const lee0 = noSync(await T(page, "s9"));
 
   /* 1. no name, not started -> link box (B9 name box hidden) */
