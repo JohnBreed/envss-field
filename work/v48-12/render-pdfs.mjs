@@ -24,7 +24,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === "/vendor/pdf-lib.min.js") p = PDF_LIB;
   else if (url.pathname === "/" || url.pathname === "/render.html") {
     res.writeHead(200, { "Content-Type": "text/html", "Cache-Control": "no-store" });
-    res.end(`<!doctype html><meta charset="utf-8"><script src="/vendor/pdf-lib.min.js"></script><script src="/fit-test.js?v=48.12"></script>`);
+    res.end(`<!doctype html><meta charset="utf-8"><script src="/vendor/pdf-lib.min.js"></script><script src="/fit-test.js?v=48.13"></script>`);
     return;
   } else p = path.join(ROOT, decodeURIComponent(url.pathname));
   fs.readFile(p, (err, buf) => {

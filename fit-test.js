@@ -1,13 +1,30 @@
-/* ENVSS Field v48.12: Respirator fit testing (TSI-layout Vision OCR, closer TSI PDF with branded header, no photo page).
-   Event type "fit", codes {job}-FIT-{seq}. Photo + optional Google Vision OCR, confirm,
-   two signatures, A4 TSI-layout PDF (signed or unsigned, ENVSS logo + clickable contacts, no photo page), Drive copy into
-   {job}_Field-App/Fit Test, zip download. No Podio writes. */
+/* ENVSS Field v48.13: Respirator fit testing (standalone event type, TSI-layout Vision OCR with an on-device fallback,
+   closer TSI PDF with branded header, no photo page).
+   Event type "fit", codes {job}-FIT-{seq}; it does not link to any other event. Photo + Google Vision OCR (default);
+   with no internet the photo is read on the device (Tesseract.js, cached for offline use) and re-read with Vision
+   when back online if nobody has edited it yet. Confirm, two signatures, A4 TSI-layout PDF (signed or unsigned),
+   Drive copy into {job}_Field-App/Fit-Tests, zip download. No Podio writes. */
 (function (root) {
   "use strict";
-  const VERSION = "48.12";
+  const VERSION = "48.13";
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
   const OCR_FN = "ocr-fit-report";
+  /* Drive copy worker (Apps Script v48.13) files fit-test PDFs and zips in {job}_Field-App/Fit-Tests (it routes on the
+     -FIT- event code; this name is for display and tests). */
+  const DRIVE_SUBFOLDER = "Fit-Tests";
+  /* On-device OCR (offline fallback). Pinned versions; assets are kept in their own Cache Storage bucket. */
+  const TESS = {
+    lib: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+    worker: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+    coreSimd: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd-lstm.wasm.js",
+    core: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-lstm.wasm.js",
+    langDir: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int",
+    lang: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
+    cache: "envss-ocr-tesseract-5.1.1",
+    edge: 2000,
+    psm: "11"
+  };
   const LABEL_ROWS = [
     ["ID NUMBER", "idNumber"],
     ["LAST NAME", "lastName"],
@@ -565,6 +582,69 @@
     return { rows: out, overall: overall };
   }
 
+  /* v48.13: on-device photos are often tilted or slightly curved, so a row's name, duration, fit factor and Pass can sit
+     at different heights. Pair the table by order down each column instead of by height (used for device reads only). */
+  function parseExercisesByRank(words) {
+    const exHead = words.find(function (w) { return w.n === "EXERCISE"; });
+    if (!exHead) return { rows: [], overall: null };
+    const durHead = words.find(function (w) { return w.n === "DURATION"; });
+    const ffHead = words.find(function (w) { return w.n === "FACTOR" || w.n === "FACTO" || w.n === "FACTO!"; }) || words.find(function (w) { return w.n === "FIT" && w.yc > exHead.y0 - 40 && w.x0 > exHead.x1 + 200; });
+    const passHead = words.find(function (w) { return w.n === "PASS" && w.yc > exHead.y0 - 40 && w.yc < exHead.y1 + 40 && (!ffHead || w.x0 > ffHead.x1); });
+    const op = words.find(function (w) { return (w.n === "FITTEST" || w.n === "OPERATOR") && w.yc > exHead.yc; });
+    const top = Math.min(exHead.y1, durHead ? durHead.y1 : 1e9, ffHead ? ffHead.y1 : 1e9) - 2;
+    const bottom = op ? op.y0 - 2 : 1e9;
+    const body = words.filter(function (w) { return w.yc > top && w.yc < bottom && !isTaskbarToken(w.text); });
+    const xDur = durHead ? durHead.x0 - 20 : exHead.x1 + 260;
+    const xFf = ffHead ? (ffHead.n === "FIT" ? ffHead.x0 : ffHead.x0 - 40) - 30 : xDur + 220;
+    const xPass = passHead ? passHead.x0 - 40 : xFf + 220;
+    const nameWords = body.filter(function (w) { return w.xc >= exHead.x0 - 30 && w.xc < xDur && /[A-Z]{2,}/.test(w.n) && w.n !== "EXERCISE"; });
+    const lines = [];
+    nameWords.slice().sort(function (a, b) { return a.yc - b.yc; }).forEach(function (w) {
+      const last = lines[lines.length - 1];
+      if (last && Math.abs(w.yc - last.yc) < Math.max(8, w.h * 0.6)) { last.words.push(w); }
+      else lines.push({ yc: w.yc, words: [w] });
+    });
+    const names = lines.map(function (l) { return { yc: l.yc, text: joinWords(l.words), words: l.words }; })
+      .filter(function (l) { return /^(OVERALL|[A-Z ]{3,})/.test(normTok(l.text)); });
+    const col = function (from, to, test) {
+      return body.filter(function (w) { return w.xc >= from && w.xc < to && test(w.text); }).sort(function (a, b) { return a.yc - b.yc; });
+    };
+    const durs = col(xDur, xFf, function (t) { return /^\d{1,3}$/.test(trim(t)); });
+    const ffs = col(xFf, xPass, isValidFfToken);
+    const passes = col(xPass, 1e9, function (t) { return !!parseYesNo(t); });
+    function pick(list, i, n) {
+      if (list.length === n) return list[i] || null;
+      /* Counts differ: nearest by height after the first item's offset. */
+      if (!list.length || !names.length) return null;
+      const off = list[0].yc - names[0].yc;
+      const want = names[i].yc + off;
+      let best = null, bd = 1e9;
+      list.forEach(function (w) { const d = Math.abs(w.yc - want); if (d < bd) { bd = d; best = w; } });
+      return bd < 18 ? best : null;
+    }
+    const out = [];
+    let overall = null;
+    const exNames = names.filter(function (l) { return !/^OVERALL/.test(normTok(l.text)); });
+    const nOverall = names.length - exNames.length;
+    names.forEach(function (l, i) {
+      const isOverall = /^OVERALL/.test(normTok(l.text));
+      const ff = pick(ffs, i, names.length);
+      const ps = pick(passes, i, names.length);
+      if (isOverall) {
+        const raw = ff ? trim(ff.text) : "";
+        const pass = ps ? parseYesNo(ps.text) : "";
+        overall = { fitFactorRaw: raw, passRaw: ps ? ps.text : "", fitFactor: parseFf(raw), pass: pass };
+        return;
+      }
+      const d = pick(durs, i, exNames.length + (durs.length > exNames.length ? nOverall : 0));
+      const raw = ff ? trim(ff.text) : "";
+      const name = trim(l.text).replace(/\s+/g, " ").toUpperCase();
+      const known = KNOWN_EXERCISES.find(function (k) { return k === name; }) || name;
+      out.push({ exercise: known, duration: d ? trim(d.text) : "", fitFactorRaw: raw, passRaw: ps ? ps.text : "", fitFactor: parseFf(raw), pass: ps ? parseYesNo(ps.text) : "" });
+    });
+    return { rows: out.filter(function (r) { return r.fitFactorRaw || r.pass || r.duration; }), overall: overall };
+  }
+
   function estimateAngle(words) {
     const angs = [];
     for (let i = 0; i < words.length; i++) {
@@ -594,6 +674,61 @@
     words.sort(function (a, b) { return a.yc - b.yc || a.x0 - b.x0; });
     return words;
   }
+  /* v48.13 (device reads only): TSI centres a label on a two-line value, and photos tilt, so give each value word to the
+     label in its column whose centre is nearest in height. */
+  function assignDeviceValues(hits, rows, words, pageW) {
+    const labels = hits.filter(function (h) { return h.field !== "overallFfRaw"; });
+    const spans = labels.map(function (h) {
+      const row = rows.find(function (r) { return r.indexOf(h) >= 0; }) || [h];
+      return { hit: h, span: columnSpanFor(h, row, pageW), lines: [] };
+    });
+    const tableTop = (words.find(function (w) { return w.n === "EXERCISE"; }) || {}).y0 || 1e9;
+    const free = words.filter(function (w) { return !w.used && !isSectionHeader(w) && !isTaskbarToken(w.text) && !/^(DATE|FIT|FACTOR|FACTO!?|PASS|\(SEC\)|SEC|DURATION|NAME|NOTE:?|OPERATOR|FITTEST)$/.test(w.n); })
+      .sort(function (a, b) { return a.x0 - b.x0; });
+    /* Chain neighbours into text lines (tilt-tolerant: each word only has to line up with the one before it). */
+    const lines = [];
+    free.forEach(function (w) {
+      const line = lines.find(function (l) {
+        const last = l[l.length - 1];
+        const gap = w.x0 - last.x1;
+        return gap > -4 && gap < Math.max(30, last.h * 2.5) && Math.abs(w.yc - last.yc) < Math.max(6, Math.min(w.h, last.h) * 0.55);
+      });
+      if (line) line.push(w); else lines.push([w]);
+    });
+    lines.forEach(function (l) {
+      const w0 = l[0];
+      let best = null, bd = 1e9;
+      spans.forEach(function (sp) {
+        const h = sp.hit.box;
+        if (w0.x0 < h.x1 - 4 || w0.xc < sp.span.left || w0.xc >= sp.span.right) return;
+        if ((w0.yc < tableTop) !== (h.yc < tableTop)) return;
+        const d = Math.abs(w0.yc - h.yc);
+        if (d < bd) { bd = d; best = sp; }
+      });
+      if (best && bd <= Math.max(30, best.hit.box.h * 2.2)) best.lines.push(l);
+    });
+    const out = spans.map(function (sp) {
+      sp.lines.sort(function (a, b) { return a[0].yc - b[0].yc; });
+      sp.lines.forEach(function (l) { l.forEach(function (w) { w.used = true; }); });
+      const text = sp.lines.map(function (l) {
+        let t = "";
+        l.forEach(function (w, i) { t += (i && w.x0 - l[i - 1].x1 >= 2 ? " " : "") + w.text; });
+        return t;
+      }).join(" ").replace(/\s+/g, " ").trim();
+      return { field: sp.hit.field, text: text, hit: sp.hit };
+    });
+    /* NAME is sometimes missed on device; the printed name sits under the second signature line, below the operator. */
+    const opHit = labels.find(function (h) { return h.field === "operator"; });
+    if (opHit && !labels.some(function (h) { return h.field === "operatorName"; })) {
+      const opSpan = spans.find(function (sp) { return sp.hit === opHit; }).span;
+      const below = lines.filter(function (l) {
+        const w0 = l[0];
+        return !w0.used && w0.yc > opHit.box.y1 + opHit.box.h * 3 && w0.yc < opHit.box.y1 + opHit.box.h * 9 && w0.x0 > opHit.box.x1 && w0.xc < opSpan.right && l.every(function (w) { return /^[A-Za-z'.-]+$/.test(w.text); });
+      }).sort(function (a, b) { return a[0].yc - b[0].yc; });
+      if (below.length) out.push({ field: "operatorName", text: below[below.length - 1].map(function (w) { return w.text; }).join(" ") });
+    }
+    return out;
+  }
   function parseReportFromBoxes(words, extras) {
     const fields = {};
     const ang = estimateAngle(words), deg = ang * 180 / Math.PI;
@@ -602,7 +737,12 @@
     const hits = findLabelHits(clipped);
     const pageW = (clipped[0] && clipped[0].pageW) || Math.max.apply(null, clipped.map(function (w) { return w.x1; }).concat([1]));
     const rows = clusterLabelRows(hits.filter(function (h) { return h.field !== "overallFfRaw"; }));
-    const ex = parseExercisesFromWords(clipped, hits);
+    let ex = parseExercisesFromWords(clipped, hits);
+    if (extras && extras.source === "device") {
+      const byRank = parseExercisesByRank(clipped);
+      const good = function (r) { return r.rows.filter(function (x) { return x.exercise && isValidFfToken(x.fitFactorRaw) && x.pass; }).length; };
+      if (good(byRank) >= good(ex)) ex = byRank;
+    }
     if (ex.rows.length) fields.exercises = ex.rows;
     if (ex.overall && ex.overall.fitFactorRaw) fields.overallFfRaw = ex.overall.fitFactorRaw;
     if (ex.overall && ex.overall.pass) fields.overallPassRaw = ex.overall.pass;
@@ -616,7 +756,11 @@
         }
       });
     }
-    hits.forEach(function (hit) {
+    if (extras && extras.source === "device") {
+      assignDeviceValues(hits, rows, clipped, pageW).forEach(function (pair) {
+        fields[pair.field] = pair.text;
+      });
+    } else hits.forEach(function (hit) {
       if (hit.field === "overallFfRaw") return;
       const row = rows.find(function (r) { return r.indexOf(hit) >= 0; }) || [hit];
       const limitY = nextRowY(hit, rows);
@@ -1015,6 +1159,8 @@
       const op = u.match(/FITTEST\s+OPERATOR\s+([A-Z]{1,4})\b/) || u.match(/\bDATE\s+([A-Z]{1,4})\s+DATE\b/);
       if (op) fields.operator = op[1];
     }
+    /* A report label is never the operator's initials (e.g. "DATE" when the initials were not read): leave it blank for the user. */
+    if (/^(DATE|NAME|FIT|FITTEST|OPERATOR|TEST|PASS|LEVEL|NOTE|SEC|DUE|FF|FACTOR)$/i.test(trim(fields.operator || ""))) fields.operator = "";
     const nameHit = u.match(/(?<!LAST )(?<!FIRST )NAME\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})\b/);
     if (nameHit && !/^FIRST|^LAST/.test(nameHit[1].toUpperCase())) {
       const cleaned = nameHit[1].replace(/\s+(Search|Eng|Us|Cortana)$/i, "").trim();
@@ -1131,17 +1277,86 @@
     });
   }
 
+  /* v48.13: on-device (Tesseract) words. Tesseract often glues label words (IDNUMBER, TESTDATE), reads S/N as SIN and
+     picks up moiré noise at the screen edges. Clean the words here so the same TSI box parser can read them. */
+  const DEVICE_SPLITS = {
+    IDNUMBER: ["ID", "NUMBER"], LASTNAME: ["LAST", "NAME"], FIRSTNAME: ["FIRST", "NAME"], TESTDATE: ["TEST", "DATE"],
+    DUEDATE: ["DUE", "DATE"], PASSLEVEL: ["PASS", "LEVEL"], FITTESTOPERATOR: ["FITTEST", "OPERATOR"],
+    FITFACTOR: ["FIT", "FACTOR"], OVERALLFF: ["OVERALL", "FF"],
+    RESPIRATORSTYLE: ["RESPIRATOR", "STYLE"], RESPIRATORSIZE: ["RESPIRATOR", "SIZE"], FITTESTREPORT: ["FIT", "TEST", "REPORT"],
+    TESTREPORT: ["TEST", "REPORT"], HEADSIDE: ["HEAD", "SIDE"], BENDINGOVER: ["BENDING", "OVER"], N95COMPANION: ["N95-", "COMPANION"]
+  };
+  function splitWord(w, parts) {
+    const total = parts.reduce(function (n, p) { return n + p.length; }, 0) || 1;
+    let x = w.x0;
+    return parts.map(function (p) {
+      const wd = (w.x1 - w.x0) * p.length / total;
+      const out = { text: p, x0: x, x1: x + wd, y0: w.y0, y1: w.y1, c: w.c, pageW: w.pageW, pageH: w.pageH };
+      x += wd;
+      return out;
+    });
+  }
+  function normalizeDeviceWords(list, pageW, pageH) {
+    const out = [];
+    (list || []).forEach(function (raw) {
+      let text = String(raw.t != null ? raw.t : raw.text || "").replace(/[\u2014\u2013]/g, "-").replace(/[™®©|]/g, "").trim();
+      if (!text) return;
+      const conf = raw.c == null ? 100 : +raw.c;
+      /* Junk: no letters or digits, or a low-confidence short scrap with no digit in it. */
+      if (!/[A-Za-z0-9]/.test(text)) return;
+      if (conf < 60 && text.length <= 3 && !/\d/.test(text) && !/^(ID|FF|NO|YES|S\/N|SIN|3M|UP|TO)$/i.test(text)) return;
+      if (conf < 25 && !/\d/.test(text)) return;
+      const w = { text: text, x0: +raw.x0 || 0, y0: +raw.y0 || 0, x1: +raw.x1 || 0, y1: +raw.y1 || 0, c: conf, pageW: pageW || 0, pageH: pageH || 0 };
+      const key = text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (DEVICE_SPLITS[key]) {
+        splitWord(w, DEVICE_SPLITS[key]).forEach(function (x) { out.push(x); });
+        return;
+      }
+      if (/^EFFICIENCY/i.test(text)) {
+        splitWord(w, ["EFFICIENCY", "<99%"]).forEach(function (x) { out.push(x); });
+        return;
+      }
+      out.push(w);
+    });
+    /* S/N after PORTACOUNT arrives as SIN, S/IN, 5/N, SN */
+    out.forEach(function (w, i) {
+      if (/^(SIN|S\/IN|5\/N|S\/M|SM|S1N|SN)$/i.test(w.text)) {
+        const prev = out.find(function (p) { return /^PORTACOUNT$/i.test(p.text) && Math.abs((p.y0 + p.y1) / 2 - (w.y0 + w.y1) / 2) < Math.max(12, (w.y1 - w.y0)) && w.x0 >= p.x1 - 4 && w.x0 - p.x1 < 60; });
+        if (prev) w.text = "S/N";
+      }
+      if (/^N95[.,]?$/i.test(w.text)) w.text = "N95-";
+      if (/^OTE:?$/i.test(w.text) || /^NOTE:?$/i.test(w.text)) w.text = "NOTE:";
+    });
+    return out.map(function (w) {
+      return { text: w.text, n: normTok(w.text), used: false, pageW: w.pageW, pageH: w.pageH, x0: w.x0, x1: w.x1, y0: w.y0, y1: w.y1, xc: (w.x0 + w.x1) / 2, yc: (w.y0 + w.y1) / 2, w: w.x1 - w.x0, h: w.y1 - w.y0, c: w.c };
+    }).sort(function (a, b) { return a.yc - b.yc || a.x0 - b.x0; });
+  }
+  /* Text lines rebuilt from cleaned words (one line per visual row), for the line-based fallback parser. */
+  function linesFromWords(words) {
+    const rows = [];
+    words.slice().sort(function (a, b) { return a.yc - b.yc || a.x0 - b.x0; }).forEach(function (w) {
+      const last = rows[rows.length - 1];
+      if (!last || !sameRow(last[0], w)) rows.push([w]); else last.push(w);
+    });
+    return rows.map(function (row) { return row.sort(function (a, b) { return a.x0 - b.x0; }).map(function (w) { return w.text; }).join(" "); }).join("\n");
+  }
+
   function parseReport(text, extras) {
     extras = extras || {};
-    const raw = String(text || "").replace(/\r/g, "");
+    let raw = String(text || "").replace(/\r/g, "");
+    if (extras.source === "device" && extras.ocrWords && extras.ocrWords.length) raw = linesFromWords(normalizeDeviceWords(extras.ocrWords, extras.pageW, extras.pageH));
     const lines = raw.split(/\n+/).map(function (l) { return l.replace(/[ \t]+/g, " ").trim(); }).filter(Boolean);
     let fields = {};
     const header = lines.find(function (l) { return /FIT\s*TEST\s*REPORT/i.test(l); }) || "";
     const headerDate = header.replace(/.*FIT\s*TEST\s*REPORT/i, "").trim();
     if (headerDate) fields.headerDateRaw = headerDate;
 
-    let words = wordsFromVision(extras);
-    if (!words.length && extras.ocrWords) words = wordsFromSlim(extras.ocrWords);
+    let words = extras.source === "device" ? [] : wordsFromVision(extras);
+    if (!words.length && extras.ocrWords) {
+      words = extras.source === "device"
+        ? normalizeDeviceWords(extras.ocrWords, extras.pageW, extras.pageH)
+        : wordsFromSlim(extras.ocrWords, extras.pageW, extras.pageH);
+    }
     if (words.length) {
       fields = Object.assign(fields, parseReportFromBoxes(words, extras));
     }
@@ -1157,7 +1372,8 @@
 
   const api = {
     version: VERSION, isFitEvent, fitSeqOf, nextFitSeq, fitEventCode, fileNameFor,
-    parseReport, parseTsiDate, parseFf, ffMeets, safeToken, parseYesNo, wordsFromVision, findLabelHits, parseExercisesFromWords, parseReportFromBoxes, joinWords, clipWordsToReport, slimOcrWords
+    parseReport, parseTsiDate, parseFf, ffMeets, safeToken, parseYesNo, wordsFromVision, findLabelHits, parseExercisesFromWords, parseReportFromBoxes, joinWords, clipWordsToReport, slimOcrWords, normalizeDeviceWords,
+    driveSubfolder: DRIVE_SUBFOLDER, tesseractAssets: TESS
   };
   root.envssFit = api;
 
@@ -1240,12 +1456,6 @@
       };
       root.sendOne = root.sendOne;
     }
-  }
-
-  function parentOptions(ev) {
-    const evs = (typeof db !== "undefined" && db && db.events) || [];
-    return evs.filter(e => e && e.projectId === ev.projectId && e.id !== ev.id && !isFitEvent(e) && !(root.isFibreEvent && root.isFibreEvent(e)))
-      .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
   }
 
   function stageOf(ev) {
@@ -1398,7 +1608,8 @@
   function confirmHtml(rep, ev) {
     const psrc = photoSrc(rep);
     const flags = (rep.flags || []).map(f => "<li>" + esc(f.reason) + "</li>").join("");
-    const msg = rep.ocrMessage ? "<p class=\"help\" id=\"fitOcrMsg\">" + esc(rep.ocrMessage) + "</p>" : "";
+    const msg = (rep.ocrSource === "device" ? "<p class=\"fit-device\" id=\"fitDeviceBadge\">Read on device</p>" : "")
+      + (rep.ocrMessage ? "<p class=\"help\" id=\"fitOcrMsg\">" + esc(rep.ocrMessage) + "</p>" : "");
     const fails = (rep.exerciseFails || []).length
       ? "<p class=\"fit-warn\">Exercise fail" + (rep.exerciseFails.length === 1 ? "" : "s") + ": " + esc(rep.exerciseFails.join(", ")) + "</p>"
       : "";
@@ -1480,11 +1691,6 @@
   function eventFitHtml(ev) {
     const p = root.project && root.project(ev.projectId);
     const reps = reportsOf(ev.id);
-    const parents = parentOptions(ev);
-    const parentSel = "<label>Linked hygiene event (optional)<select id=\"fitParent\">"
-      + "<option value=\"\">None</option>"
-      + parents.map(e => "<option value=\"" + esc(e.id) + "\"" + (ev.parentEventId === e.id ? " selected" : "") + ">" + esc(e.code + (e.date ? " · " + e.date : "")) + "</option>").join("")
-      + "</select></label>";
     const rows = reps.length ? reps.map(r => {
       const signed = !!(r.signedAt || (r.sigTech && r.sigClient));
       const who = [r.lastName, r.firstName].filter(Boolean).join(", ") || "Details not filled in";
@@ -1493,7 +1699,7 @@
       return "<div class=\"train\" data-fit-open=\"" + esc(r.id) + "\">"
         + "<div class=\"pouch\">" + (signed ? "✓" : "…") + "</div>"
         + "<div><div class=\"row-title\">" + esc(who) + " · " + esc(r.model || r.respirator || "Respirator not set") + "</div>"
-        + "<div class=\"muted\">" + res + fail + (signed ? " · signed" : " · not signed") + (r.pdfName ? " · " + esc(r.pdfName) : "") + "</div></div>"
+        + "<div class=\"muted\">" + res + fail + (signed ? " · signed" : " · not signed") + (r.ocrSource === "device" ? " · read on device" + (r.ocrPendingVision ? " (Vision re-read when online)" : "") : "") + (r.pdfName ? " · " + esc(r.pdfName) : "") + "</div></div>"
         + "<span class=\"badge " + (signed ? "s-ok" : "s-needs") + "\">" + (signed ? "Signed" : "In progress") + "</span></div>";
     }).join("") : "<div class=\"empty\">No fit-test reports yet. Add one from a PortaCount report photo, or enter the details by hand.</div>";
     const st = stageOf(ev);
@@ -1504,7 +1710,6 @@
       + "<h2 class=\"brand-type\" style=\"margin:4px 0;color:var(--navy)\">" + esc(ev.code) + "</h2>"
       + "<div class=\"muted\">" + esc((root.eventTypeLabel && root.eventTypeLabel(ev)) || "Respirator fit testing") + (ev.date ? " · " + esc(ev.date) : "") + "</div>"
       + "</div>" + (root.eventBadge ? root.eventBadge(ev) : "") + "</div>"
-      + "<div class=\"card\" style=\"margin-top:10px\">" + parentSel + "</div>"
       + "<div class=\"row\" style=\"margin:10px 0\">"
       + "<button type=\"button\" class=\"btn mid\" id=\"fitAddReport\">Add individual report</button>"
       + "<input id=\"fitNewPhoto\" type=\"file\" accept=\"image/*\" capture=\"environment\" hidden>"
@@ -1594,47 +1799,304 @@
   }
   function dataUrlToBase64(dataUrl) { return String(dataUrl || "").replace(/^data:[^;]+;base64,/, ""); }
 
+  /* ---------- OCR: Google Vision first, on-device fallback (v48.13) ---------- */
+  function isOffline() { return typeof navigator !== "undefined" && navigator.onLine === false; }
+  function visionPost(cfg, blob) {
+    return blobToDataUrl(blob).then(function (dataUrl) {
+      const headers = (root.sbHeaders && root.sbHeaders()) || {};
+      const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctl ? setTimeout(function () { ctl.abort(); }, 60000) : null;
+      return fetch(cfg.supabaseUrl + "/functions/v1/" + OCR_FN, {
+        method: "POST",
+        headers: Object.assign({ "Content-Type": "application/json" }, headers),
+        body: JSON.stringify({ image: dataUrlToBase64(dataUrl), mime: "image/jpeg" }),
+        signal: ctl ? ctl.signal : undefined
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (j) { return { res: res, j: j }; });
+      }).finally(function () { if (timer) clearTimeout(timer); });
+    });
+  }
+  /* A gateway error is treated like no signal: the photo can still be read on the device. */
+  function visionUnreachable(out) {
+    const st = out && out.res ? out.res.status : 0;
+    if (out && out.j && out.j.error === "OCR_NOT_CONFIGURED") return false;
+    return st === 0 || st === 502 || st === 503 || st === 504;
+  }
+  function applyVision(rep, j) {
+    const parsed = parseReport(j.text || "", { pages: j.pages, annotations: j.annotations, confidence: null });
+    applyParsed(rep, parsed);
+    rep.ocrText = j.text || "";
+    if (parsed.ocrWords && parsed.ocrWords.length) rep.ocrWords = parsed.ocrWords;
+    rep.ocrStatus = "ok";
+    rep.ocrSource = "vision";
+    rep.ocrPendingVision = false;
+    return parsed;
+  }
+
   async function runOcr(rep, file) {
     rep.ocrStatus = "running";
     rep.ocrMessage = "Reading the photo…";
+    rep.fieldsEdited = false;
+    let small = file;
+    try { small = await downscaleBlob(file, 1600, 0.72); } catch (e) { small = file; }
+    if (isOffline()) { await runDeviceOcr(rep, file, small, "offline"); return; }
+    const cfg = root.sbCfg && root.sbCfg();
+    if (!cfg || !cfg.supabaseUrl) {
+      rep.ocrStatus = "unavailable";
+      rep.ocrMessage = "OCR not set up yet, enter manually";
+      return;
+    }
+    let out;
     try {
-      const small = await downscaleBlob(file, 1600, 0.72);
-      const dataUrl = await blobToDataUrl(small);
-      const cfg = root.sbCfg && root.sbCfg();
-      if (!cfg || !cfg.supabaseUrl) {
-        rep.ocrStatus = "unavailable";
-        rep.ocrMessage = "OCR not set up yet, enter manually";
-        return;
-      }
-      const headers = (root.sbHeaders && root.sbHeaders()) || {};
-      const res = await fetch(cfg.supabaseUrl + "/functions/v1/" + OCR_FN, {
-        method: "POST",
-        headers: Object.assign({ "Content-Type": "application/json" }, headers),
-        body: JSON.stringify({ image: dataUrlToBase64(dataUrl), mime: "image/jpeg" })
+      out = await visionPost(cfg, small);
+    } catch (e) {
+      /* fetch threw: no signal, DNS, captive portal, or timed out */
+      await runDeviceOcr(rep, file, small, "network");
+      return;
+    }
+    const res = out.res, j = out.j;
+    if (res.status === 503 && j.error === "OCR_NOT_CONFIGURED") {
+      rep.ocrStatus = "not_configured";
+      rep.ocrMessage = "OCR not set up yet, enter manually";
+      return;
+    }
+    if (visionUnreachable(out)) { await runDeviceOcr(rep, file, small, "network"); return; }
+    if (!res.ok) {
+      rep.ocrStatus = "failed";
+      rep.ocrMessage = j.message || "Could not read the photo. Enter the details manually, or retake it.";
+      return;
+    }
+    const parsed = applyVision(rep, j);
+    await dropPending(rep.id);
+    rep.ocrMessage = parsed.missing.length || parsed.flags.length
+      ? "Check the highlighted fields against the photo."
+      : "Fields were filled from the photo. Please check them before signing.";
+  }
+
+  /* --- on-device reader: Tesseract.js, lazy-loaded, kept in Cache Storage so it works with no signal --- */
+  function hasCaches() { return typeof caches !== "undefined" && caches && typeof caches.open === "function"; }
+  async function ocrCached(url) {
+    if (hasCaches()) {
+      try { const c = await caches.open(TESS.cache); const hit = await c.match(url); if (hit) return hit; } catch (e) { /* fall through */ }
+    }
+    const res = await fetch(url, { mode: "cors", credentials: "omit" });
+    if (!res.ok) throw new Error("download " + res.status);
+    if (hasCaches()) { try { const c = await caches.open(TESS.cache); await c.put(url, res.clone()); } catch (e) { /* quota: still usable this time */ } }
+    return res;
+  }
+  function simdOk() {
+    try { return typeof WebAssembly !== "undefined" && WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11])); }
+    catch (e) { return false; }
+  }
+  function deviceAssets() { return [TESS.lib, TESS.worker, simdOk() ? TESS.coreSimd : TESS.core, TESS.lang]; }
+  async function deviceOcrReady() {
+    if (!hasCaches()) return false;
+    try {
+      const c = await caches.open(TESS.cache);
+      for (const u of deviceAssets()) { if (!(await c.match(u))) return false; }
+      return true;
+    } catch (e) { return false; }
+  }
+  let warming = null;
+  /* Download the on-device reader once (about 7 MB) so a later photo can be read with no signal. Runs in the
+     background after the app is idle; never on first paint, never on Data Saver. */
+  function warmDeviceOcr(force) {
+    if (warming) return warming;
+    if (!force) {
+      if (isOffline()) return Promise.resolve(false);
+      const cn = typeof navigator !== "undefined" && navigator.connection;
+      if (cn && cn.saveData) return Promise.resolve(false);
+    }
+    warming = (async function () {
+      try {
+        for (const u of deviceAssets()) {
+          const r = await ocrCached(u);
+          if (r && r.body && typeof r.body.cancel === "function" && !r.bodyUsed) { try { await r.body.cancel(); } catch (e) {} }
+        }
+        return true;
+      } catch (e) {
+        console.warn("[ENVSS] on-device OCR download", e);
+        return false;
+      } finally { warming = null; }
+    })();
+    return warming;
+  }
+  let tessLoading = null;
+  function loadTesseract() {
+    if (root.Tesseract && root.Tesseract.createWorker) return Promise.resolve(root.Tesseract);
+    if (!tessLoading) {
+      tessLoading = (async function () {
+        const txt = await (await ocrCached(TESS.lib)).text();
+        const url = URL.createObjectURL(new Blob([txt], { type: "text/javascript" }));
+        try {
+          await new Promise(function (res, rej) {
+            const sc = document.createElement("script");
+            sc.src = url; sc.onload = res; sc.onerror = function () { rej(new Error("could not start the reader")); };
+            document.head.appendChild(sc);
+          });
+        } finally { URL.revokeObjectURL(url); }
+        if (!root.Tesseract || !root.Tesseract.createWorker) throw new Error("reader library missing");
+        return root.Tesseract;
+      })().catch(function (e) { tessLoading = null; throw e; });
+    }
+    return tessLoading;
+  }
+  /* One worker script = fetch shim (serves the language file from our cache) + Tesseract core + Tesseract worker,
+     so nothing inside the worker needs the network or the service worker. */
+  async function deviceWorkerUrl() {
+    const parts = await Promise.all([ocrCached(simdOk() ? TESS.coreSimd : TESS.core).then(r => r.text()), ocrCached(TESS.worker).then(r => r.text())]);
+    const shim = "(function(){var C=" + JSON.stringify(TESS.cache) + ",F=self.fetch.bind(self);"
+      + "self.fetch=function(u,o){var k=typeof u==='string'?u:(u&&u.url)||'';"
+      /* Only http(s) URLs go through the cache: Cache.match() on the core's data: URI (the embedded wasm) can return an
+         unrelated entry, which then fails to compile. data:/blob: always go straight to the real fetch. */
+      + "if(!/^https?:/i.test(k)||!self.caches)return F(u,o);"
+      + "var hitP=caches.open(C).then(function(c){return c.match(k);}).catch(function(){return null;});"
+      + "return hitP.then(function(hit){if(hit&&hit.url&&hit.url!==k)hit=null;if(hit)return hit;return F(u,o).then(function(r){if(r&&r.ok){var cl=r.clone();caches.open(C).then(function(c){return c.put(k,cl);}).catch(function(){});}return r;});});};})();\n";
+    return URL.createObjectURL(new Blob([shim, parts[0], "\n;\n", parts[1]], { type: "text/javascript" }));
+  }
+  function imageDims(blob) {
+    return new Promise(function (res) {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = function () { URL.revokeObjectURL(url); res({ w: img.naturalWidth || img.width, h: img.naturalHeight || img.height }); };
+      img.onerror = function () { URL.revokeObjectURL(url); res({ w: 0, h: 0 }); };
+      img.src = url;
+    });
+  }
+  function withTimeout(p, ms, label) {
+    return Promise.race([p, new Promise(function (_, rej) { setTimeout(function () { rej(new Error(label || "timed out")); }, ms); })]);
+  }
+  /* Returns { text, words: [{t,x0,y0,x1,y1,c}], pageW, pageH } in the same shape the TSI box parser reads. */
+  async function deviceRead(file) {
+    const T = await loadTesseract();
+    const img = await downscaleBlob(file, TESS.edge, 0.9);
+    const dims = await imageDims(img);
+    const wurl = await deviceWorkerUrl();
+    let worker = null, failed = null, gaveUp = false;
+    /* A crash inside the worker (e.g. wasm abort) never settles Tesseract's promises, so every step races an error/timeout. */
+    const crash = new Promise(function (_, rej) { failed = rej; });
+    crash.catch(function () {});
+    try {
+      const made = T.createWorker("eng", 1, {
+        workerPath: wurl, workerBlobURL: false, corePath: simdOk() ? TESS.coreSimd : TESS.core,
+        langPath: TESS.langDir, gzip: true, cacheMethod: "none",
+        errorHandler: function (e) { failed(e instanceof Error ? e : new Error(String(e && e.message || e || "reader error"))); }
       });
-      const j = await res.json().catch(() => ({}));
-      if (res.status === 503 || j.error === "OCR_NOT_CONFIGURED") {
-        rep.ocrStatus = "not_configured";
-        rep.ocrMessage = "OCR not set up yet, enter manually";
-        return;
-      }
-      if (!res.ok) {
-        rep.ocrStatus = "failed";
-        rep.ocrMessage = j.message || "Could not read the photo. Enter the details manually, or retake it.";
-        return;
-      }
-      const parsed = parseReport(j.text || "", { pages: j.pages, annotations: j.annotations, confidence: null });
+      made.then(function (w) { if (gaveUp) { try { w.terminate(); } catch (e) {} } }, function () {});
+      try { worker = await Promise.race([withTimeout(made, 90000, "the on-device reader did not start"), crash]); }
+      catch (e) { gaveUp = true; throw e; }
+      await Promise.race([withTimeout(worker.setParameters({ tessedit_pageseg_mode: TESS.psm }), 30000, "reader setup timed out"), crash]);
+      const r = await Promise.race([withTimeout(worker.recognize(img, {}, { text: true, blocks: true }), 240000, "reading took too long"), crash]);
+      const words = [];
+      ((r.data && r.data.blocks) || []).forEach(function (b) {
+        (b.paragraphs || []).forEach(function (p) {
+          (p.lines || []).forEach(function (l) {
+            (l.words || []).forEach(function (wd) {
+              if (wd && wd.text && wd.bbox) words.push({ t: wd.text, x0: wd.bbox.x0, y0: wd.bbox.y0, x1: wd.bbox.x1, y1: wd.bbox.y1, c: Math.round(wd.confidence || 0) });
+            });
+          });
+        });
+      });
+      return { text: (r.data && r.data.text) || "", words: words, pageW: dims.w, pageH: dims.h };
+    } finally {
+      try { if (worker) await worker.terminate(); } catch (e) {}
+      URL.revokeObjectURL(wurl);
+    }
+  }
+
+  /* The downscaled photo is kept (Cache Storage, this device only) until Vision has re-read it or someone edits a field. */
+  const PENDING_CACHE = "envss-ocr-pending-v1";
+  function pendingKey(id) { return new URL("__envss_ocr_pending/" + encodeURIComponent(id), (root.location && root.location.href) || "https://field.envss.com.au/").href; }
+  async function savePending(id, blob) {
+    if (!hasCaches() || !blob) return false;
+    try { const c = await caches.open(PENDING_CACHE); await c.put(pendingKey(id), new Response(blob, { headers: { "Content-Type": "image/jpeg" } })); return true; }
+    catch (e) { return false; }
+  }
+  async function loadPending(id) {
+    if (!hasCaches()) return null;
+    try { const c = await caches.open(PENDING_CACHE); const hit = await c.match(pendingKey(id)); return hit ? await hit.blob() : null; }
+    catch (e) { return null; }
+  }
+  async function dropPending(id) {
+    if (!hasCaches()) return;
+    try { const c = await caches.open(PENDING_CACHE); await c.delete(pendingKey(id)); } catch (e) {}
+  }
+
+  const DEVICE_MSG = "Read on device (no internet). Check every field against the photo. When you are back online it is re-read with Google Vision, unless you have changed a field.";
+  async function runDeviceOcr(rep, file, small, why) {
+    rep.ocrMessage = "No internet. Reading the photo on this device…";
+    try {
+      const reader = typeof root.__envssDeviceOcr === "function" ? root.__envssDeviceOcr : deviceRead;
+      const out = await reader(file);
+      const parsed = parseReport(out.text || "", { ocrWords: out.words || [], pageW: out.pageW, pageH: out.pageH, source: "device" });
       applyParsed(rep, parsed);
-      rep.ocrText = j.text || "";
+      rep.ocrText = out.text || "";
       if (parsed.ocrWords && parsed.ocrWords.length) rep.ocrWords = parsed.ocrWords;
       rep.ocrStatus = "ok";
-      rep.ocrMessage = parsed.missing.length || parsed.flags.length
-        ? "Check the highlighted fields against the photo."
-        : "Fields were filled from the photo. Please check them before signing.";
+      rep.ocrSource = "device";
+      rep.ocrDeviceAt = new Date().toISOString();
+      rep.ocrMessage = DEVICE_MSG;
     } catch (e) {
+      console.warn("[ENVSS] on-device OCR", e);
+      const ready = await deviceOcrReady();
       rep.ocrStatus = "failed";
-      rep.ocrMessage = "Could not reach OCR (" + (e && e.message || e) + "). Enter the details manually, or try again when you are online.";
+      rep.ocrSource = "";
+      rep.ocrMessage = ready
+        ? "No internet, and this device could not read the photo (" + (e && e.message || e) + "). Enter the details manually; it is re-read with Google Vision when you are back online unless you change a field."
+        : "No internet, and the on-device reader has not been downloaded yet (it downloads once while the app is open online). Enter the details manually; it is re-read with Google Vision when you are back online unless you change a field.";
     }
+    rep.ocrOfflineReason = why || "offline";
+    rep.ocrPendingVision = await savePending(rep.id, small);
+  }
+
+  /* Someone typed in, or confirmed, the fields: never let a later Vision read overwrite them. */
+  function markFieldsEdited(rep, why) {
+    if (!rep || rep.fieldsEdited) return;
+    rep.fieldsEdited = true;
+    if (rep.ocrPendingVision) {
+      rep.ocrPendingVision = false;
+      dropPending(rep.id);
+      const ev = root.eventById && root.eventById(rep.eventId);
+      evLog(ev, "Fit-test Vision re-read cancelled", why || "fields edited");
+    }
+  }
+
+  let rereading = false;
+  async function rereadPending() {
+    if (rereading || isOffline()) return 0;
+    const cfg = root.sbCfg && root.sbCfg();
+    if (!cfg || !cfg.supabaseUrl) return 0;
+    rereading = true;
+    let n = 0;
+    try {
+      const reps = ((typeof db !== "undefined" && db && db.fitReports) || []).filter(function (r) {
+        return r && r.ocrPendingVision && !r.fieldsEdited && !r.signedAt && !r.sigTech;
+      });
+      for (const rep of reps) {
+        const blob = await loadPending(rep.id);
+        if (!blob) continue; /* another device's report, or the photo was cleared */
+        let out;
+        try { out = await visionPost(cfg, blob); } catch (e) { break; /* still no signal */ }
+        if (visionUnreachable(out)) break;
+        if (!out.res.ok) continue;
+        /* The tech may have started typing while Vision was reading. */
+        if (rep.fieldsEdited || rep.signedAt || !rep.ocrPendingVision) continue;
+        const wasDevice = rep.ocrSource === "device";
+        const parsed = applyVision(rep, out.j);
+        rep.ocrRereadAt = new Date().toISOString();
+        rep.ocrMessage = (wasDevice ? "Re-read with Google Vision now you are back online (it was read on the device). " : "Read with Google Vision now you are back online. ")
+          + (parsed.missing.length || parsed.flags.length ? "Check the highlighted fields against the photo." : "Please check the fields before signing.");
+        if (typeof root.touch === "function") root.touch(rep);
+        await dropPending(rep.id);
+        evLog(root.eventById && root.eventById(rep.eventId), "Fit-test photo re-read with Google Vision", [rep.lastName, rep.firstName].filter(Boolean).join(", "));
+        n++;
+      }
+      if (n) {
+        saveQuiet();
+        if (typeof root.render === "function" && !(root.userIsTyping && root.userIsTyping())) root.render();
+      }
+    } finally { rereading = false; }
+    return n;
   }
 
   async function attachPhoto(rep, ev, file) {
@@ -2124,7 +2586,7 @@
         if (html.indexOf("id=\"fitEventFields\"") === -1) {
           html = html.replace("<div class=\"footer-actions\">",
             "<div id=\"fitEventFields\" style=\"display:none\">"
-            + "<p class=\"help\">Code: {job}-FIT-001, 002, … — a sibling event under this job, not a hygiene -001 number. You can link it to today’s hygiene event after it is created. There is no laboratory COC for fit testing.</p>"
+            + "<p class=\"help\">Code: {job}-FIT-001, 002, … — its own event under this job. There is no laboratory COC for fit testing.</p>"
             + "</div><div class=\"footer-actions\">");
         }
         return html;
@@ -2156,7 +2618,7 @@
       const ev = {
         id: uid("e"), projectId, type: "fit", stage: "planned", date,
         code: fitEventCode(p, nextFitSeq(projectId)),
-        multiDay: false, notes: "", uploadReady: false, operators: [], parentEventId: "",
+        multiDay: false, notes: "", uploadReady: false, operators: [],
         audit: []
       };
       db.events.push(ev);
@@ -2228,8 +2690,6 @@
       if (_bind) _bind.apply(this, arguments);
       const ev = root.eventById && root.eventById(view.eventId);
       if (!ev || !isFitEvent(ev)) return;
-      const parent = document.getElementById("fitParent");
-      if (parent) parent.onchange = () => { ev.parentEventId = parent.value || ""; evLog(ev, "Linked hygiene event", ev.parentEventId || "cleared"); saveQuiet(); };
       const add = document.getElementById("fitAddReport");
       const inp = document.getElementById("fitNewPhoto") || document.getElementById("fitPhotoInput");
       if (add && document.getElementById("fitNewPhoto")) add.onclick = () => document.getElementById("fitNewPhoto").click();
@@ -2247,6 +2707,18 @@
       document.querySelectorAll("[data-fit-open]").forEach(row => {
         row.onclick = () => { const r = reportById(row.getAttribute("data-fit-open")); if (r) openConfirm(r); };
       });
+      const confirmBox = document.getElementById("fitConfirm");
+      if (confirmBox && !confirmBox.dataset.editWatch) {
+        confirmBox.dataset.editWatch = "1";
+        const onEdit = function (e) {
+          const t = e && e.target;
+          if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.type === "file") return;
+          const rep = reportById(view.fitReportId);
+          if (rep && !rep.fieldsEdited) { markFieldsEdited(rep, "fields edited"); saveQuiet(); }
+        };
+        confirmBox.addEventListener("input", onEdit);
+        confirmBox.addEventListener("change", onEdit);
+      }
       const backEv = document.getElementById("fitBackEvent");
       if (backEv) backEv.onclick = () => { view.fitScreen = ""; view.fitReportId = ""; root.render(); };
       const retake = document.getElementById("fitRetake");
@@ -2273,6 +2745,7 @@
         const rep = reportById(view.fitReportId);
         if (!rep) return;
         collectForm(rep);
+        markFieldsEdited(rep, "exercise added");
         rep.exercises = (rep.exercises || []).concat([{ exercise: "", duration: "", fitFactorRaw: "", pass: "" }]);
         saveQuiet();
         openConfirm(rep);
@@ -2282,6 +2755,7 @@
         const rep = reportById(view.fitReportId);
         if (!rep) return;
         collectForm(rep);
+        markFieldsEdited(rep, "saved without signing");
         evLog(ev, "Fit-test report saved", "unsigned draft");
         save();
         try {
@@ -2300,6 +2774,7 @@
         const rep = reportById(view.fitReportId);
         if (!rep) return;
         collectForm(rep);
+        markFieldsEdited(rep, "fields confirmed");
         if (!trim(rep.lastName) || !trim(rep.firstName)) { alert("Enter the worker’s last and first name before signing."); return; }
         saveQuiet();
         openSign(rep);
@@ -2360,6 +2835,7 @@
       + ".fit-ex-wrap{overflow:auto}.fit-ex{width:100%;border-collapse:collapse;font-size:13px}"
       + ".fit-ex th,.fit-ex td{padding:4px;border-bottom:1px solid var(--edge,#3A4A7A)}"
       + ".fit-sig{width:100%;height:180px;background:#fff;border:2px solid var(--edge,#3A4A7A);border-radius:12px;touch-action:none}"
+      + ".fit-device{display:inline-block;margin:6px 0 0;padding:3px 10px;border-radius:999px;background:#FFF4E5;color:#8A4B08;font-weight:700;font-size:13px}"
       + ".s-ok{background:#E5F4EE;color:#1F6B4A}.s-needs{background:#FFF4E5;color:#8A4B08}";
     document.head.appendChild(st);
   }
@@ -2378,7 +2854,24 @@
     api.zipAll = zipAll;
     api.blankReport = blankReport;
     api.runOcr = runOcr;
+    api.deviceRead = deviceRead;
+    api.deviceOcrReady = deviceOcrReady;
+    api.warmDeviceOcr = warmDeviceOcr;
+    api.rereadPending = rereadPending;
+    api.markFieldsEdited = markFieldsEdited;
+    api.loadPending = loadPending;
     root.envssFit = api;
+    /* Vision re-read of photos that were read on the device, once the signal is back. */
+    root.addEventListener && root.addEventListener("online", function () { setTimeout(function () { rereadPending().catch(function () {}); }, 4000); });
+    setTimeout(function () { rereadPending().catch(function () {}); }, 6000);
+    /* Background download of the on-device reader: after load and idle, online only, skipped on Data Saver and in
+       automated test browsers (tests call warmDeviceOcr(true) themselves). */
+    if (!(typeof navigator !== "undefined" && navigator.webdriver)) {
+      setTimeout(function () {
+        const go = function () { warmDeviceOcr(false); };
+        if (typeof root.requestIdleCallback === "function") root.requestIdleCallback(go, { timeout: 20000 }); else go();
+      }, 30000);
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
