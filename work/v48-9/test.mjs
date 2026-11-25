@@ -1,4 +1,4 @@
-/* v48.9 tests: respirator fit testing event type, exclusions, confirm form, signatures, PDF.
+/* v48.10 tests: respirator fit testing event type, exclusions, confirm form, signatures, PDF.
    Usage: ROOT=/workspace/envss-fit-v489 node work/v48-9/test.mjs [pixel7|chromebook]   (default: both)
    Supabase is mocked in memory. Fixture names are made up. */
 import fs from "fs"; import path from "path"; import { execSync } from "child_process";
@@ -42,7 +42,7 @@ NAME John Breed`;
 function fixture() {
   return {
     catalogs: { contaminants: [{ id: "INH", name: "Inhalable dust", code: "INH", kind: "airborne", headHint: "IESS", flowTolPct: 10, defaultFlow: "2.0" }], pumps: [], fleetPumps: [], heads: [], dosimeters: [], occupations: [], respirators: [], hpds: [] },
-    projects: [{ id: "p489", number: "0019489", name: "v48.9 fit-test", source: "field", site: "Test site" }],
+    projects: [{ id: "p489", number: "0019489", name: "v48.10 fit-test", source: "field", site: "Test site" }],
     events: [
       { id: "eH", projectId: "p489", code: "0019489-001", type: "hygiene", date: TODAY, stage: "planned", audit: [] },
       { id: "eFit", projectId: "p489", code: "0019489-FIT-001", type: "fit", date: TODAY, stage: "planned", parentEventId: "eH", audit: [] }
@@ -112,7 +112,7 @@ async function run(vp) {
   const shot = (page, n, full = false) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   fs.readdirSync(OUT).filter(f => f.endsWith('.pdf') || f.endsWith('.zip')).forEach(f => fs.unlinkSync(path.join(OUT, f)));
   const page = await boot(vp, { status: 503, body: { error: "OCR_NOT_CONFIGURED", message: "OCR not set up yet, enter manually" } });
-  check(`[${vp}] app is v48.9 with fit-test module`, await page.evaluate(() => APP_VERSION === "48.9" && document.getElementById("appVersion").textContent === "v48.9" && document.title === "ENVSS Field v48.9" && !!(window.envssFit && envssFit.parseReport)), await page.evaluate(() => ({ v: APP_VERSION, t: document.title, fit: !!(window.envssFit) })));
+  check(`[${vp}] app is v48.10 with fit-test module`, await page.evaluate(() => APP_VERSION === "48.10" && document.getElementById("appVersion").textContent === "v48.10" && document.title === "ENVSS Field v48.10" && !!(window.envssFit && envssFit.parseReport)), await page.evaluate(() => ({ v: APP_VERSION, t: document.title, fit: !!(window.envssFit) })));
 
   const labels = await page.evaluate(() => {
     const ev = eventById("eFit"), hy = eventById("eH");

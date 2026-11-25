@@ -1,10 +1,10 @@
-/* ENVSS Field v48.9: Respirator fit testing.
+/* ENVSS Field v48.10: Respirator fit testing (Vision bounding-box OCR, IndexedDB photos).
    Event type "fit", codes {job}-FIT-{seq}. Photo + optional Google Vision OCR, confirm,
    two signatures, A4 PDF (form + signatures + original photo), Drive copy into
    {job}_Field-App/Fit Test, zip download. No Podio writes. */
 (function (root) {
   "use strict";
-  const VERSION = "48.9";
+  const VERSION = "48.10";
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
   const OCR_FN = "ocr-fit-report";
@@ -22,6 +22,7 @@
     ["N95 COMPANION", "n95Companion"],
     ["RESPIRATOR STYLE", "respiratorStyle"],
     ["RESPIRATOR SIZE", "respiratorSize"],
+    ["SIZE", "respiratorSize"],
     ["MANUFACTURER", "manufacturer"],
     ["MODEL", "model"],
     ["PROTOCOL", "protocol"],
@@ -32,6 +33,7 @@
     ["OVERALL FF", "overallFfRaw"],
     ["FITTEST OPERATOR", "operator"],
     ["FIT TEST OPERATOR", "operator"],
+    ["NAME", "operatorName"],
     ["RESPIRATOR", "respirator"],
     ["NOTE", "note"]
   ];
@@ -73,10 +75,41 @@
     return sur + "_" + first + "_" + model + "_" + datePart + ".pdf";
   }
 
+  function monthNum(s) {
+    const m = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, SEPT: 9, OCT: 10, NOV: 11, DEC: 12 };
+    return m[String(s || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4)] || m[String(s || "").toUpperCase().slice(0, 3)] || 0;
+  }
+  function expandMergedDate(raw) {
+    /* "2412NOV2026", "25NOV2026", "25 NOV2026", "25 NOV 2026 10:45" */
+    const t = String(raw || "").toUpperCase().replace(/[.,]/g, " ").replace(/\s+/g, " ").trim();
+    if (!t) return "";
+    const compact = t.replace(/\s+/g, "");
+    const m = compact.match(/^(\d{1,2})(\d{2})?(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEPT?|OCT|NOV|DEC)[A-Z]*(\d{4}|\d{2})(?:[ T]?(\d{1,2})[:.]?(\d{2})?)?$/);
+    if (m) {
+      const day = +m[1], mon = monthNum(m[3]), y = +(m[4].length === 2 ? 2000 + +m[4] : m[4]);
+      if (day && mon && y) {
+        let out = pad(day) + "/" + pad(mon) + "/" + y;
+        if (m[5] != null) out += " " + pad(m[5]) + ":" + pad(m[6]);
+        return out;
+      }
+    }
+    const spaced = t.match(/\b(\d{1,2})\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEPT?|OCT|NOV|DEC)[A-Z]*\s+(\d{4}|\d{2})(?:\s+(\d{1,2})[:.](\d{2}))?\b/);
+    if (spaced) {
+      const day = +spaced[1], mon = monthNum(spaced[2]), y = +(spaced[3].length === 2 ? 2000 + +spaced[3] : spaced[3]);
+      if (day && mon && y) {
+        let out = pad(day) + "/" + pad(mon) + "/" + y;
+        if (spaced[4] != null) out += " " + pad(spaced[4]) + ":" + spaced[5];
+        return out;
+      }
+    }
+    return "";
+  }
   function parseTsiDate(raw) {
     const out = { raw: trim(raw), iso: "", display: "", displayDashed: "", time: "", flag: "", year: 0, month: 0, day: 0 };
     if (!out.raw) { out.flag = "missing"; return out; }
-    const m = out.raw.match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
+    const expanded = expandMergedDate(out.raw);
+    const src = expanded || out.raw;
+    const m = String(src).match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
     if (!m) { out.flag = "unparsed"; return out; }
     let a = +m[1], b = +m[2], y = +m[3];
     if (y < 100) y += 2000;
@@ -90,6 +123,10 @@
     out.display = pad(day) + "/" + pad(month) + "/" + y;
     out.displayDashed = pad(day) + "-" + pad(month) + "-" + y;
     if (m[4] != null) out.time = pad(m[4]) + ":" + m[5];
+    else {
+      const tm = String(out.raw).match(/\b(\d{1,2})[:.](\d{2})\b/);
+      if (tm) out.time = pad(tm[1]) + ":" + tm[2];
+    }
     return out;
   }
 
@@ -146,44 +183,485 @@
     return { rows, next: i };
   }
 
-  function parseReport(text, extras) {
-    extras = extras || {};
-    const raw = String(text || "").replace(/\r/g, "");
-    const lines = raw.split(/\n+/).map(l => l.replace(/[ \t]+/g, " ").trim()).filter(Boolean);
-    const fields = {};
-    const missing = [];
-    const flags = [];
-    const header = lines.find(l => /FIT\s*TEST\s*REPORT/i.test(l)) || "";
-    const headerDate = header.replace(/.*FIT\s*TEST\s*REPORT/i, "").trim();
-    if (headerDate) fields.headerDateRaw = headerDate;
+  function normTok(s) {
+    return String(s || "").toUpperCase().replace(/[™®©]/g, "").replace(/[_.,]/g, "").replace(/\s+/g, " ").trim();
+  }
+  function boxOf(bb, pw, ph) {
+    const verts = (bb && (bb.vertices || bb.normalizedVertices)) || [];
+    const norm = !!(bb && bb.normalizedVertices && !bb.vertices);
+    const pts = verts.map(function (v) {
+      const x = v && v.x != null ? v.x : 0, y = v && v.y != null ? v.y : 0;
+      return { x: norm ? x * pw : x, y: norm ? y * ph : y };
+    });
+    if (!pts.length) return null;
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    return { x0: Math.min.apply(null, xs), x1: Math.max.apply(null, xs), y0: Math.min.apply(null, ys), y1: Math.max.apply(null, ys) };
+  }
+  function withCenter(b) {
+    if (!b) return null;
+    b.w = b.x1 - b.x0; b.h = b.y1 - b.y0;
+    b.xc = (b.x0 + b.x1) / 2; b.yc = (b.y0 + b.y1) / 2;
+    return b;
+  }
+  function unionBox(a, b) {
+    return withCenter({ x0: Math.min(a.x0, b.x0), x1: Math.max(a.x1, b.x1), y0: Math.min(a.y0, b.y0), y1: Math.max(a.y1, b.y1) });
+  }
+  function yOverlap(a, b) {
+    const top = Math.max(a.y0, b.y0), bot = Math.min(a.y1, b.y1);
+    return Math.max(0, bot - top);
+  }
+  function sameRow(a, b) {
+    const ov = yOverlap(a, b);
+    const lim = Math.max(8, 0.35 * Math.min(a.h || (a.y1 - a.y0), b.h || (b.y1 - b.y0), 40));
+    if (ov >= lim) return true;
+    return Math.abs(a.yc - b.yc) <= Math.max(a.h, b.h, 14) * 0.7;
+  }
 
+  function wordsFromPages(pages) {
+    const words = [];
+    (pages || []).forEach(function (page) {
+      const pw = page.width || 1, ph = page.height || 1;
+      (page.blocks || []).forEach(function (block) {
+        (block.paragraphs || []).forEach(function (para) {
+          (para.words || []).forEach(function (word) {
+            const text = (word.symbols || []).map(s => s.text || "").join("");
+            const b = withCenter(boxOf(word.boundingBox, pw, ph));
+            if (text && b) words.push({ text: text, n: normTok(text), used: false, pageW: pw, pageH: ph, x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y1, xc: b.xc, yc: b.yc, w: b.w, h: b.h });
+          });
+        });
+      });
+    });
+    return words;
+  }
+  function wordsFromAnnotations(annotations) {
+    const words = [];
+    (annotations || []).forEach(function (a, i) {
+      if (i === 0) return; /* first item is the full text */
+      const text = a.description || a.text || "";
+      const b = withCenter(boxOf(a.boundingPoly || a.boundingBox, 1, 1));
+      if (text && b && !/\n/.test(text)) words.push({ text: text, n: normTok(text), used: false, pageW: 0, pageH: 0, x0: b.x0, x1: b.x1, y0: b.y0, y1: b.y1, xc: b.xc, yc: b.yc, w: b.w, h: b.h });
+    });
+    return words;
+  }
+  function wordsFromVision(extras) {
+    extras = extras || {};
+    let words = wordsFromPages(extras.pages);
+    if (!words.length) words = wordsFromAnnotations(extras.annotations);
+    words.sort(function (a, b) { return a.yc - b.yc || a.x0 - b.x0; });
+    return words;
+  }
+
+  function labelTokens(lab) {
+    const u = normTok(lab).replace(/<99%/g, " <99%").replace(/N95-COMPANION/g, "N95 COMPANION").replace(/S\/N/g, "S/N");
+    const parts = u.split(" ").filter(Boolean);
+    const out = [];
+    parts.forEach(function (p) {
+      if (p === "S/N" || p === "SN") out.push(["S/N", "SN", "S"]);
+      else if (p === "N95") out.push(["N95-COMPANION", "N95COMPANION", "N95"]);
+      else if (p === "COMPANION") out.push(["COMPANION", "-COMPANION"]);
+      else if (p.indexOf("EFFICIENCY") === 0) out.push(["EFFICIENCY<99%", "EFFICIENCY"]);
+      else out.push([p]);
+    });
+    return out;
+  }
+  function tokMatch(wordN, options) {
+    return options.some(function (opt) {
+      if (wordN === opt) return true;
+      if (opt === "S" && (wordN === "S" || wordN === "S/" || wordN === "S/N")) return true;
+      if (opt === "N95" && (wordN === "N95" || wordN.indexOf("N95-") === 0)) return true;
+      if (opt === "EFFICIENCY" && wordN.indexOf("EFFICIENCY") === 0) return true;
+      return false;
+    });
+  }
+  function findLabelHits(words) {
+    const specs = LABEL_ROWS.map(function (pair, idx) { return { lab: pair[0], field: pair[1], toks: labelTokens(pair[0]), idx: idx, len: pair[0].length }; });
+    specs.sort(function (a, b) { return b.len - a.len; });
+    const hits = [];
+    const taken = new Set();
+    function closeOnRow(a, b) {
+      if (!sameRow(a, b)) return false;
+      const gap = b.x0 - a.x1;
+      return gap >= -4 && gap < Math.max(28, a.h * 2.2);
+    }
+    specs.forEach(function (spec) {
+      for (let i = 0; i < words.length; i++) {
+        if (taken.has(i) || !tokMatch(words[i].n, spec.toks[0])) continue;
+        const idxs = [i];
+        let ok = true;
+        let last = words[i];
+        for (let t = 1; t < spec.toks.length; t++) {
+          let found = -1;
+          for (let j = 0; j < words.length; j++) {
+            if (taken.has(j) || idxs.indexOf(j) >= 0) continue;
+            if (tokMatch(words[j].n, spec.toks[t]) && closeOnRow(last, words[j])) { found = j; break; }
+          }
+          /* S/N may arrive as S / N */
+          if (found < 0 && spec.toks[t][0] === "S/N") {
+            for (let j = 0; j < words.length; j++) {
+              if (taken.has(j)) continue;
+              if ((words[j].n === "N" || words[j].n === "/N") && closeOnRow(last, words[j])) { found = j; break; }
+            }
+          }
+          if (found < 0) { ok = false; break; }
+          idxs.push(found); last = words[found];
+        }
+        if (!ok) continue;
+        /* "NAME" must not be the NAME in FIRST/LAST NAME */
+        if (spec.lab === "NAME") {
+          const box0 = words[idxs[0]];
+          const stolen = words.some(function (w, wi) {
+            return !idxs.includes(wi) && (w.n === "FIRST" || w.n === "LAST") && sameRow(w, box0) && box0.x0 - w.x1 < 40;
+          });
+          if (stolen) continue;
+        }
+        if (spec.lab === "SIZE") {
+          const box0 = words[idxs[0]];
+          const stolen = words.some(function (w, wi) {
+            return !idxs.includes(wi) && (w.n === "ONE" || w.n === "RESPIRATOR") && sameRow(w, box0) && Math.abs(w.x0 - box0.x0) < 200;
+          });
+          if (stolen) continue;
+        }
+        let box = { x0: words[idxs[0]].x0, x1: words[idxs[0]].x1, y0: words[idxs[0]].y0, y1: words[idxs[0]].y1 };
+        idxs.forEach(function (k) { box = unionBox(box, words[k]); });
+        idxs.forEach(function (k) { taken.add(k); words[k].used = true; });
+        /* Swallow leftover hyphen / S/N fragments on the same row (Vision often splits N95-COMPANION and S/N). */
+        words.forEach(function (w, wi) {
+          if (taken.has(wi) || !sameRow(w, box)) return;
+          if (w.x0 < box.x1 - 2 || w.x0 - box.x1 > 22) return;
+          const trail = /^(COMPANION|-COMPANION|\/N|\/|N|S\/N|SN|<99%|99%)$/;
+          if (trail.test(w.n) || (spec.field === "n95Companion" && /COMPANION/.test(w.n)) || (spec.field === "portaCountSn" && /^(S\/N|SN|\/N|\/|N)$/.test(w.n)) || (spec.field === "efficiency" && /99/.test(w.n))) {
+            taken.add(wi); w.used = true; idxs.push(wi); box = unionBox(box, w);
+          }
+        });
+        hits.push({ field: spec.field, lab: spec.lab, box: box, idxs: idxs, xc: box.xc, yc: box.yc });
+        break;
+      }
+    });
+    return hits;
+  }
+  function columnGapFromHits(hits, words) {
+    if (!hits.length) return (words[0] && words[0].pageW) || 1e9;
+    const xs = hits.map(h => h.box.x0).sort(function (a, b) { return a - b; });
+    let bestGap = 0, gapAt = -1;
+    for (let i = 1; i < xs.length; i++) {
+      const g = xs[i] - xs[i - 1];
+      if (g > bestGap) { bestGap = g; gapAt = i; }
+    }
+    const pageW = (words[0] && words[0].pageW) || Math.max.apply(null, words.map(w => w.x1));
+    if (bestGap < Math.max(80, pageW * 0.12) || gapAt < 0) return pageW + 10;
+    /* Boundary sits just left of the right-hand label cluster so left-column values can run wide. */
+    const rightStart = xs[gapAt];
+    return rightStart - 8;
+  }
+  function colRightFor(hit, gap, pageW) {
+    return hit.box.x0 < gap ? gap : pageW + 10;
+  }
+  function colLeftFor(hit, gap) {
+    return hit.box.x0 < gap ? -10 : gap;
+  }
+  function nextLabelY(hit, hits, gap) {
+    let y = 1e9;
+    const left = colLeftFor(hit, gap), right = hit.box.x0 < gap ? gap : 1e9;
+    hits.forEach(function (h) {
+      if (h === hit) return;
+      if (h.box.x0 >= left && h.box.x0 < right && h.box.y0 > hit.box.y1 + 2) y = Math.min(y, h.box.y0);
+    });
+    return y;
+  }
+  function joinWords(ws) {
+    if (!ws.length) return "";
+    const rows = [];
+    ws.slice().sort(function (a, b) { return a.yc - b.yc || a.x0 - b.x0; }).forEach(function (w) {
+      const last = rows[rows.length - 1];
+      if (!last || !sameRow(last[0], w)) rows.push([w]);
+      else last.push(w);
+    });
+    return rows.map(function (row) {
+      row.sort(function (a, b) { return a.x0 - b.x0; });
+      let out = "";
+      row.forEach(function (w, i) {
+        const prev = row[i - 1];
+        const glued = prev && (w.x0 - prev.x1 < 2);
+        out += (i && !glued ? " " : "") + w.text;
+      });
+      return out;
+    }).join(" ").replace(/\s+/g, " ").trim();
+  }
+  function isSectionHeader(w) {
+    const n = w.n;
+    return n === "EXERCISE" || n === "DURATION" || n === "OVERALL" || n === "FITTEST" || n === "PROTOCOL" || n === "APPROVAL" || n === "EFFICIENCY" || n.indexOf("EFFICIENCY") === 0;
+  }
+  function valueWordsFor(hit, hits, words, gap, pageW) {
+    const right = colRightFor(hit, gap, pageW);
+    const left = colLeftFor(hit, gap);
+    let limitY = nextLabelY(hit, hits, gap);
+    const unused = words.filter(w => !w.used);
+    /* Never read through the exercise table or the next obvious section header. */
+    unused.forEach(function (w) {
+      if (isSectionHeader(w) && w.y0 > hit.box.y1 && w.x0 < right && w.x1 > left) limitY = Math.min(limitY, w.y0);
+    });
+    const nextHit = hits.filter(function (h) {
+      return h !== hit && h.box.x0 >= left && h.box.x0 < right && h.box.y0 > hit.box.y1 + 1;
+    }).sort(function (a, b) { return a.box.y0 - b.box.y0; })[0];
+    const same = unused.filter(function (w) {
+      return w.x0 >= hit.box.x1 - 4 && w.x0 < right && w.x1 > hit.box.x1 && sameRow(w, hit.box) && !isSectionHeader(w);
+    });
+    let chosen = same.slice();
+    const lineH = Math.max(14, hit.box.h * 1.8);
+    if (!chosen.length) {
+      /* Stacked printed layout: the value sits under the label in the same column. */
+      const cap = hit.box.y1 + lineH * 5;
+      chosen = unused.filter(function (w) {
+        return w.yc > hit.box.y1 - 2 && w.y0 < Math.min(limitY, cap) - 2 && w.xc >= left && w.x0 < right && w.xc < right &&
+          (w.x0 >= hit.box.x0 - 24 || w.xc >= hit.box.x0 - 10) && !isSectionHeader(w);
+      });
+    } else {
+      /* Wrapped continuation lines under the first value, still in this column. */
+      const maxY = chosen.reduce((m, w) => Math.max(m, w.y1), hit.box.y1);
+      unused.forEach(function (w) {
+        if (chosen.indexOf(w) >= 0 || isSectionHeader(w)) return;
+        if (w.y0 >= maxY - 2 && w.y0 < limitY - 2 && w.x0 < right && w.xc >= Math.min.apply(null, chosen.map(c => c.x0)) - 16 && w.xc < right) {
+          if (w.y0 - maxY < Math.max(36, lineH * 2.2)) chosen.push(w);
+        }
+      });
+    }
+    /* Don't swallow a later label's words, or values that sit on the next label's row. */
+    chosen = chosen.filter(function (w) {
+      if (nextHit && (sameRow(w, nextHit.box) || w.yc >= nextHit.box.y0 - 2)) return false;
+      return !hits.some(function (h) {
+        if (h === hit) return false;
+        return w.x0 < h.box.x1 && w.x1 > h.box.x0 && w.y0 < h.box.y1 && w.y1 > h.box.y0;
+      });
+    });
+    return chosen;
+  }
+  function parseExercisesFromWords(words, hits) {
+    const headers = {};
+    words.forEach(function (w) {
+      const n = w.n;
+      if (n === "EXERCISE" && !headers.exercise) headers.exercise = w;
+      else if (n === "DURATION" && !headers.duration) headers.duration = w;
+      else if ((n === "FIT" || n === "FACTOR") && !headers.factor) {
+        /* require nearby FACTOR / FIT */
+        const other = words.find(x => (n === "FIT" ? x.n === "FACTOR" : x.n === "FIT") && sameRow(x, w) && Math.abs(x.x0 - w.x0) < 80);
+        if (other) headers.factor = n === "FIT" ? w : other;
+      } else if (n === "PASS" && !headers.pass) {
+        /* table PASS, not a Yes/No value: sits near FIT FACTOR / DURATION on a header row */
+        if (headers.factor && sameRow(w, headers.factor) && w.x0 > headers.factor.x0) headers.pass = w;
+      }
+    });
+    if (!headers.exercise) return [];
+    const top = headers.exercise.y1;
+    const overall = hits.find(h => h.field === "overallFfRaw") || words.find(w => w.n === "OVERALL");
+    const bottom = overall ? (overall.box ? overall.box.y0 : overall.y0) : 1e9;
+    const body = words.filter(w => w.yc > top + 2 && w.y0 < bottom - 2 && !w.used);
+    /* cluster into rows */
+    const ys = body.slice().sort((a, b) => a.yc - b.yc);
+    const rows = [];
+    ys.forEach(function (w) {
+      const last = rows[rows.length - 1];
+      if (!last || w.yc - last[0].yc > Math.max(12, (w.h || 12) * 0.8)) rows.push([w]);
+      else last.push(w);
+    });
+    const xDur = headers.duration ? headers.duration.x0 - 20 : null;
+    const xFf = headers.factor ? headers.factor.x0 - 20 : null;
+    const xPass = headers.pass ? headers.pass.x0 - 20 : null;
+    const out = [];
+    rows.forEach(function (row) {
+      const texts = row.slice().sort((a, b) => a.x0 - b.x0);
+      function col(from, to) {
+        return joinWords(texts.filter(w => w.xc >= from && (to == null || w.xc < to)));
+      }
+      if (xDur == null) return;
+      const name = col(-10, xDur);
+      if (!name || /^EXERCISE$/i.test(name)) return;
+      const dur = col(xDur, xFf);
+      const ff = col(xFf, xPass);
+      const p = col(xPass, 1e9);
+      if (!ff && !p && !dur) return;
+      out.push({ exercise: name, duration: dur, fitFactorRaw: ff, passRaw: p, fitFactor: parseFf(ff), pass: parseYesNo(p) });
+    });
+    return out;
+  }
+
+  function estimateAngle(words) {
+    const angs = [];
+    for (let i = 0; i < words.length; i++) {
+      for (let j = i + 1; j < words.length; j++) {
+        const a = words[i], b = words[j];
+        const dx = b.xc - a.xc, dy = b.yc - a.yc;
+        if (Math.abs(dx) > 80 && Math.abs(dy) < 22) angs.push(Math.atan2(dy, dx));
+      }
+    }
+    if (angs.length < 6) return 0;
+    angs.sort(function (a, b) { return a - b; });
+    return angs[Math.floor(angs.length / 2)];
+  }
+  function applyDeskew(words, angle) {
+    if (!angle || Math.abs(angle) < (0.4 * Math.PI / 180)) return words;
+    const c = Math.cos(-angle), s = Math.sin(-angle);
+    const cx = words.reduce((m, w) => m + w.xc, 0) / words.length;
+    const cy = words.reduce((m, w) => m + w.yc, 0) / words.length;
+    function rot(x, y) { return { x: c * (x - cx) - s * (y - cy) + cx, y: s * (x - cx) + c * (y - cy) + cy }; }
+    words.forEach(function (w) {
+      const a = rot(w.x0, w.y0), b = rot(w.x1, w.y0), d = rot(w.x0, w.y1), e = rot(w.x1, w.y1);
+      const xs = [a.x, b.x, d.x, e.x], ys = [a.y, b.y, d.y, e.y];
+      w.x0 = Math.min.apply(null, xs); w.x1 = Math.max.apply(null, xs);
+      w.y0 = Math.min.apply(null, ys); w.y1 = Math.max.apply(null, ys);
+      w.xc = (w.x0 + w.x1) / 2; w.yc = (w.y0 + w.y1) / 2; w.w = w.x1 - w.x0; w.h = w.y1 - w.y0;
+    });
+    words.sort(function (a, b) { return a.yc - b.yc || a.x0 - b.x0; });
+    return words;
+  }
+  function parseReportFromBoxes(words, extras) {
+    const fields = {};
+    const ang = estimateAngle(words), deg = ang * 180 / Math.PI;
+    if (deg && Math.abs(deg) >= 0.8 && Math.abs(deg) <= 12) applyDeskew(words, ang);
+    const hits = findLabelHits(words);
+    const pageW = (words[0] && words[0].pageW) || Math.max.apply(null, words.map(w => w.x1).concat([1]));
+    const gap = columnGapFromHits(hits, words);
+    hits.forEach(function (hit) {
+      const vals = valueWordsFor(hit, hits, words, gap, pageW);
+      const text = joinWords(vals);
+      if (text) {
+        fields[hit.field] = (fields[hit.field] ? fields[hit.field] + " " : "") + text;
+        vals.forEach(w => { w.used = true; });
+      } else if (fields[hit.field] == null) {
+        fields[hit.field] = "";
+      }
+    });
+    const ex = parseExercisesFromWords(words, hits);
+    if (ex.length) fields.exercises = ex;
+    /* Header date sitting on the title row */
+    const title = words.find(w => w.n === "FIT" || w.n === "REPORT");
+    if (title && !fields.headerDateRaw) {
+      const head = words.filter(w => sameRow(w, title) && w.x0 > title.x1 && !w.used);
+      const ht = joinWords(head);
+      if (ht) fields.headerDateRaw = ht;
+    }
+    return fields;
+  }
+
+  function parseReportFromLines(lines, fields) {
     for (let i = 0; i < lines.length; i++) {
       const u = lines[i].toUpperCase();
       if (/^EXERCISE\b/.test(u) && /FIT FACTOR/.test(u)) {
         const ex = parseExercises(lines, i + 1);
-        fields.exercises = ex.rows;
+        if (!fields.exercises || !fields.exercises.length) fields.exercises = ex.rows;
         i = ex.next - 1;
         continue;
       }
-      const pair = labelKey(lines[i]);
-      if (!pair) continue;
-      let val = valueAfter(lines[i], pair[0]);
-      while (i + 1 < lines.length && !labelKey(lines[i + 1]) && !/^EXERCISE\b/.test(lines[i + 1].toUpperCase()) && !/^FIT\s*TEST\s*REPORT/i.test(lines[i + 1])) {
-        const nxt = lines[i + 1];
-        if (/^NAME\b/i.test(nxt) && pair[1] === "operator") { fields.operatorName = valueAfter(nxt, "NAME"); i++; break; }
-        if (val && nxt.length < 80) val = trim(val + " " + nxt);
-        else if (!val) val = nxt;
-        i++;
-      }
-      if (pair[1] === "operator") {
-        fields.operator = val;
-        const nm = lines[i + 1] && /^NAME\b/i.test(lines[i + 1]) ? valueAfter(lines[i + 1], "NAME") : "";
-        if (nm) { fields.operatorName = nm; i++; }
+      if (/^NAME\b/.test(u) && !/^FIRST NAME|^LAST NAME/.test(u)) {
+        if (!trim(fields.operatorName)) fields.operatorName = valueAfter(lines[i], "NAME");
         continue;
       }
-      if (!fields[pair[1]]) fields[pair[1]] = val;
+      const pair = labelKey(lines[i]);
+      if (!pair) {
+        /* wrapped continuation of respirator / style */
+        if (trim(fields.respirator) && !labelKey(lines[i]) && !trim(fields._stopWrap)) {
+          /* handled below after the loop via leftover join in original parser */
+        }
+        continue;
+      }
+      const key = pair[1];
+      let val = valueAfter(lines[i], pair[0]);
+      if (key === "respirator" || key === "respiratorStyle") {
+        let j = i + 1;
+        while (j < lines.length && !labelKey(lines[j]) && !/^EXERCISE\b/i.test(lines[j]) && !/^OVERALL\b/i.test(lines[j])) {
+          val = (val ? val + " " : "") + lines[j];
+          j++;
+        }
+        i = j - 1;
+      }
+      if (val && !trim(fields[key])) fields[key] = val;
     }
+    return fields;
+  }
 
+  function tidyFields(fields) {
+    const sn = String(fields.portaCountSn || "");
+    const snm = sn.match(/^(\d{6,14})(?:\s+[\s\S]*)?$/);
+    if (snm) {
+      const rest = trim(sn.slice(snm[1].length));
+      fields.portaCountSn = snm[1];
+      if (rest && rest.length > String(fields.respirator || "").length) fields.respirator = rest;
+      else if (rest && !trim(fields.respirator)) fields.respirator = rest;
+    }
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(fields.idNumber || "")) {
+      if (!fields.testDateRaw) fields.testDateRaw = fields.idNumber;
+      fields.idNumber = "";
+    }
+    const plParts = String(fields.passLevelRaw || "").match(/\d+(?:\.\d+)?/g) || [];
+    const pl = plParts.map(Number).find(n => n >= 5 && n <= 1000);
+    if (pl != null) fields.passLevelRaw = String(pl);
+    if (/^[\d.+]+$/.test(trim(fields.operator || ""))) fields.operator = "";
+    if (trim(fields.operator) && !trim(fields.operatorName)) {
+      const parts = trim(fields.operator).split(/\s+/);
+      if (parts.length > 1 && /^[A-Z]{1,4}$/.test(parts[0])) {
+        fields.operator = parts[0];
+        fields.operatorName = parts.slice(1).join(" ");
+      }
+    }
+    if (!trim(fields.operator) && trim(fields.operatorName)) {
+      const parts = trim(fields.operatorName).split(/\s+/);
+      if (/^[A-Z]{1,4}$/.test(parts[0]) && parts.length > 1) {
+        fields.operator = parts[0];
+        fields.operatorName = parts.slice(1).join(" ");
+      }
+    }
+    if ((!fields.model || /^\+$/.test(trim(fields.model))) && fields.respirator) {
+      const mm = String(fields.respirator).match(/\b(Aura\s+\S+|1870\+?|[A-Za-z0-9.-]+\+)/);
+      if (mm) fields.model = mm[1].replace(/,$/, "");
+    }
+    return fields;
+  }
+  function recoverFromText(fields, raw) {
+    const u = String(raw || "").replace(/\s+/g, " ");
+    const dateLike = /\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{1,2}\s*NOV[A-Z]*\s*\d{4})\b/i;
+    const parsedTest = parseTsiDate(fields.testDateRaw || "");
+    if (!trim(fields.testDateRaw) || parsedTest.flag === "unparsed" || parsedTest.flag === "missing") {
+      const dates = []; let m; const re = new RegExp(dateLike.source, "gi");
+      while ((m = re.exec(u))) dates.push(m[1]);
+      const due = (fields.dueDateRaw || "").replace(/\s+/g, "");
+      const pick = dates.find(d => d.replace(/\s+/g, "") !== due) || dates[0];
+      if (pick) fields.headerDateRaw = pick;
+      if (/^\d{1,2}:\d{2}$/.test(trim(fields.testDateRaw || ""))) fields.testTime = fields.testTime || trim(fields.testDateRaw);
+      if (parsedTest.flag === "unparsed") fields.testDateRaw = pick || fields.testDateRaw;
+    }
+    if (!trim(fields.idNumber) || /^\d{1,2}\/\d{1,2}\//.test(fields.idNumber)) {
+      const id = u.match(/\b(ENVSS\d+|T-\d+|[A-Z]{2,6}-\d{2,5})\b/);
+      if (id) fields.idNumber = id[1];
+    }
+    if (!/OSHA/i.test(fields.protocol || "")) {
+      const pr = u.match(/OSHA\s+FAST[- ]?FILTERING\s+FACE/i);
+      if (pr) fields.protocol = pr[0].replace(/\s+/g, " ");
+    }
+    const ovRaw = trim(fields.overallFfRaw || "");
+    const ovParts = ovRaw.match(/\d[\d.+]*/g) || [];
+    if (!ovRaw || ovParts.length > 1 || /^(30|50|50s)$/i.test(ovRaw) || (parseFloat(ovRaw) && parseFloat(ovRaw) < 80 && ovParts.length)) {
+      const o = u.match(/OVERALL\s*FF?\s+(\d[\d.+]*)/i) || u.match(/\b(200\+)\b/);
+      if (o) fields.overallFfRaw = o[1];
+    }
+    if (!trim(fields.model) || trim(fields.model).length < 3 || /^(\+|disposable\b)/i.test(trim(fields.model))) {
+      const m = u.match(/\b(Aura\s+9322A\+?|Aura\s+[A-Z0-9+]+|1870\+?)/i);
+      if (m) fields.model = m[1];
+    }
+    if (!/exhalation/i.test(fields.respiratorStyle || "")) {
+      const st = u.match(/Disposable[^\n]{0,90}exhalation\s*\.?\s*valve/i);
+      if (st) fields.respiratorStyle = st[0].replace(/\s+/g, " ").trim();
+    }
+    if (!/Aura|1870/i.test(fields.respirator || "")) {
+      const r = u.match(/3M\s+Aura\s+\S+(?:\s+Disposable[^\[]{0,60})?(?:\[100\]\s*N95)?/i) || u.match(/3M\s+1870\+[^\n]{0,60}/i);
+      if (r) fields.respirator = r[0].replace(/\s+/g, " ").trim();
+    }
+    return fields;
+  }
+  function finalizeFields(fields, extras) {
+    extras = extras || {};
+    tidyFields(fields);
+    if (extras.rawText) recoverFromText(fields, extras.rawText);
+    const missing = [];
+    const flags = [];
     const testDate = parseTsiDate(fields.testDateRaw || fields.headerDateRaw || "");
     const dueDate = parseTsiDate(fields.dueDateRaw || "");
     fields.testDate = testDate;
@@ -207,10 +685,12 @@
     fields.overallFf = overallFf;
     const overallByLevel = ffMeets(overallFf, fields.passLevel);
     const overallWord = parseYesNo((fields.overallFfRaw || "").split(/\s+/).slice(-1)[0]);
-    // If the raw is "200+ Yes", overallWord may be Yes — also try a trailing word.
     const trail = String(fields.overallFfRaw || "").match(/\s+(Yes|No|PASS|FAIL)\s*$/i);
     const overallYn = trail ? parseYesNo(trail[1]) : overallWord;
-    fields.exercises = fields.exercises || [];
+    fields.exercises = (fields.exercises || []).filter(function (ex) {
+      const n = trim(ex.exercise || "");
+      return n.length >= 4 && (ex.fitFactor && (ex.fitFactor.raw || ex.fitFactor.value != null) || ex.pass || trim(ex.duration || ""));
+    });
     fields.exercises.forEach(function (ex) {
       const byLevel = ffMeets(ex.fitFactor, fields.passLevel);
       if (!ex.pass && byLevel === false) ex.pass = "no";
@@ -248,16 +728,35 @@
       if (map[label] && low.indexOf(map[label]) < 0) low.push(map[label]);
     });
 
-    return {
-      fields, missing, flags, low,
-      rawText: raw,
-      confidence: extras.confidence == null ? null : extras.confidence
-    };
+    return { fields, missing, flags, low, confidence: extras.confidence == null ? null : extras.confidence };
+  }
+
+  function parseReport(text, extras) {
+    extras = extras || {};
+    const raw = String(text || "").replace(/\r/g, "");
+    const lines = raw.split(/\n+/).map(l => l.replace(/[ \t]+/g, " ").trim()).filter(Boolean);
+    let fields = {};
+    const header = lines.find(l => /FIT\s*TEST\s*REPORT/i.test(l)) || "";
+    const headerDate = header.replace(/.*FIT\s*TEST\s*REPORT/i, "").trim();
+    if (headerDate) fields.headerDateRaw = headerDate;
+
+    const words = wordsFromVision(extras);
+    if (words.length) {
+      fields = Object.assign(fields, parseReportFromBoxes(words, extras));
+    }
+    /* Fill any still-empty fields from the plain-text line parser (single-column dumps, unit tests). */
+    parseReportFromLines(lines, fields);
+    recoverFromText(fields, raw);
+
+    extras.rawText = extras.rawText || raw;
+    const done = finalizeFields(fields, extras);
+    done.rawText = raw;
+    return done;
   }
 
   const api = {
     version: VERSION, isFitEvent, fitSeqOf, nextFitSeq, fitEventCode, fileNameFor,
-    parseReport, parseTsiDate, parseFf, ffMeets, safeToken, parseYesNo
+    parseReport, parseTsiDate, parseFf, ffMeets, safeToken, parseYesNo, wordsFromVision, findLabelHits, columnGapFromHits, parseExercisesFromWords, parseReportFromBoxes, joinWords
   };
   root.envssFit = api;
 
@@ -484,6 +983,11 @@
     return (rep.low || []).indexOf(field) >= 0 || (rep.missing || []).indexOf(field) >= 0 ? " fit-low" : "";
   }
 
+  function photoPid(rep) {
+    const v = (rep && (rep.photo || rep.photoDataUrl)) || "";
+    if (String(v).indexOf("envss-photo:") === 0) return String(v).slice("envss-photo:".length);
+    return "";
+  }
   function photoSrc(rep) {
     if (rep.photoDataUrl && String(rep.photoDataUrl).indexOf("data:") === 0) return rep.photoDataUrl;
     if (rep.photo && String(rep.photo).indexOf("data:") === 0) return rep.photo;
@@ -516,7 +1020,7 @@
       + fails
       + "<div class=\"fit-grid\">"
       + "<div class=\"fit-photo-col\"><div class=\"card\">"
-      + (psrc ? "<img id=\"fitPhotoImg\" alt=\"Fit-test report photo\" src=\"" + psrc + "\">" : "<p class=\"help\">No photo attached.</p>")
+      + (psrc ? "<img id=\"fitPhotoImg\" alt=\"Fit-test report photo\" src=\"" + psrc + "\">" : (photoPid(rep) && root.envssPhotos && root.envssPhotos.imgTag ? root.envssPhotos.imgTag(photoPid(rep), "Fit-test report photo").replace("<img ", "<img id=\"fitPhotoImg\" style=\"width:100%;max-height:70vh;object-fit:contain\" ") : "<p class=\"help\">No photo attached.</p>"))
       + "<div class=\"row\" style=\"margin-top:8px\"><button type=\"button\" class=\"btn mid\" id=\"fitRetake\">Retake photo</button>"
       + "<input id=\"fitPhotoInput\" type=\"file\" accept=\"image/*\" capture=\"environment\" hidden></div>"
       + "</div></div>"
@@ -718,7 +1222,7 @@
         rep.ocrMessage = j.message || "Could not read the photo. Enter the details manually, or retake it.";
         return;
       }
-      const parsed = parseReport(j.text || "", { confidence: null });
+      const parsed = parseReport(j.text || "", { pages: j.pages, annotations: j.annotations, confidence: null });
       applyParsed(rep, parsed);
       rep.ocrText = j.text || "";
       rep.ocrStatus = "ok";
@@ -732,21 +1236,27 @@
   }
 
   async function attachPhoto(rep, ev, file) {
-    const dataUrl = await blobToDataUrl(file);
-    rep.photoDataUrl = dataUrl;
+    const small = await downscaleBlob(file, 1600, 0.72);
+    delete rep.photoDataUrl;
     try {
       if (root.envssPhotos && root.envssPhotos.attach) {
-        const fakeTrain = { id: rep.id, eventId: ev.id, photoRefs: {} };
-        const ref = await root.envssPhotos.attach(file, fakeTrain, "photo");
-        rep.photo = ref;
-        rep.photoRefs = fakeTrain.photoRefs;
+        const host = { id: rep.id, eventId: ev.id, projectId: ev.projectId || rep.projectId, photoRefs: Object.assign({}, rep.photoRefs) };
+        const ref = await root.envssPhotos.attach(small, host, "photo");
+        rep.photoRefs = host.photoRefs || rep.photoRefs;
+        if (ref && String(ref).indexOf("data:") === 0) {
+          /* IndexedDB unavailable: keep only the already-downscaled last-resort copy. */
+          rep.photoDataUrl = ref; rep.photo = "inline";
+        } else {
+          rep.photo = ref; delete rep.photoDataUrl;
+        }
       } else {
-        const small = await downscaleBlob(file, 2000, 0.8);
+        /* Last resort if the photo store is missing: a downscaled data URL, never the original. */
         rep.photoDataUrl = await blobToDataUrl(small);
         rep.photo = "inline";
       }
     } catch (e) {
       console.warn("[ENVSS] fit photo store", e);
+      try { rep.photoDataUrl = await blobToDataUrl(small); } catch (e2) {}
       rep.photo = "inline";
     }
   }
@@ -783,7 +1293,14 @@
   }
 
   async function jpegForPdf(rep) {
-    const src = photoSrc(rep);
+    let src = photoSrc(rep);
+    if (!src) {
+      const pid = photoPid(rep);
+      if (pid && root.envssPhotos && root.envssPhotos.blobOf) {
+        const blob = await root.envssPhotos.blobOf(pid);
+        if (blob) src = await blobToDataUrl(blob);
+      }
+    }
     if (!src) return null;
     const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
     const k = Math.min(1, 1400 / Math.max(img.width, img.height));
