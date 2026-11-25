@@ -67,7 +67,7 @@ const st = page => page.evaluate(() => ({ page: view.page, train: view.trainId, 
 const times = page => page.evaluate(() => JSON.stringify(db.trains.map(t => [t.id, t.startAt || "", t.endAt || "", t.status])));
 
 let page = await boot("chromebook");
-check("[chromebook] version 48.7", await page.evaluate(() => APP_VERSION === "48.7" && document.title === "ENVSS Field v48.7" && document.getElementById("appVersion").textContent === "v48.7"));
+check("[chromebook] version 48.8", await page.evaluate(() => APP_VERSION === "48.8" && document.title === "ENVSS Field v48.8" && document.getElementById("appVersion").textContent === "v48.8"));
 const t0 = await times(page);
 
 /* ---- hygiene sample arrows ---- */

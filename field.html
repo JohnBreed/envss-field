@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ENVSS Field v48.8 (25 Nov 2026 AWST): start flow pre-fills end flow; STOP asks if there was a deviation from the initial flow rate (No = end equals start, or enter a different end flow). Supersedes PR #15 guard (a). -->
 <!-- ENVSS Field v48.7 (25 Nov 2026 AWST): Linked Sample A, B, … at prep (no name needed); a person field changed on one linked sample asks before it fills the others; started samples and samples on another person are never filled. -->
 <!-- ENVSS Field v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
 <!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
@@ -10,7 +11,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.7</title>
+  <title>ENVSS Field v48.8</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -394,7 +395,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.7</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.8</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -410,12 +411,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.7"></script>
+  <script src="config.js?v=48.8"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.7"; /* 2026-11-25 (AWST): v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.8"; /* 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -11764,6 +11765,167 @@ function fixOpen(ts) {
     + ".v486-ch{margin:6px 0 0 18px;padding:0}.v486-ch li{margin:3px 0}";
   document.head.appendChild(st);
   try { if (tidy()) persist(); render(); } catch (e) {}
+})();
+</script>
+
+
+<script>
+/* ===== v48.8: end flow prefill + STOP deviation prompt (John, 25 Nov 2026 AWST) =====
+   1. Typing or changing start flow on an airborne sample (hygiene or AFM) pre-fills end flow
+      when end flow is empty or still the last auto-filled value. A manually typed end flow is left alone.
+      Field blanks, noise and passive badges have no flow, so they are skipped.
+   2. STOP on those samples is held until the sampler answers "Was there a deviation from the
+      initial flow rate?" (shows the start flow). No = end flow equals start flow, confirmed.
+      Or they enter a different end flow and Save. The existing ±tolerance warning still applies
+      to the new value (inline on the sample, and the "Flow outside tolerance" audit at STOP).
+      The answer is written to the audit trail. STOP does not finish until they answer, which
+      closes the gap where STOP could save with no end flow (e.g. 0019185 sample 1, 24 Nov).
+   This supersedes draft PR #15 guard (a), which locked end flow until STOP and warned when end
+   equalled start. End flow is now pre-filled from start flow and confirmed at STOP instead. */
+(function () {
+  function curT() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function wantsFlow(t) {
+    try { return !!t && !isBlank(t) && !isNoise(t) && !isPassive(t); }
+    catch (e) { return !!t; }
+  }
+  function flowEq(a, b) {
+    const na = num(a), nb = num(b);
+    if (na != null && nb != null) return na === nb;
+    return String(a || "").trim() === String(b || "").trim();
+  }
+  function canReuseEnd(t, endVal) {
+    const v = String(endVal == null ? "" : endVal).trim();
+    if (!v) return true;
+    return t.endFlowPrefill != null && String(t.endFlowPrefill) !== "" && flowEq(v, t.endFlowPrefill);
+  }
+  function applyPrefill(t, startVal) {
+    if (!wantsFlow(t)) return false;
+    const start = String(startVal == null ? "" : startVal).trim();
+    if (!start || num(start) == null) return false;
+    const endEl = document.getElementById("endFlow");
+    const curEnd = endEl ? endEl.value : (t.endFlow || "");
+    if (!canReuseEnd(t, curEnd)) return false;
+    if (endEl) endEl.value = start;
+    t.endFlow = start;
+    t.endFlowPrefill = start;
+    return true;
+  }
+  function wirePrefill() {
+    const t = curT();
+    const start = document.getElementById("startFlow");
+    if (!t || !wantsFlow(t) || !start || start.dataset.v488) return;
+    start.dataset.v488 = "1";
+    const go = () => applyPrefill(t, start.value);
+    start.addEventListener("input", go);
+    start.addEventListener("change", go, true);
+  }
+  function parseFlow(v) {
+    const s = String(v == null ? "" : v).trim().replace(",", ".");
+    if (!s) return null;
+    return num(s) == null ? null : s;
+  }
+  function warnHtml(t, endVal) {
+    const probe = Object.assign({}, t, { endFlow: endVal });
+    let chk;
+    try { chk = flowCheck(probe); } catch (e) { return `<p class="help muted" id="v488Tol" style="margin:8px 0 0;display:none"></p>`; }
+    if (chk && chk.pct != null && !chk.ok) {
+      return `<p class="help" id="v488Tol" style="color:var(--danger);font-weight:700;margin:8px 0 0">End flow is ${chk.pct.toFixed(1)}% from the initial flow rate${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%). This is a warning — you can still save.</p>`;
+    }
+    if (chk && chk.noStart && chk.pct != null) {
+      return `<p class="help muted" id="v488Tol" style="margin:8px 0 0">${esc(flowNoStartNote(chk))}</p>`;
+    }
+    return `<p class="help muted" id="v488Tol" style="margin:8px 0 0;display:none"></p>`;
+  }
+  function writeEnd(t, value) {
+    t.endFlow = value;
+    t.endFlowPrefill = null;
+    const el = document.getElementById("endFlow"); if (el) el.value = value;
+    try { saveQuiet(); } catch (e) {}
+  }
+  function askDeviation(t) {
+    return new Promise(resolve => {
+      const old = document.getElementById("v488Modal"); if (old) old.remove();
+      try { collectTrain(t); } catch (e) {}
+      const start = String(t.startFlow || "").trim();
+      const hasStart = num(start) != null;
+      const initialEnd = String(t.endFlow || "").trim() || (hasStart ? start : "");
+      const w = document.createElement("div");
+      w.className = "v488-modal";
+      w.id = "v488Modal";
+      w.innerHTML = `<div class="v488-dialog" role="dialog" aria-modal="true" aria-labelledby="v488Q">
+        <p class="v488-q" id="v488Q">Was there a deviation from the initial flow rate?</p>
+        <p class="help" id="v488Start">${hasStart ? "Initial flow rate: <strong>" + esc(start) + " L/min</strong>" : "No start flow was recorded. Enter the end flow (L/min)."}</p>
+        ${hasStart ? `<button type="button" class="btn green lg" id="v488No" style="width:100%;margin:8px 0 12px">No</button>` : ""}
+        <label for="v488End">${hasStart ? "Or enter the end flow (L/min)" : "End flow (L/min)"}</label>
+        <input id="v488End" inputmode="decimal" value="${esc(initialEnd)}" placeholder="L/min" autocomplete="off">
+        <div id="v488Warn">${warnHtml(t, initialEnd)}</div>
+        <p class="help" id="v488Err" style="color:var(--danger);font-weight:700;display:none"></p>
+        <button type="button" class="btn mid lg" id="v488Save" style="width:100%;margin-top:10px">Save</button>
+      </div>`;
+      document.body.appendChild(w);
+      const endIn = w.querySelector("#v488End");
+      const err = w.querySelector("#v488Err");
+      const showErr = msg => { err.style.display = msg ? "block" : "none"; err.textContent = msg || ""; };
+      endIn.addEventListener("input", () => { w.querySelector("#v488Warn").innerHTML = warnHtml(t, endIn.value); showErr(""); });
+      const finish = (choice, value) => { w.remove(); resolve({ choice, value }); };
+      const noBtn = w.querySelector("#v488No");
+      if (noBtn) noBtn.onclick = () => {
+        writeEnd(t, start);
+        audit(t, "Flow deviation at STOP", "No — end flow set to the initial flow rate, " + start + " L/min");
+        try { saveQuiet(); } catch (e) {}
+        finish("no", start);
+      };
+      w.querySelector("#v488Save").onclick = () => {
+        const v = parseFlow(endIn.value);
+        if (v == null) { showErr(hasStart ? "Enter the end flow, or choose No." : "Enter the end flow."); endIn.focus(); return; }
+        writeEnd(t, v);
+        const same = hasStart && flowEq(v, start);
+        audit(t, "Flow deviation at STOP", same
+          ? "End flow entered as " + v + " L/min, same as the initial flow rate"
+          : "End flow entered as " + v + " L/min (initial " + (hasStart ? start + " L/min" : "not recorded") + ")");
+        try { saveQuiet(); } catch (e) {}
+        finish("entered", v);
+      };
+      w.addEventListener("click", ev => { ev.stopPropagation(); });
+      w.addEventListener("keydown", ev => { if (ev.key === "Escape") ev.preventDefault(); });
+      setTimeout(() => { if (noBtn) noBtn.focus(); else endIn.focus(); }, 0);
+    });
+  }
+
+  let passing = false, asking = false;
+  document.addEventListener("click", function (e) {
+    if (passing) return;
+    const b = e.target && e.target.closest && e.target.closest("#btnStop");
+    if (!b || b.disabled) return;
+    const t = curT();
+    if (!t || !wantsFlow(t) || t.status !== "running") return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (asking || document.getElementById("v488Modal")) return;
+    asking = true;
+    askDeviation(t).then(ans => {
+      asking = false;
+      if (!ans) return;
+      passing = true;
+      try { b.click(); } finally { passing = false; }
+    }, () => { asking = false; });
+  }, true);
+
+  const _render488 = render;
+  render = function () {
+    const r = _render488.apply(this, arguments);
+    try { wirePrefill(); } catch (e) { console.warn("v48.8 prefill", e); }
+    return r;
+  };
+  window.render = render;
+  window.v488 = { wantsFlow, applyPrefill, canReuseEnd, askDeviation };
+  const st = document.createElement("style");
+  st.textContent = ".v488-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10050;padding:16px}"
+    + ".v488-dialog{background:var(--panel,#1B2340);color:var(--text,#fff);border-radius:14px;padding:18px;max-width:420px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.5);box-sizing:border-box}"
+    + ".v488-q{font-size:18px;font-weight:700;margin:0 0 10px;line-height:1.3}"
+    + ".v488-dialog input{width:100%;box-sizing:border-box;font-size:18px;min-height:44px;padding:10px 12px}"
+    + ".v488-dialog .btn.lg{min-height:48px;font-size:18px}";
+  document.head.appendChild(st);
 })();
 </script>
 

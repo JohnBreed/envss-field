@@ -1,0 +1,287 @@
+[
+ {
+  "name": "[pixel7] app is v48.8",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] typing start flow 2.0 pre-fills end flow 2.0",
+  "ok": true,
+  "detail": "{\"start\":\"2.0\",\"end\":\"2.0\",\"prefill\":\"2.0\",\"startBox\":\"2.0\",\"endBox\":\"2.0\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[pixel7] changing start to 2.2 updates the auto-filled end flow",
+  "ok": true,
+  "detail": "{\"start\":\"2.2\",\"end\":\"2.2\",\"prefill\":\"2.2\",\"startBox\":\"2.2\",\"endBox\":\"2.2\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[pixel7] a manually entered end flow is kept when start flow changes",
+  "ok": true,
+  "detail": "{\"start\":\"2.5\",\"end\":\"1.8\",\"prefill\":\"2.2\",\"startBox\":\"2.5\",\"endBox\":\"1.8\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[pixel7] after end flow is cleared, a new start flow pre-fills it again",
+  "ok": true,
+  "detail": "{\"start\":\"2.0\",\"end\":\"2.0\",\"prefill\":\"2.0\",\"startBox\":\"2.0\",\"endBox\":\"2.0\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[pixel7] hygiene field blank has no start/end flow and no STOP",
+  "ok": true,
+  "detail": "{\"start\":false,\"end\":false,\"stop\":false}"
+ },
+ {
+  "name": "[pixel7] noise sample has no start/end flow (STOP is for time only)",
+  "ok": true,
+  "detail": "{\"start\":false,\"end\":false,\"stop\":true}"
+ },
+ {
+  "name": "[pixel7] passive badge has no start/end flow",
+  "ok": true,
+  "detail": "{\"start\":false,\"end\":false}"
+ },
+ {
+  "name": "[pixel7] AFM sample shows start flow (default 2.0) and an empty end flow until start is edited",
+  "ok": true,
+  "detail": "{\"start\":\"2.0\",\"end\":\"\",\"prefill\":null,\"startBox\":\"2.0\",\"endBox\":\"\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[pixel7] AFM: changing start flow 2.0 → 2.1 pre-fills end flow 2.1",
+  "ok": true,
+  "detail": "{\"start\":\"2.1\",\"end\":\"2.1\",\"prefill\":\"2.1\",\"startBox\":\"2.1\",\"endBox\":\"2.1\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[pixel7] AFM: a manually entered end flow is not overwritten",
+  "ok": true,
+  "detail": "{\"start\":\"2.2\",\"end\":\"1.9\",\"prefill\":\"2.1\",\"startBox\":\"2.2\",\"endBox\":\"1.9\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[pixel7] AFM field blank has no flow inputs (pump/flow are N/A)",
+  "ok": true,
+  "detail": "{\"start\":false,\"end\":false,\"na\":true}"
+ },
+ {
+  "name": "[pixel7] running sample 2 is still missing an end flow before STOP",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] STOP opens the deviation prompt and does not stop the sample yet",
+  "ok": true,
+  "detail": "{\"m\":{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"2.0\",\"no\":true,\"warn\":\"\",\"err\":\"\"},\"s\":\"running\",\"end\":\"\",\"endAt\":\"\"}"
+ },
+ {
+  "name": "[pixel7] clicking the backdrop or pressing Escape does not close the prompt or stop the sample",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] Save with an empty end flow shows an error and stays on the prompt",
+  "ok": true,
+  "detail": "{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"\",\"no\":true,\"warn\":\"\",\"err\":\"Enter the end flow, or choose No.\"}"
+ },
+ {
+  "name": "[pixel7] No: sample stops, end flow = 2.0, audit records 'No'",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-25T02:35:17.971Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-25T02:35:17.971Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-25T02:35:17.971Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-25T02:35:17.971Z\",\"detail\":\"(empty) → 25 Nov, 10:35:17 am AWST\"},{\"at\":\"2026-11-25T02:35:17.985Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
+ },
+ {
+  "name": "[pixel7] the deviation prompt is gone after No",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] STOP on sample 3 shows the same prompt with start 2.0",
+  "ok": true,
+  "detail": "{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"2.0\",\"no\":true,\"warn\":\"\",\"err\":\"\"}"
+ },
+ {
+  "name": "[pixel7] typing 1.5 (25% from 2.0) shows the existing tolerance warning in the prompt",
+  "ok": true,
+  "detail": "{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"1.5\",\"no\":true,\"warn\":\"End flow is 25.0% from the initial flow rate (2 L/min) (tolerance ±10%). This is a warning — you can still save.\",\"err\":\"\"}"
+ },
+ {
+  "name": "[pixel7] Save: sample stops, end flow = 1.5, audit records the entered value and 'Flow outside tolerance'",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-25T02:35:19.775Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-25T02:35:19.775Z\",\"action\":\"Flow outside tolerance\",\"detail\":\"25.0% vs ±10%\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-25T02:35:19.775Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-25T02:35:19.775Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-25T02:35:19.775Z\",\"detail\":\"(empty) → 25 Nov, 10:35:19 am AWST\"},{\"at\":\"2026-11-25T02:35:19.790Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
+ },
+ {
+  "name": "[pixel7] after Save, the sample screen still shows the tolerance warning",
+  "ok": true,
+  "detail": "\n        End flow is 25.0% from the set flow (2 L/min). Tolerance ±10%.\n        Outside tolerance — reject unless you have a documented reason.\n      "
+ },
+ {
+  "name": "[pixel7] AFM STOP shows the same deviation prompt",
+  "ok": true,
+  "detail": "{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"2.0\",\"no\":true,\"warn\":\"\",\"err\":\"\"}"
+ },
+ {
+  "name": "[pixel7] AFM No: stops with end flow 2.0 and the same audit wording",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-25T02:35:21.414Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-25T02:35:21.414Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-25T02:35:21.414Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-25T02:35:21.414Z\",\"detail\":\"(empty) → 25 Nov, 10:35:21 am AWST\"},{\"at\":\"2026-11-25T02:35:21.422Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
+ },
+ {
+  "name": "[pixel7] noise STOP does not show the flow prompt and still stops",
+  "ok": true,
+  "detail": "{\"s\":\"ended\",\"endFlow\":\"\",\"acts\":[\"STOP pressed\",\"Changed Status\",\"Changed Stop time\",\"Changed Sex picked\",\"Stop location\"]}"
+ },
+ {
+  "name": "[pixel7] reload keeps stopped samples and confirmed end flows",
+  "ok": true,
+  "detail": "h2:ended:2.0:No — end flow set to the initial flow rate, 2.0 L/min | h3:ended:1.5:End flow entered as 1.5 L/min (initial 2.0 L/min) | f2:ended:2.0:No — end flow set to the initial flow rate, 2.0 L/min | n2:ended::"
+ },
+ {
+  "name": "[pixel7] no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] no unexpected native alerts",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] app is v48.8",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] typing start flow 2.0 pre-fills end flow 2.0",
+  "ok": true,
+  "detail": "{\"start\":\"2.0\",\"end\":\"2.0\",\"prefill\":\"2.0\",\"startBox\":\"2.0\",\"endBox\":\"2.0\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[chromebook] changing start to 2.2 updates the auto-filled end flow",
+  "ok": true,
+  "detail": "{\"start\":\"2.2\",\"end\":\"2.2\",\"prefill\":\"2.2\",\"startBox\":\"2.2\",\"endBox\":\"2.2\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[chromebook] a manually entered end flow is kept when start flow changes",
+  "ok": true,
+  "detail": "{\"start\":\"2.5\",\"end\":\"1.8\",\"prefill\":\"2.2\",\"startBox\":\"2.5\",\"endBox\":\"1.8\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[chromebook] after end flow is cleared, a new start flow pre-fills it again",
+  "ok": true,
+  "detail": "{\"start\":\"2.0\",\"end\":\"2.0\",\"prefill\":\"2.0\",\"startBox\":\"2.0\",\"endBox\":\"2.0\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[chromebook] hygiene field blank has no start/end flow and no STOP",
+  "ok": true,
+  "detail": "{\"start\":false,\"end\":false,\"stop\":false}"
+ },
+ {
+  "name": "[chromebook] noise sample has no start/end flow (STOP is for time only)",
+  "ok": true,
+  "detail": "{\"start\":false,\"end\":false,\"stop\":true}"
+ },
+ {
+  "name": "[chromebook] passive badge has no start/end flow",
+  "ok": true,
+  "detail": "{\"start\":false,\"end\":false}"
+ },
+ {
+  "name": "[chromebook] AFM sample shows start flow (default 2.0) and an empty end flow until start is edited",
+  "ok": true,
+  "detail": "{\"start\":\"2.0\",\"end\":\"\",\"prefill\":null,\"startBox\":\"2.0\",\"endBox\":\"\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[chromebook] AFM: changing start flow 2.0 → 2.1 pre-fills end flow 2.1",
+  "ok": true,
+  "detail": "{\"start\":\"2.1\",\"end\":\"2.1\",\"prefill\":\"2.1\",\"startBox\":\"2.1\",\"endBox\":\"2.1\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[chromebook] AFM: a manually entered end flow is not overwritten",
+  "ok": true,
+  "detail": "{\"start\":\"2.2\",\"end\":\"1.9\",\"prefill\":\"2.1\",\"startBox\":\"2.2\",\"endBox\":\"1.9\",\"hasStart\":true,\"hasEnd\":true}"
+ },
+ {
+  "name": "[chromebook] AFM field blank has no flow inputs (pump/flow are N/A)",
+  "ok": true,
+  "detail": "{\"start\":false,\"end\":false,\"na\":true}"
+ },
+ {
+  "name": "[chromebook] running sample 2 is still missing an end flow before STOP",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] STOP opens the deviation prompt and does not stop the sample yet",
+  "ok": true,
+  "detail": "{\"m\":{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"2.0\",\"no\":true,\"warn\":\"\",\"err\":\"\"},\"s\":\"running\",\"end\":\"\",\"endAt\":\"\"}"
+ },
+ {
+  "name": "[chromebook] clicking the backdrop or pressing Escape does not close the prompt or stop the sample",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] Save with an empty end flow shows an error and stays on the prompt",
+  "ok": true,
+  "detail": "{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"\",\"no\":true,\"warn\":\"\",\"err\":\"Enter the end flow, or choose No.\"}"
+ },
+ {
+  "name": "[chromebook] No: sample stops, end flow = 2.0, audit records 'No'",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-25T02:35:34.415Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-25T02:35:34.414Z\",\"detail\":\"(empty) → 25 Nov, 10:35:34 am AWST\"},{\"at\":\"2026-11-25T02:35:34.428Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-25T02:35:34.437Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-25T02:35:34.615Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
+ },
+ {
+  "name": "[chromebook] the deviation prompt is gone after No",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] STOP on sample 3 shows the same prompt with start 2.0",
+  "ok": true,
+  "detail": "{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"2.0\",\"no\":true,\"warn\":\"\",\"err\":\"\"}"
+ },
+ {
+  "name": "[chromebook] typing 1.5 (25% from 2.0) shows the existing tolerance warning in the prompt",
+  "ok": true,
+  "detail": "{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"1.5\",\"no\":true,\"warn\":\"End flow is 25.0% from the initial flow rate (2 L/min) (tolerance ±10%). This is a warning — you can still save.\",\"err\":\"\"}"
+ },
+ {
+  "name": "[chromebook] Save: sample stops, end flow = 1.5, audit records the entered value and 'Flow outside tolerance'",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-25T02:35:36.149Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-25T02:35:36.149Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-25T02:35:36.149Z\",\"detail\":\"(empty) → 25 Nov, 10:35:36 am AWST\"},{\"at\":\"2026-11-25T02:35:36.163Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-25T02:35:36.176Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-25T02:35:36.349Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
+ },
+ {
+  "name": "[chromebook] after Save, the sample screen still shows the tolerance warning",
+  "ok": true,
+  "detail": "\n        End flow is 25.0% from the set flow (2 L/min). Tolerance ±10%.\n        Outside tolerance — reject unless you have a documented reason.\n      "
+ },
+ {
+  "name": "[chromebook] AFM STOP shows the same deviation prompt",
+  "ok": true,
+  "detail": "{\"q\":\"Was there a deviation from the initial flow rate?\",\"start\":\"Initial flow rate: 2.0 L/min\",\"end\":\"2.0\",\"no\":true,\"warn\":\"\",\"err\":\"\"}"
+ },
+ {
+  "name": "[chromebook] AFM No: stops with end flow 2.0 and the same audit wording",
+  "ok": true,
+  "detail": "[{\"at\":\"2026-11-25T02:35:37.721Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-25T02:35:37.721Z\",\"detail\":\"(empty) → 25 Nov, 10:35:37 am AWST\"},{\"at\":\"2026-11-25T02:35:37.728Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-25T02:35:37.906Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-25T02:35:37.921Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
+ },
+ {
+  "name": "[chromebook] noise STOP does not show the flow prompt and still stops",
+  "ok": true,
+  "detail": "{\"s\":\"ended\",\"endFlow\":\"\",\"acts\":[\"STOP pressed\",\"Changed Status\",\"Changed Stop time\",\"Changed Sex picked\",\"Stop location\",\"STOP pressed on a Chromebook\"]}"
+ },
+ {
+  "name": "[chromebook] reload keeps stopped samples and confirmed end flows",
+  "ok": true,
+  "detail": "h2:ended:2.0:No — end flow set to the initial flow rate, 2.0 L/min | h3:ended:1.5:End flow entered as 1.5 L/min (initial 2.0 L/min) | f2:ended:2.0:No — end flow set to the initial flow rate, 2.0 L/min | n2:ended::"
+ },
+ {
+  "name": "[chromebook] no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] no unexpected native alerts",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "no request left the box except the CDN libraries; every Supabase call was answered by the in-memory mock",
+  "ok": true,
+  "detail": ""
+ }
+]
