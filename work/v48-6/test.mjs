@@ -1,4 +1,4 @@
-/* v48.6 draft tests: Linked Sample A, B, … (open item 24, John 23 Nov 2026 AWST).
+/* v48.7 tests: Linked Sample A, B, … (open item 24, John 23 Nov 2026 AWST; respirator rule 25 Nov 2026 AWST).
    Usage: ROOT=/workspace/envss-li node work/v48-6/test.mjs [pixel7|chromebook]   (default: both)
    Supabase is mocked in memory and *.supabase.co is mapped to a dead local port, so nothing reaches production.
    Fixture names are made up. */
@@ -47,12 +47,13 @@ const T = (page, id) => page.evaluate(i => JSON.parse(JSON.stringify(db.trains.f
 const noSync = o => { const c = Object.assign({}, o); delete c.updatedAt; return JSON.stringify(c); };   /* updatedAt = sync bookkeeping (scanDirty), not a data change */
 const open = async (page, id) => { await page.evaluate(i => openTrain(i), id); await sleep(250); };
 const blurOut = async page => { await page.evaluate(() => { const a = document.activeElement; if (a && a.blur) a.blur(); }); await sleep(200); };
+const tap = async (page, sel) => { await page.evaluate(q => document.querySelector(q).scrollIntoView({ block: "center" }), sel); await sleep(80); await page.click(sel); await sleep(250); };
 const modal = page => page.evaluate(() => { const m = document.getElementById("v486Modal"); return m ? { q: m.querySelector("#v486Q").textContent, skip: (m.querySelector("#v486Skip") || {}).textContent || "", ch: (m.querySelector("#v486Changes") || {}).textContent || "" } : null; });
 
 async function run(vp) {
   const shot = (page, n, full = true) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const page = await boot(vp);
-  check(`[${vp}] app is v48.6`, await page.evaluate(() => APP_VERSION === "48.6" && document.getElementById("appVersion").textContent === "v48.6" && document.title === "ENVSS Field v48.6"));
+  check(`[${vp}] app is v48.7`, await page.evaluate(() => APP_VERSION === "48.7" && document.getElementById("appVersion").textContent === "v48.7" && document.title === "ENVSS Field v48.7"));
   const lee0 = noSync(await T(page, "s9"));
 
   /* 1. no name, not started -> link box (B9 name box hidden) */
@@ -120,6 +121,31 @@ async function run(vp) {
   check(`[${vp}] once named: label stays as secondary text and the existing name allocation box takes over`, named.chip.startsWith("Linked Sample A · Sarah Testone") && named.alloc && !named.link && /Sample 2/.test(named.also), JSON.stringify(named));
   await page.evaluate(() => window.scrollTo(0, 0)); await shot(page, "05-named-A-alloc-box");
 
+  /* 5b. respirator: asks once when the answer is complete; OK fills the group INCLUDING the running sample 3 */
+  await tap(page, '[data-yn="rpd"][data-val="yes"]');
+  let r0 = await modal(page);
+  await page.type("#rpdModel", "3M 6500"); await blurOut(page);
+  await tap(page, '[data-rq="shaven"][data-val="yes"]');
+  const r1 = await modal(page);
+  check(`[${vp}] respirator: no prompt while the answer is still incomplete (worn / model / shaven)`, !r0 && !r1, JSON.stringify([r0, r1]));
+  await tap(page, '[data-rq="fit"][data-val="yes"]'); await sleep(200);
+  m = await modal(page);
+  check(`[${vp}] respirator: one prompt 'This will also fill Linked Sample A: samples 2, 3. OK?' listing all 4 answers (running sample 3 included)`, m && m.q === "This will also fill Linked Sample A: samples 2, 3. OK?" && /Respirator worn\?: \(empty\) → yes/.test(m.ch) && /Respirator brand \/ model: \(empty\) → 3M 6500/.test(m.ch) && /Clean-shaven/.test(m.ch) && /Fit-tested/.test(m.ch) && !m.skip, JSON.stringify(m));
+  await shot(page, "05b-respirator-warning", false);
+  await page.click("#v486Yes"); await sleep(400);
+  let r2 = await T(page, "s2"), r3 = await T(page, "s3");
+  check(`[${vp}] respirator OK: filled on sample 2 and on RUNNING sample 3 (worn, model, shaven, fit) with audit entries`, [r2, r3].every(x => x.rpdAsked === "yes" && x.rpd.worn === "yes" && x.rpd.model === "3M 6500" && x.rpd.shaven === "yes" && x.rpd.fit === "yes" && x.audit.filter(e => /confirmed/.test(e.detail) && /^rpd/.test(e.field)).length === 4), JSON.stringify([r2.rpd, r2.rpdAsked, r3.rpd, r3.rpdAsked]));
+  check(`[${vp}] running sample 3 still has no name / company after the respirator fill`, !r3.person.first && !r3.person.company && r3.status === "running", JSON.stringify(r3.person));
+  /* held prompt is released when the sample is left */
+  await open(page, "s2"); await tap(page, '[data-rq="fit"][data-val="yes"]');   /* tap again = clear: answer incomplete again */
+  const held = await modal(page);
+  await page.evaluate(() => leaveSample("s2", "eL")); await sleep(400);
+  m = await modal(page);
+  check(`[${vp}] respirator: incomplete change is held, then asked once when the sample is left`, !held && m && m.q === "This will also fill Linked Sample A: samples 1, 3. OK?" && /Fit-tested\?: yes → \(empty\)/.test(m.ch), JSON.stringify([held, m]));
+  await page.click("#v486No"); await sleep(300);
+  r2 = await T(page, "s2"); const r1b = await T(page, "s1"); r3 = await T(page, "s3");
+  check(`[${vp}] respirator Cancel: only sample 2 changed (1 and 3 keep fit-tested yes)`, !r2.rpd.fit && r1b.rpd.fit === "yes" && r3.rpd.fit === "yes", JSON.stringify([r2.rpd.fit, r1b.rpd.fit, r3.rpd.fit]));
+
   /* 6. Cancel changes only this sample */
   await open(page, "s4"); await page.type("#company", "Cancel Co"); await blurOut(page); await sleep(200);
   m = await modal(page);
@@ -153,10 +179,26 @@ async function run(vp) {
   const lee1 = noSync(await T(page, "s9"));
   check(`[${vp}] separately allocated person (s9) never touched`, lee1 === lee0, lee0 + "\n=>\n" + lee1);
 
+  /* 7b. respirator in group B: another person's sample and a rejected sample are never filled */
+  await page.evaluate(() => { const x = db.trains.find(y => y.id === "s6"); x.status = "running"; x.startAt = new Date().toISOString(); persist(); });
+  await open(page, "s4"); await tap(page, '[data-yn="rpd"][data-val="no"]'); await sleep(200);
+  m = await modal(page);
+  check(`[${vp}] respirator 'No' on sample 4: prompt fills running sample 6 only; sample 5 (Lee Different) not changed`, m && m.q === "This will also fill Linked Sample B: sample 6. OK?" && /Sample 5 \(on Lee Different\)/.test(m.skip), JSON.stringify(m));
+  await page.click("#v486Yes"); await sleep(400);
+  let b5 = await T(page, "s5"), b6 = await T(page, "s6");
+  check(`[${vp}] respirator OK: sample 6 (running) = No; sample 5 untouched`, b6.rpdAsked === "no" && b6.rpd.worn === "no" && !b5.rpdAsked, JSON.stringify([b6.rpdAsked, b5.rpdAsked]));
+  await page.evaluate(() => { const x = db.trains.find(y => y.id === "s6"); x.status = "rejected"; x.rejectAsked = "yes"; x.endAt = new Date().toISOString(); persist(); });
+  await open(page, "s4"); await tap(page, '[data-yn="rpd"][data-val="unknown"]'); await sleep(300);
+  m = await modal(page);
+  b6 = await T(page, "s6"); b5 = await T(page, "s5"); const b4 = await T(page, "s4");
+  check(`[${vp}] rejected sample 6 and other-person sample 5 never filled (no prompt; 4 = unknown only)`, !m && b4.rpdAsked === "unknown" && b6.rpdAsked === "no" && !b5.rpdAsked, JSON.stringify([m, b4.rpdAsked, b6.rpdAsked, b5.rpdAsked]));
+
   /* 8. reload persists everything */
   await sleep(300); await page.reload({ waitUntil: "networkidle0" }); await sleep(900);
   const fin = await page.evaluate(() => db.trains.map(x => [x.id, x.linkLabel || "", (x.person || {}).first || "", (x.person || {}).last || ""].join(":")).join(" "));
+  const finR = await page.evaluate(() => db.trains.filter(x => x.linkLabel).map(x => x.id + ":" + (x.rpdAsked || "-")).join(" "));
   check(`[${vp}] reload keeps labels and filled names`, fin === "s1:A:Sarah:Testone s2:A:Sarah:Testone s3:A:: s4:B:Ben:Testtwo s5:B:Lee:Different s6:B:Ben:Testtwo s7::: s8::: s9::Lee:Other s10:::", fin);
+  check(`[${vp}] reload keeps respirator answers`, finR === "s1:yes s2:yes s3:yes s4:unknown s5:- s6:no", finR);
   await page.evaluate(() => openEvent("eL")); await sleep(300); await shot(page, "07-event-list-after-reload");
   check(`[${vp}] no page errors`, !page.errs.length, page.errs.join(" | "));
   check(`[${vp}] no native alerts`, !page.dialogs.length, page.dialogs.join(" | "));

@@ -1,6 +1,6 @@
-# v48.6 draft — Linked Sample A, B, … (open item 24)
+# v48.7 — Linked Sample A, B, … (open item 24)
 
-John, 23 Nov 2026 AWST. Not published: merging field.html to main publishes the live app.
+John, 23 Nov 2026 AWST (built as the v48.6 draft); renumbered v48.7 on top of main v48.6 (project list Layout A, #18), 25 Nov 2026 AWST. Merging field.html to main publishes the live app.
 
 - On a personal sample (airborne personal, passive badge, noise personal) that has **no name** and has **not been
   started**, a "Link samples to one person" box lists the other not-started, unallocated personal samples. Tick, Select,
@@ -13,6 +13,11 @@ John, 23 Nov 2026 AWST. Not published: merging field.html to main publishes the 
 - Never filled: started samples, rejected / fault samples, samples whose name is a different person.
   v46 silent carry-across of location / date / shift / roster now also skips started samples; SEG moved to the
   confirm set.
+- Respirator (John, 25 Nov 2026 AWST): a change to Respirator worn? / brand / model / clean-shaven / fit-tested on one
+  sample in a group asks once — when the answer is complete (No / Unknown, or Yes with model + both questions), or when
+  the sample is left. OK fills the group's other airborne personal samples on the same day INCLUDING running / stopped
+  ones (audit entry each); Cancel changes only that sample. Never rejected / fault samples, never another person's
+  sample. The v46 silent respirator carry-across now applies only to untagged same-name samples.
 - Stored as `linkLabel` next to the existing `personTag` on the sample record (syncs in the payload).
   "Clear this sample's information" also clears the label. Static, field blank and AFM samples are never offered.
 
