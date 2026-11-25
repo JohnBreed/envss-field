@@ -274,7 +274,7 @@
   function shortName(p) {
     return p.shortName || String(p.name || "").replace(/^\d{7}[-_ ]*/, "") || p.number;
   }
-  function typeLab(t) { return t === "fibre" ? "AFM" : "Hygiene"; }
+  function typeLab(t) { return t === "fibre" ? "AFM" : t === "fit" ? "Fit testing" : "Hygiene"; }
 
   function cardHtml(p, evs, today, expanded) {
     const cur = pickCurrent(evs, today);
