@@ -1,0 +1,367 @@
+[
+ {
+  "name": "[pixel7] app is v48.7",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] unnamed personal sample shows 'Link samples' (next letter A), no name needed",
+  "ok": true,
+  "detail": "{\"link\":true,\"alloc\":false,\"btn\":\"Link samples\",\"help\":\"No name yet? Tick the samples one person will wear and the app labels them Linked Sample A. Nothing to type.\"}"
+ },
+ {
+  "name": "[pixel7] picker offers only unnamed, not-started personal samples (no static s7, blank s8, other person s9, running s10)",
+  "ok": true,
+  "detail": "[\"s2\",\"s3\",\"s4\",\"s5\",\"s6\"]"
+ },
+ {
+  "name": "[pixel7] confirm reads 'Link these samples as Linked Sample A?'",
+  "ok": true,
+  "detail": "Link these samples as Linked Sample A?"
+ },
+ {
+  "name": "[pixel7] link 3 unnamed samples -> all 'Linked Sample A' with one shared person tag",
+  "ok": true,
+  "detail": "[[\"A\",\"ptrl7xi3c\"],[\"A\",\"ptrl7xi3c\"],[\"A\",\"ptrl7xi3c\"]]"
+ },
+ {
+  "name": "[pixel7] sample screen shows label chip",
+  "ok": true,
+  "detail": "Linked Sample A · no name yet · with samples 2, 3"
+ },
+ {
+  "name": "[pixel7] group A members are no longer offered to another group",
+  "ok": true,
+  "detail": "[\"s5\",\"s6\"]"
+ },
+ {
+  "name": "[pixel7] second group -> 'Linked Sample B'",
+  "ok": true,
+  "detail": "B,B"
+ },
+ {
+  "name": "[pixel7] sample list shows 'Linked Sample A/B' tags on the 5 linked rows only",
+  "ok": true,
+  "detail": "[[\"s1\",\"Linked Sample A · no name yet\"],[\"s2\",\"Linked Sample A · no name yet\"],[\"s3\",\"Linked Sample A · no name yet\"],[\"s4\",\"Linked Sample B · no name yet\"],[\"s5\",\"Linked Sample B · no name yet\"]]"
+ },
+ {
+  "name": "[pixel7] static and field blank samples get no link box",
+  "ok": true,
+  "detail": "{\"stat\":false,\"blank\":false}"
+ },
+ {
+  "name": "[pixel7] reload keeps the labels",
+  "ok": true,
+  "detail": "s1:A,s2:A,s3:A,s4:B,s5:B"
+ },
+ {
+  "name": "[pixel7] no prompt while still typing in the person fields (first -> last is one prompt)",
+  "ok": true,
+  "detail": "null"
+ },
+ {
+  "name": "[pixel7] warning: 'This will also fill Linked Sample A: sample 2. OK?' (s3 started is left out)",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample A: sample 2. OK?\",\"skip\":\"Not changed: Sample 3 (started).\",\"ch\":\"First name: (empty) → SarahLast name: (empty) → TestoneCompany: (empty) → Acme Mining\"}"
+ },
+ {
+  "name": "[pixel7] OK fills sample 2 (name + company) with an audit entry",
+  "ok": true,
+  "detail": "[{\"first\":\"Sarah\",\"last\":\"Testone\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"Acme Mining\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},[{\"at\":\"2026-11-25T02:12:47.550Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First name\",\"field\":\"person.first\",\"from\":\"\",\"to\":\"Sarah\",\"detail\":\"(empty) → Sarah (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:12:47.550Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last name\",\"field\":\"person.last\",\"from\":\"\",\"to\":\"Testone\",\"detail\":\"(empty) → Testone (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:12:47.550Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"person.company\",\"from\":\"\",\"to\":\"Acme Mining\",\"detail\":\"(empty) → Acme Mining (Linked Sample A, from Sample 1, confirmed)\"}]]"
+ },
+ {
+  "name": "[pixel7] started sample 3 not overwritten",
+  "ok": true,
+  "detail": "{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"}"
+ },
+ {
+  "name": "[pixel7] once named: label stays as secondary text and the existing name allocation box takes over",
+  "ok": true,
+  "detail": "{\"chip\":\"Linked Sample A · Sarah Testone · with samples 2, 3\",\"alloc\":true,\"link\":false,\"also\":\"Also on Sarah Testone: Sample 2 (Airborne · personal), Sample 3 (Airborne · personal). Location, sampling date, shift, shift length and roster stay the same on all of them (not started samples only); name, date of birth, company, occupation and SEG are filled across after you confirm.\"}"
+ },
+ {
+  "name": "[pixel7] respirator: no prompt while the answer is still incomplete (worn / model / shaven)",
+  "ok": true,
+  "detail": "[null,null]"
+ },
+ {
+  "name": "[pixel7] respirator: one prompt 'This will also fill Linked Sample A: samples 2, 3. OK?' listing all 4 answers (running sample 3 included)",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample A: samples 2, 3. OK?\",\"skip\":\"\",\"ch\":\"Respirator worn?: (empty) → yesRespirator brand / model: (empty) → 3M 6500Clean-shaven?: (empty) → yesFit-tested?: (empty) → yes\"}"
+ },
+ {
+  "name": "[pixel7] respirator OK: filled on sample 2 and on RUNNING sample 3 (worn, model, shaven, fit) with audit entries",
+  "ok": true,
+  "detail": "[{\"worn\":\"yes\",\"model\":\"3M 6500\",\"shaven\":\"yes\",\"fit\":\"yes\"},\"yes\",{\"worn\":\"yes\",\"model\":\"3M 6500\",\"shaven\":\"yes\",\"fit\":\"yes\"},\"yes\"]"
+ },
+ {
+  "name": "[pixel7] running sample 3 still has no name / company after the respirator fill",
+  "ok": true,
+  "detail": "{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"}"
+ },
+ {
+  "name": "[pixel7] respirator: incomplete change is held, then asked once when the sample is left",
+  "ok": true,
+  "detail": "[null,{\"q\":\"This will also fill Linked Sample A: samples 1, 3. OK?\",\"skip\":\"\",\"ch\":\"Fit-tested?: yes → (empty)\"}]"
+ },
+ {
+  "name": "[pixel7] respirator Cancel: only sample 2 changed (1 and 3 keep fit-tested yes)",
+  "ok": true,
+  "detail": "[\"\",\"yes\",\"yes\"]"
+ },
+ {
+  "name": "[pixel7] group B prompt lists sample 5",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample B: sample 5. OK?\",\"skip\":\"\",\"ch\":\"Company: (empty) → Cancel Co\"}"
+ },
+ {
+  "name": "[pixel7] Cancel: sample 4 changed, sample 5 untouched, decline audited",
+  "ok": true,
+  "detail": "[\"Cancel Co\",\"\"]"
+ },
+ {
+  "name": "[pixel7] group B link box offers sample 6",
+  "ok": true,
+  "detail": "[{\"btn\":true,\"dis\":false,\"hidden\":true,\"opts\":[\"s6\"]},{\"train\":\"s4\",\"page\":\"train\",\"hidden\":false,\"opts\":[\"s6\"],\"modal\":false},\"btnLink 431/915\"]"
+ },
+ {
+  "name": "[pixel7] adding to an existing group keeps its letter (s6 -> B)",
+  "ok": true,
+  "detail": "Add these samples to Linked Sample B?"
+ },
+ {
+  "name": "[pixel7] prompt fills sample 6 only; sample 5 (another person) listed as not changed",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample B: sample 6. OK?\",\"skip\":\"Not changed: Sample 5 (on Lee Different).\",\"ch\":\"First name: (empty) → BenLast name: (empty) → TesttwoDate of birth: (empty) → 1990-06-05\"}"
+ },
+ {
+  "name": "[pixel7] sample 6 filled (name + DOB); sample 5 keeps Lee Different, no DOB",
+  "ok": true,
+  "detail": "[{\"first\":\"Ben\",\"last\":\"Testtwo\",\"sex\":\"\",\"dob\":\"1990-06-05\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\",\"dobD\":\"05\",\"dobM\":\"06\",\"dobY\":\"1990\"},{\"first\":\"Lee\",\"last\":\"Different\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"}]"
+ },
+ {
+  "name": "[pixel7] separately allocated person (s9) never touched",
+  "ok": true,
+  "detail": "{\"id\":\"s9\",\"eventId\":\"eL\",\"trainKind\":\"airborne_personal\",\"sampleNo\":9,\"pouch\":\"9\",\"contaminantId\":\"INH\",\"pumpSerial\":\"88009\",\"headId\":\"IESS09\",\"mediaId\":\"C-9\",\"startFlow\":\"2.0\",\"endFlow\":\"\",\"rotameter\":\"R1\",\"shiftDate\":\"2026-11-25\",\"shiftKind\":\"day\",\"status\":\"prepped\",\"startAt\":\"\",\"endAt\":\"\",\"comments\":\"\",\"mode\":\"personal\",\"person\":{\"first\":\"Lee\",\"last\":\"Other\",\"occupation\":\"Fitter\",\"company\":\"OtherCo\",\"sex\":\"male\",\"dob\":\"1980-01-02\",\"dobD\":\"02\",\"dobM\":\"01\",\"dobY\":\"1980\"},\"rpd\":{},\"hpd\":{},\"audit\":[],\"personTag\":\"ptLee\"}\n=>\n{\"id\":\"s9\",\"eventId\":\"eL\",\"trainKind\":\"airborne_personal\",\"sampleNo\":9,\"pouch\":\"9\",\"contaminantId\":\"INH\",\"pumpSerial\":\"88009\",\"headId\":\"IESS09\",\"mediaId\":\"C-9\",\"startFlow\":\"2.0\",\"endFlow\":\"\",\"rotameter\":\"R1\",\"shiftDate\":\"2026-11-25\",\"shiftKind\":\"day\",\"status\":\"prepped\",\"startAt\":\"\",\"endAt\":\"\",\"comments\":\"\",\"mode\":\"personal\",\"person\":{\"first\":\"Lee\",\"last\":\"Other\",\"occupation\":\"Fitter\",\"company\":\"OtherCo\",\"sex\":\"male\",\"dob\":\"1980-01-02\",\"dobD\":\"02\",\"dobM\":\"01\",\"dobY\":\"1980\"},\"rpd\":{},\"hpd\":{},\"audit\":[],\"personTag\":\"ptLee\"}"
+ },
+ {
+  "name": "[pixel7] respirator 'No' on sample 4: prompt fills running sample 6 only; sample 5 (Lee Different) not changed",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample B: sample 6. OK?\",\"skip\":\"Not changed: Sample 5 (on Lee Different).\",\"ch\":\"Respirator worn?: (empty) → no\"}"
+ },
+ {
+  "name": "[pixel7] respirator OK: sample 6 (running) = No; sample 5 untouched",
+  "ok": true,
+  "detail": "[\"no\",null]"
+ },
+ {
+  "name": "[pixel7] rejected sample 6 and other-person sample 5 never filled (no prompt; 4 = unknown only)",
+  "ok": true,
+  "detail": "[null,\"unknown\",\"no\",null]"
+ },
+ {
+  "name": "[pixel7] reload keeps labels and filled names",
+  "ok": true,
+  "detail": "s1:A:Sarah:Testone s2:A:Sarah:Testone s3:A:: s4:B:Ben:Testtwo s5:B:Lee:Different s6:B:Ben:Testtwo s7::: s8::: s9::Lee:Other s10:::"
+ },
+ {
+  "name": "[pixel7] reload keeps respirator answers",
+  "ok": true,
+  "detail": "s1:yes s2:yes s3:yes s4:unknown s5:- s6:no"
+ },
+ {
+  "name": "[pixel7] no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] no native alerts",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] app is v48.7",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] unnamed personal sample shows 'Link samples' (next letter A), no name needed",
+  "ok": true,
+  "detail": "{\"link\":true,\"alloc\":false,\"btn\":\"Link samples\",\"help\":\"No name yet? Tick the samples one person will wear and the app labels them Linked Sample A. Nothing to type.\"}"
+ },
+ {
+  "name": "[chromebook] picker offers only unnamed, not-started personal samples (no static s7, blank s8, other person s9, running s10)",
+  "ok": true,
+  "detail": "[\"s2\",\"s3\",\"s4\",\"s5\",\"s6\"]"
+ },
+ {
+  "name": "[chromebook] confirm reads 'Link these samples as Linked Sample A?'",
+  "ok": true,
+  "detail": "Link these samples as Linked Sample A?"
+ },
+ {
+  "name": "[chromebook] link 3 unnamed samples -> all 'Linked Sample A' with one shared person tag",
+  "ok": true,
+  "detail": "[[\"A\",\"pttj3w5zy\"],[\"A\",\"pttj3w5zy\"],[\"A\",\"pttj3w5zy\"]]"
+ },
+ {
+  "name": "[chromebook] sample screen shows label chip",
+  "ok": true,
+  "detail": "Linked Sample A · no name yet · with samples 2, 3"
+ },
+ {
+  "name": "[chromebook] group A members are no longer offered to another group",
+  "ok": true,
+  "detail": "[\"s5\",\"s6\"]"
+ },
+ {
+  "name": "[chromebook] second group -> 'Linked Sample B'",
+  "ok": true,
+  "detail": "B,B"
+ },
+ {
+  "name": "[chromebook] sample list shows 'Linked Sample A/B' tags on the 5 linked rows only",
+  "ok": true,
+  "detail": "[[\"s1\",\"Linked Sample A · no name yet\"],[\"s2\",\"Linked Sample A · no name yet\"],[\"s3\",\"Linked Sample A · no name yet\"],[\"s4\",\"Linked Sample B · no name yet\"],[\"s5\",\"Linked Sample B · no name yet\"]]"
+ },
+ {
+  "name": "[chromebook] static and field blank samples get no link box",
+  "ok": true,
+  "detail": "{\"stat\":false,\"blank\":false}"
+ },
+ {
+  "name": "[chromebook] reload keeps the labels",
+  "ok": true,
+  "detail": "s1:A,s2:A,s3:A,s4:B,s5:B"
+ },
+ {
+  "name": "[chromebook] no prompt while still typing in the person fields (first -> last is one prompt)",
+  "ok": true,
+  "detail": "null"
+ },
+ {
+  "name": "[chromebook] warning: 'This will also fill Linked Sample A: sample 2. OK?' (s3 started is left out)",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample A: sample 2. OK?\",\"skip\":\"Not changed: Sample 3 (started).\",\"ch\":\"First name: (empty) → SarahLast name: (empty) → TestoneCompany: (empty) → Acme Mining\"}"
+ },
+ {
+  "name": "[chromebook] OK fills sample 2 (name + company) with an audit entry",
+  "ok": true,
+  "detail": "[{\"first\":\"Sarah\",\"last\":\"Testone\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"Acme Mining\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},[{\"at\":\"2026-11-25T02:13:12.364Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First name\",\"field\":\"person.first\",\"from\":\"\",\"to\":\"Sarah\",\"detail\":\"(empty) → Sarah (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:13:12.364Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last name\",\"field\":\"person.last\",\"from\":\"\",\"to\":\"Testone\",\"detail\":\"(empty) → Testone (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:13:12.364Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"person.company\",\"from\":\"\",\"to\":\"Acme Mining\",\"detail\":\"(empty) → Acme Mining (Linked Sample A, from Sample 1, confirmed)\"}]]"
+ },
+ {
+  "name": "[chromebook] started sample 3 not overwritten",
+  "ok": true,
+  "detail": "{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"}"
+ },
+ {
+  "name": "[chromebook] once named: label stays as secondary text and the existing name allocation box takes over",
+  "ok": true,
+  "detail": "{\"chip\":\"Linked Sample A · Sarah Testone · with samples 2, 3\",\"alloc\":true,\"link\":false,\"also\":\"Also on Sarah Testone: Sample 2 (Airborne · personal), Sample 3 (Airborne · personal). Location, sampling date, shift, shift length and roster stay the same on all of them (not started samples only); name, date of birth, company, occupation and SEG are filled across after you confirm.\"}"
+ },
+ {
+  "name": "[chromebook] respirator: no prompt while the answer is still incomplete (worn / model / shaven)",
+  "ok": true,
+  "detail": "[null,null]"
+ },
+ {
+  "name": "[chromebook] respirator: one prompt 'This will also fill Linked Sample A: samples 2, 3. OK?' listing all 4 answers (running sample 3 included)",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample A: samples 2, 3. OK?\",\"skip\":\"\",\"ch\":\"Respirator worn?: (empty) → yesRespirator brand / model: (empty) → 3M 6500Clean-shaven?: (empty) → yesFit-tested?: (empty) → yes\"}"
+ },
+ {
+  "name": "[chromebook] respirator OK: filled on sample 2 and on RUNNING sample 3 (worn, model, shaven, fit) with audit entries",
+  "ok": true,
+  "detail": "[{\"worn\":\"yes\",\"model\":\"3M 6500\",\"shaven\":\"yes\",\"fit\":\"yes\"},\"yes\",{\"worn\":\"yes\",\"model\":\"3M 6500\",\"shaven\":\"yes\",\"fit\":\"yes\"},\"yes\"]"
+ },
+ {
+  "name": "[chromebook] running sample 3 still has no name / company after the respirator fill",
+  "ok": true,
+  "detail": "{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"}"
+ },
+ {
+  "name": "[chromebook] respirator: incomplete change is held, then asked once when the sample is left",
+  "ok": true,
+  "detail": "[null,{\"q\":\"This will also fill Linked Sample A: samples 1, 3. OK?\",\"skip\":\"\",\"ch\":\"Fit-tested?: yes → (empty)\"}]"
+ },
+ {
+  "name": "[chromebook] respirator Cancel: only sample 2 changed (1 and 3 keep fit-tested yes)",
+  "ok": true,
+  "detail": "[\"\",\"yes\",\"yes\"]"
+ },
+ {
+  "name": "[chromebook] group B prompt lists sample 5",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample B: sample 5. OK?\",\"skip\":\"\",\"ch\":\"Company: (empty) → Cancel Co\"}"
+ },
+ {
+  "name": "[chromebook] Cancel: sample 4 changed, sample 5 untouched, decline audited",
+  "ok": true,
+  "detail": "[\"Cancel Co\",\"\"]"
+ },
+ {
+  "name": "[chromebook] group B link box offers sample 6",
+  "ok": true,
+  "detail": "[{\"btn\":true,\"dis\":false,\"hidden\":true,\"opts\":[\"s6\"]},{\"train\":\"s4\",\"page\":\"train\",\"hidden\":false,\"opts\":[\"s6\"],\"modal\":false},\"btnLink 358/768\"]"
+ },
+ {
+  "name": "[chromebook] adding to an existing group keeps its letter (s6 -> B)",
+  "ok": true,
+  "detail": "Add these samples to Linked Sample B?"
+ },
+ {
+  "name": "[chromebook] prompt fills sample 6 only; sample 5 (another person) listed as not changed",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample B: sample 6. OK?\",\"skip\":\"Not changed: Sample 5 (on Lee Different).\",\"ch\":\"First name: (empty) → BenLast name: (empty) → TesttwoDate of birth: (empty) → 1990-06-05\"}"
+ },
+ {
+  "name": "[chromebook] sample 6 filled (name + DOB); sample 5 keeps Lee Different, no DOB",
+  "ok": true,
+  "detail": "[{\"first\":\"Ben\",\"last\":\"Testtwo\",\"sex\":\"\",\"dob\":\"1990-06-05\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\",\"dobD\":\"05\",\"dobM\":\"06\",\"dobY\":\"1990\"},{\"first\":\"Lee\",\"last\":\"Different\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"}]"
+ },
+ {
+  "name": "[chromebook] separately allocated person (s9) never touched",
+  "ok": true,
+  "detail": "{\"id\":\"s9\",\"eventId\":\"eL\",\"trainKind\":\"airborne_personal\",\"sampleNo\":9,\"pouch\":\"9\",\"contaminantId\":\"INH\",\"pumpSerial\":\"88009\",\"headId\":\"IESS09\",\"mediaId\":\"C-9\",\"startFlow\":\"2.0\",\"endFlow\":\"\",\"rotameter\":\"R1\",\"shiftDate\":\"2026-11-25\",\"shiftKind\":\"day\",\"status\":\"prepped\",\"startAt\":\"\",\"endAt\":\"\",\"comments\":\"\",\"mode\":\"personal\",\"person\":{\"first\":\"Lee\",\"last\":\"Other\",\"occupation\":\"Fitter\",\"company\":\"OtherCo\",\"sex\":\"male\",\"dob\":\"1980-01-02\",\"dobD\":\"02\",\"dobM\":\"01\",\"dobY\":\"1980\"},\"rpd\":{},\"hpd\":{},\"audit\":[],\"personTag\":\"ptLee\"}\n=>\n{\"id\":\"s9\",\"eventId\":\"eL\",\"trainKind\":\"airborne_personal\",\"sampleNo\":9,\"pouch\":\"9\",\"contaminantId\":\"INH\",\"pumpSerial\":\"88009\",\"headId\":\"IESS09\",\"mediaId\":\"C-9\",\"startFlow\":\"2.0\",\"endFlow\":\"\",\"rotameter\":\"R1\",\"shiftDate\":\"2026-11-25\",\"shiftKind\":\"day\",\"status\":\"prepped\",\"startAt\":\"\",\"endAt\":\"\",\"comments\":\"\",\"mode\":\"personal\",\"person\":{\"first\":\"Lee\",\"last\":\"Other\",\"occupation\":\"Fitter\",\"company\":\"OtherCo\",\"sex\":\"male\",\"dob\":\"1980-01-02\",\"dobD\":\"02\",\"dobM\":\"01\",\"dobY\":\"1980\"},\"rpd\":{},\"hpd\":{},\"audit\":[],\"personTag\":\"ptLee\"}"
+ },
+ {
+  "name": "[chromebook] respirator 'No' on sample 4: prompt fills running sample 6 only; sample 5 (Lee Different) not changed",
+  "ok": true,
+  "detail": "{\"q\":\"This will also fill Linked Sample B: sample 6. OK?\",\"skip\":\"Not changed: Sample 5 (on Lee Different).\",\"ch\":\"Respirator worn?: (empty) → no\"}"
+ },
+ {
+  "name": "[chromebook] respirator OK: sample 6 (running) = No; sample 5 untouched",
+  "ok": true,
+  "detail": "[\"no\",null]"
+ },
+ {
+  "name": "[chromebook] rejected sample 6 and other-person sample 5 never filled (no prompt; 4 = unknown only)",
+  "ok": true,
+  "detail": "[null,\"unknown\",\"no\",null]"
+ },
+ {
+  "name": "[chromebook] reload keeps labels and filled names",
+  "ok": true,
+  "detail": "s1:A:Sarah:Testone s2:A:Sarah:Testone s3:A:: s4:B:Ben:Testtwo s5:B:Lee:Different s6:B:Ben:Testtwo s7::: s8::: s9::Lee:Other s10:::"
+ },
+ {
+  "name": "[chromebook] reload keeps respirator answers",
+  "ok": true,
+  "detail": "s1:yes s2:yes s3:yes s4:unknown s5:- s6:no"
+ },
+ {
+  "name": "[chromebook] no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] no native alerts",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "no request left the box except the CDN libraries; every Supabase call was answered by the in-memory mock (and *.supabase.co is mapped to a dead local port)",
+  "ok": true,
+  "detail": ""
+ }
+]

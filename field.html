@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ENVSS Field v48.7 (25 Nov 2026 AWST): Linked Sample A, B, … at prep (no name needed); a person field changed on one linked sample asks before it fills the others; started samples and samples on another person are never filled. -->
 <!-- ENVSS Field v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
 <!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
 <!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
@@ -9,7 +10,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.5</title>
+  <title>ENVSS Field v48.7</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -393,7 +394,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.5</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.7</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -409,12 +410,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.5"></script>
+  <script src="config.js?v=48.7"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.6"; /* 2026-11-23 (AWST): v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.7"; /* 2026-11-25 (AWST): v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -9532,7 +9533,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
    E17 dashboard says why no projects show, with a retry, and a "My jobs" filter.
    No Podio writes, no emails, no Drive edits. ===== */
 (function () {
-  const SHARED = [["seg", "SEG"], ["location", "Location"], ["shiftDate", "Sampling date"], ["shiftKind", "Sampling shift"],
+  const SHARED = [/* v48.7: SEG moved to the confirm-before-fill set (linked samples layer) */ ["location", "Location"], ["shiftDate", "Sampling date"], ["shiftKind", "Sampling shift"],
     ["person.hours", "Shift length (hours / shift)"], ["person.daysOn", "Roster: days on"], ["person.daysOff", "Roster: days off"]];
   const PPE = [["rpdAsked", "Respirator worn?"], ["rpd.model", "Respirator brand / model"], ["rpd.shaven", "Clean-shaven?"], ["rpd.fit", "Fit-tested?"]];
   const get = (o, k) => k.split(".").reduce((a, p) => (a == null ? a : a[p]), o);
@@ -9567,7 +9568,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   function personName(x) { const p = x.person || {}; return [p.first, p.last].map(v => str(v).trim()).filter(Boolean).join(" ") || str(p.occupation).trim() || "someone"; }
   /* the person-linked fields removed by "Clear this sample's information". Equipment, contaminant, sample number,
      sampling date / shift and the audit trail are kept. */
-  const PERSON_FIELDS = ["person", "personTag", "occupationCode", "seg", "location", "locationCode", "rpdAsked", "rpd", "hpdAsked", "hpd", "dailyLog"];
+  const PERSON_FIELDS = ["person", "personTag", "linkLabel", "occupationCode", "seg", "location", "locationCode", "rpdAsked", "rpd", "hpdAsked", "hpd", "dailyLog"];
   function blankPerson(p) { const o = {}; Object.keys(p || {}).forEach(k => { o[k] = ""; }); ["first", "last", "occupation"].forEach(k => { o[k] = ""; }); return o; }
   /* returns "" when cleared, else the reason it was not */
   function clearInfo(x) {
@@ -9584,7 +9585,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       cleared.push(k);
       if (k === "person") x.person = blankPerson(x.person);
       else if (k === "rpd" || k === "hpd") x[k] = {};
-      else if (k === "dailyLog" || k === "personTag") delete x[k];
+      else if (k === "dailyLog" || k === "personTag" || k === "linkLabel") delete x[k];
       else x[k] = "";
     });
     note(x, "Sample information cleared for reallocation", "was allocated to " + was + "; cleared: " + (cleared.join(", ") || "nothing to clear") + ". Sample is now unallocated.", "person", was, "");
@@ -9613,7 +9614,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const list = unallocated(t);
     let h = `<div class="card v46-alloc" id="allocBox"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>This person's samples</strong>
       <button type="button" class="btn mid" id="btnAllocate" ${list.length ? "" : "disabled"}>Add samples to this person</button></div>`;
-    h += sib.length ? `<p class="help" id="allocList">Also on ${esc([t.person.first, t.person.last].join(" "))}: ${sib.map(x => esc(displayNo(x) + " (" + kindLabel(x) + ")")).join(", ")}. SEG, location, sampling date, shift, shift length and roster stay the same on all of them.</p>`
+    h += sib.length ? `<p class="help" id="allocList">Also on ${esc([t.person.first, t.person.last].join(" "))}: ${sib.map(x => esc(displayNo(x) + " (" + kindLabel(x) + ")")).join(", ")}. Location, sampling date, shift, shift length and roster stay the same on all of them (not started samples only); name, date of birth, company, occupation and SEG are filled across after you confirm.</p>`
       : `<p class="help" id="allocList">No other samples on this person yet.</p>`;
     if (!list.length) h += `<p class="help">No unallocated samples in this event (a sample with a name or occupation already belongs to someone).</p>`;
     h += `<div id="allocPick" hidden><p class="help">Only samples with no name or occupation are listed.</p>${list.map(x => `<label class="check-row v46-pick"><input type="checkbox" data-alloc="${esc(x.id)}"> ${esc(displayNo(x))} · ${esc(kindLabel(x))}${x.trainKind === "airborne_passive" && x.badgeId ? " · badge " + esc(x.badgeId) : ""}${!isNoise(x) && x.mediaId ? " · " + esc(x.mediaId) : ""}${isNoise(x) && x.dosimeterSerial ? " · " + esc(x.dosimeterSerial) : ""}</label>`).join("")}
@@ -9647,6 +9648,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     targets.forEach(x => {
       x.person = Object.assign({}, x.person || {}, JSON.parse(JSON.stringify(src)));
       x.personTag = tag;
+      if (t.linkLabel) x.linkLabel = t.linkLabel;   /* v48.7: a named person's group keeps its Linked Sample letter */
       ["seg", "location", "shiftDate", "shiftKind", "occupationCode"].forEach(k => { if (t[k] != null && t[k] !== "") x[k] = t[k]; });
       if (isAirbornePersonal(x) && isAirbornePersonal(t) && !isNoise(x) && !isNoise(t) && dayOf(x) === dayOf(t) && !x.rpdAsked && t.rpdAsked) {   // B11
         x.rpdAsked = t.rpdAsked; x.rpd = Object.assign({}, t.rpd || {});
@@ -9708,13 +9710,14 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (t.personTag) SHARED.forEach(([k, label]) => {
       if (before[k] === now[k]) return;
       sib.filter(x => x.personTag === t.personTag).forEach(x => {
+        if (started(x)) return;   // v48.7: a started sample is never overwritten from another sample
         if (str(get(x, k)) === now[k]) return;
         const was = str(get(x, k)); set(x, k, get(t, k));
         note(x, "Changed " + label, (was || "(empty)") + " → " + (now[k] || "(empty)") + " (same person, from " + displayNo(t) + ")", k, was, now[k]);
         if (snaps.has(x.id)) snaps.get(x.id)[k] = now[k];
       });
     });
-    if (isAirbornePersonal(t) && !isNoise(t)) PPE.forEach(([k, label]) => {
+    if (!t.personTag && isAirbornePersonal(t) && !isNoise(t)) PPE.forEach(([k, label]) => {   /* v48.7: linked / allocated groups ask first (linked samples layer) */
       if (before[k] === now[k]) return;
       sib.filter(x => isAirbornePersonal(x) && !isNoise(x) && dayOf(x) === dayOf(t)).forEach(x => {
         const was = str(get(x, k));
@@ -11499,6 +11502,268 @@ function fixOpen(ts) {
     + "@media print{.v484-side,.v484-nav{display:none}}";
   document.head.appendChild(st);
   render();
+})();
+</script>
+
+
+<script>
+/* ===== v48.7: Linked Sample A, B, … (John, 23 Nov 2026 AWST, open item 24; respirator rule 25 Nov 2026) =====
+   Prep-stage linking without a name. On a personal sample (airborne personal, passive badge, noise personal; never
+   static, field blank or AFM) that has not been started and has no name, staff tick other not-started, unallocated
+   samples and the app gives the group the next free letter in the event: "Linked Sample A", "B", … No typing.
+   The group shares the v46 person tag (t.personTag) and keeps its letter in t.linkLabel, so the existing name-based
+   B9 allocation, B11 PPE carry-across and B12 Start all keep working once a name is entered.
+   Person fields (first / last name, date of birth, sex, company, occupation, occupation code, SEG) changed on one
+   sample in a group ask first: "This will also fill Linked Sample A: samples 2, 3. OK?" OK fills the others (audited);
+   Cancel changes only this sample. A started sample is never filled, and neither is a sample whose name is a
+   different person. Location / date / shift / roster keep the v46 behaviour (not started samples only, v48.7).
+   Respirator (John, 25 Nov 2026 AWST): a change to Respirator worn? / brand / model / clean-shaven / fit-tested on one
+   sample in a group asks once (when the answer is complete or the sample is left); OK fills the group's other airborne
+   personal samples on the same day INCLUDING running / stopped ones (never rejected / fault, never another person).
+   Local data only; syncs with the sample like any other field. No Podio writes, no emails, no Drive edits. ===== */
+(function () {
+  const V = window.v46;
+  if (!V) return;
+  const FILL = [["person.first", "First name"], ["person.last", "Last name"], ["person.dob", "Date of birth"], ["person.sex", "Sex"],
+    ["person.company", "Company"], ["person.occupation", "Occupation"], ["person.occupationCode", "Occupation code"],
+    ["occupationCode", "Occupation code (SRS)"], ["seg", "SEG"]];
+  const RPD = [["rpdAsked", "Respirator worn?"], ["rpd.model", "Respirator brand / model"], ["rpd.shaven", "Clean-shaven?"], ["rpd.fit", "Fit-tested?"]];
+  const RPDK = new Set(RPD.map(r => r[0]));
+  const LBL = Object.fromEntries(FILL.concat(RPD));
+  const airP = x => isAirbornePersonal(x) && !isNoise(x) && !isStatic(x);
+  const dayOf = x => str(x.shiftDate || (eventById(x.eventId) || {}).date).slice(0, 10);
+  /* respirator answer still being filled in on the open sample: wait (ask once) */
+  function rpdPending(t, keys) {
+    if (!keys.some(k => RPDK.has(k)) || view.page !== "train" || view.trainId !== t.id) return false;
+    const r = t.rpd || {};
+    return t.rpdAsked === "yes" && !(str(r.model).trim() && str(r.shaven) && str(r.fit));
+  }
+  const str = v => (v == null ? "" : String(v));
+  const get = (o, k) => k.split(".").reduce((a, p) => (a == null ? a : a[p]), o);
+  const set = (o, k, v) => { const ps = k.split("."); let a = o; for (let i = 0; i < ps.length - 1; i++) { a[ps[i]] = a[ps[i]] || {}; a = a[ps[i]]; } a[ps[ps.length - 1]] = v; };
+  const voided = x => x.status === "rejected" || x.status === "fault";
+  const notStarted = x => !!x && !voided(x) && !V.started(x);
+  function note(x, action, detail, field, from, to) { x.audit = x.audit || []; x.audit.push({ at: nowIso(), who: whoText(), action, field: field || "", from: from == null ? "" : from, to: to == null ? "" : to, detail: detail || "" }); }
+  function cur() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function label(x) { return x && x.linkLabel ? "Linked Sample " + x.linkLabel : ""; }
+  function fullName(x) { const p = (x && x.person) || {}; return [p.first, p.last].map(v => str(v).trim()).filter(Boolean).join(" "); }
+  /* the rest of this sample's group (same person tag, same event) */
+  function members(t) { return t && t.personTag ? trainsOf(t.eventId).filter(x => x !== t && x.personTag === t.personTag && V.personType(x)) : []; }
+  function nos(xs) {
+    const d = xs.map(displayNo);
+    return d.every(v => /^Sample \S+$/.test(v)) ? (d.length === 1 ? "sample " : "samples ") + d.map(v => v.slice(7)).join(", ") : d.join(", ");
+  }
+  function letterAt(i) { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function nextLetter(eventId) {
+    const used = new Set(trainsOf(eventId).map(x => x.linkLabel).filter(Boolean));
+    for (let i = 0; ; i++) { const l = letterAt(i); if (!used.has(l)) return l; }
+  }
+  /* a group whose letter is on some members only (e.g. B9 added a sample before v48.7): give all the same letter */
+  function tidy() {
+    let changed = false;
+    const byTag = {};
+    (db.trains || []).forEach(x => { if (x.personTag && x.linkLabel) byTag[x.eventId + "|" + x.personTag] = x.linkLabel; });
+    (db.trains || []).forEach(x => { const l = x.personTag && byTag[x.eventId + "|" + x.personTag]; if (l && x.linkLabel !== l && !V.started(x)) { x.linkLabel = l; changed = true; } });
+    return changed;
+  }
+
+  /* ---------- dialog (same look as the v46 Yes / No) ---------- */
+  function ask(question, detailHtml, yes, no) {
+    return new Promise(res => {
+      const w = document.createElement("div"); w.className = "v46-modal"; w.id = "v486Modal";
+      w.innerHTML = `<div class="v46-dialog" role="dialog" aria-modal="true"><p class="v46-q" id="v486Q">${esc(question)}</p>${detailHtml || ""}
+        <div class="row" style="gap:10px;justify-content:flex-end;margin-top:14px"><button type="button" class="btn ghost" id="v486No">${esc(no || "Cancel")}</button><button type="button" class="btn green" id="v486Yes">${esc(yes || "OK")}</button></div></div>`;
+      document.body.appendChild(w);
+      const done = v => { w.remove(); res(v); };
+      w.querySelector("#v486Yes").onclick = () => done(true);
+      w.querySelector("#v486No").onclick = () => done(false);
+    });
+  }
+
+  /* ---------- link at prep (no name) ---------- */
+  async function link(t, ids) {
+    collectTrain(t);
+    if (!V.personType(t) || !notStarted(t) || V.nameKey(t)) { alert("Only a personal sample that has not been started and has no name can be linked here."); return 0; }
+    const free = V.unallocated(t);
+    const targets = ids.map(id => db.trains.find(x => x.id === id)).filter(x => x && free.includes(x));
+    if (!targets.length) { alert("Those samples can no longer be linked (started, or already on someone)."); return 0; }
+    const letter = t.linkLabel || (members(t).find(x => x.linkLabel) || {}).linkLabel || nextLetter(t.eventId);
+    const isNew = !t.personTag;
+    const ok = await ask((isNew ? "Link these samples as Linked Sample " : "Add these samples to Linked Sample ") + letter + "?",
+      `<p class="help">${esc([t].concat(members(t), targets).map(displayNo).join(", "))} will be worn by the same person. No name is needed now; when one is entered on any of them you will be asked before it fills the others.</p>`, "Link", "Cancel");
+    if (!ok) return 0;
+    const tag = t.personTag || uid("pt");
+    [t].concat(members(t)).forEach(x => {
+      if (!x.personTag) { x.personTag = tag; }
+      if (x.linkLabel !== letter && !V.started(x)) { x.linkLabel = letter; note(x, "Linked Sample " + letter, (isNew ? "group created at prep" : "group letter set") + " (no name yet)", "linkLabel", "", letter); }
+    });
+    targets.forEach(x => {
+      x.personTag = tag; x.linkLabel = letter;
+      note(x, "Linked Sample " + letter, "linked at prep with " + displayNo(t) + " (no name yet)", "linkLabel", "", letter);
+    });
+    note(t, "Samples linked", "Linked Sample " + letter + ": " + targets.map(displayNo).join(", "));
+    save();
+    return targets.length;
+  }
+  async function unlink(t) {
+    collectTrain(t);
+    if (!notStarted(t) || V.nameKey(t)) return false;
+    const l = label(t), rest = members(t);
+    const ok = await ask("Remove " + displayNo(t) + " from " + l + "?", `<p class="help">The other samples stay linked.${rest.length === 1 ? " " + esc(displayNo(rest[0])) + " would be on its own, so it is unlinked too." : ""}</p>`, "Remove", "Cancel");
+    if (!ok) return false;
+    const off = [t].concat(rest.length === 1 && notStarted(rest[0]) && !V.nameKey(rest[0]) ? rest : []);
+    off.forEach(x => { const was = x.linkLabel || ""; delete x.personTag; delete x.linkLabel; note(x, "Removed from " + l, "unlinked at prep", "linkLabel", was, ""); });
+    save();
+    return true;
+  }
+  window.v486Link = link; window.v486Unlink = unlink;
+
+  function linkHtml(t) {
+    const rest = members(t), list = V.unallocated(t), open = notStarted(t);
+    let h = `<div class="card v46-alloc v486-link" id="linkBox"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>${t.linkLabel ? esc(label(t)) : "Link samples to one person"}</strong>`;
+    if (open) h += `<button type="button" class="btn mid" id="btnLink" ${list.length ? "" : "disabled"}>${t.linkLabel ? "Add samples to " + esc(label(t)) : "Link samples"}</button>`;
+    h += `</div>`;
+    h += t.linkLabel ? `<p class="help" id="linkList">Linked with ${rest.length ? esc(nos(rest)) : "no other samples yet"}. No name needed yet. When a name, date of birth, company, occupation or SEG is entered on any of them, you'll be asked before it fills the others.</p>`
+      : `<p class="help" id="linkList">No name yet? Tick the samples one person will wear and the app labels them Linked Sample ${esc(nextLetter(t.eventId))}. Nothing to type.</p>`;
+    if (open && !list.length) h += `<p class="help">No other samples to link (static, field blank, started or already linked samples are not listed).</p>`;
+    if (open) h += `<div id="linkPick" hidden><p class="help">Personal samples not started and not on anyone yet:</p>${list.map(x => `<label class="check-row v46-pick"><input type="checkbox" data-link="${esc(x.id)}"> ${esc(displayNo(x))} · ${esc(kindLabel(x))}${!isNoise(x) && x.mediaId ? " · " + esc(x.mediaId) : ""}${isNoise(x) && x.dosimeterSerial ? " · " + esc(x.dosimeterSerial) : ""}</label>`).join("")}
+      <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn green" id="btnLinkSelect">Select</button><button type="button" class="btn ghost" id="btnLinkCancel">Cancel</button></div></div>`;
+    if (open && t.linkLabel) h += `<div class="row" style="gap:8px;margin-top:6px"><button type="button" class="btn ghost" id="btnUnlink">Remove this sample from ${esc(label(t))}</button></div>`;
+    if (!open && t.linkLabel) h += `<p class="help">This sample has been started, so it stays in ${esc(label(t))}.</p>`;
+    return h + `</div>`;
+  }
+
+  /* ---------- fill across the group, after a confirm ---------- */
+  const snaps = new Map(); let lastId = null;
+  function snap(t) { const o = {}; FILL.concat(RPD).forEach(([k]) => { o[k] = str(get(t, k)).trim(); }); o._name = V.nameKey(t); return o; }
+  const queue = []; let asking = false;
+  /* which of keys may be filled on x: person fields only on not-started samples; respirator answers on started ones too
+     (airborne personal, same day). Never rejected / fault, never another person's sample. */
+  function keysFor(x, t, keys, beforeName) {
+    if (voided(x)) return { keys: [], why: "rejected / fault" };
+    if (V.nameKey(x) && V.nameKey(x) !== beforeName && V.nameKey(x) !== V.nameKey(t)) return { keys: [], why: "on " + fullName(x) };
+    const pk = keys.filter(k => !RPDK.has(k)), rk = keys.filter(k => RPDK.has(k));
+    const st = V.started(x), rOk = airP(t) && airP(x) && dayOf(x) === dayOf(t);
+    const out = (st ? [] : pk).concat(rOk ? rk : []);
+    let why = "";
+    if (!out.length) why = st && pk.length ? "started" : (!rOk && rk.length ? (airP(x) ? "different day" : "no respirator question") : "");
+    else if (st && pk.length) why = "started: respirator only";
+    return { keys: out, why };
+  }
+  function fillTargets(t, beforeName, keys) {
+    keys = keys || FILL.map(f => f[0]);
+    const ok = [], skip = [], part = [];
+    members(t).forEach(x => {
+      const r = keysFor(x, t, keys, beforeName);
+      if (!r.keys.length) { if (r.why) skip.push([x, r.why]); }
+      else { ok.push(x); if (r.why) part.push([x, r.why]); }
+    });
+    return { ok, skip, part };
+  }
+  /* wait while the person is still typing in the person fields (first → last name is one prompt, not two) */
+  function typing() { const a = document.activeElement, host = document.getElementById("modeFields"); return !!(a && host && host.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)); }
+  document.addEventListener("focusout", () => { if (queue.length) setTimeout(drain, 60); });
+  async function drain() {
+    if (asking || typing()) return; asking = true;
+    try {
+      for (;;) {
+        const i = queue.findIndex(j => { const tt = db.trains.find(x => x.id === j.id); return !tt || !rpdPending(tt, Object.keys(j.ch)); });
+        if (i < 0) break;   // only respirator answers still being filled in: ask when complete or when the sample is left
+        const job = queue.splice(i, 1)[0];
+        const t = db.trains.find(x => x.id === job.id); if (!t || !t.personTag) continue;
+        const keys = Object.keys(job.ch).filter(k => str(get(t, k)).trim() === job.ch[k].to);   // still the value typed
+        if (!keys.length) continue;
+        const { skip, part } = fillTargets(t, job.beforeName, keys);
+        const plan = new Map();
+        members(t).forEach(x => { const r = keysFor(x, t, keys, job.beforeName); const ks = r.keys.filter(k => str(get(x, k)).trim() !== job.ch[k].to); if (ks.length) plan.set(x, ks); });
+        const need = [...plan.keys()];
+        if (!need.length) continue;
+        const grp = label(t) || ((fullName(t) || "this person") + "'s samples");
+        const yes = await ask("This will also fill " + grp + ": " + nos(need) + ". OK?",
+          `<ul class="v486-ch" id="v486Changes">${keys.map(k => `<li>${esc(LBL[k])}: ${esc(job.ch[k].from || "(empty)")} → <strong>${esc(job.ch[k].to || "(empty)")}</strong></li>`).join("")}</ul>`
+          + (part.filter(([x]) => plan.has(x)).length ? `<p class="help" id="v486Part">${part.filter(([x]) => plan.has(x)).map(([x, why]) => esc(displayNo(x) + " (" + why + ")")).join(", ")}.</p>` : "")
+          + (skip.length ? `<p class="help" id="v486Skip">Not changed: ${skip.map(([x, why]) => esc(displayNo(x) + " (" + why + ")")).join(", ")}.</p>` : "")
+          + `<p class="help">Cancel changes ${esc(displayNo(t))} only.</p>`, "OK", "Cancel");
+        if (!yes) { note(t, "Fill across declined", keys.map(k => LBL[k]).join(", ") + " changed on " + displayNo(t) + " only; not filled on " + need.map(displayNo).join(", ")); saveQuiet(); continue; }
+        need.forEach(x => {
+          plan.get(x).forEach(k => {
+            const was = str(get(x, k)).trim(), to = str(get(t, k));
+            if (was === to.trim()) return;
+            set(x, k, to);
+            if (k === "person.dob") ["dobD", "dobM", "dobY"].forEach(q => { x.person[q] = (t.person || {})[q] || ""; });
+            if (k === "person.sex" && t.person && t.person.sexSet !== undefined) x.person.sexSet = t.person.sexSet;
+            if (k === "rpdAsked") { x.rpd = x.rpd || {}; x.rpd.worn = to; }
+            note(x, "Changed " + LBL[k], (was || "(empty)") + " → " + (to || "(empty)") + " (" + (label(t) || "same person") + ", from " + displayNo(t) + ", confirmed)", k, was, to);
+          });
+          snaps.delete(x.id);
+        });
+        note(t, "Filled across linked samples", keys.map(k => LBL[k]).join(", ") + " → " + need.map(displayNo).join(", "));
+        save();
+      }
+    } finally { asking = false; }
+  }
+  function detect() {
+    const t = cur(); if (!t || !t.personTag || !V.personType(t)) return;
+    const before = snaps.get(t.id), now = snap(t); snaps.set(t.id, now);
+    if (!before) return;
+    const ch = {};
+    FILL.concat(RPD).forEach(([k]) => { if (before[k] !== now[k]) ch[k] = { from: before[k], to: now[k] }; });
+    if (!Object.keys(ch).length) return;
+    const q = queue.find(j => j.id === t.id);
+    if (q) Object.keys(ch).forEach(k => { q.ch[k] = { from: q.ch[k] ? q.ch[k].from : ch[k].from, to: ch[k].to }; });
+    else queue.push({ id: t.id, ch, beforeName: before._name });
+    setTimeout(drain, 0);
+  }
+  const _commit486 = commit;
+  commit = function () { try { detect(); } catch (e) { console.warn("v48.7 fill", e); } try { tidy(); } catch (e) {} return _commit486.apply(this, arguments); };
+  window.commit = commit;
+
+  /* ---------- screens ---------- */
+  function decorate() {
+    document.querySelectorAll('#app .train[onclick*="openTrain"]').forEach(row => {
+      const m = /openTrain\('([^']+)'\)/.exec(row.getAttribute("onclick") || ""); if (!m) return;
+      const x = db.trains.find(y => y.id === m[1]); if (!x || !x.linkLabel || row.querySelector(".v486-tag")) return;
+      const s = document.createElement("span"); s.className = "v486-tag"; s.textContent = label(x) + (fullName(x) ? "" : " · no name yet");
+      (row.querySelector(".row-title") || row).appendChild(s);
+    });
+    const t = cur();
+    if (queue.length && (!t || t.id !== lastId)) setTimeout(drain, 0);   // left the sample: ask about any held respirator change
+    if (!t) { lastId = null; return; }
+    if (t.id !== lastId || !snaps.has(t.id)) { snaps.set(t.id, snap(t)); lastId = t.id; }
+    if (!V.personType(t)) return;
+    const h2 = document.querySelector("#app .wrap h2");
+    if (t.linkLabel && h2 && !document.getElementById("v486Label")) {
+      const d = document.createElement("div"); d.id = "v486Label"; d.className = "v486-chip";
+      const rest = members(t);
+      d.textContent = label(t) + (fullName(t) ? " · " + fullName(t) : " · no name yet") + (rest.length ? " · with " + nos(rest) : "");
+      const sync = document.getElementById("v46SampleSync");
+      (sync || h2.closest(".row") || h2).insertAdjacentElement("afterend", d);
+    }
+    const host = document.getElementById("modeFields");
+    if (!host || V.nameKey(t) || document.getElementById("linkBox")) return;
+    if (!notStarted(t) && !t.linkLabel) return;
+    (document.getElementById("allocBox") || host).insertAdjacentHTML("afterend", linkHtml(t));
+    const b = document.getElementById("btnLink"), pick = document.getElementById("linkPick");
+    if (b && pick) b.onclick = () => { pick.hidden = !pick.hidden; };
+    const c = document.getElementById("btnLinkCancel"); if (c) c.onclick = () => { pick.hidden = true; document.querySelectorAll("[data-link]").forEach(i => { i.checked = false; }); };
+    const sel = document.getElementById("btnLinkSelect");
+    if (sel) sel.onclick = async () => {
+      const ids = [...document.querySelectorAll("[data-link]:checked")].map(i => i.dataset.link);
+      if (!ids.length) { alert("Tick at least one sample first."); return; }
+      if (await link(t, ids)) render();
+    };
+    const u = document.getElementById("btnUnlink"); if (u) u.onclick = async () => { if (await unlink(t)) render(); };
+  }
+  const _render486 = render;
+  render = function () { const r = _render486.apply(this, arguments); try { decorate(); } catch (e) { console.warn("v48.7 decorate", e); } return r; };
+  window.render = render;
+  window.v486 = { members, nextLetter, label, fillTargets, snaps };
+  const st = document.createElement("style");
+  st.textContent = ".v486-chip{display:inline-block;margin:6px 0 2px 8px;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700;background:#1E3A5F;color:#9CC8FF}"
+    + ".v486-tag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700;background:#1E3A5F;color:#9CC8FF;vertical-align:middle}"
+    + ".v486-ch{margin:6px 0 0 18px;padding:0}.v486-ch li{margin:3px 0}";
+  document.head.appendChild(st);
+  try { if (tidy()) persist(); render(); } catch (e) {}
 })();
 </script>
 

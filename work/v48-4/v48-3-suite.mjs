@@ -57,7 +57,7 @@ async function pickReason(page, code, text) { await page.evaluate((c, t) => { co
 /* ================= Chromebook (laptop UA) ================= */
 let page = await boot("chromebook");
 const fx = fixture();
-check("[chromebook] version 48.6", await page.evaluate(() => APP_VERSION === "48.6" && document.title === "ENVSS Field v48.6"), await page.evaluate(() => document.title));
+check("[chromebook] version 48.7", await page.evaluate(() => APP_VERSION === "48.7" && document.title === "ENVSS Field v48.7"), await page.evaluate(() => document.title));
 
 /* 1. stored times untouched on upgrade; legacy labels derived only */
 const before = fx.trains.map(t => [t.id, t.startAt, t.endAt, t.status]);
@@ -237,7 +237,7 @@ check("no page errors (pixel7)", !errs.length, errs.join(" | "));
 await sleep(1500);
 const rpc = [...(page.t.store.rpc || new Map()).values()];
 const p = (rpc.find(r => r.p && r.p.event === "app_open") || {}).p || {};
-check("sign-in log: app open sent through envss_log_app_open with device detail", p.app_version === "48.6" && p.device_type === "phone" && p.os === "Android" && p.os_version === "14" && p.browser === "Chrome" && /^156/.test(p.browser_version) && p.display_mode === "browser_tab" && p.client_event_id, JSON.stringify(p));
+check("sign-in log: app open sent through envss_log_app_open with device detail", p.app_version === "48.7" && p.device_type === "phone" && p.os === "Android" && p.os_version === "14" && p.browser === "Chrome" && /^156/.test(p.browser_version) && p.display_mode === "browser_tab" && p.client_event_id, JSON.stringify(p));
 check("sign-in log: daily_open also sent", rpc.some(r => r.p && r.p.event === "daily_open"), rpc.map(r => r.p && r.p.event).join(","));
 check("sign-in log: no new staff-facing UI", !(await page.evaluate(() => !!document.getElementById("btnLoginLog"))));
 await page.close();
