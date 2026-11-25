@@ -1,10 +1,10 @@
-/* ENVSS Field v48.11: Respirator fit testing (TSI-layout Vision OCR, TSI-style PDF, no photo page).
+/* ENVSS Field v48.12: Respirator fit testing (TSI-layout Vision OCR, closer TSI PDF with branded header, no photo page).
    Event type "fit", codes {job}-FIT-{seq}. Photo + optional Google Vision OCR, confirm,
-   two signatures, A4 PDF (form + signatures + original photo), Drive copy into
+   two signatures, A4 TSI-layout PDF (signed or unsigned, ENVSS logo + clickable contacts, no photo page), Drive copy into
    {job}_Field-App/Fit Test, zip download. No Podio writes. */
 (function (root) {
   "use strict";
-  const VERSION = "48.11";
+  const VERSION = "48.12";
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
   const OCR_FN = "ocr-fit-report";
@@ -1725,7 +1725,16 @@
     const g = t => (parts.find(x => x.type === t) || {}).value || "";
     return g("day") + "/" + g("month") + "/" + g("year") + " " + g("hour") + ":" + g("minute") + " AWST";
   }
-
+  function formatDateOnly(iso) {
+    const d = iso ? new Date(iso) : new Date();
+    if (isNaN(d.getTime())) return String(iso || "");
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Australia/Perth",
+      year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(d);
+    const g = t => (parts.find(x => x.type === t) || {}).value || "";
+    return g("day") + "/" + g("month") + "/" + g("year");
+  }
 
   function wrapPdfText(font, text, size, maxW) {
     const words = String(text == null ? "" : text).split(/\s+/);
@@ -1755,6 +1764,43 @@
     if (typeof v === "object") return v.raw || v.display || "";
     return String(v);
   }
+  function pdfSafe(str) {
+    return String(str == null ? "" : str)
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, "-")
+      .replace(/\u2026/g, "...");
+  }
+  function addUriLink(page, lib, x, y, w, h, url) {
+    try {
+      const PDFString = lib.PDFString;
+      if (!PDFString || typeof page.node.addAnnot !== "function") return;
+      const annot = page.doc.context.obj({
+        Type: "Annot",
+        Subtype: "Link",
+        Rect: [x, y, x + w, y + h],
+        Border: [0, 0, 0],
+        A: { Type: "Action", S: "URI", URI: PDFString.of(String(url)) }
+      });
+      page.node.addAnnot(page.doc.context.register(annot));
+    } catch (e) { console.warn("[ENVSS] pdf link", e); }
+  }
+  let _logoPngBytes = null, _logoTried = false;
+  async function envssLogoBytes(opts) {
+    if (opts && opts.logoBytes && opts.logoBytes.length) return opts.logoBytes;
+    if (_logoPngBytes) return _logoPngBytes;
+    if (_logoTried) return null;
+    _logoTried = true;
+    try {
+      if (typeof fetch !== "function") return null;
+      const res = await fetch("vOSog.png");
+      if (!res.ok) return null;
+      _logoPngBytes = new Uint8Array(await res.arrayBuffer());
+      return _logoPngBytes;
+    } catch (e) { return null; }
+  }
+
+  /* Closer TSI PortaCount FIT TEST REPORT layout on one A4 page, plus a slim ENVSS brand band. */
   async function buildReportPdf(rep, opts) {
     opts = opts || {};
     const signed = !!opts.signed;
@@ -1768,155 +1814,239 @@
     const font = await doc.embedFont(lib.StandardFonts.Helvetica);
     const bold = await doc.embedFont(lib.StandardFonts.HelveticaBold);
     const black = lib.rgb(0, 0, 0);
-    const grey = lib.rgb(0.15, 0.15, 0.15);
-    const W = 595.28, H = 841.89, L = 36, R = W - 36;
-    let y = H - 40;
-    function text(str, x, yy, size, f, color) {
-      page.drawText(String(str == null ? "" : str), { x: x, y: yy, size: size || 9, font: f || font, color: color || black });
-    }
-    function center(str, yy, size, f) {
-      const s = String(str || ""), sz = size || 14;
-      const w = (f || bold).widthOfTextAtSize(s, sz);
-      text(s, Math.max(L, (W - w) / 2), yy, sz, f || bold);
-    }
-    function hline(yy) { page.drawLine({ start: { x: L, y: yy }, end: { x: R, y: yy }, thickness: 0.6, color: black }); }
+    const navy = lib.rgb(33 / 255, 55 / 255, 108 / 255);
+    const W = 595.28, H = 841.89, L = 42, R = 560;
+    const size = 9, leading = 13;
+    const labelEdge = 142, valueX = 152, valueMaxW = 178;
+    const rightLabelEdge = 422, rightValueX = 430, rightValueMaxW = R - rightValueX;
 
-    center("FIT TEST REPORT", y, 16, bold);
-    y -= 18;
-    const headerDate = fieldText(rep, "testDate") || (rep.testDate && rep.testDate.display) || fieldText(rep, "dueDate") || "";
-    /* Header date on the TSI report is the test date (or the title date). */
-    const titleDate = (rep.testDate && rep.testDate.display) || rep.testDateDisplay || "";
-    if (titleDate) center(titleDate, y, 11, font);
+    function text(str, x, yy, sz, f, color) {
+      const s = pdfSafe(str);
+      if (!s) return;
+      try { page.drawText(s, { x: x, y: yy, size: sz || size, font: f || font, color: color || black }); }
+      catch (e) {
+        const ascii = s.replace(/[^\x20-\x7E]/g, "");
+        if (ascii) page.drawText(ascii, { x: x, y: yy, size: sz || size, font: f || font, color: color || black });
+      }
+    }
+    function rightLabel(lab, edge, yy, sz, f, color) {
+      const s = pdfSafe(lab);
+      const fn = f || bold;
+      const use = sz || size;
+      text(s, edge - fn.widthOfTextAtSize(s, use), yy, use, fn, color);
+    }
+    function centerAt(str, cx, yy, sz, f, color) {
+      const s = pdfSafe(str);
+      if (!s) return;
+      const fn = f || font, use = sz || size;
+      text(s, cx - fn.widthOfTextAtSize(s, use) / 2, yy, use, fn, color);
+    }
+    function underlineAt(x, yy, w, thick) {
+      page.drawLine({ start: { x: x, y: yy }, end: { x: x + w, y: yy }, thickness: thick || 0.8, color: black });
+    }
+    function drawWrapped(val, x, yy, maxW, sz, f) {
+      const lines = wrapPdfText(f || font, pdfSafe(val), sz || size, maxW);
+      lines.forEach(function (ln, i) { text(ln, x, yy - i * leading, sz || size, f || font); });
+      return Math.max(1, lines.length);
+    }
+
+    /* Slim brand band above the TSI title: logo (or wordmark) + clickable website and admin email. */
+    const logoBytes = await envssLogoBytes(opts);
+    let logoH = 22, usedLogo = false;
+    if (logoBytes) {
+      try {
+        const img = await doc.embedPng(logoBytes);
+        const logoW = logoH * (img.width / img.height);
+        const yImg = H - 14 - logoH;
+        page.drawImage(img, { x: L, y: yImg, width: logoW, height: logoH });
+        addUriLink(page, lib, L, yImg, logoW, logoH, "https://envss.com.au");
+        usedLogo = true;
+      } catch (e) { usedLogo = false; }
+    }
+    if (!usedLogo) {
+      const mark = "Environmental Site Services";
+      const mSize = 11;
+      const yMark = H - 28;
+      text(mark, L, yMark, mSize, bold, navy);
+      addUriLink(page, lib, L, yMark - 3, bold.widthOfTextAtSize(mark, mSize), mSize + 5, "https://envss.com.au");
+      logoH = 16;
+    }
+    const linkSize = 8;
+    const url = "https://envss.com.au";
+    const mail = "admin@envss.com.au";
+    const urlW = font.widthOfTextAtSize(url, linkSize);
+    const mailW = font.widthOfTextAtSize(mail, linkSize);
+    const gap = 16;
+    const linksX = R - (urlW + gap + mailW);
+    const midY = H - 14 - Math.max(logoH, 22) / 2 - linkSize / 3;
+    text(url, linksX, midY, linkSize, font, navy);
+    underlineAt(linksX, midY - 1.4, urlW, 0.4);
+    addUriLink(page, lib, linksX, midY - 3, urlW, linkSize + 5, url);
+    const mailX = linksX + urlW + gap;
+    text(mail, mailX, midY, linkSize, font, navy);
+    underlineAt(mailX, midY - 1.4, mailW, 0.4);
+    addUriLink(page, lib, mailX, midY - 3, mailW, linkSize + 5, "mailto:admin@envss.com.au");
+    const ruleY = H - 14 - Math.max(logoH, 22) - 8;
+    page.drawLine({ start: { x: L, y: ruleY }, end: { x: R, y: ruleY }, thickness: 0.5, color: navy });
+
+    let y = ruleY - 22;
+
+    /* Title: FIT TEST REPORT, bold, underlined, centred. Date (DD/MM/YYYY) centred under it. */
+    const title = "FIT TEST REPORT";
+    const tSize = 12;
+    const tw = bold.widthOfTextAtSize(title, tSize);
+    const tx = (W - tw) / 2;
+    text(title, tx, y, tSize, bold);
+    underlineAt(tx, y - 2.4, tw, 1);
     y -= 16;
-    hline(y + 6);
-    y -= 10;
+    const titleDate = (rep.testDate && rep.testDate.display) || rep.testDateDisplay || "";
+    if (titleDate) centerAt(titleDate, W / 2, y, 9, bold);
+    y -= 26;
 
-    function labelVal(lab, val, x, yy, colW) {
-      text(lab, x, yy, 7, bold, grey);
-      const lines = wrapPdfText(font, val, 9, colW - 2);
-      lines.forEach(function (ln, i) { text(ln, x, yy - 11 - i * 11, 9, font); });
-      return yy - 11 - Math.max(1, lines.length) * 11 - 6;
-    }
-
-    /* Identity: five labels across, values underneath. */
-    const idCols = [
+    /* Left labels right-aligned; values left-aligned beside them. */
+    const idRows = [
       ["ID NUMBER", fieldText(rep, "idNumber")],
       ["LAST NAME", fieldText(rep, "lastName")],
       ["FIRST NAME", fieldText(rep, "firstName")],
       ["COMPANY", fieldText(rep, "company")],
       ["LOCATION", fieldText(rep, "location")]
     ];
-    const colW = (R - L) / idCols.length;
-    idCols.forEach(function (c, i) { text(c[0], L + i * colW, y, 7, bold, grey); });
-    y -= 12;
-    let idBottom = y;
-    idCols.forEach(function (c, i) {
-      const lines = wrapPdfText(font, c[1], 9, colW - 6);
-      lines.forEach(function (ln, k) { text(ln, L + i * colW, y - k * 11, 9, font); });
-      idBottom = Math.min(idBottom, y - Math.max(1, lines.length) * 11);
+    idRows.forEach(function (row) {
+      rightLabel(row[0], labelEdge, y);
+      drawWrapped(row[1], valueX, y, valueMaxW, size, font);
+      y -= leading;
     });
-    y = idBottom - 10;
 
-    const half = (R - L - 16) / 2;
-    const midX = L + half + 16;
-    text("TEST DATE", L, y, 7, bold, grey);
-    text("DUE DATE", midX, y, 7, bold, grey);
-    y -= 12;
-    text(fieldText(rep, "testDate"), L, y, 9, font);
-    text(fieldText(rep, "dueDate"), midX, y, 9, font);
-    y -= 18;
-
-    const leftFields = [
-      ["RESPIRATOR", fieldText(rep, "respirator")],
-      ["MANUFACTURER", fieldText(rep, "manufacturer")],
-      ["MODEL", fieldText(rep, "model")],
-      ["RESPIRATOR STYLE", fieldText(rep, "respiratorStyle")],
-      ["RESPIRATOR SIZE", fieldText(rep, "respiratorSize")]
-    ];
-    const rightFields = [
-      ["PORTACOUNT S/N", fieldText(rep, "portaCountSn")],
-      ["N95-COMPANION", fieldText(rep, "n95Companion")],
-      ["PROTOCOL", fieldText(rep, "protocol")],
-      ["PASS LEVEL", fieldText(rep, "passLevel")],
-      ["APPROVAL", fieldText(rep, "approval")],
-      ["EFFICIENCY<99%", fieldText(rep, "efficiency")]
-    ];
-    const yLeftStart = y, yRightStart = y;
-    let yL = y, yR = y;
-    leftFields.forEach(function (c) { yL = labelVal(c[0], c[1], L, yL, half); });
-    rightFields.forEach(function (c) { yR = labelVal(c[0], c[1], midX, yR, half); });
-    y = Math.min(yL, yR) - 6;
-    hline(y + 8);
-    y -= 4;
-
-    /* Exercise table */
-    const xEx = L, xDur = L + 230, xFf = L + 340, xPass = L + 450;
-    text("EXERCISE", xEx, y, 7, bold, grey);
-    text("DURATION (sec)", xDur, y, 7, bold, grey);
-    text("FIT FACTOR", xFf, y, 7, bold, grey);
-    text("PASS", xPass, y, 7, bold, grey);
-    y -= 8;
-    hline(y + 4);
-    y -= 12;
-    const exRows = (rep.exercises || []).slice();
-    exRows.push({
-      exercise: "OVERALL FF",
-      duration: "",
-      fitFactorRaw: fieldText(rep, "overallFf"),
-      pass: (rep.overallPass === true || rep.result === "PASS") ? "yes" : (rep.overallPass === false || rep.result === "FAIL") ? "no" : ""
-    });
-    exRows.forEach(function (ex) {
-      const nameLines = wrapPdfText(font, ex.exercise || "", 9, xDur - xEx - 8);
-      nameLines.forEach(function (ln, i) { text(ln, xEx, y - i * 11, 9, /OVERALL/i.test(ex.exercise || "") ? bold : font); });
-      text(ex.duration || "", xDur, y, 9, font);
-      const ff = ex.fitFactorRaw || (ex.fitFactor && ex.fitFactor.raw) || "";
-      text(ff, xFf, y, 9, font);
-      const p = ex.pass === "no" || ex.pass === "fail" ? "No" : ex.pass === "yes" || ex.pass === "pass" ? "Yes" : (ex.passRaw || "");
-      text(p, xPass, y, 9, font);
-      y -= Math.max(14, nameLines.length * 11 + 3);
-    });
-    y -= 8;
-
-    text("FITTEST OPERATOR", L, y, 7, bold, grey);
-    text("NOTE", midX, y, 7, bold, grey);
-    y -= 12;
-    text(fieldText(rep, "operator"), L, y, 9, font);
-    const noteLines = wrapPdfText(font, fieldText(rep, "note"), 9, half);
-    noteLines.forEach(function (ln, i) { text(ln, midX, y - i * 11, 9, font); });
     y -= 16;
-    text("NAME", L, y, 7, bold, grey);
-    y -= 12;
-    text(fieldText(rep, "operatorName"), L, y, 9, font);
-    y -= 22;
+    const yTest = y;
+    rightLabel("TEST DATE", labelEdge, y);
+    text(fieldText(rep, "testDate"), valueX, y, size, font);
+    rightLabel("PORTACOUNT S/N", rightLabelEdge, y);
+    text(fieldText(rep, "portaCountSn"), rightValueX, y, size, font);
+    y -= leading;
+    rightLabel("DUE DATE", labelEdge, y);
+    text(fieldText(rep, "dueDate"), valueX, y, size, font);
+    rightLabel("N95-COMPANION\u2122", rightLabelEdge, y);
+    text(fieldText(rep, "n95Companion"), rightValueX, y, size, font);
+    y -= 20;
 
-    /* Signature block — the only difference between signed and unsigned copies. */
-    hline(y + 10);
-    y -= 4;
-    text("ENVSS technician", L, y, 8, bold);
-    text("Client", midX, y, 8, bold);
-    y -= 8;
-    async function paintSig(data, x, boxW, boxH) {
-      page.drawRectangle({ x: x, y: y - boxH, width: boxW, height: boxH, borderWidth: 0.5, borderColor: grey, color: lib.rgb(1, 1, 1) });
+    const leftKeys = [
+      ["respirator", "RESPIRATOR"],
+      ["manufacturer", "MANUFACTURER"],
+      ["model", "MODEL"],
+      ["respiratorStyle", "RESPIRATOR STYLE"],
+      ["respiratorSize", "RESPIRATOR SIZE"]
+    ];
+    const firstY = {};
+    leftKeys.forEach(function (pair) {
+      firstY[pair[0]] = y;
+      rightLabel(pair[1], labelEdge, y);
+      const n = drawWrapped(fieldText(rep, pair[0]), valueX, y, valueMaxW, size, font);
+      y -= n * leading;
+    });
+
+    function rightPair(lab, val, yy) {
+      if (yy == null) return;
+      rightLabel(lab, rightLabelEdge, yy);
+      drawWrapped(val, rightValueX, yy, rightValueMaxW, size, font);
+    }
+    rightPair("PROTOCOL", fieldText(rep, "protocol"), firstY.respirator);
+    rightPair("PASS LEVEL", fieldText(rep, "passLevel"), firstY.manufacturer);
+    rightPair("APPROVAL", fieldText(rep, "approval"), firstY.respiratorStyle);
+    rightPair("EFFICIENCY<99%", fieldText(rep, "efficiency"), firstY.respiratorSize);
+
+    y = Math.min(y, (firstY.respiratorSize || y) - leading) - 18;
+
+    /* Exercise table: underlined bold headers; duration / fit factor / pass centred. */
+    const xEx = L;
+    const durCx = 278, ffCx = 400, passCx = 520;
+    const headers = [
+      { t: "EXERCISE", x: xEx, cx: null },
+      { t: "DURATION (sec)", x: null, cx: durCx },
+      { t: "FIT FACTOR", x: null, cx: ffCx },
+      { t: "PASS", x: null, cx: passCx }
+    ];
+    headers.forEach(function (h) {
+      const w = bold.widthOfTextAtSize(h.t, size);
+      const x = h.cx != null ? h.cx - w / 2 : h.x;
+      text(h.t, x, y, size, bold);
+      underlineAt(x, y - 2, w, 0.8);
+    });
+    y -= 16;
+
+    function passLabel(p, raw) {
+      if (p === "no" || p === "fail") return "No";
+      if (p === "yes" || p === "pass") return "Yes";
+      return raw || "";
+    }
+    (rep.exercises || []).forEach(function (ex) {
+      const nameLines = wrapPdfText(font, pdfSafe(ex.exercise || ""), size, durCx - 70 - xEx);
+      nameLines.forEach(function (ln, i) { text(ln, xEx, y - i * leading, size, font); });
+      centerAt(ex.duration || "", durCx, y, size, font);
+      centerAt(ex.fitFactorRaw || (ex.fitFactor && ex.fitFactor.raw) || "", ffCx, y, size, font);
+      centerAt(passLabel(ex.pass, ex.passRaw), passCx, y, size, font);
+      y -= Math.max(leading, nameLines.length * leading);
+    });
+
+    y -= 14;
+    text("OVERALL FF", xEx, y, size, bold);
+    centerAt(fieldText(rep, "overallFf"), ffCx, y, size, font);
+    const overallPass = (rep.overallPass === true || rep.result === "PASS") ? "Yes"
+      : (rep.overallPass === false || rep.result === "FAIL") ? "No" : "";
+    centerAt(overallPass, passCx, y, size, font);
+
+    y -= 36;
+
+    /* Signature lines: marks sit on the line; names centred under it; DATE + date on the right. */
+    const lineStart = 150, dateLabW = bold.widthOfTextAtSize("DATE", size);
+    const dateLabX = 400, dateLineX = dateLabX + dateLabW + 8;
+    const signDate = signed && rep.signedAt ? formatDateOnly(rep.signedAt) : "";
+    const operatorUnder = fieldText(rep, "operator");
+    const first = trim(fieldText(rep, "firstName"));
+    const last = trim(fieldText(rep, "lastName"));
+    const nameUnder = trim([first, last].filter(Boolean).join(" ")) || fieldText(rep, "operatorName") || "";
+
+    async function paintSigOnLine(data, x0, x1, lineY) {
       if (!signed || !data) return;
       try {
         const b64 = String(data).replace(/^data:[^;]+;base64,/, "");
         const bytes = Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
         const img = String(data).indexOf("image/jpeg") >= 0 ? await doc.embedJpg(bytes) : await doc.embedPng(bytes);
-        const iw = boxW - 6, ih = Math.min(boxH - 6, iw * (img.height / img.width));
-        page.drawImage(img, { x: x + 3, y: y - ih - 3, width: iw, height: ih });
+        const maxW = Math.max(48, (x1 - x0) * 0.5), maxH = 26;
+        let iw = maxW, ih = iw * (img.height / img.width);
+        if (ih > maxH) { ih = maxH; iw = ih * (img.width / img.height); }
+        page.drawImage(img, { x: (x0 + x1) / 2 - iw / 2, y: lineY + 1, width: iw, height: ih });
       } catch (e) {}
     }
-    const boxH = 52, boxW = half - 4;
-    await paintSig(rep.sigTech, L, boxW, boxH);
-    await paintSig(rep.sigClient, midX, boxW, boxH);
-    y -= boxH + 12;
-    const techName = signed ? (fieldText(rep, "operatorName") || "") : "";
-    const signedDisp = signed && rep.signedAt ? formatAwst(rep.signedAt) : "";
-    text("Name: " + techName, L, y, 8, font);
-    text("Name: ", midX, y, 8, font);
-    y -= 12;
-    text("Date: " + signedDisp, L, y, 8, font);
-    text("Date: " + signedDisp, midX, y, 8, font);
+    function paintDateLine(lineY) {
+      rightLabel("DATE", dateLabX + dateLabW, lineY);
+      underlineAt(dateLineX, lineY, R - dateLineX, 0.7);
+      if (signDate) {
+        const dw = font.widthOfTextAtSize(signDate, size);
+        text(signDate, dateLineX + Math.max(4, (R - dateLineX - dw) / 2), lineY + 2, size, font);
+      }
+    }
+
+    rightLabel("FITTEST OPERATOR", lineStart - 8, y);
+    underlineAt(lineStart, y, dateLabX - 16 - lineStart, 0.7);
+    await paintSigOnLine(rep.sigTech, lineStart, dateLabX - 16, y);
+    paintDateLine(y);
+    centerAt(operatorUnder, (lineStart + dateLabX - 16) / 2, y - 12, size, font);
+
+    y -= 40;
+    rightLabel("NAME", lineStart - 8, y);
+    underlineAt(lineStart, y, dateLabX - 16 - lineStart, 0.7);
+    await paintSigOnLine(rep.sigClient, lineStart, dateLabX - 16, y);
+    paintDateLine(y);
+    centerAt(nameUnder, (lineStart + dateLabX - 16) / 2, y - 12, size, font);
+
+    /* NOTE: bottom left. Keep it on this page; drop no fields. */
+    y = Math.min(y - 36, 72);
+    if (y < 40) y = 40;
+    const note = fieldText(rep, "note");
+    text("NOTE:", L, y, size, bold);
+    const noteX = L + bold.widthOfTextAtSize("NOTE:", size) + 6;
+    if (note) drawWrapped(note, noteX, y, R - noteX, size, font);
 
     const bytes = await doc.save();
     let name = fileNameFor(Object.assign({}, rep, { testDate: rep.testDate || parseTsiDate(rep.testDateDisplay || rep.testDateRaw) }));
@@ -1924,6 +2054,7 @@
     const blob = new Blob([bytes], { type: "application/pdf" });
     return { blob: blob, name: name, bytes: bytes.byteLength };
   }
+
   async function buildPdf(rep, ev) {
     return buildReportPdf(rep, { signed: !!(rep && (rep.signedAt || (rep.sigTech && rep.sigClient))) });
   }
