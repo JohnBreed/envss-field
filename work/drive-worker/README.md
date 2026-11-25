@@ -50,6 +50,7 @@ A stopped row stays stopped. After the folder situation is fixed, set that rowâ€
 
 - Photo: `0019333-001_S03_filter_1.jpg` (S = sample, N = noise, then the sample number, type `filter` / `equip` / `log`, then a count).
 - Generated file: `0019333-001_Laboratory_COC.xlsx`. The next generation is `â€¦_COC_2.xlsx`. The worker adds a further `_n` only if that exact name is already in the folder.
+- Fit-test PDFs and zips (event code `{job}-FIT-{seq}`) are created inside a new `{job}_Field-App/Fit Test` subfolder. The worker only creates that folder if it is missing; it never edits, moves, or renames anything already in the job folder.
 - `manifest.csv` in `{job}_Field-App` lists what this worker created.
 
 ## Check a copy

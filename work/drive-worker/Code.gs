@@ -137,6 +137,29 @@ function ensureFieldApp_(job, projectFolderId) {
   return { ok: true, folder: created };
 }
 
+
+function isFitTestRow_(row) {
+  return /-FIT-\d+/i.test(String((row && row.event_code) || ""));
+}
+
+function ensureFitTestFolder_(appFolderId) {
+  var name = "Fit Test";
+  var kids = childByName_(appFolderId, name, true);
+  if (kids.length === 1) return { ok: true, folder: kids[0] };
+  if (kids.length > 1) {
+    var ours = kids.filter(function (f) { return f.appProperties && f.appProperties.envssFitTest === "1"; });
+    if (ours.length === 1) return { ok: true, folder: ours[0] };
+    return { ok: false, status: "stopped", message: "fit test folder not unique" };
+  }
+  var created = Drive.Files.create({
+    name: name,
+    mimeType: "application/vnd.google-apps.folder",
+    parents: [appFolderId],
+    appProperties: { envssFitTest: "1" }
+  }, null, { supportsAllDrives: true, fields: "id,name,appProperties" });
+  return { ok: true, folder: created };
+}
+
 function namesIn_(folderId) {
   var files = driveList_("trashed = false and '" + q_(folderId) + "' in parents", { corpora: "allDrives" });
   return files.map(function (f) { return f.name; });
@@ -213,7 +236,14 @@ function copyOne_(row) {
 
   var appFolder = ensureFieldApp_(row.job_number, match.folder.id);
   if (!appFolder.ok) { stopRow_(row, appFolder.message); return; }
-  var folderId = appFolder.folder.id;
+  var dest = appFolder;
+  if (isFitTestRow_(row)) {
+    dest = ensureFitTestFolder_(appFolder.folder.id);
+    if (!dest.ok) { stopRow_(row, dest.message); return; }
+  }
+  var folderId = dest.folder.id;
+  /* Manifest stays in {job}_Field-App (the only existing file this worker may update). */
+  var manifestFolderId = appFolder.folder.id;
 
   var prior = findBySource_(folderId, row.source_key);
   var file = prior;
@@ -238,7 +268,7 @@ function copyOne_(row) {
     file = createFile_(folderId, finalName, blob, row.source_key);
   }
   var line = [new Date().toISOString(), row.job_number, row.event_code || "", row.kind, finalName || file.name, file.id, row.source_key, row.bytes || ""].map(csv_).join(",");
-  appendManifest_(folderId, line, row.source_key);
+  appendManifest_(manifestFolderId || folderId, line, row.source_key);
   var url = file.webViewLink || ("https://drive.google.com/file/d/" + file.id + "/view");
   patchRow_(row, {
     status: "copied",
