@@ -1,7 +1,7 @@
 /* v46/v47 test harness: serves the repo, fakes a signed-in session, mocks Supabase REST in memory (no production writes). */
 import fs from "fs"; import path from "path"; import http from "http";
 const puppeteer = (await import("/tmp/pw/node_modules/puppeteer-core/lib/esm/puppeteer/puppeteer-core.js")).default;
-export const root = process.env.ROOT || "/workspace/envss-flow";
+export const root = process.env.ROOT || "/workspace/envss-fit-v4810";
 export async function serve() {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://127.0.0.1");

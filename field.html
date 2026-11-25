@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48.9 (25 Nov 2026 AWST): Respirator fit testing event type ({job}-FIT-{seq}), photo OCR via Google Vision, two signatures, A4 PDF with original photo, Drive copy into {job}_Field-App/Fit Test. -->
+<!-- ENVSS Field v48.10 (25 Nov 2026 AWST): Fit-test OCR uses Vision bounding boxes; photos/PDFs stay in IndexedDB. v48.9: Respirator fit testing event type ({job}-FIT-{seq}), photo OCR via Google Vision, two signatures, A4 PDF with original photo, Drive copy into {job}_Field-App/Fit Test. -->
 <!-- ENVSS Field v48.8 (25 Nov 2026 AWST): start flow pre-fills end flow; STOP asks if there was a deviation from the initial flow rate (No = end equals start, or enter a different end flow). Supersedes PR #15 guard (a). -->
 <!-- ENVSS Field v48.7 (25 Nov 2026 AWST): Linked Sample A, B, … at prep (no name needed); a person field changed on one linked sample asks before it fills the others; started samples and samples on another person are never filled. -->
 <!-- ENVSS Field v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
@@ -12,7 +12,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.9</title>
+  <title>ENVSS Field v48.10</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -396,7 +396,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.9</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.10</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -412,12 +412,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.9"></script>
+  <script src="config.js?v=48.10"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.9"; /* 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.10"; /* 2026-11-25 (AWST): v48.10 = v48.9 + Vision box-based fit-test OCR and IndexedDB photo/PDF storage (no data URLs in localStorage or envss_fit_reports). 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -832,11 +832,23 @@ function load() {
     return structuredClone(DEFAULT);
   }
 }
+function slimFitReport(r) {
+  if (!r) return r;
+  const o = Object.assign({}, r);
+  delete o.photoDataUrl; delete o.pdfDataUrl; delete o.pdfBase64; delete o.pdfBlob;
+  delete o.ocrPages; delete o.ocrAnnotations; delete o.ocrWords;
+  if (typeof o.photo === "string" && o.photo.indexOf("data:") === 0) {
+    const pid = o.photoRefs && Object.keys(o.photoRefs)[0];
+    o.photo = pid ? "envss-photo:" + pid : "";
+  }
+  return o;
+}
 function persist() {
   const referenced = new Set((db.events || []).map(e => e.projectId));
   const projects = (db.projects || []).filter(p => keepProjectLocally(p, referenced));
   const keepIds = new Set(projects.map(p => p.id));
   const out = Object.assign({}, db, { projects });
+  if (Array.isArray(out.fitReports)) out.fitReports = out.fitReports.map(function (r) { return slimFitReport(r); });
   const ok = safeSetItem(KEY, JSON.stringify(out));
   const base = {};
   Object.keys(syncState.base).forEach(id => { if (keepIds.has(id)) base[id] = syncState.base[id]; });
@@ -1012,6 +1024,7 @@ async function pullActivity() {
       const fr = mergeRemote("fitReports", fitRows);
       fitChanged = !!fr.changed;
       syncState.fitReportsAt = new Date().toISOString();
+      if (window.envssPhotos && envssPhotos.migrate) await envssPhotos.migrate();
     } catch (fe) {
       syncState.fitReportsError = String(fe && fe.message || fe);
     }
@@ -1078,7 +1091,7 @@ async function sendOne(p) {
   const rec = findRec(p.coll, p.id);
   if (!rec) return null;
   const now = new Date().toISOString();
-  const sent = JSON.parse(JSON.stringify(rec));
+  const sent = JSON.parse(JSON.stringify(p.coll === "fitReports" ? slimFitReport(rec) : rec));
   delete sent.updatedAt;
   const at = rec.updatedAt || now;
   if (p.coll === "projects" && isPodioProject(rec)) return null;   // v33: hard stop, never write a Podio row
@@ -5289,7 +5302,7 @@ followUpComplete = function (t) {
   }
   async function count() { try { pending = (await all()).filter(r => !r.uploaded && !r.removed).length; } catch (e) { pending = 0; } try { paintSyncBar(); } catch (e) {} return pending; }
   function markOnRecord(rec) {
-    const t = (db.trains || []).find(x => x.id === rec.trainId); if (!t) return;
+    const t = (db.trains || []).find(x => x.id === rec.trainId) || (db.fitReports || []).find(x => x.id === rec.trainId); if (!t) return;
     let hit = false;
     if (t.photoRefs && t.photoRefs[rec.pid]) { t.photoRefs[rec.pid].uploaded = true; hit = true; }
     ((t.dailyLog && t.dailyLog.photos) || []).forEach(p => { if (p && p.pid === rec.pid) { p.uploaded = true; hit = true; } });
@@ -5322,7 +5335,21 @@ followUpComplete = function (t) {
     } catch (e) { console.warn("[ENVSS] photo queue", e); }
     finally { running = false; await count(); }
   }
-  async function prune() { try { const cut = Date.now() - KEEP_DAYS * 864e5; for (const r of await all()) if (r.uploaded && r.uploadedAt && Date.parse(r.uploadedAt) < cut) await del(r.pid); } catch (e) {} }
+  async function prune() {
+    try {
+      const cut = Date.now() - KEEP_DAYS * 864e5;
+      const fitDone = new Set();
+      for (const t of (db.fitReports || [])) {
+        const refs = t && t.photoRefs || {};
+        Object.keys(refs).forEach(function (pid) { if (refs[pid] && refs[pid].uploaded) fitDone.add(pid); });
+      }
+      for (const r of await all()) {
+        if (!r.uploaded) continue;
+        const at = r.uploadedAt ? Date.parse(r.uploadedAt) : 0;
+        if (fitDone.has(r.pid) || (at && at < cut)) await del(r.pid);
+      }
+    } catch (e) {}
+  }
   /* move old inline data: photos into IndexedDB; the record is only changed after the IndexedDB write succeeds */
   let migrating = false;
   async function migrate() {
@@ -5336,6 +5363,18 @@ followUpComplete = function (t) {
         for (let i = 0; i < ps.length; i++) { const p = ps[i]; if (p && typeof p.data === "string" && p.data.startsWith("data:image")) {
           try { const ref = await add(p.data, t, "dailyLog", p.at || p.takenAt); ps[i] = Object.assign({}, ref, { at: p.at || ref.takenAt, name: p.name || "" }); n++; } catch (e) { console.warn("[ENVSS] migrate", e); } } }
         if (n > n0) { t.updatedAt = nowIso(); t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoText(), action: "Photos moved to device photo storage", field: "photo", from: "", to: "", detail: (n - n0) + " inline photo(s) replaced by references; upload queued" }); }
+      }
+      for (const r of (db.fitReports || []).slice()) {
+        const n0 = n;
+        const v = r.photoDataUrl || r.photo;
+        if (typeof v === "string" && v.indexOf("data:image") === 0) {
+          try {
+            const ref = await add(v, { id: r.id, eventId: r.eventId, projectId: r.projectId }, "photo", r.updatedAt);
+            r.photoRefs = Object.assign({}, r.photoRefs, { [ref.pid]: Object.assign({ field: "photo" }, ref) });
+            r.photo = PFX + ref.pid; delete r.photoDataUrl; n++;
+          } catch (e) { console.warn("[ENVSS] migrate fit photo", e); }
+        }
+        if (n > n0) r.updatedAt = nowIso();
       }
       if (n) { saveQuiet(); console.info("[ENVSS] moved " + n + " inline photo(s) to device photo storage"); window._v44dMigrated = (window._v44dMigrated || 0) + n; try { render(); } catch (e) {} }
     } catch (e) { console.warn("[ENVSS] photo migration skipped", e); }
@@ -5367,7 +5406,9 @@ followUpComplete = function (t) {
   setInterval(run, 60e3);
   /* export: storage paths of the filter / equipment photos ("filter: p/…jpg; equipment: p/…jpg") */
   window.envssPhotoPaths = t => [["photo", "filter"], ["equipPhoto", "equipment"]].map(([k, l]) => { const v = t[k]; if (!v) return ""; if (String(v).startsWith(PFX)) { const m = metaFor(t, String(v).slice(PFX.length)); return l + ": " + (m ? m.path : "local"); } return l + ": inline (not yet moved)"; }).filter(Boolean).join("; ");
-  window.envssPhotos = { add, attach, discard, imgTag, hydrate, run, count, migrate, prune, all, pending: () => pending, shrinkSrc, maxPx: MAXPX, quality: Q, pathOf: pid => { for (const t of db.trains || []) { const m = metaFor(t, pid); if (m) return m.path; } return ""; } };
+  window.envssPhotos = { add, attach, discard, imgTag, hydrate, run, count, migrate, prune, all, pending: () => pending, shrinkSrc, maxPx: MAXPX, quality: Q,
+    blobOf: async pid => { try { const r = await get(pid); return r && r.blob; } catch (e) { return null; } },
+    pathOf: pid => { for (const t of (db.trains || []).concat(db.fitReports || [])) { const m = metaFor(t, pid); if (m) return m.path; } return ""; } };
   const st = document.createElement("style"); st.textContent = ".photo-q{margin-top:4px;font-weight:700;color:#FFC266}.photo-ph{display:inline-block;padding:10px 12px;border:1px dashed #6B7590;border-radius:8px;color:#B4BBCC;font-size:13px;max-width:220px}";
   document.head.appendChild(st);
   (async () => { await migrate(); await prune(); await count(); run(); })();
@@ -8951,6 +8992,20 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     } : {});
   }
 
+  function markFitPhotosUploaded(it) {
+    const name = (it && (it.baseName || it.fileName)) || "";
+    if (!/\.pdf$/i.test(name)) return;
+    for (const r of (db.fitReports || [])) {
+      if (!r || !r.pdfName) continue;
+      if (name !== r.pdfName && name.indexOf(String(r.pdfName).replace(/\.pdf$/i, "")) !== 0) continue;
+      let hit = false;
+      const refs = r.photoRefs || {};
+      Object.keys(refs).forEach(function (pid) {
+        if (refs[pid] && !refs[pid].uploaded) { refs[pid].uploaded = true; refs[pid].uploadedAt = nowIso(); hit = true; }
+      });
+      if (hit && window.envssPhotos && envssPhotos.prune) envssPhotos.prune();
+    }
+  }
   function enqueueExport(blob, name) {
     if (!blob || !name) return;
     let ev = null;
@@ -9070,7 +9125,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
           if (it.status === "stopped" || it.status === "copied") continue;
           if ((it.nextAt || 0) > Date.now()) continue;
           try {
-            if (it.kind === "file" && !it.storageUploaded) { await uploadExport(it); it.storageUploaded = true; it.blob = undefined; }
+            if (it.kind === "file" && !it.storageUploaded) { await uploadExport(it); it.storageUploaded = true; it.blob = undefined; try { markFitPhotosUploaded(it); } catch (e) {} }
             if (!it.rowInserted && it.jobNumber) { await insertRow(it); it.rowInserted = true; }
             it.message = it.message && /job folder not found/i.test(it.message) ? it.message : "";
           } catch (e) {
@@ -11945,7 +12000,7 @@ function fixOpen(ts) {
 
   <!-- local review mockups only; not for publish -->
   <script src="work/projlist/review.js"></script>
-  <script src="fit-test.js"></script>
+  <script src="fit-test.js?v=48.10"></script>
 
 </body>
 </html>

@@ -1,0 +1,68 @@
+[
+  {
+    "image": "print_breed.png",
+    "fixture": "print_breed.json",
+    "words": 131,
+    "bytes": 167427
+  },
+  {
+    "image": "print_breed_lowcontrast.jpg",
+    "fixture": "print_breed_lowcontrast.json",
+    "words": 130,
+    "bytes": 166040
+  },
+  {
+    "image": "print_breed_novtight.png",
+    "fixture": "print_breed_novtight.json",
+    "words": 133,
+    "bytes": 167157
+  },
+  {
+    "image": "print_breed_tilted.jpg",
+    "fixture": "print_breed_tilted.json",
+    "words": 130,
+    "bytes": 166273
+  },
+  {
+    "image": "print_tester.png",
+    "fixture": "print_tester.json",
+    "words": 112,
+    "bytes": 148813
+  },
+  {
+    "image": "print_tester_lowcontrast.jpg",
+    "fixture": "print_tester_lowcontrast.json",
+    "words": 112,
+    "bytes": 148786
+  },
+  {
+    "image": "print_tester_tilted.jpg",
+    "fixture": "print_tester_tilted.json",
+    "words": 112,
+    "bytes": 149714
+  },
+  {
+    "image": "screen_breed.png",
+    "fixture": "screen_breed.json",
+    "words": 129,
+    "bytes": 166351
+  },
+  {
+    "image": "screen_breed_nov.png",
+    "fixture": "screen_breed_nov.json",
+    "words": 135,
+    "bytes": 168766
+  },
+  {
+    "image": "screen_breed_tilted.jpg",
+    "fixture": "screen_breed_tilted.json",
+    "words": 129,
+    "bytes": 167632
+  },
+  {
+    "image": "screen_tester.png",
+    "fixture": "screen_tester.json",
+    "words": 112,
+    "bytes": 150843
+  }
+]
