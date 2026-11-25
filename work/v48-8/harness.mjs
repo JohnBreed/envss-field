@@ -1,7 +1,9 @@
 /* v46/v47 test harness: serves the repo, fakes a signed-in session, mocks Supabase REST in memory (no production writes). */
 import fs from "fs"; import path from "path"; import http from "http";
+import { fileURLToPath } from "url";
 const puppeteer = (await import("/tmp/pw/node_modules/puppeteer-core/lib/esm/puppeteer/puppeteer-core.js")).default;
-export const root = process.env.ROOT || "/workspace/envss-fit-v4811";
+const __dir = path.dirname(fileURLToPath(import.meta.url));
+export const root = process.env.ROOT || path.resolve(__dir, "../..");
 export async function serve() {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://127.0.0.1");
@@ -10,7 +12,7 @@ export async function serve() {
     fs.readFile(p, (err, buf) => {
       if (err) { res.writeHead(404); res.end("missing"); return; }
       const ext = path.extname(p);
-      const type = ext === ".html" ? "text/html" : ext === ".js" ? "text/javascript" : ext === ".svg" ? "image/svg+xml" : ext === ".css" ? "text/css" : "application/octet-stream";
+      const type = ext === ".html" ? "text/html" : ext === ".js" ? "text/javascript" : ext === ".svg" ? "image/svg+xml" : ext === ".css" ? "text/css" : ext === ".png" ? "image/png" : ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : "application/octet-stream";
       res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-store" }); res.end(buf);
     });
   });

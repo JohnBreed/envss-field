@@ -1,4 +1,4 @@
-/* v48.11 tests: respirator fit testing event type, exclusions, confirm form, signatures, PDF.
+/* v48.12 tests: respirator fit testing event type, exclusions, confirm form, signatures, PDF.
    Usage: ROOT=/workspace/envss-fit-v489 node work/v48-9/test.mjs [pixel7|chromebook]   (default: both)
    Supabase is mocked in memory. Fixture names are made up. */
 import fs from "fs"; import path from "path"; import { execSync } from "child_process";
@@ -42,7 +42,7 @@ NAME John Breed`;
 function fixture() {
   return {
     catalogs: { contaminants: [{ id: "INH", name: "Inhalable dust", code: "INH", kind: "airborne", headHint: "IESS", flowTolPct: 10, defaultFlow: "2.0" }], pumps: [], fleetPumps: [], heads: [], dosimeters: [], occupations: [], respirators: [], hpds: [] },
-    projects: [{ id: "p489", number: "0019489", name: "v48.11 fit-test", source: "field", site: "Test site" }],
+    projects: [{ id: "p489", number: "0019489", name: "v48.12 fit-test", source: "field", site: "Test site" }],
     events: [
       { id: "eH", projectId: "p489", code: "0019489-001", type: "hygiene", date: TODAY, stage: "planned", audit: [] },
       { id: "eFit", projectId: "p489", code: "0019489-FIT-001", type: "fit", date: TODAY, stage: "planned", parentEventId: "eH", audit: [] }
@@ -112,7 +112,7 @@ async function run(vp) {
   const shot = (page, n, full = false) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   fs.readdirSync(OUT).filter(f => f.endsWith('.pdf') || f.endsWith('.zip')).forEach(f => fs.unlinkSync(path.join(OUT, f)));
   const page = await boot(vp, { status: 503, body: { error: "OCR_NOT_CONFIGURED", message: "OCR not set up yet, enter manually" } });
-  check(`[${vp}] app is v48.11 with fit-test module`, await page.evaluate(() => APP_VERSION === "48.11" && document.getElementById("appVersion").textContent === "v48.11" && document.title === "ENVSS Field v48.11" && !!(window.envssFit && envssFit.parseReport)), await page.evaluate(() => ({ v: APP_VERSION, t: document.title, fit: !!(window.envssFit) })));
+  check(`[${vp}] app is v48.12 with fit-test module`, await page.evaluate(() => APP_VERSION === "48.12" && document.getElementById("appVersion").textContent === "v48.12" && document.title === "ENVSS Field v48.12" && !!(window.envssFit && envssFit.parseReport)), await page.evaluate(() => ({ v: APP_VERSION, t: document.title, fit: !!(window.envssFit) })));
 
   const labels = await page.evaluate(() => {
     const ev = eventById("eFit"), hy = eventById("eH");
@@ -301,7 +301,7 @@ async function run(vp) {
     signedLine = execSync("pdftotext -layout " + JSON.stringify(pdfPath) + " -", { encoding: "utf8" });
     execSync("pdftoppm -png -r 140 " + JSON.stringify(pdfPath) + " " + JSON.stringify(path.join(OUT, vp + "-07-pdf")));
   }
-  check(`[${vp}] signed PDF is a one-page TSI layout with signatures and no photo page`, pages === 1 && /FIT TEST REPORT/.test(signedLine) && /ENVSS technician/.test(signedLine) && /AWST/.test(signedLine) && photoPdfs.length > 0, JSON.stringify({ pages, files: photoPdfs, signed: signedLine.slice(0, 400) }));
+  check(`[${vp}] signed PDF is a one-page TSI layout with signatures and no photo page`, pages === 1 && /FIT TEST REPORT/.test(signedLine) && /FITTEST OPERATOR/.test(signedLine) && /NOTE:/.test(signedLine) && /envss\.com\.au/.test(signedLine) && /admin@envss\.com\.au/.test(signedLine) && !/ENVSS technician/.test(signedLine) && photoPdfs.length > 0, JSON.stringify({ pages, files: photoPdfs, signed: signedLine.slice(0, 500) }));
   await page3.close();
 
   const pageErrs = page.errs.filter(e => !/Failed to load|ocr-fit-report|jszip|pdf-lib/i.test(e));
