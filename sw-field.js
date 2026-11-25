@@ -3,10 +3,10 @@
    Network-first for the page and its assets, falling back to the cache when offline.
    Supabase API calls are never cached or intercepted. */
 const VERSION = "48.7";
-const CACHE = "envss-field-v48-7"; /* v48.7: Linked Sample A, B, … at prep. v48.6: project list Layout A. v48.5: AFM pull is every event at Podio Report not sent. v48.4: next / previous arrows on sample and event screens. v48.3: time capture lock + COC / complete gate. v48.2: AFM field-app + live checks. v48.1: flow check vs own start flow. v48: quick fixes (flow, LAeq, dose-badge UI, toggle jump, rotameter, add confirm, clash, locked sample no). IndexedDB names are unchanged. Rollback: previous cache envss-field-v46. */
+const CACHE = "envss-field-v48-7"; /* v48.7: Linked Sample A, B, … at prep; work/projlist/review.js (project list, v48.6) added to the offline cache. v48.6: project list Layout A. v48.5: AFM pull is every event at Podio Report not sent. v48.4: next / previous arrows on sample and event screens. v48.3: time capture lock + COC / complete gate. v48.2: AFM field-app + live checks. v48.1: flow check vs own start flow. v48: quick fixes (flow, LAeq, dose-badge UI, toggle jump, rotameter, add confirm, clash, locked sample no). IndexedDB names are unchanged. Rollback: previous cache envss-field-v46. */
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
-const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "noise.js", "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css"].map(p => BASE + p);
+const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "noise.js", "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css", "work/projlist/review.js"].map(p => BASE + p);
 const CDN_ASSETS = [
   "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
   "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"

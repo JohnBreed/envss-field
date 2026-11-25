@@ -22,7 +22,7 @@
  {
   "name": "[pixel7] link 3 unnamed samples -> all 'Linked Sample A' with one shared person tag",
   "ok": true,
-  "detail": "[[\"A\",\"ptc0137px\"],[\"A\",\"ptc0137px\"],[\"A\",\"ptc0137px\"]]"
+  "detail": "[[\"A\",\"ptrl7xi3c\"],[\"A\",\"ptrl7xi3c\"],[\"A\",\"ptrl7xi3c\"]]"
  },
  {
   "name": "[pixel7] sample screen shows label chip",
@@ -67,7 +67,7 @@
  {
   "name": "[pixel7] OK fills sample 2 (name + company) with an audit entry",
   "ok": true,
-  "detail": "[{\"first\":\"Sarah\",\"last\":\"Testone\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"Acme Mining\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},[{\"at\":\"2026-11-25T02:02:54.568Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First name\",\"field\":\"person.first\",\"from\":\"\",\"to\":\"Sarah\",\"detail\":\"(empty) → Sarah (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:02:54.568Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last name\",\"field\":\"person.last\",\"from\":\"\",\"to\":\"Testone\",\"detail\":\"(empty) → Testone (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:02:54.568Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"person.company\",\"from\":\"\",\"to\":\"Acme Mining\",\"detail\":\"(empty) → Acme Mining (Linked Sample A, from Sample 1, confirmed)\"}]]"
+  "detail": "[{\"first\":\"Sarah\",\"last\":\"Testone\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"Acme Mining\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},[{\"at\":\"2026-11-25T02:12:47.550Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First name\",\"field\":\"person.first\",\"from\":\"\",\"to\":\"Sarah\",\"detail\":\"(empty) → Sarah (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:12:47.550Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last name\",\"field\":\"person.last\",\"from\":\"\",\"to\":\"Testone\",\"detail\":\"(empty) → Testone (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:12:47.550Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"person.company\",\"from\":\"\",\"to\":\"Acme Mining\",\"detail\":\"(empty) → Acme Mining (Linked Sample A, from Sample 1, confirmed)\"}]]"
  },
  {
   "name": "[pixel7] started sample 3 not overwritten",
@@ -202,7 +202,7 @@
  {
   "name": "[chromebook] link 3 unnamed samples -> all 'Linked Sample A' with one shared person tag",
   "ok": true,
-  "detail": "[[\"A\",\"ptmb8zp8n\"],[\"A\",\"ptmb8zp8n\"],[\"A\",\"ptmb8zp8n\"]]"
+  "detail": "[[\"A\",\"pttj3w5zy\"],[\"A\",\"pttj3w5zy\"],[\"A\",\"pttj3w5zy\"]]"
  },
  {
   "name": "[chromebook] sample screen shows label chip",
@@ -247,7 +247,7 @@
  {
   "name": "[chromebook] OK fills sample 2 (name + company) with an audit entry",
   "ok": true,
-  "detail": "[{\"first\":\"Sarah\",\"last\":\"Testone\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"Acme Mining\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},[{\"at\":\"2026-11-25T02:03:19.002Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First name\",\"field\":\"person.first\",\"from\":\"\",\"to\":\"Sarah\",\"detail\":\"(empty) → Sarah (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:03:19.002Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last name\",\"field\":\"person.last\",\"from\":\"\",\"to\":\"Testone\",\"detail\":\"(empty) → Testone (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:03:19.002Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"person.company\",\"from\":\"\",\"to\":\"Acme Mining\",\"detail\":\"(empty) → Acme Mining (Linked Sample A, from Sample 1, confirmed)\"}]]"
+  "detail": "[{\"first\":\"Sarah\",\"last\":\"Testone\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"Acme Mining\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},[{\"at\":\"2026-11-25T02:13:12.364Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First name\",\"field\":\"person.first\",\"from\":\"\",\"to\":\"Sarah\",\"detail\":\"(empty) → Sarah (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:13:12.364Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last name\",\"field\":\"person.last\",\"from\":\"\",\"to\":\"Testone\",\"detail\":\"(empty) → Testone (Linked Sample A, from Sample 1, confirmed)\"},{\"at\":\"2026-11-25T02:13:12.364Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"person.company\",\"from\":\"\",\"to\":\"Acme Mining\",\"detail\":\"(empty) → Acme Mining (Linked Sample A, from Sample 1, confirmed)\"}]]"
  },
  {
   "name": "[chromebook] started sample 3 not overwritten",
