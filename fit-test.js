@@ -1,10 +1,10 @@
-/* ENVSS Field v48.12: Respirator fit testing (TSI-layout Vision OCR, closer TSI PDF with branded header, no photo page).
+/* ENVSS Field v48.13: Respirator fit testing (v48.13: How-to guide link; one Drive copy per PDF/zip). v48.12: (TSI-layout Vision OCR, closer TSI PDF with branded header, no photo page).
    Event type "fit", codes {job}-FIT-{seq}. Photo + optional Google Vision OCR, confirm,
    two signatures, A4 TSI-layout PDF (signed or unsigned, ENVSS logo + clickable contacts, no photo page), Drive copy into
    {job}_Field-App/Fit Test, zip download. No Podio writes. */
 (function (root) {
   "use strict";
-  const VERSION = "48.12";
+  const VERSION = "48.13";
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
   const OCR_FN = "ocr-fit-report";
@@ -1513,6 +1513,7 @@
       + (reps.some(r => r.signedAt || r.pdfBlob || r.pdfName) ? "<button type=\"button\" class=\"btn mid\" id=\"fitZip\">Download all (zip)</button>" : "")
       + "</div>"
       + rows
+      + "<p class=\"help\" id=\"fitHowTo\"><a href=\"help/fit-test.html\" target=\"_blank\" rel=\"noopener\">How to record a fit test (video and step-by-step guide)</a></p>"
       + "<p class=\"help\">ENVSS Field v" + (root.APP_VERSION || VERSION) + " · Status follows signed reports, not samples. There is no laboratory COC for fit testing.</p>"
       + "</div>";
   }
@@ -2059,6 +2060,14 @@
     return buildReportPdf(rep, { signed: !!(rep && (rep.signedAt || (rep.sigTech && rep.sigClient))) });
   }
 
+  /* v48.13: the app-wide download() already queues a Drive copy of every export, so only queue here when it is
+     missing. Before v48.13 each signed PDF/zip was queued twice and the second copy landed in Drive as name_2.pdf. */
+  function queueDrive(blob, name) {
+    if (typeof root.download === "function") return;
+    try {
+      if (root.envssDrive && root.envssDrive.enqueueExport) root.envssDrive.enqueueExport(blob, name);
+    } catch (e) { console.warn("[ENVSS] fit drive enqueue", e); }
+  }
   function downloadBlob(blob, name) {
     if (typeof root.download === "function") { root.download(blob, name); return; }
     const a = document.createElement("a");
@@ -2074,9 +2083,7 @@
     rep.pdfBytes = out.bytes;
     evLog(ev, "Fit-test PDF created", out.name + " (" + out.bytes + " bytes)");
     save();
-    try {
-      if (root.envssDrive && root.envssDrive.enqueueExport) root.envssDrive.enqueueExport(out.blob, out.name);
-    } catch (e) { console.warn("[ENVSS] fit drive enqueue", e); }
+    queueDrive(out.blob, out.name);
     downloadBlob(out.blob, out.name);
     return out;
   }
@@ -2099,7 +2106,7 @@
     }
     const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
     const zipName = ev.code + "_Fit-Tests.zip";
-    try { if (root.envssDrive && root.envssDrive.enqueueExport) root.envssDrive.enqueueExport(blob, zipName); } catch (e) {}
+    queueDrive(blob, zipName);
     downloadBlob(blob, zipName);
     evLog(ev, "Fit-test zip downloaded", zipName);
     save();

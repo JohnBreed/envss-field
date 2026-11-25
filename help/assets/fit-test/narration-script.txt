@@ -1,0 +1,51 @@
+ENVSS Field — fit-test how-to
+Australian voice: Natasha (en-AU), generated narration
+
+00:00:00  Open the app
+This is a quick guide to recording a respirator fit test in the ENVSS Field app on a Chromebook. You'll need the job number, and a photo of the PortaCount fit test report. The job and names in this video are example data.
+
+00:00:16  Open the job
+Sign in with your ENVSS Google account as usual, then click the job on the Projects screen. We're using job 0 0 1 9 3 8 9.
+
+00:00:27  New fit-testing event
+Click New project event. Under Event type, choose Respirator fit testing, check the date, and click Create event.
+
+00:00:42  Event number
+The app numbers it for you: the job number, then FIT, then 0 0 1. The next fit-testing event on this job will be FIT 0 0 2.
+
+00:00:53  Add the report photo
+Now click Add individual report, and choose the photo of the TSI report. On a phone this opens the camera. On the Chromebook, pick the photo from Files. Get the whole report in the shot, flat and in focus.
+
+00:01:09  Wait for the read
+The app reads the photo with Google Vision. Give it a few seconds, and stay on this screen.
+
+00:01:16  Confirm screen
+Next is the confirm screen. The photo is on the left, and the fields from the report are filled in on the right: the ID number, name, company, test and due dates, the PortaCount serial number, and the respirator.
+
+00:01:32  Check every field
+Scroll down to check the protocol, pass level, the four exercises, the overall fit factor, and the PASS or FAIL result. Anything the app isn't sure about is highlighted. Check every field against the photo, and fix anything that's wrong. Nothing is signed automatically.
+
+00:01:51  Signing later
+If you can't get signatures straight away, click Save without signing. You'll get an unsigned PDF, and you can open the report later to sign it.
+
+00:02:02  Continue to signatures
+Otherwise, when everything's correct, click Continue to signatures.
+
+00:02:07  Technician signs
+The ENVSS technician signs in the top box, with a finger or stylus on a touch screen, or with the trackpad.
+
+00:02:15  Person tested signs
+Then hand the device to the person who was tested, and they sign in the Client box. Use Clear if you need to start again.
+
+00:02:25  Save signed PDF
+Click Save signed PDF.
+
+00:02:28  The signed PDF
+The app makes a one page PDF in the TSI report layout, with the ENVSS header and both signatures, and downloads a copy. It's named by surname, first name, mask model and test date.
+
+00:02:43  Copied to Drive
+Back on the event, the report shows as signed. Under Files for Drive, the PDF is copied as a new file into the Fit-Tests folder in the job's Field App Drive folder. Nothing already in the job folder is changed.
+
+00:02:59  Finish the event
+Add a report for each person you test. When everyone has signed, click Mark event complete. If you need this guide again, there's a How to link at the bottom of every fit-testing event.
+
