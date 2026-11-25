@@ -53,8 +53,8 @@ const DMY = US.replaceAll("11/25/2026", "25/11/2026").replace("11/25/2027", "25/
 const us = F.parseReport(US);
 const f = us.fields;
 check("US fixture: names, company, location, ID", f.lastName === "Breed" && f.firstName === "John" && f.company === "ENVSS" && f.location === "Various" && f.idNumber === "ENVSS1", JSON.stringify({ last: f.lastName, first: f.firstName, co: f.company, loc: f.location, id: f.idNumber }));
-check("US fixture: dates flagged as US and stored DD/MM/YYYY", f.testDate.flag === "us" && f.testDate.display === "25/11/2026" && f.testDate.iso === "2026-11-25" && f.testTime === "10:45" && f.dueDate.flag === "us" && f.dueDate.display === "25/11/2027", JSON.stringify({ t: f.testDate, due: f.dueDate, time: f.testTime }));
-check("US fixture: a US-date flag is raised for the technician", us.flags.some(x => x.field === "testDate" && /US MM\/DD/.test(x.reason)), JSON.stringify(us.flags));
+check("US fixture: 11/25/2026 resolves silently to 25/11/2026", f.testDate.flag === "" && f.testDate.display === "25/11/2026" && f.testDate.iso === "2026-11-25" && f.testTime === "10:45" && f.dueDate.flag === "" && f.dueDate.display === "25/11/2027", JSON.stringify({ t: f.testDate, due: f.dueDate, time: f.testTime, flags: us.flags }));
+check("US fixture: no warning when the month/day is unambiguous (25 > 12)", !us.flags.some(x => x.field === "testDate" || x.field === "dueDate"), JSON.stringify(us.flags));
 check("US fixture: wrapped respirator and style are joined", /Aura 9322A\+/.test(f.respirator) && /\[100\] N95/.test(f.respirator) && /exhalation valve/.test(f.respiratorStyle), JSON.stringify({ r: f.respirator, s: f.respiratorStyle }));
 check("US fixture: manufacturer, model, size, protocol, pass level, PortaCount, N95", f.manufacturer === "3M" && f.model === "Aura 9322A+" && f.respiratorSize === "One Size" && f.protocol === "OSHA FAST-FILTERING FACE" && f.passLevel === 100 && f.portaCountSn === "8048192704" && /^Yes$/i.test(f.n95Companion), JSON.stringify({ mfr: f.manufacturer, model: f.model, size: f.respiratorSize, proto: f.protocol, pl: f.passLevel, sn: f.portaCountSn, n95: f.n95Companion }));
 check("US fixture: four exercises all pass, overall 200+ is PASS", f.exercises.length === 4 && f.exercises.every(e => e.pass === "yes") && f.overallFf.value === 200 && f.overallFf.plus === true && f.result === "PASS" && f.exerciseFails.length === 0, JSON.stringify({ n: f.exercises.length, ex: f.exercises, ov: f.overallFf, r: f.result, fails: f.exerciseFails }));
@@ -85,6 +85,8 @@ check("fit event code is {job}-FIT-{seq}", F.fitEventCode({ number: "0019185" },
 check("deleted fit numbers are not reused", F.nextFitSeq("p1", events.filter(e => e.type !== "fit"), [{ tombstone: "event", projectId: "p1", type: "fit", code: "0019185-FIT-001" }]) === "002");
 
 const ambiguous = F.parseTsiDate("10/11/2026");
+const same = F.parseTsiDate("03/03/2026");
+check("03/03/2026 is not flagged (both parts equal)", same.flag === "" && same.display === "03/03/2026", JSON.stringify(same));
 check("Ambiguous 10/11/2026 is treated as DD/MM and flagged", ambiguous.flag === "ambiguous" && ambiguous.display === "10/11/2026" && ambiguous.iso === "2026-11-10", JSON.stringify(ambiguous));
 
 process.exit(results.every(r => r.ok) ? 0 : 1);
