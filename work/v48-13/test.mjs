@@ -165,6 +165,21 @@ async function run(vp) {
   const r2c = await page.evaluate(id => JSON.parse(JSON.stringify(db.fitReports.find(r => r.id === id))), rep2.id);
   check(`[${vp}] confirmed value saved from the form`, r2c.lastName === "Smith", r2c.lastName);
 
+  /* From PR #24: one Drive copy per fit-test PDF (download() already queues it; v48.12 queued it twice -> name_2.pdf). */
+  const q = await page.evaluate(async id => {
+    const D = window.envssDrive, orig = D.enqueueExport, names = [];
+    D.enqueueExport = function (b, n) { names.push(n); };
+    const fdl = window.download; const dls = [];
+    window.download = function (b, n) { dls.push(n); D.enqueueExport(b, n); };
+    try { await envssFit.finishPdf(db.fitReports.find(r => r.id === id), eventById("eFit"), false); }
+    finally { D.enqueueExport = orig; window.download = fdl; }
+    return { names, dls };
+  }, rep2.id);
+  check(`[${vp}] a fit-test PDF is queued to Drive once (no _2 copy)`, q.names.length === 1 && q.dls.length === 1 && /\.pdf$/.test(q.names[0]), JSON.stringify(q));
+  await page.evaluate(() => { view.fitScreen = ""; view.fitReportId = ""; openEvent("eFit"); }); await sleep(300);
+  const howto = await page.evaluate(() => { const a = document.querySelector("#fitHowTo a"); return a ? { href: a.getAttribute("href"), t: a.textContent, tgt: a.target } : null; });
+  check(`[${vp}] fit event shows the How to record a fit test link (help/fit-test.html)`, howto && howto.href === "help/fit-test.html" && /How to record a fit test/.test(howto.t) && howto.tgt === "_blank", JSON.stringify(howto));
+
   page.store.offline = true;
   const rep3 = await uploadPhoto(page, TINY);
   page.store.offline = false;
@@ -223,6 +238,7 @@ const sw = fs.readFileSync(path.join(REPO, "sw-field.js"), "utf8");
 check("sw-field.js precaches fit-test.js?v=<version> (fit testing loads offline)", /"fit-test\.js\?v=" \+ VERSION/.test(sw) && /envss-field-v48-13/.test(sw));
 check("sw-field.js only deletes envss-field-* caches (envss-ocr-* survives app updates)", /k\.startsWith\("envss-field-"\)/.test(sw));
 const html = fs.readFileSync(path.join(REPO, "field.html"), "utf8");
+check("help/fit-test.html guide is in the branch (from PR #24)", fs.existsSync(path.join(REPO, "help/fit-test.html")) && fs.existsSync(path.join(REPO, "help/assets/fit-test/fit-test-how-to.mp4")));
 check("field.html does not load Tesseract on first paint", !/<script[^>]+tesseract/i.test(html));
 fs.writeFileSync(path.join(OUT, "test-results.json"), JSON.stringify({ results, real }, null, 1));
 console.log("\n" + results.filter(r => r.ok).length + " passed, " + results.filter(r => !r.ok).length + " failed");
