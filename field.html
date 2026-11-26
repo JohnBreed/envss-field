@@ -289,6 +289,16 @@ input.pf-done, select.pf-done { border-left: 5px solid var(--go) !important; }
 .pouch { font-size: 28px; font-weight: 700; color: var(--hot) !important; }
 .muted, .help { color: var(--sub); }
 .muted { font-size: 15px; }
+/* v48.14: project screen header + ☰ menu */
+.proj-job { font: 800 26px/1.15 Montserrat, Arial, sans-serif; color: var(--text, #F2F4FA); margin-top: 4px; letter-spacing: .3px; }
+.proj-name { font-size: 16px; font-weight: 600; color: var(--text, inherit); margin-top: 2px; overflow-wrap: anywhere; }
+.v4814-has-menu { position: relative; }
+.v4814-menu { position: absolute; top: 14px; right: 14px; z-index: 20; }
+.v4814-menu > summary { list-style: none; cursor: pointer; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 26px; border-radius: 12px; border: 2px solid var(--edge, #3E4C7E); background: var(--surf, #1E2847); color: var(--text, #F2F4FA); user-select: none; }
+.v4814-menu > summary::-webkit-details-marker { display: none; }
+.v4814-menu-list { position: absolute; right: 0; top: 54px; min-width: 220px; background: var(--surf2, #27335A); border: 1px solid var(--edge, #3E4C7E); border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,.35); padding: 6px; }
+.v4814-menu-item { display: block; padding: 14px 16px; border-radius: 8px; cursor: pointer; font: 700 17px Montserrat, Arial, sans-serif; color: var(--text, #F2F4FA); }
+.v4814-menu-item:hover { background: rgba(255,255,255,.08); }
 label { color: #D5DCF2; font-size: 14px; font-weight: 700; letter-spacing: .02em; }
 input, select, textarea { background: #0F1630; color: var(--text); border: 2px solid var(--edge); border-radius: 12px; min-height: 52px; font-size: 18px; }
 input::placeholder, textarea::placeholder { color: #8E98BA; }
@@ -1176,16 +1186,28 @@ function fmtClock(iso) {
   const d = new Date(iso);
   return d.toLocaleString("en-AU", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" });
 }
+/* v48.14: plain times for the status bar: "3:58 pm" today, "yesterday 3:58 pm", else "26 Nov, 3:58 pm" */
+function fmtWhen(iso) {
+  if (!iso) return "not yet";
+  const d = new Date(iso); if (isNaN(d)) return "not yet";
+  const t = d.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", hour12: true }).replace(/\s+/g, " ").toLowerCase();
+  const day = x => x.toLocaleDateString("en-AU"), now = new Date(), y = new Date(now.getTime() - 864e5);
+  if (day(d) === day(now)) return t;
+  if (day(d) === day(y)) return "yesterday " + t;
+  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short" }).replace(".", "") + ", " + t;
+}
+window.fmtWhen = fmtWhen;
 function paintSyncBar() {
   const el = document.getElementById("syncBar");
   if (!el) return;
   const n = pendingCount();
   const parts = [];
-  parts.push(navigator.onLine && reachable ? "Online" : "Offline (working from this device)");
-  parts.push(n ? n + " change" + (n === 1 ? "" : "s") + " pending" : "All changes synced");
-  parts.push("last sync " + fmtClock(syncState.lastPushAt && syncState.lastPushAt > (syncState.lastPullAt || "") ? syncState.lastPushAt : syncState.lastPullAt));
-  if (projectsLoading) parts.push("loading projects…");
-  else parts.push("projects " + fmtClock(syncState.projectsAt));
+  /* v48.14: plain English (was "Online · 9 changes pending · last sync 26 Nov. 03:58 pm · projects 26 Nov. 03:58 pm") */
+  parts.push(navigator.onLine && reachable ? "Online" : "Offline. Your work is saved on this device");
+  parts.push(n ? n + " change" + (n === 1 ? "" : "s") + " still uploading…" : "Everything uploaded");
+  parts.push("Last synced " + fmtWhen(syncState.lastPushAt && syncState.lastPushAt > (syncState.lastPullAt || "") ? syncState.lastPushAt : syncState.lastPullAt));
+  if (projectsLoading) parts.push("Loading project list…");
+  else parts.push("Project list updated " + fmtWhen(syncState.projectsAt));
   let html = '<span id="syncText">' + esc(parts.join(" · ")) + "</span>";
   html += ' <button type="button" class="sync-link" id="btnSyncNow">Sync now</button>';
   html += ' <button type="button" class="sync-link" id="btnRefreshProjects">Refresh projects</button>';
@@ -1583,8 +1605,8 @@ function projectHtml() {
       <div class="row" style="margin-top:10px">
         <div class="grow">
           <h2 class="brand-type" style="margin:0;color:var(--navy)">Project events</h2>
-          <div class="muted">${p.number}</div>
-          <div class="muted">${esc(p.name || "")} · ${esc(p.site || "")}</div>
+          <div class="proj-job" role="heading" aria-level="3">${esc(p.number || "")}</div>
+          <div class="proj-name">${esc(p.name || "")}${p.site ? " · " + esc(p.site) : ""}</div>
         </div>
         <button class="btn orange" id="btnNewEventTop" onclick="openNewEvent('${p.id}')">New project event</button>
       </div>
@@ -3172,11 +3194,21 @@ function importFieldCsv(text) {
   openProject(p.id);
 }
 window.importFieldCsv = importFieldCsv;
+/* v48.14: Import field CSV lives in the ☰ menu at the top right of the project screen */
+function projectMenu(html) {
+  var menu = '<details class="v4814-menu" id="projectMenu"><summary aria-label="More actions" title="More actions">☰</summary><div class="v4814-menu-list">'
+    + '<label class="v4814-menu-item">Import field CSV<input id="importCsv" type="file" accept=".csv,text/csv" style="display:none"></label></div></details>';
+  return html.replace('<div class="wrap">', '<div class="wrap v4814-has-menu">' + menu);
+}
+document.addEventListener("click", function (e) {   /* tap outside the ☰ menu, or pick a file, closes it */
+  var m = document.getElementById("projectMenu"); if (m && m.open && !(e.target && e.target.closest && e.target.closest("#projectMenu"))) m.open = false;
+});
+document.addEventListener("change", function (e) { if (e.target && e.target.id === "importCsv") { var m = document.getElementById("projectMenu"); if (m) m.open = false; } }, true);
 var _projectSimple = projectHtml;
 projectHtml = function () {
   var html = _projectSimple();
   if (html.indexOf("importCsv") >= 0) return html;
-  return html.replace("</h2>", "</h2><label class=\"btn ghost\" style=\"display:inline-block\">Import field CSV<input id=\"importCsv\" type=\"file\" accept=\".csv,text/csv\" style=\"display:none\"></label>");
+  return projectMenu(html);
 };
 var _bindImport = bind;
 bind = function () {
@@ -3244,7 +3276,7 @@ var _projectCoc = projectHtml;
 projectHtml = function () {
   var html = _projectCoc();
   if (html.indexOf("importCsv") >= 0) return html;
-  return html.replace("</h2>", "</h2><label class=\"btn ghost\" style=\"display:inline-block\">Import field CSV<input id=\"importCsv\" type=\"file\" accept=\".csv,text/csv\" style=\"display:none\"></label>");
+  return projectMenu(html);
 };
 var _eventCoc = eventHtml;
 eventHtml = function () {
@@ -9428,7 +9460,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (podioState.job) podioState.rows = byJob[podioState.job] || [];
     mirrorAt = Date.now();
     podioState.err = "";
-    podioState.note = "Refreshed from Podio: " + planned + " planned HYG event" + (planned === 1 ? "" : "s") + " across jobs" + (newest ? " (Podio copy updated " + fmtClock(newest) + ")" : "") + ".";
+    podioState.note = (newest ? "Podio jobs updated " + fmtWhen(newest) + ". " : "Checked Podio. ") + planned + " planned Podio event" + (planned === 1 ? "" : "s") + " across all jobs.";   /* v48.14 plain English */
     /* v48.7: hand the full list to the auto-create layer (it only reads it; see the v48.7 script at the end) */
     try { window.dispatchEvent(new CustomEvent("envss:podio-hyg", { detail: { rows: all, complete: Array.isArray(items) && items.length < 2000, at: new Date().toISOString(), newest } })); } catch (e) { console.warn("v48.7 hook", e); }
     return true;
@@ -9994,13 +10026,13 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       const el = document.getElementById("syncBar"); const tx = document.getElementById("syncText");
       const n = unsyncedCount();
       if (el && tx) {
-        if (n && !pendingCount()) tx.textContent = tx.textContent.replace("All changes synced", n + " change" + (n === 1 ? "" : "s") + " saved on this device, waiting to sync");
+        if (n && !pendingCount()) tx.textContent = tx.textContent.replace("Everything uploaded", n + " change" + (n === 1 ? "" : "s") + " saved on this device, still uploading…");
         el.dataset.unsynced = String(n);
         el.classList.toggle("pending", !!n);
         let s = document.getElementById("v46Safe");
         if (!s) { s = document.createElement("div"); s.id = "v46Safe"; s.className = "v46-safe"; el.appendChild(s); }
-        s.textContent = n ? "Saved on this device ✓ · " + n + " waiting for Supabase" + (syncState.lastError ? " (" + syncState.lastError + ")" : "") + (navigator.onLine ? " — retrying" : " — will send when back online")
-          : "Saved on this device ✓ · Supabase ✓";
+        s.textContent = n ? "Saved on this device ✓ " + n + " still to upload" + (navigator.onLine ? ", trying again now." : ", will upload when you are back online.") + (syncState.lastError ? " Last try: " + syncState.lastError : "")
+          : "Saved on this device ✓ Everything uploaded ✓";   /* v48.14: plain English, no "Supabase" */
         s.classList.toggle("ok", !n);
       }
     } catch (e) { console.warn("v46 sync bar", e); }
@@ -10064,7 +10096,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (h2 && !document.getElementById("v46SampleSync")) {
       const p = syncState.pending["trains:" + t.id]; const u = unsyncedOf("trains", t);
       const d = document.createElement("div"); d.id = "v46SampleSync"; d.className = "v46-sample-sync " + (u ? "wait" : "ok");
-      d.textContent = u ? "Saved on this device ✓ · waiting to sync to Supabase" + (p && p.tries ? " (" + p.tries + " tr" + (p.tries === 1 ? "y" : "ies") + (p.lastError ? ": " + p.lastError : "") + ")" : "") : "Saved on this device ✓ · synced to Supabase ✓";
+      d.textContent = u ? "Saved on this device ✓ Still uploading" + (p && p.tries ? " (" + p.tries + " tr" + (p.tries === 1 ? "y" : "ies") + (p.lastError ? ": " + p.lastError : "") + ")" : "") + "…" : "Saved on this device ✓ Uploaded ✓";
       (h2.closest(".row") || h2).insertAdjacentElement("afterend", d);
     }
     if (!personType(t)) return;
@@ -10429,7 +10461,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       st.at = Date.now(); st.err = "";
       const open = events.filter(e => e.open).length;
       st.note = "Refreshed AFM from Podio: " + open + " open AFM event" + (open === 1 ? "" : "s") + ", " + samples.length + " Podio sample" + (samples.length === 1 ? "" : "s")
-        + (newest ? " (Podio copy updated " + (typeof fmtClock === "function" ? fmtClock(newest) : newest) + ")" : "") + ". Nothing is sent to Podio.";
+        + (newest ? " (Podio jobs updated " + (typeof fmtWhen === "function" ? fmtWhen(newest) : newest) + ")" : "") + ". Nothing is sent to Podio.";
       return true;
     } finally { st.busy = false; paint(); }
   }
@@ -12364,7 +12396,7 @@ function fixOpen(ts) {
       const f = flagsFor(ev);
       return '<p class="help">' + (ev.podioAuto ? "Field event " + esc(ev.code) + " was created automatically." : "Fieldwork started: " + esc(ev.code) + ".") + "</p>"
         + (f.length ? '<p class="podio-flag v487-flag">Needs review: ' + esc(f.map(x => x.text).join(" ")) + "</p>" : "")
-        + '<button type="button" class="btn" data-v487-open="' + esc(ev.id) + '">Open ' + esc(ev.code) + "</button>";
+        + '<button type="button" class="btn" data-v487-open="' + esc(ev.id) + '">Open project event ' + esc(ev.code) + "</button>";
     }
     const tb = tombs();
     if (tb.items.has(item) || tb.evs.has(idFor(item))) {

@@ -183,7 +183,26 @@ async function run(vp) {
   /* 3. project page: auto-created card + screenshots */
   await page.evaluate(() => openProject("podio-p0019500")); await sleep(700);
   const card1 = await page.evaluate(() => (document.querySelector('[data-podio-item="9001"]') || {}).textContent || "");
-  check(`[${vp}] project's Podio list says created automatically, with Open (no Start fieldwork)`, /created automatically/.test(card1) && /Open 0019500-/.test(card1) && !/Start fieldwork/.test(card1), card1);
+  const openBtn = await page.evaluate(() => { const b = document.querySelector('[data-podio-item="9001"] [data-v487-open]'); const e = db.events.find(x => x.podioItemId === "9001"); return { text: b ? b.textContent.trim() : "", code: e ? e.code : "" }; });
+  check(`[${vp}] Podio card button reads exactly 'Open project event ' + the event's real code`, openBtn.code && openBtn.text === "Open project event " + openBtn.code, JSON.stringify(openBtn));
+  const ui2 = await page.evaluate(() => {
+    const bar = (document.getElementById("syncBar") || {}).textContent || "";
+    const menu = document.getElementById("projectMenu"), imp = document.getElementById("importCsv");
+    const job = document.querySelector("#app .proj-job"), fab = document.querySelector(".fab");
+    return { bar, menuTopRight: !!menu && menu.getBoundingClientRect().right > menu.closest(".wrap").getBoundingClientRect().right - 40 && menu.getBoundingClientRect().top + window.scrollY < 300,
+      importInMenu: !!imp && !!imp.closest("#projectMenu"), importLabel: imp ? imp.closest("label").textContent.trim() : "",
+      importHiddenUntilOpen: !!menu && !menu.open,
+      jobText: job ? job.textContent.trim() : "", jobPx: job ? parseFloat(getComputedStyle(job).fontSize) : 0,
+      oldImportOutside: [...document.querySelectorAll("#app label")].some(l => /Import field CSV/.test(l.textContent) && !l.closest("#projectMenu")) };
+  });
+  check(`[${vp}] status bar in plain English: 'Last synced', 'Project list updated', no 'Supabase', no 'pending'`, /Last synced /.test(ui2.bar) && /Project list updated /.test(ui2.bar) && !/Supabase/i.test(ui2.bar) && !/pending/.test(ui2.bar) && !/last sync /.test(ui2.bar), ui2.bar);
+  check(`[${vp}] Import field CSV is in the ☰ menu at the top right (closed until tapped), not on the page`, ui2.menuTopRight && ui2.importInMenu && ui2.importLabel === "Import field CSV" && ui2.importHiddenUntilOpen && !ui2.oldImportOutside, JSON.stringify(ui2));
+  check(`[${vp}] job number is a heading (0019500, at least 22px)`, ui2.jobText === "0019500" && ui2.jobPx >= 22, JSON.stringify(ui2));
+  await page.evaluate(() => { document.querySelector("#projectMenu summary").click(); });
+  const menuOpen = await page.evaluate(() => { const m = document.getElementById("projectMenu"), l = document.getElementById("importCsv").closest("label"); return m.open && l.getBoundingClientRect().height > 30; });
+  check(`[${vp}] tapping ☰ shows Import field CSV`, menuOpen);
+  await page.evaluate(() => { const m = document.getElementById("projectMenu"); if (m) m.open = false; });
+  check(`[${vp}] project's Podio list says created automatically, with 'Open project event <code>' (no Start fieldwork)`, /created automatically/.test(card1) && /Open project event 0019500-00\d/.test(card1) && !/Start fieldwork/.test(card1), card1);
   await shot(page, "01-project-auto-created");
   await page.evaluate(() => openEvent("e-podio-9001")); await sleep(400);
   const autoNote = await page.evaluate(() => (document.getElementById("v487Auto") || {}).textContent || "");
