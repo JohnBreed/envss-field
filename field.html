@@ -12201,7 +12201,9 @@ function fixOpen(ts) {
     if (hint && !codes.has(hint) && hint.slice(0, 7) === String(jobOf(p) || p.number)) return hint;
     const job = jobOf(p) || p.number;
     let n = (db.events || []).filter(e => e.projectId === p.id && isHyg(e)).length + 1;
-    while (codes.has(job + "-" + String(n).padStart(3, "0"))) n++;
+    /* v48.14 (0019300): never hand out a code another Podio event names in its reference (…-001-…); that event gets it */
+    const named = c => tb.hinted && tb.hinted.has(c) && c !== hint;
+    while (codes.has(job + "-" + String(n).padStart(3, "0")) || named(job + "-" + String(n).padStart(3, "0"))) n++;
     return job + "-" + String(n).padStart(3, "0");
   }
   function build(p, pl, id, how, tb, cfg) {
@@ -12234,6 +12236,7 @@ function fixOpen(ts) {
     last.waiting = false;
     const tb = tombs(), skipped = {}, out = [];
     offers = {};
+    tb.hinted = new Set(snap.rows.map(r => codeHint(r.payload || {})).filter(Boolean));
     const rows = snap.rows.slice().sort((a, b) => String((a.payload || {}).startDate || "9999").localeCompare(String((b.payload || {}).startDate || "9999")) || String(a.itemId).localeCompare(String(b.itemId)));
     rows.forEach(r => {
       const pl = r.payload || {}, item = String(pl.itemId || r.itemId || "");

@@ -26,7 +26,7 @@ function remoteFixture() {
     envss_projects: new Map([proj("0019500", "Auto A"), proj("0019501", "Auto no date"), proj("0019502", "Old backlog"), proj("0019503", "Deleted before"),
       proj("0019504", "AFM only"), proj("0019401", "Leichhardt hand-made"), proj("0019508", "Moved"), proj("0019509", "Deleted in Podio"), proj("0019510", "Race"),
       proj("0019511", "Reuse hand-made"), proj("0019512", "Hand-made had samples"), proj("0019513", "Deleted auto"), proj("0019514", "Deleted linked"), proj("0019515", "Deleted unknown kind"), proj("0019516", "Deleted here"),
-      proj("0019517", "Kerr-like"), proj("0019518", "Old no date"), proj("0019519", "Has fit event"), proj("0019520", "Like 0019389")].map(p => [p.id, p])),
+      proj("0019517", "Kerr-like"), proj("0019518", "Old no date"), proj("0019519", "Has fit event"), proj("0019520", "Like 0019389"), proj("0019521", "Like 0019300")].map(p => [p.id, p])),
     v_field_hyg_events: new Map([
       item(9001, "0019500", "Site A", D(2), "Site Works Start Date is now Confirmed"),
       item(9002, "0019501", "Site B", "", "Site Works Start Date is Tentative"),
@@ -52,6 +52,9 @@ function remoteFixture() {
       item(9053, "0019518", "Old no date", "", "Site Works Start Date is Tentative", { lastEdit: new Date(Date.now() - 200 * 864e5).toISOString() }),
       item(9052, "0019519", "Hyg beside fit", D(4), "Site Works Start Date is now Confirmed"),
       item(9054, "0019520", "Like 0019389", D(6), "Site Works Start Date is now Confirmed"),
+      /* 0019300-like: two Podio HYG events on one project + date; the second names -001 in its reference */
+      item(9055, "0019521", "Kewdale", D(19), "Site Works Start Date is now Confirmed"),
+      item(9056, "0019521", "Kewdale again", D(19), "Site Works Start Date is now Confirmed", { fields: { "reference-3": "0019521-001-Test Client-HYG-ACA NSED-Kewdale" } }),
       item(9031, "0019508", "Cancelled later", D(9), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": "Canceled" } })
     ].map(r => [String(r.item_id), r])),
     envss_events: new Map([
@@ -154,7 +157,9 @@ async function run(vp) {
   check(`[${vp}] hand-made 0019401-001 on the same job + date blocks a duplicate: link offered instead`, byItem(list, "9006").length === 0 && JSON.stringify((await page.evaluate(() => envssAuto.offers()))["9006"]) === '["eHand"]', JSON.stringify(await page.evaluate(() => envssAuto.offers())));
   check(`[${vp}] already-linked events are not duplicated (9008 stays one event)`, byItem(list, "9008").length === 1);
   const last = await page.evaluate(() => envssAuto.last());
-  check(`[${vp}] run summary created 14 (9001, 9002, 9003, 9010, 9029, 9030, 9040-9044, 9051-9053)`, last.created.length === 14, JSON.stringify(last));
+  check(`[${vp}] 0019300-like: two Podio events on one project + date -> two field events (Podio is the source), no link offer between them`, byItem(list, "9055").length === 1 && byItem(list, "9056").length === 1 && !(await page.evaluate(() => envssAuto.offers()))["9056"]);
+  check(`[${vp}] 0019300-like: the Podio event whose reference says -001 gets 0019521-001; the other gets -002`, byItem(list, "9056")[0].code === "0019521-001" && byItem(list, "9055")[0].code === "0019521-002", JSON.stringify([byItem(list, "9055")[0].code, byItem(list, "9056")[0].code]));
+  check(`[${vp}] run summary created 16 (9001, 9002, 9003, 9010, 9029, 9030, 9040-9044, 9051-9053, 9055, 9056)`, last.created.length === 16, JSON.stringify(last));
   /* code reuse (John, 23 Nov 2026 20:05 AWST) */
   const codeOf = i => (byItem(list, i)[0] || {}).code;
   check(`[${vp}] deleted hand-made duplicate with no samples: auto event reuses its code (0019511-001)`, codeOf("9040") === "0019511-001", codeOf("9040"));
