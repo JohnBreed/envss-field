@@ -1,35 +1,80 @@
 {
-  "at": "2026-11-23T12:08:26.597Z",
+  "at": "2026-11-26T07:54:41.716Z",
   "results": [
     {
-      "name": "[pixel7] app is v48.7",
+      "name": "[pixel7] app is v48.14",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "[pixel7] default Podio event apps: HYG 24280319 hygiene; Occ Noise 30888380 hygiene/noise; Vent Survey 30888385 hygiene/vent; Onsite RFT 30888384 fit",
+      "ok": true,
+      "detail": "[[\"24280319\",\"hygiene\",\"\",true],[\"30888380\",\"hygiene\",\"noise\",true],[\"30888385\",\"hygiene\",\"vent\",true],[\"30888384\",\"fit\",\"fit\",true]]"
     },
     {
       "name": "[pixel7] before this device has pulled events + tombstones, nothing is created (waits)",
       "ok": true,
-      "detail": "[4,4,true]"
+      "detail": "[6,6,true]"
     },
     {
       "name": "[pixel7] confirmed Podio event -> field event e-podio-9001 on the right project with Podio details",
       "ok": true,
-      "detail": "{\"id\":\"e-podio-9001\",\"projectId\":\"podio-p0019500\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-25\",\"code\":\"0019500-003\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9001\",\"podioReference\":\"0019500-Test Client-HYG-ACA NSED-Site A\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-11-25\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019500\",\"reference\":\"0019500-Test Client-HYG-ACA NSED-Site A\",\"at\":\"2026-11-23T12:07:06.912Z\"},\"audit\":[{\"at\":\"2026-11-23T12:07:06.912Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9001 · 0019500-Test Client-HYG-ACA NSED-Site A · start 2026-11-25 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-23T12:07:06.913Z\"}"
+      "detail": "{\"id\":\"e-podio-9001\",\"projectId\":\"podio-p0019500\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019500-003\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9001\",\"podioReference\":\"0019500-Test Client-HYG-ACA NSED-Site A\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-11-28\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019500\",\"reference\":\"0019500-Test Client-HYG-ACA NSED-Site A\",\"at\":\"2026-11-26T07:52:58.311Z\"},\"podioTypes\":[\"ACA NSED\"],\"audit\":[{\"at\":\"2026-11-26T07:52:58.311Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9001 · 0019500-Test Client-HYG-ACA NSED-Site A · start 2026-11-28 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-26T07:52:58.312Z\"}"
     },
     {
       "name": "[pixel7] audit says 'Created automatically from Podio'",
       "ok": true,
-      "detail": "[{\"at\":\"2026-11-23T12:07:06.912Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9001 · 0019500-Test Client-HYG-ACA NSED-Site A · start 2026-11-25 · Site Works Start Date is now Confirmed\"}]"
+      "detail": "[{\"at\":\"2026-11-26T07:52:58.311Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9001 · 0019500-Test Client-HYG-ACA NSED-Site A · start 2026-11-28 · Site Works Start Date is now Confirmed\"}]"
     },
     {
       "name": "[pixel7] tentative Podio event with no date is created too (no wait for confirmed), date left blank",
       "ok": true,
-      "detail": "{\"id\":\"e-podio-9002\",\"projectId\":\"podio-p0019501\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"\",\"code\":\"0019501-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9002\",\"podioReference\":\"0019501-Test Client-HYG-ACA NSED-Site B\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"\",\"startStatus\":\"Site Works Start Date is Tentative\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019501\",\"reference\":\"0019501-Test Client-HYG-ACA NSED-Site B\",\"at\":\"2026-11-23T12:07:06.913Z\"},\"audit\":[{\"at\":\"2026-11-23T12:07:06.913Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9002 · 0019501-Test Client-HYG-ACA NSED-Site B · no start date in Podio · Site Works Start Date is Tentative\"}],\"updatedAt\":\"2026-11-23T12:07:06.913Z\"}"
+      "detail": "{\"id\":\"e-podio-9002\",\"projectId\":\"podio-p0019501\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"\",\"code\":\"0019501-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9002\",\"podioReference\":\"0019501-Test Client-HYG-ACA NSED-Site B\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"\",\"startStatus\":\"Site Works Start Date is Tentative\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019501\",\"reference\":\"0019501-Test Client-HYG-ACA NSED-Site B\",\"at\":\"2026-11-26T07:52:58.312Z\"},\"podioTypes\":[\"ACA NSED\"],\"audit\":[{\"at\":\"2026-11-26T07:52:58.312Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9002 · 0019501-Test Client-HYG-ACA NSED-Site B · no start date in Podio · Site Works Start Date is Tentative\"}],\"updatedAt\":\"2026-11-26T07:52:58.312Z\"}"
     },
     {
-      "name": "[pixel7] backlog event (start 30 days ago) is NOT auto-created (Start fieldwork fallback)",
+      "name": "[pixel7] v48.14: backlog event (start 30 days ago) IS auto-created now (no date window)",
+      "ok": true,
+      "detail": "[{\"id\":\"e-podio-9003\",\"projectId\":\"podio-p0019502\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-10-27\",\"code\":\"0019502-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9003\",\"podioReference\":\"0019502-Test Client-HYG-ACA NSED-Old site\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-10-27\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019502\",\"reference\":\"0019502-Test Client-HYG-ACA NSED-Old site\",\"at\":\"2026-11-26T07:52:58.311Z\"},\"podioTypes\":[\"ACA NSED\"],\"audit\":[{\"at\":\"2026-11-26T07:52:58.311Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9003 · 0019502-Test Client-HYG-ACA NSED-Old site · start 2026-10-27 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-26T07:52:58.312Z\"}]"
+    },
+    {
+      "name": "[pixel7] v48.14: Podio event with no date, last edited 200 days ago, is auto-created too",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "[pixel7] fit-testing-only HYG item (RFT,HPFT) is not made into a hygiene event",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] Kerr-like item (RFT,NSEOC-ACA,VENT + long forwarded email) -> ONE hygiene event, never a fit event",
+      "ok": true,
+      "detail": "{\"type\":\"hygiene\",\"code\":\"0019517-001\"}"
+    },
+    {
+      "name": "[pixel7] long Podio task text kept in full on the record (nothing trimmed), notes left empty",
+      "ok": true,
+      "detail": "4013"
+    },
+    {
+      "name": "[pixel7] Podio scope stored from the reference: RFT, NSEOC-ACA, VENT",
+      "ok": true,
+      "detail": "[\"RFT\",\"NSEOC-ACA\",\"VENT\"]"
+    },
+    {
+      "name": "[pixel7] hygiene event beside a fit event on the same job + date: hygiene auto-created, no link offer to the fit event",
+      "ok": true,
+      "detail": "[\"0019519-001\"]"
+    },
+    {
+      "name": "[pixel7] fit event untouched (type, code, no Podio link, no audit added)",
+      "ok": true,
+      "detail": "{\"id\":\"eFit\",\"projectId\":\"podio-p0019519\",\"type\":\"fit\",\"stage\":\"planned\",\"date\":\"2026-11-30\",\"code\":\"0019519-FIT-001\",\"multiDay\":false,\"operators\":[],\"audit\":[],\"podioUnplanned\":true,\"podioLinked\":false,\"updatedAt\":\"2026-11-26T07:52:54.364Z\"}"
+    },
+    {
+      "name": "[pixel7] 0019389-like (hand-made -001 alive + tombstoned FIT event): link offered to the hand-made event, nothing created, FIT code not reused",
+      "ok": true,
+      "detail": "[[\"eHand20\"],[]]"
     },
     {
       "name": "[pixel7] event deleted here (tombstone) is NOT re-created",
@@ -69,7 +114,7 @@
     {
       "name": "[pixel7] hand-made 0019401-001 on the same job + date blocks a duplicate: link offered instead",
       "ok": true,
-      "detail": "{\"9006\":[\"eHand\"]}"
+      "detail": "{\"9006\":[\"eHand\"],\"9054\":[\"eHand20\"]}"
     },
     {
       "name": "[pixel7] already-linked events are not duplicated (9008 stays one event)",
@@ -77,9 +122,9 @@
       "detail": ""
     },
     {
-      "name": "[pixel7] run summary created 10 (9001, 9002, 9010, 9029, 9030, 9040-9044)",
+      "name": "[pixel7] run summary created 14 (9001, 9002, 9003, 9010, 9029, 9030, 9040-9044, 9051-9053)",
       "ok": true,
-      "detail": "{\"at\":\"2026-11-23T12:07:06.913Z\",\"created\":[\"0019500-001 (e-podio-9029)\",\"0019500-002 (e-podio-9030)\",\"0019500-003 (e-podio-9001)\",\"0019511-001 (e-podio-9040)\",\"0019512-002 (e-podio-9041)\",\"0019513-002 (e-podio-9042)\",\"0019514-002 (e-podio-9043)\",\"0019515-002 (e-podio-9044)\",\"0019510-001 (e-podio-9010)\",\"0019501-001 (e-podio-9002)\"],\"adopted\":[],\"skipped\":{\"start date more than 7 days ago\":1,\"deleted here (tombstone)\":1,\"AFM only\":1,\"not planned in Podio\":13,\"field event already exists\":1,\"possible hand-made duplicate (link offered)\":1},\"waiting\":false}"
+      "detail": "{\"at\":\"2026-11-26T07:52:58.312Z\",\"created\":[\"0019502-001 (e-podio-9003)\",\"0019500-001 (e-podio-9029)\",\"0019500-002 (e-podio-9030)\",\"0019500-003 (e-podio-9001)\",\"0019511-001 (e-podio-9040)\",\"0019512-002 (e-podio-9041)\",\"0019513-002 (e-podio-9042)\",\"0019514-002 (e-podio-9043)\",\"0019515-002 (e-podio-9044)\",\"0019510-001 (e-podio-9010)\",\"0019519-001 (e-podio-9052)\",\"0019517-001 (e-podio-9051)\",\"0019501-001 (e-podio-9002)\",\"0019518-001 (e-podio-9053)\"],\"adopted\":[],\"skipped\":{\"deleted here (tombstone)\":1,\"AFM only\":1,\"not planned in Podio\":13,\"fit testing only (RFT/HPFT): use Fit test, not a hygiene event\":1,\"field event already exists\":1,\"possible hand-made duplicate (link offered)\":2},\"waiting\":false}"
     },
     {
       "name": "[pixel7] deleted hand-made duplicate with no samples: auto event reuses its code (0019511-001)",
@@ -129,47 +174,67 @@
     {
       "name": "[pixel7] project's Podio list says created automatically, with Open (no Start fieldwork)",
       "ok": true,
-      "detail": "0019500-Test Client-HYG-ACA NSED-Site A2026-11-25 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseField event 0019500-003 was created automatically.Open 0019500-003"
+      "detail": "0019500-Test Client-HYG-ACA NSED-Site A2026-11-28 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseField event 0019500-003 was created automatically.Open 0019500-003"
     },
     {
       "name": "[pixel7] event screen shows 'Created automatically from Podio' note",
       "ok": true,
-      "detail": "Created automatically from Podio on 23 Nov, 08:07 pm. If it was made in error, an admin can delete it; it will not be created again."
+      "detail": "Created automatically from Podio on 26 Nov, 03:52 pm. If it was made in error, an admin can delete it; it will not be created again."
     },
     {
-      "name": "[pixel7] older event still shows Start fieldwork (fallback)",
+      "name": "[pixel7] item that is not auto-created still shows Start fieldwork (fallback)",
       "ok": true,
-      "detail": "0019502-Test Client-HYG-ACA NSED-Old site2026-10-24 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseStart fieldwork"
+      "detail": "0019502-Test Client-HYG-RFT,HPFT-Fit only2026-11-28 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseStart fieldwork"
+    },
+    {
+      "name": "[pixel7] v48.14 Podio-first: manual 'New project event' shown as a quiet 'Add event not in Podio' fallback (button + FAB)",
+      "ok": true,
+      "detail": "{\"top\":\"Add event not in Podio\",\"topCls\":\"btn ghost\",\"fab\":\"+Not in Podio\",\"fabCls\":\"fab v4814-fab\",\"un\":\"Add event not in Podio\",\"unCls\":\"btn ghost\",\"hint\":true}"
     },
     {
       "name": "[pixel7] Start fieldwork creates one event, deterministic id, not marked auto",
       "ok": true,
-      "detail": "[{\"id\":\"e-podio-9003\",\"projectId\":\"podio-p0019502\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-10-24\",\"code\":\"0019502-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9003\",\"podioReference\":\"0019502-Test Client-HYG-ACA NSED-Old site\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":false,\"podioSeen\":{\"startDate\":\"2026-10-24\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019502\",\"reference\":\"0019502-Test Client-HYG-ACA NSED-Old site\",\"at\":\"2026-11-23T12:07:16.309Z\"},\"audit\":[{\"at\":\"2026-11-23T12:07:16.309Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Started from Podio (Start fieldwork)\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9003 · 0019502-Test Client-HYG-ACA NSED-Old site · start 2026-10-24 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-23T12:07:16.309Z\"}]"
+      "detail": "[{\"id\":\"e-podio-9050\",\"projectId\":\"podio-p0019502\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019502-002\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9050\",\"podioReference\":\"0019502-Test Client-HYG-RFT,HPFT-Fit only\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":false,\"podioSeen\":{\"startDate\":\"2026-11-28\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019502\",\"reference\":\"0019502-Test Client-HYG-RFT,HPFT-Fit only\",\"at\":\"2026-11-26T07:53:07.273Z\"},\"podioTypes\":[\"RFT\",\"HPFT\"],\"audit\":[{\"at\":\"2026-11-26T07:53:07.274Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Started from Podio (Start fieldwork)\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9050 · 0019502-Test Client-HYG-RFT,HPFT-Fit only · start 2026-11-28 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-26T07:53:07.274Z\"}]"
+    },
+    {
+      "name": "[pixel7] FAB on the event screen is back to the normal 'Add sample'",
+      "ok": true,
+      "detail": "[\"fab v4814-fab\",[\"fab\",\"+Add sample\"]]"
+    },
+    {
+      "name": "[pixel7] event shows 'Podio scope' with occupational noise in this event and fit testing as separate",
+      "ok": true,
+      "detail": "Podio scope: RFT — respirator fit testing (a separate fit-test event; not created automatically); NSEOC-ACA — occupational noise + airborne contaminants (both in this event); VENT — ventilation."
+    },
+    {
+      "name": "[pixel7] long Podio task text shown collapsed (short preview + Show all)",
+      "ok": true,
+      "detail": "{\"scope\":\"Podio scope: RFT — respirator fit testing (a separate fit-test event; not created automatically); NSEOC-ACA — occupational noise + airborne contaminants (both in this event); VENT — ventilation.\",\"det\":true,\"open\":false,\"sum\":329}"
     },
     {
       "name": "[pixel7] deleted event's card says it will not be created again, offers Start fieldwork again",
       "ok": true,
-      "detail": "0019503-Test Client-HYG-ACA NSED-Was deleted2026-11-24 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseThe field event for this was deleted. It will not be created again automatically.Start fieldwork again"
+      "detail": "0019503-Test Client-HYG-ACA NSED-Was deleted2026-11-27 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseThe field event for this was deleted. It will not be created again automatically.Start fieldwork again"
     },
     {
       "name": "[pixel7] project shows 'Link 0019401-001' and 'Create a separate event'",
       "ok": true,
-      "detail": "0019401-Test Client-HYG-ACA NSED-Lake MacLeod2026-12-05 · Site Works Start Date is Tentative · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseThis may already be a hand-made event. Link it instead of creating a duplicate?Link 0019401-001 (Sat, 5 Dec) Create a separate event"
+      "detail": "0019401-Test Client-HYG-ACA NSED-Lake MacLeod2026-12-08 · Site Works Start Date is Tentative · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseThis may already be a hand-made event. Link it instead of creating a duplicate?Link 0019401-001 (Tue, 8 Dec) Create a separate event"
     },
     {
       "name": "[pixel7] hand-made event screen offers 'Link to this Podio event'",
       "ok": true,
-      "detail": "This may be the Podio event 0019401-Test Client-HYG-ACA NSED-Lake MacLeod (Sat, 5 Dec).Link to this Podio event Not this one"
+      "detail": "This may be the Podio event 0019401-Test Client-HYG-ACA NSED-Lake MacLeod (Tue, 8 Dec).Link to this Podio event Not this one"
     },
     {
       "name": "[pixel7] Link: hand-made event becomes linked (no new event), blanks filled, date and Mines Act kept",
       "ok": true,
-      "detail": "{\"id\":\"eHand\",\"projectId\":\"podio-p0019401\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-12-05\",\"code\":\"0019401-001\",\"multiDay\":false,\"operators\":[],\"audit\":[{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Linked to Podio event\",\"field\":\"podioItemId\",\"from\":\"\",\"to\":\"9006\",\"detail\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod · filled from Podio: lab, taskDesc, poc.company, poc.first, poc.last, poc.phone\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Unplanned\",\"field\":\"podioUnplanned\",\"from\":\"true\",\"to\":\"false\",\"detail\":\"true → false\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Linked\",\"field\":\"podioLinked\",\"from\":\"false\",\"to\":\"true\",\"detail\":\"false → true\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Lab\",\"field\":\"lab\",\"from\":\"\",\"to\":\"Test Lab\",\"detail\":\"(empty) → Test Lab\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Task\",\"field\":\"taskDesc\",\"from\":\"\",\"to\":\"Dust and noise\",\"detail\":\"(empty) → Dust and noise\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"poc.company\",\"from\":\"\",\"to\":\"Test Client\",\"detail\":\"(empty) → Test Client\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First\",\"field\":\"poc.first\",\"from\":\"\",\"to\":\"Pat\",\"detail\":\"(empty) → Pat\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last\",\"field\":\"poc.last\",\"from\":\"\",\"to\":\"Contact\",\"detail\":\"(empty) → Contact\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Phone\",\"field\":\"poc.phone\",\"from\":\"\",\"to\":\"0400 000 000\",\"detail\":\"(empty) → 0400 000 000\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Item Id\",\"field\":\"podioItemId\",\"from\":\"\",\"to\":\"9006\",\"detail\":\"(empty) → 9006\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Reference\",\"field\":\"podioReference\",\"from\":\"\",\"to\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"detail\":\"(empty) → 0019401-Test Client-HYG-ACA NSED-Lake MacLeod\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Date\",\"field\":\"podioSeen.startDate\",\"from\":\"\",\"to\":\"2026-12-05\",\"detail\":\"(empty) → 2026-12-05\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Status\",\"field\":\"podioSeen.startStatus\",\"from\":\"\",\"to\":\"Site Works Start Date is Tentative\",\"detail\":\"(empty) → Site Works Start Date is Tentative\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Report Status\",\"field\":\"podioSeen.reportStatus\",\"from\":\"\",\"to\":\"Pending\",\"detail\":\"(empty) → Pending\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Job Number\",\"field\":\"podioSeen.jobNumber\",\"from\":\"\",\"to\":\"0019401\",\"detail\":\"(empty) → 0019401\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Reference\",\"field\":\"podioSeen.reference\",\"from\":\"\",\"to\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"detail\":\"(empty) → 0019401-Test Client-HYG-ACA NSED-Lake MacLeod\"},{\"at\":\"2026-11-23T12:07:19.243Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-23T12:07:19.243Z\",\"detail\":\"(empty) → 2026-11-23T12:07:19.243Z\"}],\"podioUnplanned\":false,\"podioLinked\":true,\"minesAct\":true,\"updatedAt\":\"2026-11-23T12:07:19.244Z\",\"lab\":\"Test Lab\",\"taskDesc\":\"Dust and noise\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"phone\":\"0400 000 000\"},\"podioItemId\":\"9006\",\"podioReference\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"podioSeen\":{\"startDate\":\"2026-12-05\",\"startStatus\":\"Site Works Start Date is Tentative\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019401\",\"reference\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"at\":\"2026-11-23T12:07:19.243Z\"}}"
+      "detail": "{\"id\":\"eHand\",\"projectId\":\"podio-p0019401\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-12-08\",\"code\":\"0019401-001\",\"multiDay\":false,\"operators\":[],\"audit\":[{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Linked to Podio event\",\"field\":\"podioItemId\",\"from\":\"\",\"to\":\"9006\",\"detail\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod · filled from Podio: lab, taskDesc, poc.company, poc.first, poc.last, poc.phone\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Unplanned\",\"field\":\"podioUnplanned\",\"from\":\"true\",\"to\":\"false\",\"detail\":\"true → false\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Linked\",\"field\":\"podioLinked\",\"from\":\"false\",\"to\":\"true\",\"detail\":\"false → true\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Lab\",\"field\":\"lab\",\"from\":\"\",\"to\":\"Test Lab\",\"detail\":\"(empty) → Test Lab\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Task\",\"field\":\"taskDesc\",\"from\":\"\",\"to\":\"Dust and noise\",\"detail\":\"(empty) → Dust and noise\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"poc.company\",\"from\":\"\",\"to\":\"Test Client\",\"detail\":\"(empty) → Test Client\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First\",\"field\":\"poc.first\",\"from\":\"\",\"to\":\"Pat\",\"detail\":\"(empty) → Pat\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last\",\"field\":\"poc.last\",\"from\":\"\",\"to\":\"Contact\",\"detail\":\"(empty) → Contact\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Phone\",\"field\":\"poc.phone\",\"from\":\"\",\"to\":\"0400 000 000\",\"detail\":\"(empty) → 0400 000 000\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Item Id\",\"field\":\"podioItemId\",\"from\":\"\",\"to\":\"9006\",\"detail\":\"(empty) → 9006\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Reference\",\"field\":\"podioReference\",\"from\":\"\",\"to\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"detail\":\"(empty) → 0019401-Test Client-HYG-ACA NSED-Lake MacLeod\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Date\",\"field\":\"podioSeen.startDate\",\"from\":\"\",\"to\":\"2026-12-08\",\"detail\":\"(empty) → 2026-12-08\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Status\",\"field\":\"podioSeen.startStatus\",\"from\":\"\",\"to\":\"Site Works Start Date is Tentative\",\"detail\":\"(empty) → Site Works Start Date is Tentative\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Report Status\",\"field\":\"podioSeen.reportStatus\",\"from\":\"\",\"to\":\"Pending\",\"detail\":\"(empty) → Pending\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Job Number\",\"field\":\"podioSeen.jobNumber\",\"from\":\"\",\"to\":\"0019401\",\"detail\":\"(empty) → 0019401\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Reference\",\"field\":\"podioSeen.reference\",\"from\":\"\",\"to\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"detail\":\"(empty) → 0019401-Test Client-HYG-ACA NSED-Lake MacLeod\"},{\"at\":\"2026-11-26T07:53:12.498Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-26T07:53:12.498Z\",\"detail\":\"(empty) → 2026-11-26T07:53:12.498Z\"}],\"podioUnplanned\":false,\"podioLinked\":true,\"minesAct\":true,\"updatedAt\":\"2026-11-26T07:53:12.499Z\",\"lab\":\"Test Lab\",\"taskDesc\":\"Dust and noise\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"phone\":\"0400 000 000\"},\"podioItemId\":\"9006\",\"podioReference\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"podioSeen\":{\"startDate\":\"2026-12-08\",\"startStatus\":\"Site Works Start Date is Tentative\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019401\",\"reference\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"at\":\"2026-11-26T07:53:12.498Z\"}}"
     },
     {
       "name": "[pixel7] Podio moved 9008 (start +5 -> +6): field event date NOT changed",
       "ok": true,
-      "detail": "2026-11-28"
+      "detail": "2026-12-01"
     },
     {
       "name": "[pixel7] dashboard lists events that changed in Podio (0019508-001 moved, 0019509-001 gone)",
@@ -179,12 +244,12 @@
     {
       "name": "[pixel7] event screen flag: 'Moved in Podio' + Use Podio date + Keep as is",
       "ok": true,
-      "detail": "Changed in Podio. Nothing here was changed automatically.Moved in Podio: Sat, 28 Nov → Sun, 29 Nov.Use Podio date (Sun, 29 Nov) Keep as is"
+      "detail": "Changed in Podio. Nothing here was changed automatically.Moved in Podio: Tue, 1 Dec → Wed, 2 Dec.Use Podio date (Wed, 2 Dec) Keep as is"
     },
     {
       "name": "[pixel7] Use Podio date (staff tap, confirmed) changes the date and audits it; flag clears",
       "ok": true,
-      "detail": "[{\"at\":\"2026-11-23T12:07:20.759Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Date changed to match Podio\",\"field\":\"date\",\"from\":\"2026-11-28\",\"to\":\"2026-11-29\",\"detail\":\"Moved in Podio: Sat, 28 Nov → Sun, 29 Nov.\"},{\"at\":\"2026-11-23T12:07:20.759Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Event date\",\"field\":\"date\",\"from\":\"2026-11-28\",\"to\":\"2026-11-29\",\"detail\":\"2026-11-28 → 2026-11-29\"},{\"at\":\"2026-11-23T12:07:20.759Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Date\",\"field\":\"podioSeen.startDate\",\"from\":\"2026-11-28\",\"to\":\"2026-11-29\",\"detail\":\"2026-11-28 → 2026-11-29\"},{\"at\":\"2026-11-23T12:07:20.759Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Status\",\"field\":\"podioSeen.startStatus\",\"from\":\"Confirmed\",\"to\":\"Site Works Start Date is now Confirmed\",\"detail\":\"Confirmed → Site Works Start Date is now Confirmed\"},{\"at\":\"2026-11-23T12:07:20.759Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Reference\",\"field\":\"podioSeen.reference\",\"from\":\"x\",\"to\":\"0019508-Test Client-HYG-ACA NSED-Moved site\",\"detail\":\"x → 0019508-Test Client-HYG-ACA NSED-Moved site\"},{\"at\":\"2026-11-23T12:07:20.759Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Report Status\",\"field\":\"podioSeen.reportStatus\",\"from\":\"\",\"to\":\"Pending\",\"detail\":\"(empty) → Pending\"},{\"at\":\"2026-11-23T12:07:20.759Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-23T12:07:20.759Z\",\"detail\":\"(empty) → 2026-11-23T12:07:20.759Z\"}]"
+      "detail": "[{\"at\":\"2026-11-26T07:53:13.974Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Date changed to match Podio\",\"field\":\"date\",\"from\":\"2026-12-01\",\"to\":\"2026-12-02\",\"detail\":\"Moved in Podio: Tue, 1 Dec → Wed, 2 Dec.\"},{\"at\":\"2026-11-26T07:53:13.974Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Event date\",\"field\":\"date\",\"from\":\"2026-12-01\",\"to\":\"2026-12-02\",\"detail\":\"2026-12-01 → 2026-12-02\"},{\"at\":\"2026-11-26T07:53:13.974Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Date\",\"field\":\"podioSeen.startDate\",\"from\":\"2026-12-01\",\"to\":\"2026-12-02\",\"detail\":\"2026-12-01 → 2026-12-02\"},{\"at\":\"2026-11-26T07:53:13.974Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Status\",\"field\":\"podioSeen.startStatus\",\"from\":\"Confirmed\",\"to\":\"Site Works Start Date is now Confirmed\",\"detail\":\"Confirmed → Site Works Start Date is now Confirmed\"},{\"at\":\"2026-11-26T07:53:13.974Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Reference\",\"field\":\"podioSeen.reference\",\"from\":\"x\",\"to\":\"0019508-Test Client-HYG-ACA NSED-Moved site\",\"detail\":\"x → 0019508-Test Client-HYG-ACA NSED-Moved site\"},{\"at\":\"2026-11-26T07:53:13.974Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Report Status\",\"field\":\"podioSeen.reportStatus\",\"from\":\"\",\"to\":\"Pending\",\"detail\":\"(empty) → Pending\"},{\"at\":\"2026-11-26T07:53:13.974Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-26T07:53:13.974Z\",\"detail\":\"(empty) → 2026-11-26T07:53:13.974Z\"}]"
     },
     {
       "name": "[pixel7] linked event later Canceled in Podio: 'Marked Canceled in Podio' flag, event untouched",
@@ -199,12 +264,12 @@
     {
       "name": "[pixel7] Keep as is records the review (audit) and clears the flag; event still there",
       "ok": true,
-      "detail": "{\"id\":\"eOld9009\",\"projectId\":\"podio-p0019509\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-25\",\"code\":\"0019509-001\",\"multiDay\":false,\"operators\":[],\"audit\":[{\"at\":\"2026-11-23T12:07:22.254Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Podio change reviewed: kept as is\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"This event is no longer in Podio (deleted, or the Podio copy no longer lists it).\"},{\"at\":\"2026-11-23T12:07:22.254Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Gone\",\"field\":\"podioSeen.gone\",\"from\":\"\",\"to\":\"true\",\"detail\":\"(empty) → true\"},{\"at\":\"2026-11-23T12:07:22.254Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-23T12:07:22.254Z\",\"detail\":\"(empty) → 2026-11-23T12:07:22.254Z\"}],\"podioItemId\":\"9009\",\"podioLinked\":true,\"updatedAt\":\"2026-11-23T12:07:22.254Z\",\"podioSeen\":{\"gone\":true,\"at\":\"2026-11-23T12:07:22.254Z\"}}"
+      "detail": "{\"id\":\"eOld9009\",\"projectId\":\"podio-p0019509\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019509-001\",\"multiDay\":false,\"operators\":[],\"audit\":[{\"at\":\"2026-11-26T07:53:15.420Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Podio change reviewed: kept as is\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"This event is no longer in Podio (deleted, or the Podio copy no longer lists it).\"},{\"at\":\"2026-11-26T07:53:15.420Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Gone\",\"field\":\"podioSeen.gone\",\"from\":\"\",\"to\":\"true\",\"detail\":\"(empty) → true\"},{\"at\":\"2026-11-26T07:53:15.420Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-26T07:53:15.420Z\",\"detail\":\"(empty) → 2026-11-26T07:53:15.420Z\"}],\"podioItemId\":\"9009\",\"podioLinked\":true,\"updatedAt\":\"2026-11-26T07:53:15.420Z\",\"podioSeen\":{\"gone\":true,\"at\":\"2026-11-26T07:53:15.420Z\"}}"
     },
     {
       "name": "[pixel7] delete writes a tombstone with the Podio item id (no row delete)",
       "ok": true,
-      "detail": "{\"at\":\"2026-11-23T12:07:22.669Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"id\":\"e-podio-9002\",\"tombstone\":\"event\",\"deletedEventId\":\"e-podio-9002\",\"eventId\":\"e-podio-9002\",\"projectId\":\"podio-p0019501\",\"code\":\"0019501-001\",\"type\":\"hygiene\",\"podioItemId\":\"9002\",\"podioAuto\":true,\"podioUnplanned\":false,\"sampleCount\":0,\"detail\":\"event deleted\"}"
+      "detail": "{\"at\":\"2026-11-26T07:53:15.839Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"id\":\"e-podio-9002\",\"tombstone\":\"event\",\"deletedEventId\":\"e-podio-9002\",\"eventId\":\"e-podio-9002\",\"projectId\":\"podio-p0019501\",\"code\":\"0019501-001\",\"type\":\"hygiene\",\"podioItemId\":\"9002\",\"podioAuto\":true,\"podioUnplanned\":false,\"sampleCount\":0,\"detail\":\"event deleted\"}"
     },
     {
       "name": "[pixel7] next sync does not re-create the deleted event",
@@ -224,17 +289,17 @@
     {
       "name": "[pixel7] local delete tombstone records hand-made + sample count",
       "ok": true,
-      "detail": "{\"at\":\"2026-11-23T12:07:30.467Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"id\":\"eLocalHand\",\"tombstone\":\"event\",\"deletedEventId\":\"eLocalHand\",\"eventId\":\"eLocalHand\",\"projectId\":\"podio-p0019516\",\"code\":\"0019516-001\",\"type\":\"hygiene\",\"podioItemId\":\"\",\"podioAuto\":false,\"podioUnplanned\":true,\"sampleCount\":0,\"detail\":\"event deleted\",\"updatedAt\":\"2026-11-23T12:07:30.467Z\"}"
+      "detail": "{\"at\":\"2026-11-26T07:53:23.590Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"id\":\"eLocalHand\",\"tombstone\":\"event\",\"deletedEventId\":\"eLocalHand\",\"eventId\":\"eLocalHand\",\"projectId\":\"podio-p0019516\",\"code\":\"0019516-001\",\"type\":\"hygiene\",\"podioItemId\":\"\",\"podioAuto\":false,\"podioUnplanned\":true,\"sampleCount\":0,\"detail\":\"event deleted\",\"updatedAt\":\"2026-11-26T07:53:23.590Z\"}"
     },
     {
       "name": "[pixel7] after deleting a hand-made event here, the Podio event gets 0019516-001; the deleted one stays deleted",
       "ok": true,
-      "detail": "[{\"id\":\"e-podio-9045\",\"projectId\":\"podio-p0019516\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-27\",\"code\":\"0019516-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9045\",\"podioReference\":\"0019516-Test Client-HYG-ACA NSED-Deleted here\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-11-27\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019516\",\"reference\":\"0019516-Test Client-HYG-ACA NSED-Deleted here\",\"at\":\"2026-11-23T12:07:31.285Z\"},\"audit\":[{\"at\":\"2026-11-23T12:07:31.285Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9045 · 0019516-Test Client-HYG-ACA NSED-Deleted here · start 2026-11-27 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-23T12:07:31.285Z\"}]"
+      "detail": "[{\"id\":\"e-podio-9045\",\"projectId\":\"podio-p0019516\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-30\",\"code\":\"0019516-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9045\",\"podioReference\":\"0019516-Test Client-HYG-ACA NSED-Deleted here\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-11-30\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019516\",\"reference\":\"0019516-Test Client-HYG-ACA NSED-Deleted here\",\"at\":\"2026-11-26T07:53:24.404Z\"},\"podioTypes\":[\"ACA NSED\"],\"audit\":[{\"at\":\"2026-11-26T07:53:24.404Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9045 · 0019516-Test Client-HYG-ACA NSED-Deleted here · start 2026-11-30 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-26T07:53:24.405Z\"}]"
     },
     {
       "name": "[pixel7] race: Supabase row made/edited by another device is kept, never overwritten; this device adopts it",
       "ok": true,
-      "detail": "{\"rRow\":{\"id\":\"e-podio-9012\",\"payload\":{\"id\":\"e-podio-9012\",\"projectId\":\"podio-p0019510\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019510-002\",\"multiDay\":false,\"operators\":[\"Minah\"],\"audit\":[],\"podioItemId\":\"9012\",\"podioAuto\":true,\"notes\":\"edited on the other device\"},\"updated_at\":\"2026-11-23T12:07:02.016Z\",\"updated_by\":\"Other Device <minah@envss.com.au>\"},\"rLocal\":{\"id\":\"e-podio-9012\",\"projectId\":\"podio-p0019510\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019510-002\",\"multiDay\":false,\"operators\":[\"Minah\"],\"audit\":[],\"podioItemId\":\"9012\",\"podioAuto\":true,\"notes\":\"edited on the other device\",\"updatedAt\":\"2026-11-23T12:07:02.016Z\"}}"
+      "detail": "{\"rRow\":{\"id\":\"e-podio-9012\",\"payload\":{\"id\":\"e-podio-9012\",\"projectId\":\"podio-p0019510\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-12-01\",\"code\":\"0019510-002\",\"multiDay\":false,\"operators\":[\"Minah\"],\"audit\":[],\"podioItemId\":\"9012\",\"podioAuto\":true,\"notes\":\"edited on the other device\"},\"updated_at\":\"2026-11-26T07:52:54.364Z\",\"updated_by\":\"Other Device <minah@envss.com.au>\"},\"rLocal\":{\"id\":\"e-podio-9012\",\"projectId\":\"podio-p0019510\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-12-01\",\"code\":\"0019510-002\",\"multiDay\":false,\"operators\":[\"Minah\"],\"audit\":[],\"podioItemId\":\"9012\",\"podioAuto\":true,\"notes\":\"edited on the other device\",\"updatedAt\":\"2026-11-26T07:52:54.364Z\"}}"
     },
     {
       "name": "[pixel7] race with a delete on another device: row not overwritten, event hidden, not re-created",
@@ -262,34 +327,79 @@
       "detail": ""
     },
     {
-      "name": "[chromebook] app is v48.7",
+      "name": "[chromebook] app is v48.14",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "[chromebook] default Podio event apps: HYG 24280319 hygiene; Occ Noise 30888380 hygiene/noise; Vent Survey 30888385 hygiene/vent; Onsite RFT 30888384 fit",
+      "ok": true,
+      "detail": "[[\"24280319\",\"hygiene\",\"\",true],[\"30888380\",\"hygiene\",\"noise\",true],[\"30888385\",\"hygiene\",\"vent\",true],[\"30888384\",\"fit\",\"fit\",true]]"
     },
     {
       "name": "[chromebook] before this device has pulled events + tombstones, nothing is created (waits)",
       "ok": true,
-      "detail": "[4,4,true]"
+      "detail": "[6,6,true]"
     },
     {
       "name": "[chromebook] confirmed Podio event -> field event e-podio-9001 on the right project with Podio details",
       "ok": true,
-      "detail": "{\"id\":\"e-podio-9001\",\"projectId\":\"podio-p0019500\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-25\",\"code\":\"0019500-003\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9001\",\"podioReference\":\"0019500-Test Client-HYG-ACA NSED-Site A\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-11-25\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019500\",\"reference\":\"0019500-Test Client-HYG-ACA NSED-Site A\",\"at\":\"2026-11-23T12:07:49.258Z\"},\"audit\":[{\"at\":\"2026-11-23T12:07:49.258Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9001 · 0019500-Test Client-HYG-ACA NSED-Site A · start 2026-11-25 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-23T12:07:49.259Z\"}"
+      "detail": "{\"id\":\"e-podio-9001\",\"projectId\":\"podio-p0019500\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019500-003\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9001\",\"podioReference\":\"0019500-Test Client-HYG-ACA NSED-Site A\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-11-28\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019500\",\"reference\":\"0019500-Test Client-HYG-ACA NSED-Site A\",\"at\":\"2026-11-26T07:53:42.382Z\"},\"podioTypes\":[\"ACA NSED\"],\"audit\":[{\"at\":\"2026-11-26T07:53:42.382Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9001 · 0019500-Test Client-HYG-ACA NSED-Site A · start 2026-11-28 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-26T07:53:42.383Z\"}"
     },
     {
       "name": "[chromebook] audit says 'Created automatically from Podio'",
       "ok": true,
-      "detail": "[{\"at\":\"2026-11-23T12:07:49.258Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9001 · 0019500-Test Client-HYG-ACA NSED-Site A · start 2026-11-25 · Site Works Start Date is now Confirmed\"}]"
+      "detail": "[{\"at\":\"2026-11-26T07:53:42.382Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9001 · 0019500-Test Client-HYG-ACA NSED-Site A · start 2026-11-28 · Site Works Start Date is now Confirmed\"}]"
     },
     {
       "name": "[chromebook] tentative Podio event with no date is created too (no wait for confirmed), date left blank",
       "ok": true,
-      "detail": "{\"id\":\"e-podio-9002\",\"projectId\":\"podio-p0019501\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"\",\"code\":\"0019501-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9002\",\"podioReference\":\"0019501-Test Client-HYG-ACA NSED-Site B\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"\",\"startStatus\":\"Site Works Start Date is Tentative\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019501\",\"reference\":\"0019501-Test Client-HYG-ACA NSED-Site B\",\"at\":\"2026-11-23T12:07:49.258Z\"},\"audit\":[{\"at\":\"2026-11-23T12:07:49.258Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9002 · 0019501-Test Client-HYG-ACA NSED-Site B · no start date in Podio · Site Works Start Date is Tentative\"}],\"updatedAt\":\"2026-11-23T12:07:49.259Z\"}"
+      "detail": "{\"id\":\"e-podio-9002\",\"projectId\":\"podio-p0019501\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"\",\"code\":\"0019501-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9002\",\"podioReference\":\"0019501-Test Client-HYG-ACA NSED-Site B\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"\",\"startStatus\":\"Site Works Start Date is Tentative\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019501\",\"reference\":\"0019501-Test Client-HYG-ACA NSED-Site B\",\"at\":\"2026-11-26T07:53:42.382Z\"},\"podioTypes\":[\"ACA NSED\"],\"audit\":[{\"at\":\"2026-11-26T07:53:42.382Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9002 · 0019501-Test Client-HYG-ACA NSED-Site B · no start date in Podio · Site Works Start Date is Tentative\"}],\"updatedAt\":\"2026-11-26T07:53:42.383Z\"}"
     },
     {
-      "name": "[chromebook] backlog event (start 30 days ago) is NOT auto-created (Start fieldwork fallback)",
+      "name": "[chromebook] v48.14: backlog event (start 30 days ago) IS auto-created now (no date window)",
+      "ok": true,
+      "detail": "[{\"id\":\"e-podio-9003\",\"projectId\":\"podio-p0019502\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-10-27\",\"code\":\"0019502-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9003\",\"podioReference\":\"0019502-Test Client-HYG-ACA NSED-Old site\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-10-27\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019502\",\"reference\":\"0019502-Test Client-HYG-ACA NSED-Old site\",\"at\":\"2026-11-26T07:53:42.382Z\"},\"podioTypes\":[\"ACA NSED\"],\"audit\":[{\"at\":\"2026-11-26T07:53:42.382Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9003 · 0019502-Test Client-HYG-ACA NSED-Old site · start 2026-10-27 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-26T07:53:42.383Z\"}]"
+    },
+    {
+      "name": "[chromebook] v48.14: Podio event with no date, last edited 200 days ago, is auto-created too",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "[chromebook] fit-testing-only HYG item (RFT,HPFT) is not made into a hygiene event",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[chromebook] Kerr-like item (RFT,NSEOC-ACA,VENT + long forwarded email) -> ONE hygiene event, never a fit event",
+      "ok": true,
+      "detail": "{\"type\":\"hygiene\",\"code\":\"0019517-001\"}"
+    },
+    {
+      "name": "[chromebook] long Podio task text kept in full on the record (nothing trimmed), notes left empty",
+      "ok": true,
+      "detail": "4013"
+    },
+    {
+      "name": "[chromebook] Podio scope stored from the reference: RFT, NSEOC-ACA, VENT",
+      "ok": true,
+      "detail": "[\"RFT\",\"NSEOC-ACA\",\"VENT\"]"
+    },
+    {
+      "name": "[chromebook] hygiene event beside a fit event on the same job + date: hygiene auto-created, no link offer to the fit event",
+      "ok": true,
+      "detail": "[\"0019519-001\"]"
+    },
+    {
+      "name": "[chromebook] fit event untouched (type, code, no Podio link, no audit added)",
+      "ok": true,
+      "detail": "{\"id\":\"eFit\",\"projectId\":\"podio-p0019519\",\"type\":\"fit\",\"stage\":\"planned\",\"date\":\"2026-11-30\",\"code\":\"0019519-FIT-001\",\"multiDay\":false,\"operators\":[],\"audit\":[],\"podioUnplanned\":true,\"podioLinked\":false,\"updatedAt\":\"2026-11-26T07:52:54.364Z\"}"
+    },
+    {
+      "name": "[chromebook] 0019389-like (hand-made -001 alive + tombstoned FIT event): link offered to the hand-made event, nothing created, FIT code not reused",
+      "ok": true,
+      "detail": "[[\"eHand20\"],[]]"
     },
     {
       "name": "[chromebook] event deleted here (tombstone) is NOT re-created",
@@ -329,7 +439,7 @@
     {
       "name": "[chromebook] hand-made 0019401-001 on the same job + date blocks a duplicate: link offered instead",
       "ok": true,
-      "detail": "{\"9006\":[\"eHand\"]}"
+      "detail": "{\"9006\":[\"eHand\"],\"9054\":[\"eHand20\"]}"
     },
     {
       "name": "[chromebook] already-linked events are not duplicated (9008 stays one event)",
@@ -337,9 +447,9 @@
       "detail": ""
     },
     {
-      "name": "[chromebook] run summary created 10 (9001, 9002, 9010, 9029, 9030, 9040-9044)",
+      "name": "[chromebook] run summary created 14 (9001, 9002, 9003, 9010, 9029, 9030, 9040-9044, 9051-9053)",
       "ok": true,
-      "detail": "{\"at\":\"2026-11-23T12:07:49.259Z\",\"created\":[\"0019500-001 (e-podio-9029)\",\"0019500-002 (e-podio-9030)\",\"0019500-003 (e-podio-9001)\",\"0019511-001 (e-podio-9040)\",\"0019512-002 (e-podio-9041)\",\"0019513-002 (e-podio-9042)\",\"0019514-002 (e-podio-9043)\",\"0019515-002 (e-podio-9044)\",\"0019510-001 (e-podio-9010)\",\"0019501-001 (e-podio-9002)\"],\"adopted\":[],\"skipped\":{\"start date more than 7 days ago\":1,\"deleted here (tombstone)\":1,\"AFM only\":1,\"not planned in Podio\":13,\"field event already exists\":1,\"possible hand-made duplicate (link offered)\":1},\"waiting\":false}"
+      "detail": "{\"at\":\"2026-11-26T07:53:42.382Z\",\"created\":[\"0019502-001 (e-podio-9003)\",\"0019500-001 (e-podio-9029)\",\"0019500-002 (e-podio-9030)\",\"0019500-003 (e-podio-9001)\",\"0019511-001 (e-podio-9040)\",\"0019512-002 (e-podio-9041)\",\"0019513-002 (e-podio-9042)\",\"0019514-002 (e-podio-9043)\",\"0019515-002 (e-podio-9044)\",\"0019510-001 (e-podio-9010)\",\"0019519-001 (e-podio-9052)\",\"0019517-001 (e-podio-9051)\",\"0019501-001 (e-podio-9002)\",\"0019518-001 (e-podio-9053)\"],\"adopted\":[],\"skipped\":{\"deleted here (tombstone)\":1,\"AFM only\":1,\"not planned in Podio\":13,\"fit testing only (RFT/HPFT): use Fit test, not a hygiene event\":1,\"field event already exists\":1,\"possible hand-made duplicate (link offered)\":2},\"waiting\":false}"
     },
     {
       "name": "[chromebook] deleted hand-made duplicate with no samples: auto event reuses its code (0019511-001)",
@@ -389,47 +499,67 @@
     {
       "name": "[chromebook] project's Podio list says created automatically, with Open (no Start fieldwork)",
       "ok": true,
-      "detail": "0019500-Test Client-HYG-ACA NSED-Site A2026-11-25 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseField event 0019500-003 was created automatically.Open 0019500-003"
+      "detail": "0019500-Test Client-HYG-ACA NSED-Site A2026-11-28 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseField event 0019500-003 was created automatically.Open 0019500-003"
     },
     {
       "name": "[chromebook] event screen shows 'Created automatically from Podio' note",
       "ok": true,
-      "detail": "Created automatically from Podio on 23 Nov, 08:07 pm. If it was made in error, an admin can delete it; it will not be created again."
+      "detail": "Created automatically from Podio on 26 Nov, 03:53 pm. If it was made in error, an admin can delete it; it will not be created again."
     },
     {
-      "name": "[chromebook] older event still shows Start fieldwork (fallback)",
+      "name": "[chromebook] item that is not auto-created still shows Start fieldwork (fallback)",
       "ok": true,
-      "detail": "0019502-Test Client-HYG-ACA NSED-Old site2026-10-24 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseStart fieldwork"
+      "detail": "0019502-Test Client-HYG-RFT,HPFT-Fit only2026-11-28 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseStart fieldwork"
+    },
+    {
+      "name": "[chromebook] v48.14 Podio-first: manual 'New project event' shown as a quiet 'Add event not in Podio' fallback (button + FAB)",
+      "ok": true,
+      "detail": "{\"top\":\"Add event not in Podio\",\"topCls\":\"btn ghost\",\"fab\":\"+Not in Podio\",\"fabCls\":\"fab v4814-fab\",\"un\":\"Add event not in Podio\",\"unCls\":\"btn ghost\",\"hint\":true}"
     },
     {
       "name": "[chromebook] Start fieldwork creates one event, deterministic id, not marked auto",
       "ok": true,
-      "detail": "[{\"id\":\"e-podio-9003\",\"projectId\":\"podio-p0019502\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-10-24\",\"code\":\"0019502-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9003\",\"podioReference\":\"0019502-Test Client-HYG-ACA NSED-Old site\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":false,\"podioSeen\":{\"startDate\":\"2026-10-24\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019502\",\"reference\":\"0019502-Test Client-HYG-ACA NSED-Old site\",\"at\":\"2026-11-23T12:07:57.973Z\"},\"audit\":[{\"at\":\"2026-11-23T12:07:57.973Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Started from Podio (Start fieldwork)\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9003 · 0019502-Test Client-HYG-ACA NSED-Old site · start 2026-10-24 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-23T12:07:57.973Z\"}]"
+      "detail": "[{\"id\":\"e-podio-9050\",\"projectId\":\"podio-p0019502\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019502-002\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9050\",\"podioReference\":\"0019502-Test Client-HYG-RFT,HPFT-Fit only\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":false,\"podioSeen\":{\"startDate\":\"2026-11-28\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019502\",\"reference\":\"0019502-Test Client-HYG-RFT,HPFT-Fit only\",\"at\":\"2026-11-26T07:53:51.043Z\"},\"podioTypes\":[\"RFT\",\"HPFT\"],\"audit\":[{\"at\":\"2026-11-26T07:53:51.043Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Started from Podio (Start fieldwork)\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9050 · 0019502-Test Client-HYG-RFT,HPFT-Fit only · start 2026-11-28 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-26T07:53:51.044Z\"}]"
+    },
+    {
+      "name": "[chromebook] FAB on the event screen is back to the normal 'Add sample'",
+      "ok": true,
+      "detail": "[\"fab v4814-fab\",[\"fab\",\"+Add sample\"]]"
+    },
+    {
+      "name": "[chromebook] event shows 'Podio scope' with occupational noise in this event and fit testing as separate",
+      "ok": true,
+      "detail": "Podio scope: RFT — respirator fit testing (a separate fit-test event; not created automatically); NSEOC-ACA — occupational noise + airborne contaminants (both in this event); VENT — ventilation."
+    },
+    {
+      "name": "[chromebook] long Podio task text shown collapsed (short preview + Show all)",
+      "ok": true,
+      "detail": "{\"scope\":\"Podio scope: RFT — respirator fit testing (a separate fit-test event; not created automatically); NSEOC-ACA — occupational noise + airborne contaminants (both in this event); VENT — ventilation.\",\"det\":true,\"open\":false,\"sum\":329}"
     },
     {
       "name": "[chromebook] deleted event's card says it will not be created again, offers Start fieldwork again",
       "ok": true,
-      "detail": "0019503-Test Client-HYG-ACA NSED-Was deleted2026-11-24 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseThe field event for this was deleted. It will not be created again automatically.Start fieldwork again"
+      "detail": "0019503-Test Client-HYG-ACA NSED-Was deleted2026-11-27 · Site Works Start Date is now Confirmed · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseThe field event for this was deleted. It will not be created again automatically.Start fieldwork again"
     },
     {
       "name": "[chromebook] project shows 'Link 0019401-001' and 'Create a separate event'",
       "ok": true,
-      "detail": "0019401-Test Client-HYG-ACA NSED-Lake MacLeod2026-12-05 · Site Works Start Date is Tentative · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseThis may already be a hand-made event. Link it instead of creating a duplicate?Link 0019401-001 (Sat, 5 Dec) Create a separate event"
+      "detail": "0019401-Test Client-HYG-ACA NSED-Lake MacLeod2026-12-08 · Site Works Start Date is Tentative · Test LabPOC: Pat Contact · Test Client · 0400 000 000Dust and noiseThis may already be a hand-made event. Link it instead of creating a duplicate?Link 0019401-001 (Tue, 8 Dec) Create a separate event"
     },
     {
       "name": "[chromebook] hand-made event screen offers 'Link to this Podio event'",
       "ok": true,
-      "detail": "This may be the Podio event 0019401-Test Client-HYG-ACA NSED-Lake MacLeod (Sat, 5 Dec).Link to this Podio event Not this one"
+      "detail": "This may be the Podio event 0019401-Test Client-HYG-ACA NSED-Lake MacLeod (Tue, 8 Dec).Link to this Podio event Not this one"
     },
     {
       "name": "[chromebook] Link: hand-made event becomes linked (no new event), blanks filled, date and Mines Act kept",
       "ok": true,
-      "detail": "{\"id\":\"eHand\",\"projectId\":\"podio-p0019401\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-12-05\",\"code\":\"0019401-001\",\"multiDay\":false,\"operators\":[],\"audit\":[{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Linked to Podio event\",\"field\":\"podioItemId\",\"from\":\"\",\"to\":\"9006\",\"detail\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod · filled from Podio: lab, taskDesc, poc.company, poc.first, poc.last, poc.phone\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Unplanned\",\"field\":\"podioUnplanned\",\"from\":\"true\",\"to\":\"false\",\"detail\":\"true → false\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Linked\",\"field\":\"podioLinked\",\"from\":\"false\",\"to\":\"true\",\"detail\":\"false → true\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Lab\",\"field\":\"lab\",\"from\":\"\",\"to\":\"Test Lab\",\"detail\":\"(empty) → Test Lab\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Task\",\"field\":\"taskDesc\",\"from\":\"\",\"to\":\"Dust and noise\",\"detail\":\"(empty) → Dust and noise\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"poc.company\",\"from\":\"\",\"to\":\"Test Client\",\"detail\":\"(empty) → Test Client\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First\",\"field\":\"poc.first\",\"from\":\"\",\"to\":\"Pat\",\"detail\":\"(empty) → Pat\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last\",\"field\":\"poc.last\",\"from\":\"\",\"to\":\"Contact\",\"detail\":\"(empty) → Contact\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Phone\",\"field\":\"poc.phone\",\"from\":\"\",\"to\":\"0400 000 000\",\"detail\":\"(empty) → 0400 000 000\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Item Id\",\"field\":\"podioItemId\",\"from\":\"\",\"to\":\"9006\",\"detail\":\"(empty) → 9006\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Reference\",\"field\":\"podioReference\",\"from\":\"\",\"to\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"detail\":\"(empty) → 0019401-Test Client-HYG-ACA NSED-Lake MacLeod\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Date\",\"field\":\"podioSeen.startDate\",\"from\":\"\",\"to\":\"2026-12-05\",\"detail\":\"(empty) → 2026-12-05\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Status\",\"field\":\"podioSeen.startStatus\",\"from\":\"\",\"to\":\"Site Works Start Date is Tentative\",\"detail\":\"(empty) → Site Works Start Date is Tentative\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Report Status\",\"field\":\"podioSeen.reportStatus\",\"from\":\"\",\"to\":\"Pending\",\"detail\":\"(empty) → Pending\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Job Number\",\"field\":\"podioSeen.jobNumber\",\"from\":\"\",\"to\":\"0019401\",\"detail\":\"(empty) → 0019401\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Reference\",\"field\":\"podioSeen.reference\",\"from\":\"\",\"to\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"detail\":\"(empty) → 0019401-Test Client-HYG-ACA NSED-Lake MacLeod\"},{\"at\":\"2026-11-23T12:08:00.554Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-23T12:08:00.554Z\",\"detail\":\"(empty) → 2026-11-23T12:08:00.554Z\"}],\"podioUnplanned\":false,\"podioLinked\":true,\"minesAct\":true,\"updatedAt\":\"2026-11-23T12:08:00.554Z\",\"lab\":\"Test Lab\",\"taskDesc\":\"Dust and noise\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"phone\":\"0400 000 000\"},\"podioItemId\":\"9006\",\"podioReference\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"podioSeen\":{\"startDate\":\"2026-12-05\",\"startStatus\":\"Site Works Start Date is Tentative\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019401\",\"reference\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"at\":\"2026-11-23T12:08:00.554Z\"}}"
+      "detail": "{\"id\":\"eHand\",\"projectId\":\"podio-p0019401\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-12-08\",\"code\":\"0019401-001\",\"multiDay\":false,\"operators\":[],\"audit\":[{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Linked to Podio event\",\"field\":\"podioItemId\",\"from\":\"\",\"to\":\"9006\",\"detail\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod · filled from Podio: lab, taskDesc, poc.company, poc.first, poc.last, poc.phone\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Unplanned\",\"field\":\"podioUnplanned\",\"from\":\"true\",\"to\":\"false\",\"detail\":\"true → false\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Linked\",\"field\":\"podioLinked\",\"from\":\"false\",\"to\":\"true\",\"detail\":\"false → true\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Lab\",\"field\":\"lab\",\"from\":\"\",\"to\":\"Test Lab\",\"detail\":\"(empty) → Test Lab\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Task\",\"field\":\"taskDesc\",\"from\":\"\",\"to\":\"Dust and noise\",\"detail\":\"(empty) → Dust and noise\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Company\",\"field\":\"poc.company\",\"from\":\"\",\"to\":\"Test Client\",\"detail\":\"(empty) → Test Client\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed First\",\"field\":\"poc.first\",\"from\":\"\",\"to\":\"Pat\",\"detail\":\"(empty) → Pat\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Last\",\"field\":\"poc.last\",\"from\":\"\",\"to\":\"Contact\",\"detail\":\"(empty) → Contact\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Phone\",\"field\":\"poc.phone\",\"from\":\"\",\"to\":\"0400 000 000\",\"detail\":\"(empty) → 0400 000 000\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Item Id\",\"field\":\"podioItemId\",\"from\":\"\",\"to\":\"9006\",\"detail\":\"(empty) → 9006\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Podio Reference\",\"field\":\"podioReference\",\"from\":\"\",\"to\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"detail\":\"(empty) → 0019401-Test Client-HYG-ACA NSED-Lake MacLeod\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Date\",\"field\":\"podioSeen.startDate\",\"from\":\"\",\"to\":\"2026-12-08\",\"detail\":\"(empty) → 2026-12-08\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Status\",\"field\":\"podioSeen.startStatus\",\"from\":\"\",\"to\":\"Site Works Start Date is Tentative\",\"detail\":\"(empty) → Site Works Start Date is Tentative\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Report Status\",\"field\":\"podioSeen.reportStatus\",\"from\":\"\",\"to\":\"Pending\",\"detail\":\"(empty) → Pending\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Job Number\",\"field\":\"podioSeen.jobNumber\",\"from\":\"\",\"to\":\"0019401\",\"detail\":\"(empty) → 0019401\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Reference\",\"field\":\"podioSeen.reference\",\"from\":\"\",\"to\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"detail\":\"(empty) → 0019401-Test Client-HYG-ACA NSED-Lake MacLeod\"},{\"at\":\"2026-11-26T07:53:55.799Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-26T07:53:55.799Z\",\"detail\":\"(empty) → 2026-11-26T07:53:55.799Z\"}],\"podioUnplanned\":false,\"podioLinked\":true,\"minesAct\":true,\"updatedAt\":\"2026-11-26T07:53:55.799Z\",\"lab\":\"Test Lab\",\"taskDesc\":\"Dust and noise\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"phone\":\"0400 000 000\"},\"podioItemId\":\"9006\",\"podioReference\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"podioSeen\":{\"startDate\":\"2026-12-08\",\"startStatus\":\"Site Works Start Date is Tentative\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019401\",\"reference\":\"0019401-Test Client-HYG-ACA NSED-Lake MacLeod\",\"at\":\"2026-11-26T07:53:55.799Z\"}}"
     },
     {
       "name": "[chromebook] Podio moved 9008 (start +5 -> +6): field event date NOT changed",
       "ok": true,
-      "detail": "2026-11-28"
+      "detail": "2026-12-01"
     },
     {
       "name": "[chromebook] dashboard lists events that changed in Podio (0019508-001 moved, 0019509-001 gone)",
@@ -439,12 +569,12 @@
     {
       "name": "[chromebook] event screen flag: 'Moved in Podio' + Use Podio date + Keep as is",
       "ok": true,
-      "detail": "Changed in Podio. Nothing here was changed automatically.Moved in Podio: Sat, 28 Nov → Sun, 29 Nov.Use Podio date (Sun, 29 Nov) Keep as is"
+      "detail": "Changed in Podio. Nothing here was changed automatically.Moved in Podio: Tue, 1 Dec → Wed, 2 Dec.Use Podio date (Wed, 2 Dec) Keep as is"
     },
     {
       "name": "[chromebook] Use Podio date (staff tap, confirmed) changes the date and audits it; flag clears",
       "ok": true,
-      "detail": "[{\"at\":\"2026-11-23T12:08:01.887Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Date changed to match Podio\",\"field\":\"date\",\"from\":\"2026-11-28\",\"to\":\"2026-11-29\",\"detail\":\"Moved in Podio: Sat, 28 Nov → Sun, 29 Nov.\"},{\"at\":\"2026-11-23T12:08:01.887Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Event date\",\"field\":\"date\",\"from\":\"2026-11-28\",\"to\":\"2026-11-29\",\"detail\":\"2026-11-28 → 2026-11-29\"},{\"at\":\"2026-11-23T12:08:01.887Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Date\",\"field\":\"podioSeen.startDate\",\"from\":\"2026-11-28\",\"to\":\"2026-11-29\",\"detail\":\"2026-11-28 → 2026-11-29\"},{\"at\":\"2026-11-23T12:08:01.887Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Status\",\"field\":\"podioSeen.startStatus\",\"from\":\"Confirmed\",\"to\":\"Site Works Start Date is now Confirmed\",\"detail\":\"Confirmed → Site Works Start Date is now Confirmed\"},{\"at\":\"2026-11-23T12:08:01.887Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Reference\",\"field\":\"podioSeen.reference\",\"from\":\"x\",\"to\":\"0019508-Test Client-HYG-ACA NSED-Moved site\",\"detail\":\"x → 0019508-Test Client-HYG-ACA NSED-Moved site\"},{\"at\":\"2026-11-23T12:08:01.887Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Report Status\",\"field\":\"podioSeen.reportStatus\",\"from\":\"\",\"to\":\"Pending\",\"detail\":\"(empty) → Pending\"},{\"at\":\"2026-11-23T12:08:01.887Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-23T12:08:01.887Z\",\"detail\":\"(empty) → 2026-11-23T12:08:01.887Z\"}]"
+      "detail": "[{\"at\":\"2026-11-26T07:53:57.123Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Date changed to match Podio\",\"field\":\"date\",\"from\":\"2026-12-01\",\"to\":\"2026-12-02\",\"detail\":\"Moved in Podio: Tue, 1 Dec → Wed, 2 Dec.\"},{\"at\":\"2026-11-26T07:53:57.123Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Event date\",\"field\":\"date\",\"from\":\"2026-12-01\",\"to\":\"2026-12-02\",\"detail\":\"2026-12-01 → 2026-12-02\"},{\"at\":\"2026-11-26T07:53:57.123Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Date\",\"field\":\"podioSeen.startDate\",\"from\":\"2026-12-01\",\"to\":\"2026-12-02\",\"detail\":\"2026-12-01 → 2026-12-02\"},{\"at\":\"2026-11-26T07:53:57.123Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start Status\",\"field\":\"podioSeen.startStatus\",\"from\":\"Confirmed\",\"to\":\"Site Works Start Date is now Confirmed\",\"detail\":\"Confirmed → Site Works Start Date is now Confirmed\"},{\"at\":\"2026-11-26T07:53:57.123Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Reference\",\"field\":\"podioSeen.reference\",\"from\":\"x\",\"to\":\"0019508-Test Client-HYG-ACA NSED-Moved site\",\"detail\":\"x → 0019508-Test Client-HYG-ACA NSED-Moved site\"},{\"at\":\"2026-11-26T07:53:57.123Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Report Status\",\"field\":\"podioSeen.reportStatus\",\"from\":\"\",\"to\":\"Pending\",\"detail\":\"(empty) → Pending\"},{\"at\":\"2026-11-26T07:53:57.123Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-26T07:53:57.123Z\",\"detail\":\"(empty) → 2026-11-26T07:53:57.123Z\"}]"
     },
     {
       "name": "[chromebook] linked event later Canceled in Podio: 'Marked Canceled in Podio' flag, event untouched",
@@ -459,12 +589,12 @@
     {
       "name": "[chromebook] Keep as is records the review (audit) and clears the flag; event still there",
       "ok": true,
-      "detail": "{\"id\":\"eOld9009\",\"projectId\":\"podio-p0019509\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-25\",\"code\":\"0019509-001\",\"multiDay\":false,\"operators\":[],\"audit\":[{\"at\":\"2026-11-23T12:08:03.211Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Podio change reviewed: kept as is\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"This event is no longer in Podio (deleted, or the Podio copy no longer lists it).\"},{\"at\":\"2026-11-23T12:08:03.211Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Gone\",\"field\":\"podioSeen.gone\",\"from\":\"\",\"to\":\"true\",\"detail\":\"(empty) → true\"},{\"at\":\"2026-11-23T12:08:03.211Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-23T12:08:03.211Z\",\"detail\":\"(empty) → 2026-11-23T12:08:03.211Z\"}],\"podioItemId\":\"9009\",\"podioLinked\":true,\"updatedAt\":\"2026-11-23T12:08:03.211Z\",\"podioSeen\":{\"gone\":true,\"at\":\"2026-11-23T12:08:03.211Z\"}}"
+      "detail": "{\"id\":\"eOld9009\",\"projectId\":\"podio-p0019509\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019509-001\",\"multiDay\":false,\"operators\":[],\"audit\":[{\"at\":\"2026-11-26T07:53:58.452Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Podio change reviewed: kept as is\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"This event is no longer in Podio (deleted, or the Podio copy no longer lists it).\"},{\"at\":\"2026-11-26T07:53:58.452Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Gone\",\"field\":\"podioSeen.gone\",\"from\":\"\",\"to\":\"true\",\"detail\":\"(empty) → true\"},{\"at\":\"2026-11-26T07:53:58.452Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed At\",\"field\":\"podioSeen.at\",\"from\":\"\",\"to\":\"2026-11-26T07:53:58.452Z\",\"detail\":\"(empty) → 2026-11-26T07:53:58.452Z\"}],\"podioItemId\":\"9009\",\"podioLinked\":true,\"updatedAt\":\"2026-11-26T07:53:58.452Z\",\"podioSeen\":{\"gone\":true,\"at\":\"2026-11-26T07:53:58.452Z\"}}"
     },
     {
       "name": "[chromebook] delete writes a tombstone with the Podio item id (no row delete)",
       "ok": true,
-      "detail": "{\"at\":\"2026-11-23T12:08:03.624Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"id\":\"e-podio-9002\",\"tombstone\":\"event\",\"deletedEventId\":\"e-podio-9002\",\"eventId\":\"e-podio-9002\",\"projectId\":\"podio-p0019501\",\"code\":\"0019501-001\",\"type\":\"hygiene\",\"podioItemId\":\"9002\",\"podioAuto\":true,\"podioUnplanned\":false,\"sampleCount\":0,\"detail\":\"event deleted\"}"
+      "detail": "{\"at\":\"2026-11-26T07:53:58.868Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"id\":\"e-podio-9002\",\"tombstone\":\"event\",\"deletedEventId\":\"e-podio-9002\",\"eventId\":\"e-podio-9002\",\"projectId\":\"podio-p0019501\",\"code\":\"0019501-001\",\"type\":\"hygiene\",\"podioItemId\":\"9002\",\"podioAuto\":true,\"podioUnplanned\":false,\"sampleCount\":0,\"detail\":\"event deleted\"}"
     },
     {
       "name": "[chromebook] next sync does not re-create the deleted event",
@@ -484,17 +614,17 @@
     {
       "name": "[chromebook] local delete tombstone records hand-made + sample count",
       "ok": true,
-      "detail": "{\"at\":\"2026-11-23T12:08:11.367Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"id\":\"eLocalHand\",\"tombstone\":\"event\",\"deletedEventId\":\"eLocalHand\",\"eventId\":\"eLocalHand\",\"projectId\":\"podio-p0019516\",\"code\":\"0019516-001\",\"type\":\"hygiene\",\"podioItemId\":\"\",\"podioAuto\":false,\"podioUnplanned\":true,\"sampleCount\":0,\"detail\":\"event deleted\",\"updatedAt\":\"2026-11-23T12:08:11.367Z\"}"
+      "detail": "{\"at\":\"2026-11-26T07:54:06.599Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"id\":\"eLocalHand\",\"tombstone\":\"event\",\"deletedEventId\":\"eLocalHand\",\"eventId\":\"eLocalHand\",\"projectId\":\"podio-p0019516\",\"code\":\"0019516-001\",\"type\":\"hygiene\",\"podioItemId\":\"\",\"podioAuto\":false,\"podioUnplanned\":true,\"sampleCount\":0,\"detail\":\"event deleted\",\"updatedAt\":\"2026-11-26T07:54:06.599Z\"}"
     },
     {
       "name": "[chromebook] after deleting a hand-made event here, the Podio event gets 0019516-001; the deleted one stays deleted",
       "ok": true,
-      "detail": "[{\"id\":\"e-podio-9045\",\"projectId\":\"podio-p0019516\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-27\",\"code\":\"0019516-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9045\",\"podioReference\":\"0019516-Test Client-HYG-ACA NSED-Deleted here\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-11-27\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019516\",\"reference\":\"0019516-Test Client-HYG-ACA NSED-Deleted here\",\"at\":\"2026-11-23T12:08:12.185Z\"},\"audit\":[{\"at\":\"2026-11-23T12:08:12.185Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9045 · 0019516-Test Client-HYG-ACA NSED-Deleted here · start 2026-11-27 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-23T12:08:12.185Z\"}]"
+      "detail": "[{\"id\":\"e-podio-9045\",\"projectId\":\"podio-p0019516\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-30\",\"code\":\"0019516-001\",\"multiDay\":false,\"minesAct\":false,\"notes\":\"\",\"uploadReady\":false,\"operators\":[],\"turnaround\":\"standard\",\"taskDesc\":\"Dust and noise\",\"lab\":\"Test Lab\",\"siteContact\":\"\",\"poc\":{\"company\":\"Test Client\",\"first\":\"Pat\",\"last\":\"Contact\",\"role\":\"\",\"phone\":\"0400 000 000\",\"email\":\"\"},\"equipmentDetails\":\"\",\"podioDriveLink\":\"\",\"podioItemId\":\"9045\",\"podioReference\":\"0019516-Test Client-HYG-ACA NSED-Deleted here\",\"podioLinked\":true,\"podioUnplanned\":false,\"podioAuto\":true,\"podioSeen\":{\"startDate\":\"2026-11-30\",\"startStatus\":\"Site Works Start Date is now Confirmed\",\"reportStatus\":\"Pending\",\"jobNumber\":\"0019516\",\"reference\":\"0019516-Test Client-HYG-ACA NSED-Deleted here\",\"at\":\"2026-11-26T07:54:07.418Z\"},\"podioTypes\":[\"ACA NSED\"],\"audit\":[{\"at\":\"2026-11-26T07:54:07.418Z\",\"who\":\"ENVSS Field (auto, V46 Test <field.test@envss.com.au> · Chromebook)\",\"action\":\"Created automatically from Podio\",\"field\":\"\",\"from\":\"\",\"to\":\"\",\"detail\":\"Podio HYG event 9045 · 0019516-Test Client-HYG-ACA NSED-Deleted here · start 2026-11-30 · Site Works Start Date is now Confirmed\"}],\"updatedAt\":\"2026-11-26T07:54:07.418Z\"}]"
     },
     {
       "name": "[chromebook] race: Supabase row made/edited by another device is kept, never overwritten; this device adopts it",
       "ok": true,
-      "detail": "{\"rRow\":{\"id\":\"e-podio-9012\",\"payload\":{\"id\":\"e-podio-9012\",\"projectId\":\"podio-p0019510\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019510-002\",\"multiDay\":false,\"operators\":[\"Minah\"],\"audit\":[],\"podioItemId\":\"9012\",\"podioAuto\":true,\"notes\":\"edited on the other device\"},\"updated_at\":\"2026-11-23T12:07:02.016Z\",\"updated_by\":\"Other Device <minah@envss.com.au>\"},\"rLocal\":{\"id\":\"e-podio-9012\",\"projectId\":\"podio-p0019510\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-11-28\",\"code\":\"0019510-002\",\"multiDay\":false,\"operators\":[\"Minah\"],\"audit\":[],\"podioItemId\":\"9012\",\"podioAuto\":true,\"notes\":\"edited on the other device\",\"updatedAt\":\"2026-11-23T12:07:02.016Z\"}}"
+      "detail": "{\"rRow\":{\"id\":\"e-podio-9012\",\"payload\":{\"id\":\"e-podio-9012\",\"projectId\":\"podio-p0019510\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-12-01\",\"code\":\"0019510-002\",\"multiDay\":false,\"operators\":[\"Minah\"],\"audit\":[],\"podioItemId\":\"9012\",\"podioAuto\":true,\"notes\":\"edited on the other device\"},\"updated_at\":\"2026-11-26T07:52:54.364Z\",\"updated_by\":\"Other Device <minah@envss.com.au>\"},\"rLocal\":{\"id\":\"e-podio-9012\",\"projectId\":\"podio-p0019510\",\"type\":\"hygiene\",\"stage\":\"planned\",\"date\":\"2026-12-01\",\"code\":\"0019510-002\",\"multiDay\":false,\"operators\":[\"Minah\"],\"audit\":[],\"podioItemId\":\"9012\",\"podioAuto\":true,\"notes\":\"edited on the other device\",\"updatedAt\":\"2026-11-26T07:52:54.364Z\"}}"
     },
     {
       "name": "[chromebook] race with a delete on another device: row not overwritten, event hidden, not re-created",
@@ -518,6 +648,116 @@
     },
     {
       "name": "[chromebook] no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] apps: HYG rows still auto-create alongside new apps",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] apps: Occ Noise Event -> hygiene event, kind noise, app id kept",
+      "ok": true,
+      "detail": "{\"t\":\"hygiene\",\"k\":\"noise\",\"c\":\"0019530-001\"}"
+    },
+    {
+      "name": "[pixel7] apps: Ventilation Survey Event -> hygiene event, kind vent",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] apps: Onsite Fit Test Event -> fit event {job}-FIT-001",
+      "ok": true,
+      "detail": "{\"t\":\"fit\",\"c\":\"0019530-FIT-001\"}"
+    },
+    {
+      "name": "[pixel7] apps: switched-off app creates nothing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] apps: new-app field labels (event-reference, report-status, poc-first-name) are mapped",
+      "ok": true,
+      "detail": "{\"d\":\"2026-12-05\",\"p\":{\"company\":\"\",\"first\":\"Alia\",\"last\":\"\",\"role\":\"\",\"phone\":\"\",\"email\":\"\"}}"
+    },
+    {
+      "name": "[pixel7] apps: finished new-app item (Report Status Invoiced) not created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] apps: Podio fit event beside a hand-made fit event on the same date -> link offered to the fit event, not created",
+      "ok": true,
+      "detail": "{\"9006\":[\"eHand\"],\"9054\":[\"eHand20\"],\"9605\":[\"eFitHand\"]}"
+    },
+    {
+      "name": "[pixel7] apps: HYG records unchanged (no podioAppId on HYG events)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[pixel7] apps: event says which Podio app it came from",
+      "ok": true,
+      "detail": "From Podio app: Occ Noise Event (noise)."
+    },
+    {
+      "name": "[pixel7] apps: extra view missing -> HYG still auto-creates, no new-app events, no errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[chromebook] apps: HYG rows still auto-create alongside new apps",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[chromebook] apps: Occ Noise Event -> hygiene event, kind noise, app id kept",
+      "ok": true,
+      "detail": "{\"t\":\"hygiene\",\"k\":\"noise\",\"c\":\"0019530-001\"}"
+    },
+    {
+      "name": "[chromebook] apps: Ventilation Survey Event -> hygiene event, kind vent",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[chromebook] apps: Onsite Fit Test Event -> fit event {job}-FIT-001",
+      "ok": true,
+      "detail": "{\"t\":\"fit\",\"c\":\"0019530-FIT-001\"}"
+    },
+    {
+      "name": "[chromebook] apps: switched-off app creates nothing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[chromebook] apps: new-app field labels (event-reference, report-status, poc-first-name) are mapped",
+      "ok": true,
+      "detail": "{\"d\":\"2026-12-05\",\"p\":{\"company\":\"\",\"first\":\"Alia\",\"last\":\"\",\"role\":\"\",\"phone\":\"\",\"email\":\"\"}}"
+    },
+    {
+      "name": "[chromebook] apps: finished new-app item (Report Status Invoiced) not created",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[chromebook] apps: Podio fit event beside a hand-made fit event on the same date -> link offered to the fit event, not created",
+      "ok": true,
+      "detail": "{\"9006\":[\"eHand\"],\"9054\":[\"eHand20\"],\"9605\":[\"eFitHand\"]}"
+    },
+    {
+      "name": "[chromebook] apps: HYG records unchanged (no podioAppId on HYG events)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "[chromebook] apps: event says which Podio app it came from",
+      "ok": true,
+      "detail": "From Podio app: Occ Noise Event (noise)."
+    },
+    {
+      "name": "[chromebook] apps: extra view missing -> HYG still auto-creates, no new-app events, no errors",
       "ok": true,
       "detail": ""
     },

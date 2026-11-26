@@ -82,12 +82,13 @@ function remoteFixture() {
 const { server, base: url } = await serve();
 const browser = await launch(["--host-resolver-rules=MAP *.supabase.co 127.0.0.1:9"]);
 const ext = [];
-async function boot(vp, store, keepStorage) {
+async function boot(vp, store, keepStorage, pre, mopts) {
   const ctx = await (browser.createBrowserContext ? browser.createBrowserContext() : browser.createIncognitoBrowserContext());   /* own storage + IndexedDB = a separate device */
-  const page = await ctx.newPage(); page.errs = []; page.on("pageerror", e => page.errs.push(String(e)));
+  const page = await ctx.newPage();
+  if (pre) await page.evaluateOnNewDocument(pre); page.errs = []; page.on("pageerror", e => page.errs.push(String(e)));
   page.on("console", m => { if (m.type() === "warning" && /v48\.7/.test(m.text())) page.errs.push(m.text()); });
   await page.setViewport(VIEWPORTS[vp].viewport); await page.setUserAgent(VIEWPORTS[vp].ua);
-  await page.setRequestInterception(true); page.mlog = mockSupabase(page, store, {});
+  await page.setRequestInterception(true); page.mlog = mockSupabase(page, store, mopts || {});
   page.on("request", r => { const u = r.url(); if (!u.startsWith(url) && !u.startsWith("data:") && !/cdn\.jsdelivr\.net|fonts\.(googleapis|gstatic)\.com|\.supabase\.co\//.test(u)) ext.push(vp + " " + r.method() + " " + u.split("?")[0]); });
   page.dialogs = []; page.on("dialog", async d => { page.dialogs.push(d.message()); await d.accept(); });
   await page.goto(url + "/field.html", { waitUntil: "domcontentloaded" });
@@ -107,6 +108,9 @@ async function run(vp) {
   const page = await boot(vp, store);
   check(`[${vp}] app is v48.14`, await page.evaluate(() => APP_VERSION === "48.14" && document.getElementById("appVersion").textContent === "v48.14" && document.title === "ENVSS Field v48.14"));
   await waitFor(page, () => activityLoaded && projectsLoaded);
+  const appsDefault = await page.evaluate(() => envssAuto.apps().map(a => [a.appId, a.fieldType, a.kind, a.enabled]));
+  check(`[${vp}] default Podio event apps: HYG 24280319 hygiene; Occ Noise 30888380 hygiene/noise; Vent Survey 30888385 hygiene/vent; Onsite RFT 30888384 fit`,
+    JSON.stringify(appsDefault) === JSON.stringify([["24280319", "hygiene", "", true], ["30888380", "hygiene", "noise", true], ["30888385", "hygiene", "vent", true], ["30888384", "fit", "fit", true]]), JSON.stringify(appsDefault));
 
   /* 0. not ready (events / tombstones not pulled yet) -> nothing created */
   const notReady = await page.evaluate(() => { activityLoaded = false; const before = db.events.length;
@@ -320,8 +324,57 @@ async function run(vp) {
   check(`[${vp}] no page errors`, !page.errs.length, page.errs.join(" | "));
   await page.close();
 }
+/* v48.14: per-app config — new Podio event apps (ids given later by John) map to field event types */
+async function runApps(vp) {
+  const store = remoteFixture();
+  store.envss_projects.set("podio-p0019530", proj("0019530", "New apps")); store.envss_projects.set("podio-p0019531", proj("0019531", "Hand-made fit"));
+  const ni = (app, id, job, title, start, extraF) => Object.assign(item(id, job, title, start, "Site Works Start Date is now Confirmed", { fields: extraF || {} }), { app_id: app });
+  store.v_field_podio_events = new Map([
+    ni(7001, 9601, "0019530", "Occ noise", D(3)), ni(7002, 9602, "0019530", "Vent", D(3)), ni(7003, 9603, "0019530", "Onsite fit", D(3)), ni(7004, 9604, "0019530", "Switched off", D(3)),
+    ni(7003, 9605, "0019531", "Fit beside hand-made fit", D(5)),
+    /* labels of the new apps give other external ids: aliases map them */
+    Object.assign({ item_id: 9606, app_id: 7001, title: "aliases", last_edit_on: NOW, synced_at: NOW, fields: { project: { title: "0019530 x", item_id: 1 }, "event-reference": "0019530-Test Client-HYG-NSEOC-Aliases",
+      "site-works-start-date": { start: D(9) + " 00:00:00" }, "site-works-start-date-status": "Site Works Start Date is now Confirmed", "report-status": "Pending", "poc-first-name": "Alia" } }),
+    Object.assign({ item_id: 9607, app_id: 7002, title: "done", last_edit_on: NOW, synced_at: NOW, fields: { project: { title: "0019530 x", item_id: 1 }, "event-reference": "0019530-Test Client-HYG-VENT-Done",
+      "site-works-start-date": { start: D(2) + " 00:00:00" }, "report-status": "Invoiced" } })
+  ].map(r => [String(r.item_id), r]));
+  store.envss_events.set("eFitHand", ev("eFitHand", "0019531", "0019531-FIT-001", D(5), { type: "fit", podioUnplanned: true, podioLinked: false }));
+  const pre = () => { window.ENVSS_PODIO_EVENT_APPS = [
+    { appId: "24280319", name: "HYG Assessment Event", fieldType: "hygiene", kind: "", enabled: true },
+    { appId: "7001", name: "Occ Noise Event", fieldType: "hygiene", kind: "noise", enabled: true },
+    { appId: "7002", name: "Ventilation Survey Event", fieldType: "hygiene", kind: "vent", enabled: true },
+    { appId: "7003", name: "Onsite Respirator Fit Test Event", fieldType: "fit", kind: "fit", enabled: true },
+    { appId: "7004", name: "Later app", fieldType: "hygiene", kind: "", enabled: false }]; };
+  const page = await boot(vp, store, false, pre);
+  await waitFor(page, () => activityLoaded && projectsLoaded);
+  await refresh(page); await waitFor(page, () => db.events.some(e => e.id === "e-podio-9603"), null, 10000);
+  const list = await evs(page);
+  const g = id => list.find(e => e.id === "e-podio-" + id);
+  check(`[${vp}] apps: HYG rows still auto-create alongside new apps`, !!g(9001));
+  check(`[${vp}] apps: Occ Noise Event -> hygiene event, kind noise, app id kept`, g(9601) && g(9601).type === "hygiene" && g(9601).podioEventKind === "noise" && g(9601).podioAppId === "7001" && /^0019530-00\d$/.test(g(9601).code), JSON.stringify(g(9601) && { t: g(9601).type, k: g(9601).podioEventKind, c: g(9601).code }));
+  check(`[${vp}] apps: Ventilation Survey Event -> hygiene event, kind vent`, g(9602) && g(9602).type === "hygiene" && g(9602).podioEventKind === "vent");
+  check(`[${vp}] apps: Onsite Fit Test Event -> fit event {job}-FIT-001`, g(9603) && g(9603).type === "fit" && g(9603).code === "0019530-FIT-001", JSON.stringify(g(9603) && { t: g(9603).type, c: g(9603).code }));
+  check(`[${vp}] apps: switched-off app creates nothing`, !g(9604));
+  check(`[${vp}] apps: new-app field labels (event-reference, report-status, poc-first-name) are mapped`, g(9606) && g(9606).date === D(9) && g(9606).poc.first === "Alia" && /Aliases/.test(g(9606).podioReference), JSON.stringify(g(9606) && { d: g(9606).date, p: g(9606).poc }));
+  check(`[${vp}] apps: finished new-app item (Report Status Invoiced) not created`, !g(9607));
+  const off = await page.evaluate(() => envssAuto.offers());
+  check(`[${vp}] apps: Podio fit event beside a hand-made fit event on the same date -> link offered to the fit event, not created`, !g(9605) && JSON.stringify(off["9605"]) === '["eFitHand"]', JSON.stringify(off));
+  check(`[${vp}] apps: HYG records unchanged (no podioAppId on HYG events)`, g(9001) && !("podioAppId" in g(9001)));
+  await page.evaluate(() => openEvent("e-podio-9601")); await sleep(500);
+  const lbl = await page.evaluate(() => (document.getElementById("v4814App") || {}).textContent || "");
+  check(`[${vp}] apps: event says which Podio app it came from`, /From Podio app: Occ Noise Event \(noise\)/.test(lbl), lbl);
+  if (vp === "chromebook") { await page.evaluate(() => openProject("podio-p0019530")); await sleep(700); await page.screenshot({ path: path.join(OUT, vp + "-20-new-apps-events-list.png"), fullPage: true }); }
+  /* view missing (404): HYG keeps working, nothing from new apps, nothing flagged gone */
+  const store2 = remoteFixture(); const p2 = await boot(vp, store2, false, pre, { tableStatus: { v_field_podio_events: 404 } });
+  await waitFor(p2, () => activityLoaded && projectsLoaded);
+  await refresh(p2); await waitFor(p2, () => db.events.some(e => e.id === "e-podio-9001"), null, 8000);
+  const l2 = await evs(p2);
+  check(`[${vp}] apps: extra view missing -> HYG still auto-creates, no new-app events, no errors`, l2.some(e => e.id === "e-podio-9001") && !l2.some(e => e.podioAppId) && !p2.errs.length, p2.errs.join(" | "));
+  await p2.close(); await page.close();
+}
 const which = process.argv[2] ? [process.argv[2]] : ["pixel7", "chromebook"];
 for (const vp of which) { try { await run(vp); } catch (e) { check(`[${vp}] run completed`, false, e && e.stack || e); } }
+for (const vp of which) { try { await runApps(vp); } catch (e) { check(`[${vp}] apps run completed`, false, e && e.stack || e); } }
 check("no requests left the box except the local server (and fonts/CDN)", !ext.some(u => /podio\.com|supabase\.co/.test(u)), ext.join(" | "));
 await browser.close(); server.close();
 fs.writeFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "test-results.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2));

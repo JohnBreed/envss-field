@@ -12065,6 +12065,25 @@ function fixOpen(ts) {
   function readJson(k, d) { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v == null ? d : v; } catch (e) { return d; } }
   function writeJson(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
+  /* v48.14: Podio event apps that feed auto-create, and the field event each one makes (John, 26 Nov 2026 3:15 pm AWST).
+     HYG Assessment Events works now. The three new apps are read from the draft view v_field_podio_events
+     (work/hyg_v48_14_01_podio_events_view.sql, NOT applied); until that view exists (404) nothing changes for them.
+     Override per site with window.ENVSS_PODIO_EVENT_APPS in config.js.
+     fieldType: the field app's event type ("hygiene" or "fit"). kind: shown on the event and kept on the record (podioEventKind). */
+  const HYG_APP = "24280319";
+  const PODIO_EVENT_APPS = [
+    { appId: HYG_APP, name: "HYG Assessment Event", fieldType: "hygiene", kind: "", enabled: true },
+    /* created by John 26 Nov 2026 3:29 pm AWST in 1.6 ENVSS Project Events (copies of the HYG app: same field ids) */
+    { appId: "30888380", name: "Occ Noise Event", fieldType: "hygiene", kind: "noise", enabled: true },   /* occupational noise samples go in a hygiene event (noise.js) */
+    { appId: "30888385", name: "Vent Survey Event", fieldType: "hygiene", kind: "vent", enabled: true },
+    { appId: "30888384", name: "Onsite RFT Event", fieldType: "fit", kind: "fit", enabled: true }         /* {job}-FIT-nnn, fit-test.js */
+  ];
+  const appsCfg = () => (Array.isArray(window.ENVSS_PODIO_EVENT_APPS) ? window.ENVSS_PODIO_EVENT_APPS : PODIO_EVENT_APPS).map(a => Object.assign({}, a, { appId: String(a.appId || "") }));
+  const appOf = r => { const id = String((r && (r.appId || (r.payload && r.payload.appId))) || HYG_APP); return appsCfg().find(a => a.appId === id) || null; };
+  const extraApps = () => appsCfg().filter(a => a.enabled && a.appId && a.appId !== HYG_APP && (a.fieldType === "hygiene" || a.fieldType === "fit"));
+  const evApp = ev => String((ev && ev.podioAppId) || HYG_APP);
+  const isFitEv = e => typeof isFitEvent === "function" && isFitEvent(e);
+  const sameKind = (e, cfg) => cfg && cfg.fieldType === "fit" ? isFitEv(e) : isHyg(e);
   let snap = readJson(ALL_KEY, null);                    /* last full mirror read: { rows:[{itemId,lastEdit,payload}], complete, at } */
   const DELINFO_KEY = "envss-deleted-events-v487";
   let delInfo = readJson(DELINFO_KEY, {});               /* deleted event id -> { podioItemId, podioAuto, podioUnplanned, type, samples } seen on tombstoned rows */
@@ -12080,7 +12099,7 @@ function fixOpen(ts) {
   const idFor = itemId => "e-podio-" + String(itemId).replace(/[^0-9A-Za-z_-]/g, "");
   const jobOf = p => { const m = String(p && p.number || "").trim().match(/^(\d{7})(?!\d)/); return m ? m[1] : ""; };
   const isStub = p => /^podio-afm-job-/.test(String(p && p.id || ""));
-  /* work types from the Podio reference, e.g. 0019358-Kerr Engineering-HYG-RFT,NSEOC-ACA,VENT-… -> ["RFT", "NSEOC-ACA", "VENT"] */
+  /* work types from the Podio reference, e.g. 0019xxx-Client-HYG-RFT,NSEOC-ACA,VENT-Site -> ["RFT", "NSEOC-ACA", "VENT"] */
   function typesOf(ref) {
     const m = String(ref || "").match(/-(?:HYG|HAZ)-(.*)$/); if (!m) return [];
     const take = [];
@@ -12125,8 +12144,11 @@ function fixOpen(ts) {
     const pl = r.payload || {};
     if (!pl.planned) return "not planned in Podio";
     if (!/^\d{7}$/.test(pl.jobNumber || "")) return "no job number";
-    if (isAfmOnly(pl.reference)) return "AFM only";
-    if (isFitOnly(pl.reference)) return "fit testing only (RFT/HPFT): use Fit test, not a hygiene event";
+    const cfg = appOf(r);
+    if (!cfg) return "Podio app not set up for auto-create";
+    if (!cfg.enabled) return "Podio app switched off for auto-create";
+    if (cfg.appId === HYG_APP && isAfmOnly(pl.reference)) return "AFM only";
+    if (cfg.appId === HYG_APP && isFitOnly(pl.reference)) return "fit testing only (RFT/HPFT): use Fit test, not a hygiene event";
     const t = today();
     if (pl.startDate) { if (BACK_DAYS != null && pl.startDate < addDays(t, -BACK_DAYS)) return "start date more than " + BACK_DAYS + " days ago"; }
     else if (NODATE_EDIT_DAYS != null) { const le = String(r.lastEdit || "").slice(0, 10); if (!le || le < addDays(t, -NODATE_EDIT_DAYS)) return "no start date and not edited in " + NODATE_EDIT_DAYS + " days"; }
@@ -12140,9 +12162,9 @@ function fixOpen(ts) {
   }
   /* field code named in the Podio reference: the whole reference (0019185-001) or its start (0019185-002-Construction Sciences-…) */
   const codeHint = pl => pl.fieldCode || ((String(pl.reference || "").match(/^(\d{7}-\d{3})-/) || [])[1] || "");
-  function handMade(p, pl) {
+  function handMade(p, pl, cfg) {
     const t = today();
-    return (db.events || []).filter(e => e && e.projectId === p.id && !e.podioItemId && isHyg(e)
+    return (db.events || []).filter(e => e && e.projectId === p.id && !e.podioItemId && sameKind(e, cfg || appOf({ appId: pl.appId }))
       && !(e.podioLinkDeclined || []).includes(String(pl.itemId))
       && ((codeHint(pl) && e.code === codeHint(pl))
         || (pl.startDate && e.date && Math.abs(dayDiff(e.date, pl.startDate)) <= MATCH_DAYS)
@@ -12182,24 +12204,30 @@ function fixOpen(ts) {
     while (codes.has(job + "-" + String(n).padStart(3, "0"))) n++;
     return job + "-" + String(n).padStart(3, "0");
   }
-  function build(p, pl, id, how, tb) {
+  function build(p, pl, id, how, tb, cfg) {
     const poc = pl.poc || {};
-    return {
-      id, projectId: p.id, type: "hygiene", stage: "planned",
+    cfg = cfg || appOf({ appId: pl.appId }) || PODIO_EVENT_APPS[0];
+    const fit = cfg.fieldType === "fit" && window.envssFit && typeof envssFit.fitEventCode === "function";
+    const ev = {
+      id, projectId: p.id, type: fit ? "fit" : "hygiene", stage: "planned",
       date: pl.startDate || (how === "auto" ? "" : new Date().toISOString().slice(0, 10)),
-      code: codeFor(p, pl, tb), multiDay: false, minesAct: false, notes: "", uploadReady: false, operators: [],
+      code: fit ? envssFit.fitEventCode(p, envssFit.nextFitSeq(p.id)) : codeFor(p, pl, tb), multiDay: false, minesAct: false, notes: "", uploadReady: false, operators: [],
       turnaround: pl.turnaround || "standard", taskDesc: pl.task || "", lab: pl.lab || "", siteContact: pl.siteContact || "",
       poc: { company: poc.company || "", first: poc.first || "", last: poc.last || "", role: poc.role || "", phone: poc.phone || "", email: poc.email || "" },
       equipmentDetails: pl.equipment || "", podioDriveLink: pl.driveLink || "",
       podioItemId: String(pl.itemId), podioReference: pl.reference || "", podioLinked: true, podioUnplanned: false,
       podioAuto: how === "auto", podioSeen: seenOf(pl), podioTypes: typesOf(pl.reference),
+      podioAppId: cfg.appId, podioEventKind: cfg.kind || "",
       audit: [{ at: nowIso(), who: how === "auto" ? "ENVSS Field (auto, " + whoText() + ")" : whoText(),
         action: how === "auto" ? "Created automatically from Podio" : "Started from Podio (Start fieldwork)", field: "", from: "", to: "",
-        detail: "Podio HYG event " + pl.itemId + (pl.reference ? " · " + pl.reference : "") + (pl.startDate ? " · start " + pl.startDate : " · no start date in Podio") + (pl.startStatus ? " · " + pl.startStatus : "") }]
+        detail: "Podio " + (cfg.appId === HYG_APP ? "HYG" : cfg.name) + " event " + pl.itemId + (pl.reference ? " · " + pl.reference : "") + (pl.startDate ? " · start " + pl.startDate : " · no start date in Podio") + (pl.startStatus ? " · " + pl.startStatus : "") }]
     };
+    if (cfg.appId === HYG_APP) { delete ev.podioAppId; delete ev.podioEventKind; }   /* HYG records stay exactly as before */
+    return ev;
   }
 
   /* ---------- auto-create ---------- */
+  let lastOffers = "{}";
   function run() {
     if (!snap || !Array.isArray(snap.rows)) return 0;
     if (!ready()) { last.waiting = true; return 0; }
@@ -12217,9 +12245,10 @@ function fixOpen(ts) {
       if (tb.items.has(item) || tb.evs.has(id)) return skip("deleted here (tombstone)");
       if ((db.events || []).some(e => e.id === id)) return skip("field event already exists");
       const p = projectFor(pl.jobNumber, tb, pl); if (!p) return skip("job not on the project list yet");
-      const m = handMade(p, pl);
+      const cfg = appOf(r);
+      const m = handMade(p, pl, cfg);
       if (m.length) { offers[item] = m.map(e => e.id); return skip("possible hand-made duplicate (link offered)"); }
-      const ev = build(p, pl, id, "auto", tb);
+      const ev = build(p, pl, id, "auto", tb, cfg);
       db.events.push(ev);
       out.push(ev);
     });
@@ -12229,7 +12258,8 @@ function fixOpen(ts) {
       out.forEach(ev => { made[ev.id] = snapOf("events", ev); });
       writeJson(MADE_KEY, made);
       if (!userIsTyping()) render();
-    } else if (Object.keys(offers).length) { try { if (!userIsTyping()) render(); } catch (e) {} }
+    } else if (JSON.stringify(offers) !== lastOffers) { try { if (!userIsTyping()) render(); } catch (e) {} }   /* v48.14: repaint only when the offers change */
+    lastOffers = JSON.stringify(offers);
     return out.length;
   }
 
@@ -12247,10 +12277,12 @@ function fixOpen(ts) {
   /* ---------- review flags (never change the event; staff decide) ---------- */
   const rowFor = item => snap && Array.isArray(snap.rows) ? snap.rows.find(r => String(r.itemId) === String(item)) : null;
   function flagsFor(ev) {
-    if (!ev || !ev.podioItemId || !isHyg(ev) || !snap || !Array.isArray(snap.rows)) return [];
+    if (!ev || !ev.podioItemId || !snap || !Array.isArray(snap.rows)) return [];
+    if (!isHyg(ev) && !(isFitEv(ev) && ev.podioAppId)) return [];      /* fit events: only ones made from a Podio fit-test app */
     const seen = ev.podioSeen || null, r = rowFor(ev.podioItemId), out = [];
     if (!r) {
       if (!snap.complete || (seen && seen.gone)) return [];
+      if (evApp(ev) !== HYG_APP && !(snap.apps || []).includes(evApp(ev))) return [];   /* that app was not read this time: never say "gone" */
       out.push({ kind: "gone", text: deletedInPodio.has(String(ev.podioItemId)) ? "This event was deleted in Podio." : "This event is no longer in Podio (deleted, or the Podio copy no longer lists it)." });
       return out;
     }
@@ -12358,6 +12390,10 @@ function fixOpen(ts) {
         + (f.some(x => x.kind === "gone" || x.kind === "status") ? '<p class="help" style="font-weight:400">If this event should not go ahead, an admin can delete it (Delete event). It will not come back.</p>' : "")
         + "</div>";
     }
+    if (ev.podioItemId && ev.podioAppId && evApp(ev) !== HYG_APP && !document.getElementById("v4814App")) {
+      const a = appsCfg().find(x => x.appId === evApp(ev));
+      html += '<p class="help" id="v4814App">From Podio app: ' + esc(a ? a.name : "Podio app " + evApp(ev)) + (ev.podioEventKind ? " (" + esc(ev.podioEventKind) + ")" : "") + ".</p>";
+    }
     if (ev.podioItemId && isHyg(ev) && !document.getElementById("v4814Scope")) {
       const ty = (ev.podioTypes && ev.podioTypes.length ? ev.podioTypes : typesOf(ev.podioReference));
       if (ty.length) html += '<p class="help" id="v4814Scope">Podio scope: ' + ty.map(x => esc(x) + (TYPE_HELP[x] ? " — " + esc(TYPE_HELP[x]) : "")).join("; ") + ".</p>";
@@ -12375,7 +12411,7 @@ function fixOpen(ts) {
           + '<button type="button" class="btn" data-v487-separate="' + esc(item) + '">Not this one</button></div>';
       });
     }
-    ["v487Flags", "v4814Scope"].forEach(id => { const o = document.getElementById(id); if (o) o.remove(); });
+    ["v487Flags", "v4814Scope", "v4814App"].forEach(id => { const o = document.getElementById(id); if (o) o.remove(); });
     document.querySelectorAll("#app .v487-offer[data-v487-offer]").forEach(o => o.remove());
     if (html) (h.closest(".row") || h).insertAdjacentHTML("afterend", html);   /* below the title row, full width */
   }
@@ -12427,14 +12463,60 @@ function fixOpen(ts) {
       deletedInPodio = new Set((rows || []).map(r => String(r.item_id)));
     } catch (e) {}
   }
+  /* v48.14: read the other configured Podio event apps from the draft view v_field_podio_events (read only). A missing view (404),
+     an error or a full page leaves those apps out: nothing is created for them and nothing is flagged as gone. */
+  /* new apps get external ids from their labels (work/podio-event-apps spec); map them onto the HYG ids PodioMap reads */
+  const FIELD_ALIAS = { "event-reference": "reference-3", "report-status": "generate-final-report", "coc-status": "generate-report",
+    "laboratory-turnaround-time": "selection", "site-works-attended-by": "report-submitted-by", "assigned-technician": "report-submitted-by",
+    "poc-organisation": "company", "poc-first-name": "first-name", "poc-last-name": "last-name", "poc-job-role": "job-role",
+    "poc-contact-number": "contact-number", "poc-email": "email", "all-equipment-required-details": "equipment-details",
+    "project-google-drive-job-folder-link": "google-drive-job-folder-link", "event-start-date": "site-works-start-date",
+    "event-start-date-status": "site-works-start-date-status" };
+  function aliasFields(f) {
+    const o = Object.assign({}, f);
+    Object.keys(FIELD_ALIAS).forEach(k => { if (o[k] != null && o[FIELD_ALIAS[k]] == null) o[FIELD_ALIAS[k]] = o[k]; });
+    return o;
+  }
+  let extraMissingUntil = 0;
+  async function pullExtra(apps) {
+    if (Date.now() < extraMissingUntil) return null;
+    try {
+      const c = typeof sbCfg === "function" && sbCfg(); if (!c) return null;
+      const ids = apps.map(a => a.appId).filter(x => /^\d+$/.test(x)); if (!ids.length) return null;
+      const res = await sbFetch(c.supabaseUrl + "/rest/v1/v_field_podio_events?select=app_id,item_id,title,last_edit_on,synced_at,fields&app_id=in.(" + ids.join(",") + ")&order=item_id.asc&limit=2000", { headers: sbHeaders() });
+      if (res && res.status === 404) { extraMissingUntil = Date.now() + 6 * 3600e3; return null; }   /* view not applied yet: ask again in 6 h */
+      if (!res || !res.ok) return null;
+      const items = await res.json(); if (!Array.isArray(items)) return null;
+      const rows = items.filter(it => ids.includes(String(it.app_id))).map(it => {
+        const pl = envssPodio.map.mapItem({ item_id: it.item_id, fields: aliasFields(it.fields || {}) }); pl.appId = String(it.app_id);
+        return { itemId: pl.itemId, appId: pl.appId, lastEdit: it.last_edit_on || "", payload: pl };
+      });
+      return { rows, apps: items.length < 2000 ? ids : [] };
+    } catch (e) { console.warn("v48.14 extra Podio apps", e); return null; }
+  }
+  /* v48.14: repaint after a Podio read only when the review flags changed (a repaint mid-tap swaps the button under the finger) */
+  let lastFlagSig = "[]";
+  function repaintIfChanged(force) {
+    try {
+      const sig = JSON.stringify(allFlagged().map(x => [x.ev.id, x.f.map(f => f.kind + ":" + (f.to || "") + (f.text || ""))]));
+      if ((force || sig !== lastFlagSig) && !userIsTyping()) render();
+      lastFlagSig = sig;
+    } catch (x) {}
+  }
   window.addEventListener("envss:podio-hyg", e => {
     const d = e.detail || {};
     if (!Array.isArray(d.rows)) return;
-    snap = { rows: d.rows, complete: !!d.complete, at: d.at || nowIso() };
+    snap = { rows: d.rows, complete: !!d.complete, at: d.at || nowIso(), apps: [HYG_APP] };
     writeJson(ALL_KEY, snap);
-    run();
+    run();                                                   /* HYG rows: straight away, exactly as before */
+    const extra = extraApps();
+    if (extra.length) pullExtra(extra).then(x => {          /* v48.14: other Podio event apps (read only); runs again only if any rows came back */
+      if (!x || !x.rows.length) return;
+      snap = { rows: d.rows.concat(x.rows), complete: snap.complete, at: snap.at, apps: [HYG_APP].concat(x.apps) }; writeJson(ALL_KEY, snap);
+      run(); repaintIfChanged(false);
+    });
     const missing = (db.events || []).some(ev => ev.podioItemId && !isFibreEvent(ev) && !rowFor(ev.podioItemId));
-    (missing ? loadDeleted() : Promise.resolve()).then(() => { try { if (!userIsTyping()) render(); } catch (x) {} });
+    (missing ? loadDeleted() : Promise.resolve()).then(() => repaintIfChanged(false));
   });
   /* tombstoned remote event rows: remember their Podio item (covers events deleted before v48.7 added podioItemId to tombstones) */
   const _mr = mergeRemote;
@@ -12518,7 +12600,7 @@ function fixOpen(ts) {
     + "#v4814Scope{margin:6px 0}#v487Flags .btn,.v487-offer .btn{margin:4px 6px 0 0}#v487Dash{margin:10px 0}#v487Dash .sync-link{font-weight:700;margin:0 4px}";
   document.head.appendChild(st);
   window.envssAuto = { run, card, startManual, idFor, flagsFor, allFlagged, link, separate, review, eligible, isAfmOnly,
-    isPlanned: p => PodioMapIsPlanned(p), typesOf, isFitOnly, offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
+    isPlanned: p => PodioMapIsPlanned(p), typesOf, isFitOnly, apps: appsCfg, appOf, offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
 })();
 </script>
 
