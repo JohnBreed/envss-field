@@ -87,70 +87,75 @@ Anything the app isn't sure about is highlighted.
 Check every field against the photo, and fix anything that's wrong.
 
 21
-00:01:48.737 --> 00:01:51.357
-Nothing is signed automatically.
+00:01:48.837 --> 00:01:55.613
+The person who was tested still needs to sign; your ENVSS sign-off is filled in from
+your sign-in.
 
 22
-00:01:52.057 --> 00:01:56.490
-If you can't get signatures straight away, click Save without signing.
+00:01:56.225 --> 00:02:01.090
+If you can't get the person's signature straight away, click Save without signing.
 
 23
-00:01:56.500 --> 00:02:01.608
+00:02:01.100 --> 00:02:06.209
 You'll get an unsigned PDF, and you can open the report later to sign it.
 
 24
-00:02:02.304 --> 00:02:06.857
-Otherwise, when everything's correct, click Continue to signatures.
+00:02:06.885 --> 00:02:11.378
+Otherwise, when everything's correct, click Continue to signature.
 
 25
-00:02:07.645 --> 00:02:15.082
-The ENVSS technician signs in the top box, with a finger or stylus on a touch screen,
-or with the trackpad.
+00:02:12.408 --> 00:02:23.511
+Your ENVSS sign-off is filled in automatically from your Google sign-in: your name,
+your envss.com.au email, and the date and time in AWST.
 
 26
-00:02:15.708 --> 00:02:21.066
-Then hand the device to the person who was tested, and they sign in the Client box.
+00:02:23.521 --> 00:02:25.757
+You do not need to sign.
 
 27
-00:02:21.076 --> 00:02:24.021
-Use Clear if you need to start again.
+00:02:26.461 --> 00:02:31.951
+Hand the device to the person who was tested, and they sign in the Person tested box.
 
 28
-00:02:25.722 --> 00:02:28.256
-Click Save signed PDF.
+00:02:31.961 --> 00:02:34.906
+Use Clear if you need to start again.
 
 29
-00:02:28.864 --> 00:02:37.804
-The app makes a one page PDF in the TSI report layout, with the ENVSS header and both
-signatures, and downloads a copy.
+00:02:36.043 --> 00:02:38.577
+Click Save signed PDF.
 
 30
-00:02:37.814 --> 00:02:42.778
-It's named by surname, first name, mask model and test date.
+00:02:39.223 --> 00:02:50.206
+The app makes a one page PDF in the TSI report layout, with the ENVSS header, your
+electronic sign-off, and the individual's signature, and downloads a copy.
 
 31
-00:02:43.477 --> 00:02:46.912
-Back on the event, the report shows as signed.
+00:02:50.216 --> 00:02:55.180
+It's named by surname, first name, mask model and test date.
 
 32
-00:02:46.922 --> 00:02:54.965
+00:02:55.757 --> 00:02:59.192
+Back on the event, the report shows as signed.
+
+33
+00:02:59.202 --> 00:03:07.245
 Under Files for Drive, the PDF is copied as a new file into the Fit-Tests folder in
 the job's Field App Drive folder.
 
-33
-00:02:54.975 --> 00:02:58.557
+34
+00:03:07.255 --> 00:03:10.837
 Nothing already in the job folder is changed.
 
-34
-00:02:59.235 --> 00:03:02.250
+35
+00:03:11.515 --> 00:03:14.530
 Add a report for each person you test.
 
-35
-00:03:02.260 --> 00:03:06.156
+36
+00:03:14.540 --> 00:03:18.436
 When everyone has signed, click Mark event complete.
 
-36
-00:03:06.166 --> 00:03:11.490
+37
+00:03:18.446 --> 00:03:23.770
 If you need this guide again, there's a How to link at the bottom of every fit-testing
 event.
 
