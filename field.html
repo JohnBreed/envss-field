@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48.7 draft (23 Nov 2026 AWST): field events are created automatically from Podio HYG events (open item 11); deleted ones are never re-created; Podio moves / deletions are flagged for review, never applied. v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
+<!-- ENVSS Field v48.14 draft (26 Nov 2026 AWST): hygiene field events are created automatically from Podio HYG events (open item 11, PR #16) so they show in the events list; deleted ones are never re-created; Podio moves / cancellations / deletions are flagged for review, never applied; fit events are never touched. -->
+<!-- ENVSS Field v48.13 (26 Nov 2026 AWST): the technician’s fit-test sign-off is filled in from the signed-in Google account (name, email, date/time AWST) and only the person tested signs on the phone; fit-test How-to guide link (help/fit-test.html) and one Drive copy per fit-test PDF/zip (was queued twice, second copy _2; from PR #24); fit testing is a standalone event type (no linked hygiene event), Drive copies go to {job}_Field-App/Fit-Tests, and with no internet the report photo is read on the device (re-read with Google Vision when back online unless a field was changed). v48.12: closer TSI-layout fit-test PDF with branded ENVSS header. v48.11: TSI-layout fit-test OCR and PDF (no photo page). v48.10: Fit-test OCR uses Vision bounding boxes; photos/PDFs stay in IndexedDB. v48.9: Respirator fit testing event type ({job}-FIT-{seq}), photo OCR via Google Vision, two signatures, A4 PDF with original photo, Drive copy into {job}_Field-App/Fit Test. -->
+<!-- ENVSS Field v48.8 (25 Nov 2026 AWST): start flow pre-fills end flow; STOP asks if there was a deviation from the initial flow rate (No = end equals start, or enter a different end flow). Supersedes PR #15 guard (a). -->
+<!-- ENVSS Field v48.7 (25 Nov 2026 AWST): Linked Sample A, B, … at prep (no name needed); a person field changed on one linked sample asks before it fills the others; started samples and samples on another person are never filled. -->
+<!-- ENVSS Field v48.5 (13 Nov 2026 AWST): AFM pull is every Podio AFM event at Send Final Report to Client = Report not sent (Final Report not Generated), including jobs not yet on the project list. v48.4: next / previous arrows on sample and event screens. v48.3: times from START/STOP only; COC / Mark event complete gate; not used / void. -->
 <!-- ENVSS Field v48.2 (12 Nov 2026 AWST): AFM field-app changes (bare 5-digit cowl, Pump 1 numbering, live irregularity checks, COC blocked on hard duplicates) + read-only AFM pull from the Podio mirror (AFM Event + AFM Samples; fill blanks only, no Podio writes). -->
 <!-- ENVSS Field v48.1 (12 Nov 2026 AWST): flow check uses each sample's own start flow; contaminant default only as a soft note when no start flow. -->
 <!-- ENVSS Field v48 (12 Nov 2026 AWST): quick fixes (flow ±10% INH, LAeq required, dose-badge fields, checkbox jump, rotameter wording, add-sample confirm, same-shift equipment clash, locked sample number). v46 (11 Nov 2026 AWST): PR #1 + PR #2 merged; passive badge type, START gates, allocation to a person, PPE carry-across, start all, location on every type, device + IndexedDB copy with visible sync state, Refresh from Podio reads the mirror view (no Podio calls), noise code moved to noise.js. -->
@@ -9,7 +13,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.7</title>
+  <title>ENVSS Field v48.14</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -393,7 +397,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.7</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.14</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -409,12 +413,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.7"></script>
+  <script src="config.js?v=48.14"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.7"; /* 2026-11-23 (AWST): v48.7 draft = v48.5 + auto-create field events from Podio HYG events (item 11), tombstone-safe, review flags instead of automatic changes. Numbered 48.7 because the v48.6 draft (linked samples, PR #14) is a separate branch. 2026-11-13 (AWST): v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.14"; /* 2026-11-26 (AWST): v48.14 draft = v48.13 + auto-create hygiene field events from Podio HYG events (item 11, PR #16; was numbered 48.7 in the draft). 2026-11-26 (AWST): v48.13 = v48.12 + technician electronic sign-off from the signed-in Google account (only the person tested signs on the phone), a How to link on fit-test events (help/fit-test.html: video + step guide), one Drive copy per fit-test PDF/zip (was queued twice, second copy named _2), fit testing as a standalone event type (no linked hygiene event picker; old parentEventId values are ignored), Drive folder {job}_Field-App/Fit-Tests, and an offline on-device OCR fallback (Tesseract.js 5.1.1, cached in Cache Storage after one online load; Vision re-reads it when back online only if no field was edited). 2026-11-25 (AWST): v48.12 = v48.11 + a closer TSI PortaCount PDF layout (right-aligned labels, signature lines, no boxes) and a slim branded header (ENVSS logo, clickable https://envss.com.au and mailto:admin@envss.com.au). 2026-11-25 (AWST): v48.11 = v48.10 + TSI-layout OCR (multi-column, taskbar clip, validated exercises, silent US dates) and a TSI-style signed/unsigned PDF with no photo page. 2026-11-25 (AWST): v48.10 = v48.9 + Vision box-based fit-test OCR and IndexedDB photo/PDF storage (no data URLs in localStorage or envss_fit_reports). 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -457,7 +461,8 @@ const DEFAULT = {
   events: [],
   trains: [],
   deletions: [],
-  hires: []   /* v45b-hire: equipment hire requests (local + envss_hires when SQL applied) */
+  hires: [],   /* v45b-hire: equipment hire requests (local + envss_hires when SQL applied) */
+  fitReports: []  /* v48.9: respirator fit-test reports (envss_fit_reports) */
 };
 
 const WHO_KEY = "envss-field-operator";
@@ -727,8 +732,8 @@ window.envssAuth = { session: () => { const x = getSession(); return x ? { email
    - Rows are never deleted: a deleted sample is recorded as a tombstone in envss_deletions. */
 const LEGACY_KEY = "envss-field-v04";
 const SYNC_KEY = "envss-field-next-v32-sync";
-const COLLS = ["projects", "events", "trains", "deletions", "hires"];
-const TABLE = { projects: "envss_projects", events: "envss_events", trains: "envss_trains", deletions: "envss_deletions", hires: "envss_hires" };
+const COLLS = ["projects", "events", "trains", "deletions", "hires", "fitReports"];
+const TABLE = { projects: "envss_projects", events: "envss_events", trains: "envss_trains", deletions: "envss_deletions", hires: "envss_hires", fitReports: "envss_fit_reports" };
 const DEMO_IDS = new Set(["p1900", "e1900-001"]);
 const VOLATILE = { updatedAt: 1, syncedAt: 1 };
 let storageWarning = "";
@@ -805,6 +810,7 @@ function baseLoad(parsed) {
   });
   if (!Array.isArray(d.deletions)) d.deletions = [];
   if (!Array.isArray(d.hires)) d.hires = [];
+  if (!Array.isArray(d.fitReports)) d.fitReports = [];
   (d.trains || []).forEach(t => { if (!t.audit) t.audit = []; });
   return d;
 }
@@ -827,11 +833,24 @@ function load() {
     return structuredClone(DEFAULT);
   }
 }
+function slimFitReport(r) {
+  if (!r) return r;
+  const o = Object.assign({}, r);
+  delete o.photoDataUrl; delete o.pdfDataUrl; delete o.pdfBase64; delete o.pdfBlob;
+  delete o.ocrPages; delete o.ocrAnnotations;
+  /* Keep slim ocrText + ocrWords (boxes only, no image). */
+  if (typeof o.photo === "string" && o.photo.indexOf("data:") === 0) {
+    const pid = o.photoRefs && Object.keys(o.photoRefs)[0];
+    o.photo = pid ? "envss-photo:" + pid : "";
+  }
+  return o;
+}
 function persist() {
   const referenced = new Set((db.events || []).map(e => e.projectId));
   const projects = (db.projects || []).filter(p => keepProjectLocally(p, referenced));
   const keepIds = new Set(projects.map(p => p.id));
   const out = Object.assign({}, db, { projects });
+  if (Array.isArray(out.fitReports)) out.fitReports = out.fitReports.map(function (r) { return slimFitReport(r); });
   const ok = safeSetItem(KEY, JSON.stringify(out));
   const base = {};
   Object.keys(syncState.base).forEach(id => { if (keepIds.has(id)) base[id] = syncState.base[id]; });
@@ -1001,6 +1020,16 @@ async function pullActivity() {
       syncState.hiresError = String(he && he.message || he);
       /* leave local hires queued; do not fail the whole activity pull */
     }
+    let fitChanged = false;
+    try {
+      const fitRows = await sbGet("envss_fit_reports");
+      const fr = mergeRemote("fitReports", fitRows);
+      fitChanged = !!fr.changed;
+      syncState.fitReportsAt = new Date().toISOString();
+      if (window.envssPhotos && envssPhotos.migrate) await envssPhotos.migrate();
+    } catch (fe) {
+      syncState.fitReportsError = String(fe && fe.message || fe);
+    }
     activityLoaded = true;
     reachable = true;
     syncState.lastPullAt = new Date().toISOString();
@@ -1008,7 +1037,7 @@ async function pullActivity() {
     scanDirty();   // local records never seen remotely (e.g. migrated, created offline) become pending
     persist();
     scheduleFlush(200);
-    if ((a.changed || b.changed || d.changed || hiresChanged || before !== db.trains.length) && !userIsTyping()) render();
+    if ((a.changed || b.changed || d.changed || hiresChanged || fitChanged || before !== db.trains.length) && !userIsTyping()) render();
     paintSyncBar();
   } catch (e) {
     window._envssSync = "err";
@@ -1064,7 +1093,7 @@ async function sendOne(p) {
   const rec = findRec(p.coll, p.id);
   if (!rec) return null;
   const now = new Date().toISOString();
-  const sent = JSON.parse(JSON.stringify(rec));
+  const sent = JSON.parse(JSON.stringify(p.coll === "fitReports" ? slimFitReport(rec) : rec));
   delete sent.updatedAt;
   const at = rec.updatedAt || now;
   if (p.coll === "projects" && isPodioProject(rec)) return null;   // v33: hard stop, never write a Podio row
@@ -1088,6 +1117,7 @@ async function sendOne(p) {
   if (p.coll === "events") row.project_id = rec.projectId;
   if (p.coll === "trains") row.event_id = rec.eventId;
   if (p.coll === "deletions") row.event_id = rec.eventId;
+  if (p.coll === "fitReports") { row.event_id = rec.eventId || rec.event_id || ""; row.project_id = rec.projectId || rec.project_id || ""; }
   if (p.coll === "hires") {
     /* Denormalised columns for the invoicing bot / SQL filters. payload remains the full record. */
     row.request_group_id = rec.request_group_id || rec.id;
@@ -1353,7 +1383,8 @@ function eventMatchesFilter(e, f) {
   if (f === "flag") { const x = eventFlags(e); return !!(x.rejected || x.fault); }
   return deriveEventStage(e) === f;
 }
-function eventTypeLabel(e) { return e.type === "fibre" ? "Airborne fibre monitoring" : "Hygiene event"; }
+function isFitEvent(ev) { return !!ev && (ev.type === "fit" || /-FIT-\d+/i.test(String(ev.code || ""))); }
+function eventTypeLabel(e) { return e.type === "fibre" ? "Airborne fibre monitoring" : isFitEvent(e) ? "Respirator fit testing" : "Hygiene event"; }
 function elapsedLabel(startAt) {
   const ms = Date.now() - new Date(startAt);
   if (!Number.isFinite(ms) || ms < 0) return "";
@@ -3890,7 +3921,7 @@ createEvent = function () {
     db.trains.push(fibreTrainRecord(ev, 0, "blank"));   // sample 0 = field blank
   } else {
     const codes = new Set(db.events.map(e => e.code));
-    let n = db.events.filter(e => e.projectId === projectId && !isFibreEvent(e)).length + 1;
+    let n = db.events.filter(e => e.projectId === projectId && !isFibreEvent(e) && !(typeof isFitEvent === "function" && isFitEvent(e))).length + 1;
     while (codes.has(p.number + "-" + String(n).padStart(3, "0"))) n++;
     ev = { id: uid("e"), projectId, type: "hygiene", stage: "planned", date, code: p.number + "-" + String(n).padStart(3, "0"),
       multiDay: (g("nmulti") || {}).value === "yes", minesAct: (g("nmines") || {}).value === "yes",
@@ -5273,7 +5304,7 @@ followUpComplete = function (t) {
   }
   async function count() { try { pending = (await all()).filter(r => !r.uploaded && !r.removed).length; } catch (e) { pending = 0; } try { paintSyncBar(); } catch (e) {} return pending; }
   function markOnRecord(rec) {
-    const t = (db.trains || []).find(x => x.id === rec.trainId); if (!t) return;
+    const t = (db.trains || []).find(x => x.id === rec.trainId) || (db.fitReports || []).find(x => x.id === rec.trainId); if (!t) return;
     let hit = false;
     if (t.photoRefs && t.photoRefs[rec.pid]) { t.photoRefs[rec.pid].uploaded = true; hit = true; }
     ((t.dailyLog && t.dailyLog.photos) || []).forEach(p => { if (p && p.pid === rec.pid) { p.uploaded = true; hit = true; } });
@@ -5306,7 +5337,21 @@ followUpComplete = function (t) {
     } catch (e) { console.warn("[ENVSS] photo queue", e); }
     finally { running = false; await count(); }
   }
-  async function prune() { try { const cut = Date.now() - KEEP_DAYS * 864e5; for (const r of await all()) if (r.uploaded && r.uploadedAt && Date.parse(r.uploadedAt) < cut) await del(r.pid); } catch (e) {} }
+  async function prune() {
+    try {
+      const cut = Date.now() - KEEP_DAYS * 864e5;
+      const fitDone = new Set();
+      for (const t of (db.fitReports || [])) {
+        const refs = t && t.photoRefs || {};
+        Object.keys(refs).forEach(function (pid) { if (refs[pid] && refs[pid].uploaded) fitDone.add(pid); });
+      }
+      for (const r of await all()) {
+        if (!r.uploaded) continue;
+        const at = r.uploadedAt ? Date.parse(r.uploadedAt) : 0;
+        if (fitDone.has(r.pid) || (at && at < cut)) await del(r.pid);
+      }
+    } catch (e) {}
+  }
   /* move old inline data: photos into IndexedDB; the record is only changed after the IndexedDB write succeeds */
   let migrating = false;
   async function migrate() {
@@ -5320,6 +5365,18 @@ followUpComplete = function (t) {
         for (let i = 0; i < ps.length; i++) { const p = ps[i]; if (p && typeof p.data === "string" && p.data.startsWith("data:image")) {
           try { const ref = await add(p.data, t, "dailyLog", p.at || p.takenAt); ps[i] = Object.assign({}, ref, { at: p.at || ref.takenAt, name: p.name || "" }); n++; } catch (e) { console.warn("[ENVSS] migrate", e); } } }
         if (n > n0) { t.updatedAt = nowIso(); t.audit = t.audit || []; t.audit.push({ at: nowIso(), who: whoText(), action: "Photos moved to device photo storage", field: "photo", from: "", to: "", detail: (n - n0) + " inline photo(s) replaced by references; upload queued" }); }
+      }
+      for (const r of (db.fitReports || []).slice()) {
+        const n0 = n;
+        const v = r.photoDataUrl || r.photo;
+        if (typeof v === "string" && v.indexOf("data:image") === 0) {
+          try {
+            const ref = await add(v, { id: r.id, eventId: r.eventId, projectId: r.projectId }, "photo", r.updatedAt);
+            r.photoRefs = Object.assign({}, r.photoRefs, { [ref.pid]: Object.assign({ field: "photo" }, ref) });
+            r.photo = PFX + ref.pid; delete r.photoDataUrl; n++;
+          } catch (e) { console.warn("[ENVSS] migrate fit photo", e); }
+        }
+        if (n > n0) r.updatedAt = nowIso();
       }
       if (n) { saveQuiet(); console.info("[ENVSS] moved " + n + " inline photo(s) to device photo storage"); window._v44dMigrated = (window._v44dMigrated || 0) + n; try { render(); } catch (e) {} }
     } catch (e) { console.warn("[ENVSS] photo migration skipped", e); }
@@ -5351,7 +5408,9 @@ followUpComplete = function (t) {
   setInterval(run, 60e3);
   /* export: storage paths of the filter / equipment photos ("filter: p/…jpg; equipment: p/…jpg") */
   window.envssPhotoPaths = t => [["photo", "filter"], ["equipPhoto", "equipment"]].map(([k, l]) => { const v = t[k]; if (!v) return ""; if (String(v).startsWith(PFX)) { const m = metaFor(t, String(v).slice(PFX.length)); return l + ": " + (m ? m.path : "local"); } return l + ": inline (not yet moved)"; }).filter(Boolean).join("; ");
-  window.envssPhotos = { add, attach, discard, imgTag, hydrate, run, count, migrate, prune, all, pending: () => pending, shrinkSrc, maxPx: MAXPX, quality: Q, pathOf: pid => { for (const t of db.trains || []) { const m = metaFor(t, pid); if (m) return m.path; } return ""; } };
+  window.envssPhotos = { add, attach, discard, imgTag, hydrate, run, count, migrate, prune, all, pending: () => pending, shrinkSrc, maxPx: MAXPX, quality: Q,
+    blobOf: async pid => { try { const r = await get(pid); return r && r.blob; } catch (e) { return null; } },
+    pathOf: pid => { for (const t of (db.trains || []).concat(db.fitReports || [])) { const m = metaFor(t, pid); if (m) return m.path; } return ""; } };
   const st = document.createElement("style"); st.textContent = ".photo-q{margin-top:4px;font-weight:700;color:#FFC266}.photo-ph{display:inline-block;padding:10px 12px;border:1px dashed #6B7590;border-radius:8px;color:#B4BBCC;font-size:13px;max-width:220px}";
   document.head.appendChild(st);
   (async () => { await migrate(); await prune(); await count(); run(); })();
@@ -8832,6 +8891,15 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   }
   function envssMatchJobFolders_(job, folders) {
     var hits = (folders || []).filter(function (f) { return f && envssIsProjectRoot_(f.name, job); });
+    // Subfolders such as "0019321_MEGA Resources_Admin" sit inside the project folder and also start
+    // with the job number. Keep only the outermost match: drop any hit whose parent is another hit.
+    if (hits.length > 1) {
+      var ids = {};
+      hits.forEach(function (f) { ids[f.id] = 1; });
+      hits = hits.filter(function (f) {
+        return !(f.parents || []).some(function (p) { return ids[p]; });
+      });
+    }
     if (hits.length === 1) return { ok: true, folder: hits[0] };
     if (!hits.length) return { ok: false, status: "stopped", message: "job folder not found" };
     return { ok: false, status: "stopped", message: "job folder not unique" };
@@ -8935,6 +9003,20 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     } : {});
   }
 
+  function markFitPhotosUploaded(it) {
+    const name = (it && (it.baseName || it.fileName)) || "";
+    if (!/\.pdf$/i.test(name)) return;
+    for (const r of (db.fitReports || [])) {
+      if (!r || !r.pdfName) continue;
+      if (name !== r.pdfName && name.indexOf(String(r.pdfName).replace(/\.pdf$/i, "")) !== 0) continue;
+      let hit = false;
+      const refs = r.photoRefs || {};
+      Object.keys(refs).forEach(function (pid) {
+        if (refs[pid] && !refs[pid].uploaded) { refs[pid].uploaded = true; refs[pid].uploadedAt = nowIso(); hit = true; }
+      });
+      if (hit && window.envssPhotos && envssPhotos.prune) envssPhotos.prune();
+    }
+  }
   function enqueueExport(blob, name) {
     if (!blob || !name) return;
     let ev = null;
@@ -8972,14 +9054,17 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const sourceKey = "photo:" + rec.pid;
     if (items.some(x => x.sourceKey === sourceKey)) return;
     const t = (db.trains || []).find(x => x.id === rec.trainId);
-    const ev = t && eventOf(t.eventId);
+    const fit = (db.fitReports || []).find(x => x.id === rec.trainId || (rec.eventId && x.eventId === rec.eventId && x.photoRefs && x.photoRefs[rec.pid]));
+    const ev = (t && eventOf(t.eventId)) || (fit && eventOf(fit.eventId || rec.eventId)) || (rec.eventId && eventOf(rec.eventId));
     const p = ev && project(ev.projectId);
     const job = jobNumberOf(p);
-    const type = photoTypeOf(rec.field);
+    const type = fit ? "fit" : photoTypeOf(rec.field);
     const n = items.filter(x => x.sampleId === rec.trainId && x.photoType === type).length + 1;
     const noise = t ? isNoise(t) : false;
     const sampleNo = t ? sampleNoOf(t) : 0;
-    const fileName = envssPhotoFileName_(ev ? ev.code : "event", noise, sampleNo, type, n);
+    const fileName = fit && ev
+      ? (String(ev.code).replace(/[^\w.-]+/g, "_") + "_fit_photo_" + n + ".jpg")
+      : envssPhotoFileName_(ev ? ev.code : "event", noise, sampleNo, type, n);
     const item = {
       id: "drv_" + rec.pid, sourceKey, kind: "photo", baseName: fileName, fileName,
       photoType: type, photoN: n,
@@ -9054,7 +9139,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
           if (it.status === "stopped" || it.status === "copied") continue;
           if ((it.nextAt || 0) > Date.now()) continue;
           try {
-            if (it.kind === "file" && !it.storageUploaded) { await uploadExport(it); it.storageUploaded = true; it.blob = undefined; }
+            if (it.kind === "file" && !it.storageUploaded) { await uploadExport(it); it.storageUploaded = true; it.blob = undefined; try { markFitPhotosUploaded(it); } catch (e) {} }
             if (!it.rowInserted && it.jobNumber) { await insertRow(it); it.rowInserted = true; }
             it.message = it.message && /job folder not found/i.test(it.message) ? it.message : "";
           } catch (e) {
@@ -9262,7 +9347,12 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       const jobNumber = jobNumberFrom(reference, projectTitle, f["job-number"]);
       const turnaroundLabel = textOf(f.selection);
       const lab = relOf(f["which-laboratory-is-processing-samples"]);
-      const attended = relOf(f["report-submitted-by"]);
+      function peopleOf(v) {
+        const arr = Array.isArray(v) ? v : (v == null ? [] : [v]);
+        return arr.map(function (x) { return relOf(x).title; }).filter(Boolean);
+      }
+      const attendedNames = peopleOf(f["report-submitted-by"]);
+      const attended = { title: attendedNames.join(", "), itemId: relOf(f["report-submitted-by"]).itemId };
       const taskRaw = f["task-description"];
       const equipRaw = f["equipment-details"];
       const payload = {
@@ -9379,7 +9469,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const codes = new Set((db.events || []).map(e => e.code));
     let code = row.fieldCode && !codes.has(row.fieldCode) ? row.fieldCode : "";
     if (!code) {
-      let n = (db.events || []).filter(e => e.projectId === p.id && !(typeof isFibreEvent === "function" && isFibreEvent(e))).length + 1;
+      let n = (db.events || []).filter(e => e.projectId === p.id && !(typeof isFibreEvent === "function" && isFibreEvent(e)) && !(typeof isFitEvent === "function" && isFitEvent(e))).length + 1;
       while (codes.has(p.number + "-" + String(n).padStart(3, "0"))) n++;
       code = p.number + "-" + String(n).padStart(3, "0");
     }
@@ -9430,7 +9520,8 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (!job) html += '<p class="help">This project has no 7-digit job number, so Podio events cannot be matched.</p>';
     else if (!rows.length) html += '<p class="help">No planned Podio events on this job yet. Use Refresh from Podio in the top bar to pull the latest.</p>';
     else html += rows.map(podioCard).join("");
-    html += '<button type="button" class="btn orange" id="btnUnplanned" style="margin-top:8px">Start an event not in Podio</button>';
+    html += '<button type="button" class="btn ghost" id="btnUnplanned" style="margin-top:8px" title="Use only for work that is not in Podio">Add event not in Podio</button>'   /* v48.14: Podio-first; manual start is the quiet fallback */
+      + '<p class="help" id="v4814Hint">Podio events appear in the events list by themselves. Add an event here only if it is not in Podio.</p>';
     if (podioState.note) html += '<p class="help" id="podioNote">' + esc(podioState.note) + "</p>";
     if (podioState.err) html += '<p class="help" id="podioErr" style="color:var(--danger,#9B2C2C);font-weight:700">' + esc(podioState.err) + "</p>";
     html += "</div>";
@@ -9459,7 +9550,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
         + (ev.podioReference ? '<p class="help">Reference: ' + esc(ev.podioReference) + "</p>" : "")
         + (ev.siteContact ? '<p class="help">Site contact: ' + esc(ev.siteContact) + "</p>" : "")
         + (who || poc.company ? '<p class="help">POC: ' + esc([who, poc.role, poc.company, poc.phone, poc.email].filter(Boolean).join(" · ")) + "</p>" : "")
-        + (ev.taskDesc ? '<p class="help">Task: ' + esc(ev.taskDesc) + "</p>" : "")
+        + (ev.taskDesc ? (String(ev.taskDesc).length > 320
+            ? '<details class="help v4814-task"><summary>Task (from Podio): ' + esc(String(ev.taskDesc).replace(/\s+/g, " ").slice(0, 300)) + '… <b>Show all</b></summary><div style="white-space:pre-wrap">' + esc(ev.taskDesc) + "</div></details>"
+            : '<p class="help">Task: ' + esc(ev.taskDesc) + "</p>") : "")   /* v48.14: long text (forwarded emails) collapsed, nothing trimmed from the record */
         + '<p class="help">Turnaround: ' + esc(ev.turnaround || "standard") + (ev.lab ? " · Lab: " + esc(ev.lab) : "") + "</p>"
         + (ev.date ? '<p class="help">Start date: ' + esc(ev.date) + "</p>" : "")
         + "</div>";
@@ -9539,7 +9632,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
    E17 dashboard says why no projects show, with a retry, and a "My jobs" filter.
    No Podio writes, no emails, no Drive edits. ===== */
 (function () {
-  const SHARED = [["seg", "SEG"], ["location", "Location"], ["shiftDate", "Sampling date"], ["shiftKind", "Sampling shift"],
+  const SHARED = [/* v48.7: SEG moved to the confirm-before-fill set (linked samples layer) */ ["location", "Location"], ["shiftDate", "Sampling date"], ["shiftKind", "Sampling shift"],
     ["person.hours", "Shift length (hours / shift)"], ["person.daysOn", "Roster: days on"], ["person.daysOff", "Roster: days off"]];
   const PPE = [["rpdAsked", "Respirator worn?"], ["rpd.model", "Respirator brand / model"], ["rpd.shaven", "Clean-shaven?"], ["rpd.fit", "Fit-tested?"]];
   const get = (o, k) => k.split(".").reduce((a, p) => (a == null ? a : a[p]), o);
@@ -9574,7 +9667,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   function personName(x) { const p = x.person || {}; return [p.first, p.last].map(v => str(v).trim()).filter(Boolean).join(" ") || str(p.occupation).trim() || "someone"; }
   /* the person-linked fields removed by "Clear this sample's information". Equipment, contaminant, sample number,
      sampling date / shift and the audit trail are kept. */
-  const PERSON_FIELDS = ["person", "personTag", "occupationCode", "seg", "location", "locationCode", "rpdAsked", "rpd", "hpdAsked", "hpd", "dailyLog"];
+  const PERSON_FIELDS = ["person", "personTag", "linkLabel", "occupationCode", "seg", "location", "locationCode", "rpdAsked", "rpd", "hpdAsked", "hpd", "dailyLog"];
   function blankPerson(p) { const o = {}; Object.keys(p || {}).forEach(k => { o[k] = ""; }); ["first", "last", "occupation"].forEach(k => { o[k] = ""; }); return o; }
   /* returns "" when cleared, else the reason it was not */
   function clearInfo(x) {
@@ -9591,7 +9684,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       cleared.push(k);
       if (k === "person") x.person = blankPerson(x.person);
       else if (k === "rpd" || k === "hpd") x[k] = {};
-      else if (k === "dailyLog" || k === "personTag") delete x[k];
+      else if (k === "dailyLog" || k === "personTag" || k === "linkLabel") delete x[k];
       else x[k] = "";
     });
     note(x, "Sample information cleared for reallocation", "was allocated to " + was + "; cleared: " + (cleared.join(", ") || "nothing to clear") + ". Sample is now unallocated.", "person", was, "");
@@ -9620,7 +9713,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const list = unallocated(t);
     let h = `<div class="card v46-alloc" id="allocBox"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>This person's samples</strong>
       <button type="button" class="btn mid" id="btnAllocate" ${list.length ? "" : "disabled"}>Add samples to this person</button></div>`;
-    h += sib.length ? `<p class="help" id="allocList">Also on ${esc([t.person.first, t.person.last].join(" "))}: ${sib.map(x => esc(displayNo(x) + " (" + kindLabel(x) + ")")).join(", ")}. SEG, location, sampling date, shift, shift length and roster stay the same on all of them.</p>`
+    h += sib.length ? `<p class="help" id="allocList">Also on ${esc([t.person.first, t.person.last].join(" "))}: ${sib.map(x => esc(displayNo(x) + " (" + kindLabel(x) + ")")).join(", ")}. Location, sampling date, shift, shift length and roster stay the same on all of them (not started samples only); name, date of birth, company, occupation and SEG are filled across after you confirm.</p>`
       : `<p class="help" id="allocList">No other samples on this person yet.</p>`;
     if (!list.length) h += `<p class="help">No unallocated samples in this event (a sample with a name or occupation already belongs to someone).</p>`;
     h += `<div id="allocPick" hidden><p class="help">Only samples with no name or occupation are listed.</p>${list.map(x => `<label class="check-row v46-pick"><input type="checkbox" data-alloc="${esc(x.id)}"> ${esc(displayNo(x))} · ${esc(kindLabel(x))}${x.trainKind === "airborne_passive" && x.badgeId ? " · badge " + esc(x.badgeId) : ""}${!isNoise(x) && x.mediaId ? " · " + esc(x.mediaId) : ""}${isNoise(x) && x.dosimeterSerial ? " · " + esc(x.dosimeterSerial) : ""}</label>`).join("")}
@@ -9654,6 +9747,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     targets.forEach(x => {
       x.person = Object.assign({}, x.person || {}, JSON.parse(JSON.stringify(src)));
       x.personTag = tag;
+      if (t.linkLabel) x.linkLabel = t.linkLabel;   /* v48.7: a named person's group keeps its Linked Sample letter */
       ["seg", "location", "shiftDate", "shiftKind", "occupationCode"].forEach(k => { if (t[k] != null && t[k] !== "") x[k] = t[k]; });
       if (isAirbornePersonal(x) && isAirbornePersonal(t) && !isNoise(x) && !isNoise(t) && dayOf(x) === dayOf(t) && !x.rpdAsked && t.rpdAsked) {   // B11
         x.rpdAsked = t.rpdAsked; x.rpd = Object.assign({}, t.rpd || {});
@@ -9715,13 +9809,14 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (t.personTag) SHARED.forEach(([k, label]) => {
       if (before[k] === now[k]) return;
       sib.filter(x => x.personTag === t.personTag).forEach(x => {
+        if (started(x)) return;   // v48.7: a started sample is never overwritten from another sample
         if (str(get(x, k)) === now[k]) return;
         const was = str(get(x, k)); set(x, k, get(t, k));
         note(x, "Changed " + label, (was || "(empty)") + " → " + (now[k] || "(empty)") + " (same person, from " + displayNo(t) + ")", k, was, now[k]);
         if (snaps.has(x.id)) snaps.get(x.id)[k] = now[k];
       });
     });
-    if (isAirbornePersonal(t) && !isNoise(t)) PPE.forEach(([k, label]) => {
+    if (!t.personTag && isAirbornePersonal(t) && !isNoise(t)) PPE.forEach(([k, label]) => {   /* v48.7: linked / allocated groups ask first (linked samples layer) */
       if (before[k] === now[k]) return;
       sib.filter(x => isAirbornePersonal(x) && !isNoise(x) && dayOf(x) === dayOf(t)).forEach(x => {
         const was = str(get(x, k));
@@ -11509,8 +11604,431 @@ function fixOpen(ts) {
 })();
 </script>
 
+
 <script>
-/* ===== v48.7 draft: open item 11 — field events are created automatically from Podio HYG events.
+/* ===== v48.7: Linked Sample A, B, … (John, 23 Nov 2026 AWST, open item 24; respirator rule 25 Nov 2026) =====
+   Prep-stage linking without a name. On a personal sample (airborne personal, passive badge, noise personal; never
+   static, field blank or AFM) that has not been started and has no name, staff tick other not-started, unallocated
+   samples and the app gives the group the next free letter in the event: "Linked Sample A", "B", … No typing.
+   The group shares the v46 person tag (t.personTag) and keeps its letter in t.linkLabel, so the existing name-based
+   B9 allocation, B11 PPE carry-across and B12 Start all keep working once a name is entered.
+   Person fields (first / last name, date of birth, sex, company, occupation, occupation code, SEG) changed on one
+   sample in a group ask first: "This will also fill Linked Sample A: samples 2, 3. OK?" OK fills the others (audited);
+   Cancel changes only this sample. A started sample is never filled, and neither is a sample whose name is a
+   different person. Location / date / shift / roster keep the v46 behaviour (not started samples only, v48.7).
+   Respirator (John, 25 Nov 2026 AWST): a change to Respirator worn? / brand / model / clean-shaven / fit-tested on one
+   sample in a group asks once (when the answer is complete or the sample is left); OK fills the group's other airborne
+   personal samples on the same day INCLUDING running / stopped ones (never rejected / fault, never another person).
+   Local data only; syncs with the sample like any other field. No Podio writes, no emails, no Drive edits. ===== */
+(function () {
+  const V = window.v46;
+  if (!V) return;
+  const FILL = [["person.first", "First name"], ["person.last", "Last name"], ["person.dob", "Date of birth"], ["person.sex", "Sex"],
+    ["person.company", "Company"], ["person.occupation", "Occupation"], ["person.occupationCode", "Occupation code"],
+    ["occupationCode", "Occupation code (SRS)"], ["seg", "SEG"]];
+  const RPD = [["rpdAsked", "Respirator worn?"], ["rpd.model", "Respirator brand / model"], ["rpd.shaven", "Clean-shaven?"], ["rpd.fit", "Fit-tested?"]];
+  const RPDK = new Set(RPD.map(r => r[0]));
+  const LBL = Object.fromEntries(FILL.concat(RPD));
+  const airP = x => isAirbornePersonal(x) && !isNoise(x) && !isStatic(x);
+  const dayOf = x => str(x.shiftDate || (eventById(x.eventId) || {}).date).slice(0, 10);
+  /* respirator answer still being filled in on the open sample: wait (ask once) */
+  function rpdPending(t, keys) {
+    if (!keys.some(k => RPDK.has(k)) || view.page !== "train" || view.trainId !== t.id) return false;
+    const r = t.rpd || {};
+    return t.rpdAsked === "yes" && !(str(r.model).trim() && str(r.shaven) && str(r.fit));
+  }
+  const str = v => (v == null ? "" : String(v));
+  const get = (o, k) => k.split(".").reduce((a, p) => (a == null ? a : a[p]), o);
+  const set = (o, k, v) => { const ps = k.split("."); let a = o; for (let i = 0; i < ps.length - 1; i++) { a[ps[i]] = a[ps[i]] || {}; a = a[ps[i]]; } a[ps[ps.length - 1]] = v; };
+  const voided = x => x.status === "rejected" || x.status === "fault";
+  const notStarted = x => !!x && !voided(x) && !V.started(x);
+  function note(x, action, detail, field, from, to) { x.audit = x.audit || []; x.audit.push({ at: nowIso(), who: whoText(), action, field: field || "", from: from == null ? "" : from, to: to == null ? "" : to, detail: detail || "" }); }
+  function cur() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function label(x) { return x && x.linkLabel ? "Linked Sample " + x.linkLabel : ""; }
+  function fullName(x) { const p = (x && x.person) || {}; return [p.first, p.last].map(v => str(v).trim()).filter(Boolean).join(" "); }
+  /* the rest of this sample's group (same person tag, same event) */
+  function members(t) { return t && t.personTag ? trainsOf(t.eventId).filter(x => x !== t && x.personTag === t.personTag && V.personType(x)) : []; }
+  function nos(xs) {
+    const d = xs.map(displayNo);
+    return d.every(v => /^Sample \S+$/.test(v)) ? (d.length === 1 ? "sample " : "samples ") + d.map(v => v.slice(7)).join(", ") : d.join(", ");
+  }
+  function letterAt(i) { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function nextLetter(eventId) {
+    const used = new Set(trainsOf(eventId).map(x => x.linkLabel).filter(Boolean));
+    for (let i = 0; ; i++) { const l = letterAt(i); if (!used.has(l)) return l; }
+  }
+  /* a group whose letter is on some members only (e.g. B9 added a sample before v48.7): give all the same letter */
+  function tidy() {
+    let changed = false;
+    const byTag = {};
+    (db.trains || []).forEach(x => { if (x.personTag && x.linkLabel) byTag[x.eventId + "|" + x.personTag] = x.linkLabel; });
+    (db.trains || []).forEach(x => { const l = x.personTag && byTag[x.eventId + "|" + x.personTag]; if (l && x.linkLabel !== l && !V.started(x)) { x.linkLabel = l; changed = true; } });
+    return changed;
+  }
+
+  /* ---------- dialog (same look as the v46 Yes / No) ---------- */
+  function ask(question, detailHtml, yes, no) {
+    return new Promise(res => {
+      const w = document.createElement("div"); w.className = "v46-modal"; w.id = "v486Modal";
+      w.innerHTML = `<div class="v46-dialog" role="dialog" aria-modal="true"><p class="v46-q" id="v486Q">${esc(question)}</p>${detailHtml || ""}
+        <div class="row" style="gap:10px;justify-content:flex-end;margin-top:14px"><button type="button" class="btn ghost" id="v486No">${esc(no || "Cancel")}</button><button type="button" class="btn green" id="v486Yes">${esc(yes || "OK")}</button></div></div>`;
+      document.body.appendChild(w);
+      const done = v => { w.remove(); res(v); };
+      w.querySelector("#v486Yes").onclick = () => done(true);
+      w.querySelector("#v486No").onclick = () => done(false);
+    });
+  }
+
+  /* ---------- link at prep (no name) ---------- */
+  async function link(t, ids) {
+    collectTrain(t);
+    if (!V.personType(t) || !notStarted(t) || V.nameKey(t)) { alert("Only a personal sample that has not been started and has no name can be linked here."); return 0; }
+    const free = V.unallocated(t);
+    const targets = ids.map(id => db.trains.find(x => x.id === id)).filter(x => x && free.includes(x));
+    if (!targets.length) { alert("Those samples can no longer be linked (started, or already on someone)."); return 0; }
+    const letter = t.linkLabel || (members(t).find(x => x.linkLabel) || {}).linkLabel || nextLetter(t.eventId);
+    const isNew = !t.personTag;
+    const ok = await ask((isNew ? "Link these samples as Linked Sample " : "Add these samples to Linked Sample ") + letter + "?",
+      `<p class="help">${esc([t].concat(members(t), targets).map(displayNo).join(", "))} will be worn by the same person. No name is needed now; when one is entered on any of them you will be asked before it fills the others.</p>`, "Link", "Cancel");
+    if (!ok) return 0;
+    const tag = t.personTag || uid("pt");
+    [t].concat(members(t)).forEach(x => {
+      if (!x.personTag) { x.personTag = tag; }
+      if (x.linkLabel !== letter && !V.started(x)) { x.linkLabel = letter; note(x, "Linked Sample " + letter, (isNew ? "group created at prep" : "group letter set") + " (no name yet)", "linkLabel", "", letter); }
+    });
+    targets.forEach(x => {
+      x.personTag = tag; x.linkLabel = letter;
+      note(x, "Linked Sample " + letter, "linked at prep with " + displayNo(t) + " (no name yet)", "linkLabel", "", letter);
+    });
+    note(t, "Samples linked", "Linked Sample " + letter + ": " + targets.map(displayNo).join(", "));
+    save();
+    return targets.length;
+  }
+  async function unlink(t) {
+    collectTrain(t);
+    if (!notStarted(t) || V.nameKey(t)) return false;
+    const l = label(t), rest = members(t);
+    const ok = await ask("Remove " + displayNo(t) + " from " + l + "?", `<p class="help">The other samples stay linked.${rest.length === 1 ? " " + esc(displayNo(rest[0])) + " would be on its own, so it is unlinked too." : ""}</p>`, "Remove", "Cancel");
+    if (!ok) return false;
+    const off = [t].concat(rest.length === 1 && notStarted(rest[0]) && !V.nameKey(rest[0]) ? rest : []);
+    off.forEach(x => { const was = x.linkLabel || ""; delete x.personTag; delete x.linkLabel; note(x, "Removed from " + l, "unlinked at prep", "linkLabel", was, ""); });
+    save();
+    return true;
+  }
+  window.v486Link = link; window.v486Unlink = unlink;
+
+  function linkHtml(t) {
+    const rest = members(t), list = V.unallocated(t), open = notStarted(t);
+    let h = `<div class="card v46-alloc v486-link" id="linkBox"><div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>${t.linkLabel ? esc(label(t)) : "Link samples to one person"}</strong>`;
+    if (open) h += `<button type="button" class="btn mid" id="btnLink" ${list.length ? "" : "disabled"}>${t.linkLabel ? "Add samples to " + esc(label(t)) : "Link samples"}</button>`;
+    h += `</div>`;
+    h += t.linkLabel ? `<p class="help" id="linkList">Linked with ${rest.length ? esc(nos(rest)) : "no other samples yet"}. No name needed yet. When a name, date of birth, company, occupation or SEG is entered on any of them, you'll be asked before it fills the others.</p>`
+      : `<p class="help" id="linkList">No name yet? Tick the samples one person will wear and the app labels them Linked Sample ${esc(nextLetter(t.eventId))}. Nothing to type.</p>`;
+    if (open && !list.length) h += `<p class="help">No other samples to link (static, field blank, started or already linked samples are not listed).</p>`;
+    if (open) h += `<div id="linkPick" hidden><p class="help">Personal samples not started and not on anyone yet:</p>${list.map(x => `<label class="check-row v46-pick"><input type="checkbox" data-link="${esc(x.id)}"> ${esc(displayNo(x))} · ${esc(kindLabel(x))}${!isNoise(x) && x.mediaId ? " · " + esc(x.mediaId) : ""}${isNoise(x) && x.dosimeterSerial ? " · " + esc(x.dosimeterSerial) : ""}</label>`).join("")}
+      <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn green" id="btnLinkSelect">Select</button><button type="button" class="btn ghost" id="btnLinkCancel">Cancel</button></div></div>`;
+    if (open && t.linkLabel) h += `<div class="row" style="gap:8px;margin-top:6px"><button type="button" class="btn ghost" id="btnUnlink">Remove this sample from ${esc(label(t))}</button></div>`;
+    if (!open && t.linkLabel) h += `<p class="help">This sample has been started, so it stays in ${esc(label(t))}.</p>`;
+    return h + `</div>`;
+  }
+
+  /* ---------- fill across the group, after a confirm ---------- */
+  const snaps = new Map(); let lastId = null;
+  function snap(t) { const o = {}; FILL.concat(RPD).forEach(([k]) => { o[k] = str(get(t, k)).trim(); }); o._name = V.nameKey(t); return o; }
+  const queue = []; let asking = false;
+  /* which of keys may be filled on x: person fields only on not-started samples; respirator answers on started ones too
+     (airborne personal, same day). Never rejected / fault, never another person's sample. */
+  function keysFor(x, t, keys, beforeName) {
+    if (voided(x)) return { keys: [], why: "rejected / fault" };
+    if (V.nameKey(x) && V.nameKey(x) !== beforeName && V.nameKey(x) !== V.nameKey(t)) return { keys: [], why: "on " + fullName(x) };
+    const pk = keys.filter(k => !RPDK.has(k)), rk = keys.filter(k => RPDK.has(k));
+    const st = V.started(x), rOk = airP(t) && airP(x) && dayOf(x) === dayOf(t);
+    const out = (st ? [] : pk).concat(rOk ? rk : []);
+    let why = "";
+    if (!out.length) why = st && pk.length ? "started" : (!rOk && rk.length ? (airP(x) ? "different day" : "no respirator question") : "");
+    else if (st && pk.length) why = "started: respirator only";
+    return { keys: out, why };
+  }
+  function fillTargets(t, beforeName, keys) {
+    keys = keys || FILL.map(f => f[0]);
+    const ok = [], skip = [], part = [];
+    members(t).forEach(x => {
+      const r = keysFor(x, t, keys, beforeName);
+      if (!r.keys.length) { if (r.why) skip.push([x, r.why]); }
+      else { ok.push(x); if (r.why) part.push([x, r.why]); }
+    });
+    return { ok, skip, part };
+  }
+  /* wait while the person is still typing in the person fields (first → last name is one prompt, not two) */
+  function typing() { const a = document.activeElement, host = document.getElementById("modeFields"); return !!(a && host && host.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)); }
+  document.addEventListener("focusout", () => { if (queue.length) setTimeout(drain, 60); });
+  async function drain() {
+    if (asking || typing()) return; asking = true;
+    try {
+      for (;;) {
+        const i = queue.findIndex(j => { const tt = db.trains.find(x => x.id === j.id); return !tt || !rpdPending(tt, Object.keys(j.ch)); });
+        if (i < 0) break;   // only respirator answers still being filled in: ask when complete or when the sample is left
+        const job = queue.splice(i, 1)[0];
+        const t = db.trains.find(x => x.id === job.id); if (!t || !t.personTag) continue;
+        const keys = Object.keys(job.ch).filter(k => str(get(t, k)).trim() === job.ch[k].to);   // still the value typed
+        if (!keys.length) continue;
+        const { skip, part } = fillTargets(t, job.beforeName, keys);
+        const plan = new Map();
+        members(t).forEach(x => { const r = keysFor(x, t, keys, job.beforeName); const ks = r.keys.filter(k => str(get(x, k)).trim() !== job.ch[k].to); if (ks.length) plan.set(x, ks); });
+        const need = [...plan.keys()];
+        if (!need.length) continue;
+        const grp = label(t) || ((fullName(t) || "this person") + "'s samples");
+        const yes = await ask("This will also fill " + grp + ": " + nos(need) + ". OK?",
+          `<ul class="v486-ch" id="v486Changes">${keys.map(k => `<li>${esc(LBL[k])}: ${esc(job.ch[k].from || "(empty)")} → <strong>${esc(job.ch[k].to || "(empty)")}</strong></li>`).join("")}</ul>`
+          + (part.filter(([x]) => plan.has(x)).length ? `<p class="help" id="v486Part">${part.filter(([x]) => plan.has(x)).map(([x, why]) => esc(displayNo(x) + " (" + why + ")")).join(", ")}.</p>` : "")
+          + (skip.length ? `<p class="help" id="v486Skip">Not changed: ${skip.map(([x, why]) => esc(displayNo(x) + " (" + why + ")")).join(", ")}.</p>` : "")
+          + `<p class="help">Cancel changes ${esc(displayNo(t))} only.</p>`, "OK", "Cancel");
+        if (!yes) { note(t, "Fill across declined", keys.map(k => LBL[k]).join(", ") + " changed on " + displayNo(t) + " only; not filled on " + need.map(displayNo).join(", ")); saveQuiet(); continue; }
+        need.forEach(x => {
+          plan.get(x).forEach(k => {
+            const was = str(get(x, k)).trim(), to = str(get(t, k));
+            if (was === to.trim()) return;
+            set(x, k, to);
+            if (k === "person.dob") ["dobD", "dobM", "dobY"].forEach(q => { x.person[q] = (t.person || {})[q] || ""; });
+            if (k === "person.sex" && t.person && t.person.sexSet !== undefined) x.person.sexSet = t.person.sexSet;
+            if (k === "rpdAsked") { x.rpd = x.rpd || {}; x.rpd.worn = to; }
+            note(x, "Changed " + LBL[k], (was || "(empty)") + " → " + (to || "(empty)") + " (" + (label(t) || "same person") + ", from " + displayNo(t) + ", confirmed)", k, was, to);
+          });
+          snaps.delete(x.id);
+        });
+        note(t, "Filled across linked samples", keys.map(k => LBL[k]).join(", ") + " → " + need.map(displayNo).join(", "));
+        save();
+      }
+    } finally { asking = false; }
+  }
+  function detect() {
+    const t = cur(); if (!t || !t.personTag || !V.personType(t)) return;
+    const before = snaps.get(t.id), now = snap(t); snaps.set(t.id, now);
+    if (!before) return;
+    const ch = {};
+    FILL.concat(RPD).forEach(([k]) => { if (before[k] !== now[k]) ch[k] = { from: before[k], to: now[k] }; });
+    if (!Object.keys(ch).length) return;
+    const q = queue.find(j => j.id === t.id);
+    if (q) Object.keys(ch).forEach(k => { q.ch[k] = { from: q.ch[k] ? q.ch[k].from : ch[k].from, to: ch[k].to }; });
+    else queue.push({ id: t.id, ch, beforeName: before._name });
+    setTimeout(drain, 0);
+  }
+  const _commit486 = commit;
+  commit = function () { try { detect(); } catch (e) { console.warn("v48.7 fill", e); } try { tidy(); } catch (e) {} return _commit486.apply(this, arguments); };
+  window.commit = commit;
+
+  /* ---------- screens ---------- */
+  function decorate() {
+    document.querySelectorAll('#app .train[onclick*="openTrain"]').forEach(row => {
+      const m = /openTrain\('([^']+)'\)/.exec(row.getAttribute("onclick") || ""); if (!m) return;
+      const x = db.trains.find(y => y.id === m[1]); if (!x || !x.linkLabel || row.querySelector(".v486-tag")) return;
+      const s = document.createElement("span"); s.className = "v486-tag"; s.textContent = label(x) + (fullName(x) ? "" : " · no name yet");
+      (row.querySelector(".row-title") || row).appendChild(s);
+    });
+    const t = cur();
+    if (queue.length && (!t || t.id !== lastId)) setTimeout(drain, 0);   // left the sample: ask about any held respirator change
+    if (!t) { lastId = null; return; }
+    if (t.id !== lastId || !snaps.has(t.id)) { snaps.set(t.id, snap(t)); lastId = t.id; }
+    if (!V.personType(t)) return;
+    const h2 = document.querySelector("#app .wrap h2");
+    if (t.linkLabel && h2 && !document.getElementById("v486Label")) {
+      const d = document.createElement("div"); d.id = "v486Label"; d.className = "v486-chip";
+      const rest = members(t);
+      d.textContent = label(t) + (fullName(t) ? " · " + fullName(t) : " · no name yet") + (rest.length ? " · with " + nos(rest) : "");
+      const sync = document.getElementById("v46SampleSync");
+      (sync || h2.closest(".row") || h2).insertAdjacentElement("afterend", d);
+    }
+    const host = document.getElementById("modeFields");
+    if (!host || V.nameKey(t) || document.getElementById("linkBox")) return;
+    if (!notStarted(t) && !t.linkLabel) return;
+    (document.getElementById("allocBox") || host).insertAdjacentHTML("afterend", linkHtml(t));
+    const b = document.getElementById("btnLink"), pick = document.getElementById("linkPick");
+    if (b && pick) b.onclick = () => { pick.hidden = !pick.hidden; };
+    const c = document.getElementById("btnLinkCancel"); if (c) c.onclick = () => { pick.hidden = true; document.querySelectorAll("[data-link]").forEach(i => { i.checked = false; }); };
+    const sel = document.getElementById("btnLinkSelect");
+    if (sel) sel.onclick = async () => {
+      const ids = [...document.querySelectorAll("[data-link]:checked")].map(i => i.dataset.link);
+      if (!ids.length) { alert("Tick at least one sample first."); return; }
+      if (await link(t, ids)) render();
+    };
+    const u = document.getElementById("btnUnlink"); if (u) u.onclick = async () => { if (await unlink(t)) render(); };
+  }
+  const _render486 = render;
+  render = function () { const r = _render486.apply(this, arguments); try { decorate(); } catch (e) { console.warn("v48.7 decorate", e); } return r; };
+  window.render = render;
+  window.v486 = { members, nextLetter, label, fillTargets, snaps };
+  const st = document.createElement("style");
+  st.textContent = ".v486-chip{display:inline-block;margin:6px 0 2px 8px;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700;background:#1E3A5F;color:#9CC8FF}"
+    + ".v486-tag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700;background:#1E3A5F;color:#9CC8FF;vertical-align:middle}"
+    + ".v486-ch{margin:6px 0 0 18px;padding:0}.v486-ch li{margin:3px 0}";
+  document.head.appendChild(st);
+  try { if (tidy()) persist(); render(); } catch (e) {}
+})();
+</script>
+
+
+<script>
+/* ===== v48.8: end flow prefill + STOP deviation prompt (John, 25 Nov 2026 AWST) =====
+   1. Typing or changing start flow on an airborne sample (hygiene or AFM) pre-fills end flow
+      when end flow is empty or still the last auto-filled value. A manually typed end flow is left alone.
+      Field blanks, noise and passive badges have no flow, so they are skipped.
+   2. STOP on those samples is held until the sampler answers "Was there a deviation from the
+      initial flow rate?" (shows the start flow). No = end flow equals start flow, confirmed.
+      Or they enter a different end flow and Save. The existing ±tolerance warning still applies
+      to the new value (inline on the sample, and the "Flow outside tolerance" audit at STOP).
+      The answer is written to the audit trail. STOP does not finish until they answer, which
+      closes the gap where STOP could save with no end flow (e.g. 0019185 sample 1, 24 Nov).
+   This supersedes draft PR #15 guard (a), which locked end flow until STOP and warned when end
+   equalled start. End flow is now pre-filled from start flow and confirmed at STOP instead. */
+(function () {
+  function curT() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  function wantsFlow(t) {
+    try { return !!t && !isBlank(t) && !isNoise(t) && !isPassive(t); }
+    catch (e) { return !!t; }
+  }
+  function flowEq(a, b) {
+    const na = num(a), nb = num(b);
+    if (na != null && nb != null) return na === nb;
+    return String(a || "").trim() === String(b || "").trim();
+  }
+  function canReuseEnd(t, endVal) {
+    const v = String(endVal == null ? "" : endVal).trim();
+    if (!v) return true;
+    return t.endFlowPrefill != null && String(t.endFlowPrefill) !== "" && flowEq(v, t.endFlowPrefill);
+  }
+  function applyPrefill(t, startVal) {
+    if (!wantsFlow(t)) return false;
+    const start = String(startVal == null ? "" : startVal).trim();
+    if (!start || num(start) == null) return false;
+    const endEl = document.getElementById("endFlow");
+    const curEnd = endEl ? endEl.value : (t.endFlow || "");
+    if (!canReuseEnd(t, curEnd)) return false;
+    if (endEl) endEl.value = start;
+    t.endFlow = start;
+    t.endFlowPrefill = start;
+    return true;
+  }
+  function wirePrefill() {
+    const t = curT();
+    const start = document.getElementById("startFlow");
+    if (!t || !wantsFlow(t) || !start || start.dataset.v488) return;
+    start.dataset.v488 = "1";
+    const go = () => applyPrefill(t, start.value);
+    start.addEventListener("input", go);
+    start.addEventListener("change", go, true);
+  }
+  function parseFlow(v) {
+    const s = String(v == null ? "" : v).trim().replace(",", ".");
+    if (!s) return null;
+    return num(s) == null ? null : s;
+  }
+  function warnHtml(t, endVal) {
+    const probe = Object.assign({}, t, { endFlow: endVal });
+    let chk;
+    try { chk = flowCheck(probe); } catch (e) { return `<p class="help muted" id="v488Tol" style="margin:8px 0 0;display:none"></p>`; }
+    if (chk && chk.pct != null && !chk.ok) {
+      return `<p class="help" id="v488Tol" style="color:var(--danger);font-weight:700;margin:8px 0 0">End flow is ${chk.pct.toFixed(1)}% from the initial flow rate${chk.set != null ? " (" + chk.set + " L/min)" : ""} (tolerance ±${chk.tol}%). This is a warning — you can still save.</p>`;
+    }
+    if (chk && chk.noStart && chk.pct != null) {
+      return `<p class="help muted" id="v488Tol" style="margin:8px 0 0">${esc(flowNoStartNote(chk))}</p>`;
+    }
+    return `<p class="help muted" id="v488Tol" style="margin:8px 0 0;display:none"></p>`;
+  }
+  function writeEnd(t, value) {
+    t.endFlow = value;
+    t.endFlowPrefill = null;
+    const el = document.getElementById("endFlow"); if (el) el.value = value;
+    try { saveQuiet(); } catch (e) {}
+  }
+  function askDeviation(t) {
+    return new Promise(resolve => {
+      const old = document.getElementById("v488Modal"); if (old) old.remove();
+      try { collectTrain(t); } catch (e) {}
+      const start = String(t.startFlow || "").trim();
+      const hasStart = num(start) != null;
+      const initialEnd = String(t.endFlow || "").trim() || (hasStart ? start : "");
+      const w = document.createElement("div");
+      w.className = "v488-modal";
+      w.id = "v488Modal";
+      w.innerHTML = `<div class="v488-dialog" role="dialog" aria-modal="true" aria-labelledby="v488Q">
+        <p class="v488-q" id="v488Q">Was there a deviation from the initial flow rate?</p>
+        <p class="help" id="v488Start">${hasStart ? "Initial flow rate: <strong>" + esc(start) + " L/min</strong>" : "No start flow was recorded. Enter the end flow (L/min)."}</p>
+        ${hasStart ? `<button type="button" class="btn green lg" id="v488No" style="width:100%;margin:8px 0 12px">No</button>` : ""}
+        <label for="v488End">${hasStart ? "Or enter the end flow (L/min)" : "End flow (L/min)"}</label>
+        <input id="v488End" inputmode="decimal" value="${esc(initialEnd)}" placeholder="L/min" autocomplete="off">
+        <div id="v488Warn">${warnHtml(t, initialEnd)}</div>
+        <p class="help" id="v488Err" style="color:var(--danger);font-weight:700;display:none"></p>
+        <button type="button" class="btn mid lg" id="v488Save" style="width:100%;margin-top:10px">Save</button>
+      </div>`;
+      document.body.appendChild(w);
+      const endIn = w.querySelector("#v488End");
+      const err = w.querySelector("#v488Err");
+      const showErr = msg => { err.style.display = msg ? "block" : "none"; err.textContent = msg || ""; };
+      endIn.addEventListener("input", () => { w.querySelector("#v488Warn").innerHTML = warnHtml(t, endIn.value); showErr(""); });
+      const finish = (choice, value) => { w.remove(); resolve({ choice, value }); };
+      const noBtn = w.querySelector("#v488No");
+      if (noBtn) noBtn.onclick = () => {
+        writeEnd(t, start);
+        audit(t, "Flow deviation at STOP", "No — end flow set to the initial flow rate, " + start + " L/min");
+        try { saveQuiet(); } catch (e) {}
+        finish("no", start);
+      };
+      w.querySelector("#v488Save").onclick = () => {
+        const v = parseFlow(endIn.value);
+        if (v == null) { showErr(hasStart ? "Enter the end flow, or choose No." : "Enter the end flow."); endIn.focus(); return; }
+        writeEnd(t, v);
+        const same = hasStart && flowEq(v, start);
+        audit(t, "Flow deviation at STOP", same
+          ? "End flow entered as " + v + " L/min, same as the initial flow rate"
+          : "End flow entered as " + v + " L/min (initial " + (hasStart ? start + " L/min" : "not recorded") + ")");
+        try { saveQuiet(); } catch (e) {}
+        finish("entered", v);
+      };
+      w.addEventListener("click", ev => { ev.stopPropagation(); });
+      w.addEventListener("keydown", ev => { if (ev.key === "Escape") ev.preventDefault(); });
+      setTimeout(() => { if (noBtn) noBtn.focus(); else endIn.focus(); }, 0);
+    });
+  }
+
+  let passing = false, asking = false;
+  document.addEventListener("click", function (e) {
+    if (passing) return;
+    const b = e.target && e.target.closest && e.target.closest("#btnStop");
+    if (!b || b.disabled) return;
+    const t = curT();
+    if (!t || !wantsFlow(t) || t.status !== "running") return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (asking || document.getElementById("v488Modal")) return;
+    asking = true;
+    askDeviation(t).then(ans => {
+      asking = false;
+      if (!ans) return;
+      passing = true;
+      try { b.click(); } finally { passing = false; }
+    }, () => { asking = false; });
+  }, true);
+
+  const _render488 = render;
+  render = function () {
+    const r = _render488.apply(this, arguments);
+    try { wirePrefill(); } catch (e) { console.warn("v48.8 prefill", e); }
+    return r;
+  };
+  window.render = render;
+  window.v488 = { wantsFlow, applyPrefill, canReuseEnd, askDeviation };
+  const st = document.createElement("style");
+  st.textContent = ".v488-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10050;padding:16px}"
+    + ".v488-dialog{background:var(--panel,#1B2340);color:var(--text,#fff);border-radius:14px;padding:18px;max-width:420px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.5);box-sizing:border-box}"
+    + ".v488-q{font-size:18px;font-weight:700;margin:0 0 10px;line-height:1.3}"
+    + ".v488-dialog input{width:100%;box-sizing:border-box;font-size:18px;min-height:44px;padding:10px 12px}"
+    + ".v488-dialog .btn.lg{min-height:48px;font-size:18px}";
+  document.head.appendChild(st);
+})();
+</script>
+
+<script>
+/* ===== v48.14 draft (built as v48.7): open item 11 — field events are created automatically from Podio HYG events.
    Rules (John, 20 Nov 2026 AWST; build approved 23 Nov 2026 AWST):
    - A field event is created as soon as the HYG Assessment Event exists in Podio (app 24280319, read through the
      read-only mirror view v_field_hyg_events). No wait for a confirmed date.
@@ -11532,8 +12050,11 @@ function fixOpen(ts) {
 (function () {
   const PodioMapIsPlanned = p => window.envssPodio && envssPodio.map && envssPodio.map.isPlanned ? envssPodio.map.isPlanned(p) : true;
   const ALL_KEY = "envss-podio-hyg-all-v487", GONE_KEY = "envss-podio-deleted-items-v487", MADE_KEY = "envss-auto-made-v487";
-  const BACK_DAYS = 7;            /* Podio start date at most 7 days ago (older backlog keeps Start fieldwork) */
-  const NODATE_EDIT_DAYS = 60;    /* no start date in Podio: only if the Podio item was edited in the last 60 days */
+  /* v48.14 (John, 26 Nov 2026 2:57 pm AWST): "whatever events created in Podio should show; we default to adding from Podio".
+     Every planned (not finished / cancelled / not required) HYG event is created, whatever its date. null = no date limit. */
+  const BACK_DAYS = null;         /* was 7 in the v48.7 draft */
+  const NODATE_EDIT_DAYS = null;  /* was 60 in the v48.7 draft */
+  const HANDMADE_CURRENT_DAYS = 7; /* no Podio date: a hand-made event dated within the last 7 days (or undated) may be the same visit */
   const MATCH_DAYS = 3;           /* hand-made event within 3 days of the Podio start date = possible duplicate */
   const PULL_EVERY = 15 * 60e3;   /* background read of the mirror while the app is open */
   const PF = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Perth", year: "numeric", month: "2-digit", day: "2-digit" });
@@ -11554,9 +12075,26 @@ function fixOpen(ts) {
   const last = { at: "", created: [], adopted: [], skipped: {}, waiting: false };
   let pulling = false;
 
+  /* v48.14: auto-create only ever makes and considers hygiene events; AFM (fibre) and fit-test events (type "fit", {job}-FIT-n) are never touched */
+  const isHyg = e => !!e && !isFibreEvent(e) && !(typeof isFitEvent === "function" && isFitEvent(e));
   const idFor = itemId => "e-podio-" + String(itemId).replace(/[^0-9A-Za-z_-]/g, "");
   const jobOf = p => { const m = String(p && p.number || "").trim().match(/^(\d{7})(?!\d)/); return m ? m[1] : ""; };
   const isStub = p => /^podio-afm-job-/.test(String(p && p.id || ""));
+  /* work types from the Podio reference, e.g. 0019358-Kerr Engineering-HYG-RFT,NSEOC-ACA,VENT-… -> ["RFT", "NSEOC-ACA", "VENT"] */
+  function typesOf(ref) {
+    const m = String(ref || "").match(/-(?:HYG|HAZ)-(.*)$/); if (!m) return [];
+    const take = [];
+    for (const seg of m[1].split("-")) { if (/^[A-Z_]+(?:[ ,]+[A-Z_]+)*$/.test(seg.trim())) take.push(seg.trim()); else break; }
+    return take.join("-").split(/\s*,\s*/).map(x => x.trim()).filter(Boolean);
+  }
+
+  const TYPE_HELP = { "NSEOC": "occupational noise (noise samples go in this event)", "NSEOC-ACA": "occupational noise + airborne contaminants (both in this event)",
+    "NSED": "noise dose", "ACA": "airborne contaminants", "ACA NSED": "airborne contaminants + noise dose", "ACS": "airborne contaminant sampling", "VENT": "ventilation",
+    "BAC_MLD": "bacteria / mould", "HHMP": "hazardous materials", "RFT": "respirator fit testing (a separate fit-test event; not created automatically)", "HPFT": "hearing protector fit testing (separate; not created automatically)",
+    "AT": "air testing", "ISS": "indoor / surface sampling", "DMIRS-SRS": "Mines (DMIRS) silica / respirable dust", "IAQ": "indoor air quality", "MLD": "mould",
+    "WBVIB": "whole-body vibration", "HAVIB": "hand-arm vibration", "AFM": "airborne fibre monitoring (AFM event)" };
+  /* v48.14: a HYG event whose only work is fit testing is not made into a hygiene event (fit events are made in Fit test, never automatically) */
+  function isFitOnly(ref) { const t = typesOf(ref); return t.length > 0 && t.every(x => x === "RFT" || x === "HPFT"); }
   function isAfmOnly(ref) {
     const m = String(ref || "").match(/-HYG-([^-]+)-/i);
     if (!m) return false;
@@ -11588,22 +12126,27 @@ function fixOpen(ts) {
     if (!pl.planned) return "not planned in Podio";
     if (!/^\d{7}$/.test(pl.jobNumber || "")) return "no job number";
     if (isAfmOnly(pl.reference)) return "AFM only";
+    if (isFitOnly(pl.reference)) return "fit testing only (RFT/HPFT): use Fit test, not a hygiene event";
     const t = today();
-    if (pl.startDate) { if (pl.startDate < addDays(t, -BACK_DAYS)) return "start date more than " + BACK_DAYS + " days ago"; }
-    else { const le = String(r.lastEdit || "").slice(0, 10); if (!le || le < addDays(t, -NODATE_EDIT_DAYS)) return "no start date and not edited in " + NODATE_EDIT_DAYS + " days"; }
+    if (pl.startDate) { if (BACK_DAYS != null && pl.startDate < addDays(t, -BACK_DAYS)) return "start date more than " + BACK_DAYS + " days ago"; }
+    else if (NODATE_EDIT_DAYS != null) { const le = String(r.lastEdit || "").slice(0, 10); if (!le || le < addDays(t, -NODATE_EDIT_DAYS)) return "no start date and not edited in " + NODATE_EDIT_DAYS + " days"; }
     return "";
   }
-  function projectFor(job, tb) {
+  function projectFor(job, tb, pl) {
     const ps = (db.projects || []).filter(p => jobOf(p) === job && !isStub(p) && !tb.prs.has(p.id));
-    return ps.find(p => typeof isPodioProject === "function" && isPodioProject(p)) || ps[0] || null;
+    /* v48.14: one job can have several Podio projects (0019185-001 … -004); use the one the Podio event is linked to */
+    const linked = pl && pl.projectItemId ? ps.find(p => String(p.podioItemId || "") === String(pl.projectItemId) || p.id === "podio-" + pl.projectItemId) : null;
+    return linked || ps.find(p => typeof isPodioProject === "function" && isPodioProject(p)) || ps[0] || null;
   }
+  /* field code named in the Podio reference: the whole reference (0019185-001) or its start (0019185-002-Construction Sciences-…) */
+  const codeHint = pl => pl.fieldCode || ((String(pl.reference || "").match(/^(\d{7}-\d{3})-/) || [])[1] || "");
   function handMade(p, pl) {
     const t = today();
-    return (db.events || []).filter(e => e && e.projectId === p.id && !e.podioItemId && !isFibreEvent(e)
+    return (db.events || []).filter(e => e && e.projectId === p.id && !e.podioItemId && isHyg(e)
       && !(e.podioLinkDeclined || []).includes(String(pl.itemId))
-      && ((pl.fieldCode && e.code === pl.fieldCode)
+      && ((codeHint(pl) && e.code === codeHint(pl))
         || (pl.startDate && e.date && Math.abs(dayDiff(e.date, pl.startDate)) <= MATCH_DAYS)
-        || (!pl.startDate && (!e.date || e.date >= addDays(t, -BACK_DAYS)))));
+        || (!pl.startDate && (!e.date || e.date >= addDays(t, -HANDMADE_CURRENT_DAYS)))));
   }
   function seenOf(pl) { return { startDate: pl.startDate || "", startStatus: pl.startStatus || "", reportStatus: pl.reportStatus || "", jobNumber: pl.jobNumber || "", reference: pl.reference || "", at: nowIso() }; }
   const isCancelled = v => /^(event )?cancel+ed$/i.test(String(v || "").trim());
@@ -11621,7 +12164,7 @@ function fixOpen(ts) {
       if (/^e-podio-/.test(id)) return;
       if (!String(d.code).startsWith(job + "-")) return;
       if (info.podioItemId || info.podioAuto || known.podioItemId || known.podioAuto || known.podioLinked) return;
-      if (String(info.type || "hygiene") === "fibre" || /(^|-)AFM-/.test(String(d.code))) return;
+      if (String(info.type || "hygiene") !== "hygiene" || /(^|-)(AFM|FIT)-/i.test(String(d.code))) return;   /* never reuse AFM or fit codes */
       if (!(d.podioUnplanned === true || known.podioUnplanned === true)) return;   /* must be known to be hand-made */
       if (withSamples.has(id) || Number(d.sampleCount) > 0 || known.samples) return;
       if (d.detail === "project deleted") return;
@@ -11632,9 +12175,10 @@ function fixOpen(ts) {
   function codeFor(p, pl, tb) {
     const reuse = reusableCodes(p);
     const codes = new Set((db.events || []).map(e => e.code).concat([...tb.codes].filter(c => !reuse.has(c))));
-    if (pl.fieldCode && !codes.has(pl.fieldCode)) return pl.fieldCode;
+    const hint = codeHint(pl);
+    if (hint && !codes.has(hint) && hint.slice(0, 7) === String(jobOf(p) || p.number)) return hint;
     const job = jobOf(p) || p.number;
-    let n = (db.events || []).filter(e => e.projectId === p.id && !isFibreEvent(e)).length + 1;
+    let n = (db.events || []).filter(e => e.projectId === p.id && isHyg(e)).length + 1;
     while (codes.has(job + "-" + String(n).padStart(3, "0"))) n++;
     return job + "-" + String(n).padStart(3, "0");
   }
@@ -11648,7 +12192,7 @@ function fixOpen(ts) {
       poc: { company: poc.company || "", first: poc.first || "", last: poc.last || "", role: poc.role || "", phone: poc.phone || "", email: poc.email || "" },
       equipmentDetails: pl.equipment || "", podioDriveLink: pl.driveLink || "",
       podioItemId: String(pl.itemId), podioReference: pl.reference || "", podioLinked: true, podioUnplanned: false,
-      podioAuto: how === "auto", podioSeen: seenOf(pl),
+      podioAuto: how === "auto", podioSeen: seenOf(pl), podioTypes: typesOf(pl.reference),
       audit: [{ at: nowIso(), who: how === "auto" ? "ENVSS Field (auto, " + whoText() + ")" : whoText(),
         action: how === "auto" ? "Created automatically from Podio" : "Started from Podio (Start fieldwork)", field: "", from: "", to: "",
         detail: "Podio HYG event " + pl.itemId + (pl.reference ? " · " + pl.reference : "") + (pl.startDate ? " · start " + pl.startDate : " · no start date in Podio") + (pl.startStatus ? " · " + pl.startStatus : "") }]
@@ -11672,7 +12216,7 @@ function fixOpen(ts) {
       const id = idFor(item);
       if (tb.items.has(item) || tb.evs.has(id)) return skip("deleted here (tombstone)");
       if ((db.events || []).some(e => e.id === id)) return skip("field event already exists");
-      const p = projectFor(pl.jobNumber, tb); if (!p) return skip("job not on the project list yet");
+      const p = projectFor(pl.jobNumber, tb, pl); if (!p) return skip("job not on the project list yet");
       const m = handMade(p, pl);
       if (m.length) { offers[item] = m.map(e => e.id); return skip("possible hand-made duplicate (link offered)"); }
       const ev = build(p, pl, id, "auto", tb);
@@ -11703,7 +12247,7 @@ function fixOpen(ts) {
   /* ---------- review flags (never change the event; staff decide) ---------- */
   const rowFor = item => snap && Array.isArray(snap.rows) ? snap.rows.find(r => String(r.itemId) === String(item)) : null;
   function flagsFor(ev) {
-    if (!ev || !ev.podioItemId || isFibreEvent(ev) || !snap || !Array.isArray(snap.rows)) return [];
+    if (!ev || !ev.podioItemId || !isHyg(ev) || !snap || !Array.isArray(snap.rows)) return [];
     const seen = ev.podioSeen || null, r = rowFor(ev.podioItemId), out = [];
     if (!r) {
       if (!snap.complete || (seen && seen.gone)) return [];
@@ -11814,6 +12358,10 @@ function fixOpen(ts) {
         + (f.some(x => x.kind === "gone" || x.kind === "status") ? '<p class="help" style="font-weight:400">If this event should not go ahead, an admin can delete it (Delete event). It will not come back.</p>' : "")
         + "</div>";
     }
+    if (ev.podioItemId && isHyg(ev) && !document.getElementById("v4814Scope")) {
+      const ty = (ev.podioTypes && ev.podioTypes.length ? ev.podioTypes : typesOf(ev.podioReference));
+      if (ty.length) html += '<p class="help" id="v4814Scope">Podio scope: ' + ty.map(x => esc(x) + (TYPE_HELP[x] ? " — " + esc(TYPE_HELP[x]) : "")).join("; ") + ".</p>";
+    }
     if (ev.podioAuto && !document.getElementById("v487Auto")) {
       const a = (ev.audit || []).find(x => x && x.action === "Created automatically from Podio");
       html += '<p class="help" id="v487Auto">Created automatically from Podio' + (a ? " on " + esc(fmtClock(a.at)) : "") + ". If it was made in error, an admin can delete it; it will not be created again.</p>";
@@ -11827,9 +12375,17 @@ function fixOpen(ts) {
           + '<button type="button" class="btn" data-v487-separate="' + esc(item) + '">Not this one</button></div>';
       });
     }
-    ["v487Flags"].forEach(id => { const o = document.getElementById(id); if (o) o.remove(); });
+    ["v487Flags", "v4814Scope"].forEach(id => { const o = document.getElementById(id); if (o) o.remove(); });
     document.querySelectorAll("#app .v487-offer[data-v487-offer]").forEach(o => o.remove());
     if (html) (h.closest(".row") || h).insertAdjacentHTML("afterend", html);   /* below the title row, full width */
+  }
+  /* v48.14: Podio is the default way in. On a project, events come from Podio by themselves; adding one by hand is a small fallback. */
+  function paintProjectDefaults() {
+    if (view.page !== "project") return;
+    const top = document.getElementById("btnNewEventTop");
+    if (top && !top.dataset.v4814) { top.dataset.v4814 = "1"; top.className = "btn ghost"; top.textContent = "Add event not in Podio"; top.title = "Events come from Podio automatically. Use this only for work that is not in Podio."; }
+    const fab = document.querySelector(".fab");
+    if (fab && !fab.hidden) { fab.innerHTML = "<b>+</b>Not in Podio"; fab.classList.add("v4814-fab"); }
   }
   function paintDash() {
     const old = document.getElementById("v487Dash"); if (old) old.remove();
@@ -11855,6 +12411,8 @@ function fixOpen(ts) {
   render = function () {
     const r = _render.apply(this, arguments);
     try { paintEvent(); paintDash(); } catch (e) { console.warn("v48.7 paint", e); }
+    try { paintProjectDefaults(); } catch (e) { console.warn("v48.14 paint", e); }
+    if (view.page !== "project") { const f = document.querySelector(".fab.v4814-fab"); if (f) f.classList.remove("v4814-fab"); }
     return r;
   };
   window.render = render;
@@ -11956,12 +12514,18 @@ function fixOpen(ts) {
 
   const st = document.createElement("style");
   st.textContent = ".v487-list{margin:6px 0 8px 18px;padding:0;font-weight:400}.v487-list li{margin:2px 0}"
-    + "#v487Flags .btn,.v487-offer .btn{margin:4px 6px 0 0}#v487Dash{margin:10px 0}#v487Dash .sync-link{font-weight:700;margin:0 4px}";
+    + ".fab.v4814-fab{min-height:48px;font-size:15px;opacity:.75;background:var(--panel,#1B2340);color:var(--text,#fff);border:2px solid var(--edge,#3A4258)}.fab.v4814-fab b{font-size:22px}"
+    + "#v4814Scope{margin:6px 0}#v487Flags .btn,.v487-offer .btn{margin:4px 6px 0 0}#v487Dash{margin:10px 0}#v487Dash .sync-link{font-weight:700;margin:0 4px}";
   document.head.appendChild(st);
   window.envssAuto = { run, card, startManual, idFor, flagsFor, allFlagged, link, separate, review, eligible, isAfmOnly,
-    isPlanned: p => PodioMapIsPlanned(p), offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
+    isPlanned: p => PodioMapIsPlanned(p), typesOf, isFitOnly, offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
 })();
 </script>
+
+
+  <!-- local review mockups only; not for publish -->
+  <script src="work/projlist/review.js"></script>
+  <script src="fit-test.js?v=48.14"></script>
 
 </body>
 </html>

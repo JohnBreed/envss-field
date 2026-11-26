@@ -24,9 +24,16 @@ const out = await page.evaluate((beforeIds) => {
   const made = db.events.filter(e => e.podioAuto && !e.updatedAt?.startsWith?.("x")).filter(e => !beforeIds.includes(e.id))
     .map(e => ({ code: e.code, project: (db.projects.find(p => p.id === e.projectId) || {}).number, date: e.date || "(no date)", item: e.podioItemId, ref: e.podioReference, status: (envssAuto.snap().rows.find(r => r.itemId === e.podioItemId) || {}).payload }));
   const off = Object.keys(offers).map(k => { const r = envssAuto.snap().rows.find(x => x.itemId === k); return { item: k, ref: r.payload.reference, start: r.payload.startDate || "(no date)", handMade: offers[k].map(id => { const e = db.events.find(x => x.id === id); return e.code + " @ " + (e.date || "no date"); }) }; });
-  const older = envssAuto.snap().rows.filter(r => /more than/.test(envssAuto.eligible(r))).map(r => r.payload.reference.slice(0,45) + " @ " + r.payload.startDate + " · " + r.payload.reportStatus);
-  return { older, secondRunSkipped: L.skipped, made: made.map(m => ({ code: m.code, date: m.date, item: m.item, ref: m.ref, startStatus: m.status && m.status.startStatus, report: m.status && m.status.reportStatus, coc: m.status && m.status.cocStatus })), offers: off };
+  const older = envssAuto.snap().rows.filter(r => r.payload.planned && r.payload.startDate && r.payload.startDate < new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)).map(r => r.payload.reference.slice(0,45) + " @ " + r.payload.startDate + " · " + r.payload.reportStatus);
+  const skippedPlanned = envssAuto.snap().rows.filter(r => r.payload.planned).map(r => [r.itemId, r.payload.reference.slice(0, 45), envssAuto.eligible(r)]).filter(x => x[2]);
+  const linkedAlready = envssAuto.snap().rows.filter(r => r.payload.planned && db.events.some(e => String(e.podioItemId || "") === r.itemId && !beforeIds.includes("x") && !e.podioAuto)).map(r => r.payload.reference.slice(0, 30) + " → " + db.events.filter(e => String(e.podioItemId || "") === r.itemId).map(e => e.code).join(", "));
+  return { older, skippedPlanned, linkedAlready, secondRunSkipped: L.skipped, made: made.map(m => ({ code: m.code, date: m.date, item: m.item, ref: m.ref, startStatus: m.status && m.status.startStatus, report: m.status && m.status.reportStatus, coc: m.status && m.status.cocStatus })), offers: off };
 }, beforeIds);
 console.log(JSON.stringify({ eventsBefore: before, firstRunSkipped: firstRun.skipped, firstRunCreated: firstRun.created.length, ...out }, null, 1));
 console.log("writes attempted:", log.filter(l => /^(POST|PATCH|DELETE)/.test(l)).length);
+if (process.env.SHOT_PROJECT) {   /* test copy only: screenshot one project's events list after auto-create */
+  await page.evaluate(id => openProject(id), process.env.SHOT_PROJECT); await sleep(900);
+  await page.screenshot({ path: process.env.SHOT_OUT, fullPage: true });
+  if (process.env.SHOT_EVENT) { await page.evaluate(id => openEvent(id), process.env.SHOT_EVENT); await sleep(700); await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({ path: process.env.SHOT_OUT.replace(/\.png$/, "-event.png"), fullPage: false }); }
+}
 await browser.close(); server.close();

@@ -25,7 +25,8 @@ function remoteFixture() {
   return {
     envss_projects: new Map([proj("0019500", "Auto A"), proj("0019501", "Auto no date"), proj("0019502", "Old backlog"), proj("0019503", "Deleted before"),
       proj("0019504", "AFM only"), proj("0019401", "Leichhardt hand-made"), proj("0019508", "Moved"), proj("0019509", "Deleted in Podio"), proj("0019510", "Race"),
-      proj("0019511", "Reuse hand-made"), proj("0019512", "Hand-made had samples"), proj("0019513", "Deleted auto"), proj("0019514", "Deleted linked"), proj("0019515", "Deleted unknown kind"), proj("0019516", "Deleted here")].map(p => [p.id, p])),
+      proj("0019511", "Reuse hand-made"), proj("0019512", "Hand-made had samples"), proj("0019513", "Deleted auto"), proj("0019514", "Deleted linked"), proj("0019515", "Deleted unknown kind"), proj("0019516", "Deleted here"),
+      proj("0019517", "Kerr-like"), proj("0019518", "Old no date"), proj("0019519", "Has fit event"), proj("0019520", "Like 0019389")].map(p => [p.id, p])),
     v_field_hyg_events: new Map([
       item(9001, "0019500", "Site A", D(2), "Site Works Start Date is now Confirmed"),
       item(9002, "0019501", "Site B", "", "Site Works Start Date is Tentative"),
@@ -46,6 +47,11 @@ function remoteFixture() {
       item(9042, "0019513", "Auto deleted", D(3), "Site Works Start Date is now Confirmed"),
       item(9043, "0019514", "Linked deleted", D(3), "Site Works Start Date is now Confirmed"),
       item(9044, "0019515", "Unknown", D(3), "Site Works Start Date is now Confirmed"),
+      item(9050, "0019502", "Fit only", D(2), "Site Works Start Date is now Confirmed", { types: "RFT,HPFT" }),
+      item(9051, "0019517", "Kerr-like", D(5), "Site Works Start Date is Tentative", { types: "RFT,NSEOC-ACA,VENT", fields: { "task-description": '<p>---------- Forwarded message ---------<br>From: Client &lt;client@example.com&gt;<br>Subject: FW: Airborne Contaminate Report</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p><p>Please quote respirator fit testing (RFT), occupational noise and airborne contaminants plus ventilation checks for the workshop.</p>' } }),
+      item(9053, "0019518", "Old no date", "", "Site Works Start Date is Tentative", { lastEdit: new Date(Date.now() - 200 * 864e5).toISOString() }),
+      item(9052, "0019519", "Hyg beside fit", D(4), "Site Works Start Date is now Confirmed"),
+      item(9054, "0019520", "Like 0019389", D(6), "Site Works Start Date is now Confirmed"),
       item(9031, "0019508", "Cancelled later", D(9), "Site Works Start Date is now Confirmed", { fields: { "generate-final-report": "Canceled" } })
     ].map(r => [String(r.item_id), r])),
     envss_events: new Map([
@@ -59,10 +65,14 @@ function remoteFixture() {
       ev("e-podio-9099", "0019513", "0019513-001", D(3), { podioItemId: "9099", podioAuto: true, podioLinked: true }),
       ev("eLinkDel", "0019514", "0019514-001", D(3), { podioItemId: "9098", podioLinked: true }),
       ev("eUnk", "0019515", "0019515-001", D(3), {}),
+      ev("eFit", "0019519", "0019519-FIT-001", D(4), { type: "fit", podioUnplanned: true, podioLinked: false }),
+      ev("eHand20", "0019520", "0019520-001", D(6), { podioUnplanned: true, podioLinked: false }),
+      ev("eFitDel", "0019520", "0019520-FIT-001", D(6), { type: "fit", podioUnplanned: true, podioLinked: false }),
       ev("e-podio-9031", "0019508", "0019508-002", D(9), { podioItemId: "9031", podioAuto: true, podioLinked: true, podioSeen: { startDate: D(9), startStatus: "Site Works Start Date is now Confirmed", reportStatus: "Pending", jobNumber: "0019508", reference: "x" } })
     ].map(r => [r.id, r])),
     envss_deletions: new Map([...[["eHandDel", "0019511"], ["eHandS", "0019512"], ["e-podio-9099", "0019513"], ["eLinkDel", "0019514"], ["eUnk", "0019515"]].map(([id, job]) =>
       [id, { id, payload: { id, tombstone: "event", deletedEventId: id, eventId: id, projectId: "podio-p" + job, code: job + "-001", type: "hygiene", at: NOW, detail: "event deleted" }, updated_at: NOW }]),
+      ["eFitDel", { id: "eFitDel", payload: { id: "eFitDel", tombstone: "event", deletedEventId: "eFitDel", eventId: "eFitDel", projectId: "podio-p0019520", code: "0019520-FIT-001", type: "fit", podioUnplanned: true, sampleCount: 0, at: NOW, detail: "event deleted" }, updated_at: NOW }],
       ["tS1", { id: "tS1", payload: { id: "tS1", trainId: "tS1", eventId: "eHandS", pouch: 1, kind: "airborne_personal", at: NOW, detail: "event deleted" }, updated_at: NOW }],
       ["e-podio-9004", { id: "e-podio-9004", payload: { id: "e-podio-9004", tombstone: "event", deletedEventId: "e-podio-9004", eventId: "e-podio-9004", projectId: "podio-p0019503", code: "0019503-001", type: "hygiene", at: NOW, detail: "event deleted" }, updated_at: NOW }]]),
     envss_trains: new Map([["tS1", { id: "tS1", payload: { id: "tS1", eventId: "eHandS", trainKind: "airborne_personal", sampleNo: 1, status: "prepped", pumpSerial: "88001" }, updated_at: NOW }]]), envss_hires: new Map()
@@ -95,7 +105,7 @@ async function run(vp) {
   const shot = (page, n, full = true) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const store = remoteFixture();
   const page = await boot(vp, store);
-  check(`[${vp}] app is v48.7`, await page.evaluate(() => APP_VERSION === "48.7" && document.getElementById("appVersion").textContent === "v48.7" && document.title === "ENVSS Field v48.7"));
+  check(`[${vp}] app is v48.14`, await page.evaluate(() => APP_VERSION === "48.14" && document.getElementById("appVersion").textContent === "v48.14" && document.title === "ENVSS Field v48.14"));
   await waitFor(page, () => activityLoaded && projectsLoaded);
 
   /* 0. not ready (events / tombstones not pulled yet) -> nothing created */
@@ -112,7 +122,18 @@ async function run(vp) {
   check(`[${vp}] confirmed Podio event -> field event e-podio-9001 on the right project with Podio details`, e1 && e1.projectId === "podio-p0019500" && e1.date === D(2) && e1.podioAuto === true && e1.podioLinked === true && e1.lab === "Test Lab" && e1.poc.first === "Pat" && /^0019500-00\d$/.test(e1.code) && e1.podioSeen.startDate === D(2), JSON.stringify(e1));
   check(`[${vp}] audit says 'Created automatically from Podio'`, e1 && e1.audit.length === 1 && e1.audit[0].action === "Created automatically from Podio", JSON.stringify(e1 && e1.audit));
   check(`[${vp}] tentative Podio event with no date is created too (no wait for confirmed), date left blank`, e2 && e2.date === "" && e2.podioItemId === "9002", JSON.stringify(e2));
-  check(`[${vp}] backlog event (start 30 days ago) is NOT auto-created (Start fieldwork fallback)`, byItem(list, "9003").length === 0);
+  check(`[${vp}] v48.14: backlog event (start 30 days ago) IS auto-created now (no date window)`, byItem(list, "9003").length === 1 && byItem(list, "9003")[0].podioAuto === true, JSON.stringify(byItem(list, "9003")));
+  check(`[${vp}] v48.14: Podio event with no date, last edited 200 days ago, is auto-created too`, byItem(list, "9053").length === 1);
+  check(`[${vp}] fit-testing-only HYG item (RFT,HPFT) is not made into a hygiene event`, byItem(list, "9050").length === 0);
+  const k = byItem(list, "9051")[0];
+  check(`[${vp}] Kerr-like item (RFT,NSEOC-ACA,VENT + long forwarded email) -> ONE hygiene event, never a fit event`, byItem(list, "9051").length === 1 && k.type === "hygiene" && /^0019517-00\d$/.test(k.code) && !list.some(e => e.projectId === "podio-p0019517" && e.type === "fit"), JSON.stringify(k && { type: k.type, code: k.code }));
+  check(`[${vp}] long Podio task text kept in full on the record (nothing trimmed), notes left empty`, k && k.taskDesc.length > 3000 && /Forwarded message/.test(k.taskDesc) && !k.notes, k && k.taskDesc.length);
+  check(`[${vp}] Podio scope stored from the reference: RFT, NSEOC-ACA, VENT`, k && JSON.stringify(k.podioTypes) === '["RFT","NSEOC-ACA","VENT"]', JSON.stringify(k && k.podioTypes));
+  const fitE = list.find(e => e.id === "eFit"), h19 = byItem(list, "9052");
+  check(`[${vp}] hygiene event beside a fit event on the same job + date: hygiene auto-created, no link offer to the fit event`, h19.length === 1 && h19[0].type === "hygiene" && /^0019519-00\d$/.test(h19[0].code) && !(await page.evaluate(() => envssAuto.offers()))["9052"], JSON.stringify(h19.map(e => e.code)));
+  check(`[${vp}] fit event untouched (type, code, no Podio link, no audit added)`, fitE && fitE.type === "fit" && fitE.code === "0019519-FIT-001" && !fitE.podioItemId && !fitE.podioLinked && (fitE.audit || []).length === 0, JSON.stringify(fitE));
+  const offers20 = (await page.evaluate(() => envssAuto.offers()))["9054"];
+  check(`[${vp}] 0019389-like (hand-made -001 alive + tombstoned FIT event): link offered to the hand-made event, nothing created, FIT code not reused`, byItem(list, "9054").length === 0 && JSON.stringify(offers20) === '["eHand20"]' && !list.some(e => e.projectId === "podio-p0019520" && e.type === "fit") && JSON.stringify(await page.evaluate(() => envssAuto.reusableCodes("podio-p0019520"))) === "[]", JSON.stringify([offers20, await page.evaluate(() => envssAuto.reusableCodes("podio-p0019520"))]));
   check(`[${vp}] event deleted here (tombstone) is NOT re-created`, byItem(list, "9004").length === 0 && !list.some(e => e.id === "e-podio-9004"));
   check(`[${vp}] AFM-only HYG item is skipped (AFM flow owns it)`, byItem(list, "9005").length === 0);
   check(`[${vp}] Podio 'Not required' item is not created`, byItem(list, "9011").length === 0);
@@ -129,7 +150,7 @@ async function run(vp) {
   check(`[${vp}] hand-made 0019401-001 on the same job + date blocks a duplicate: link offered instead`, byItem(list, "9006").length === 0 && JSON.stringify((await page.evaluate(() => envssAuto.offers()))["9006"]) === '["eHand"]', JSON.stringify(await page.evaluate(() => envssAuto.offers())));
   check(`[${vp}] already-linked events are not duplicated (9008 stays one event)`, byItem(list, "9008").length === 1);
   const last = await page.evaluate(() => envssAuto.last());
-  check(`[${vp}] run summary created 10 (9001, 9002, 9010, 9029, 9030, 9040-9044)`, last.created.length === 10, JSON.stringify(last));
+  check(`[${vp}] run summary created 14 (9001, 9002, 9003, 9010, 9029, 9030, 9040-9044, 9051-9053)`, last.created.length === 14, JSON.stringify(last));
   /* code reuse (John, 23 Nov 2026 20:05 AWST) */
   const codeOf = i => (byItem(list, i)[0] || {}).code;
   check(`[${vp}] deleted hand-made duplicate with no samples: auto event reuses its code (0019511-001)`, codeOf("9040") === "0019511-001", codeOf("9040"));
@@ -160,15 +181,31 @@ async function run(vp) {
   check(`[${vp}] event screen shows 'Created automatically from Podio' note`, /Created automatically from Podio/.test(autoNote), autoNote);
   await page.evaluate(() => window.scrollTo(0, 0)); await shot(page, "02-event-auto-note", false);
 
-  /* 4. backlog event keeps Start fieldwork (fallback) and it still works */
+  /* 4. Start fieldwork stays as the fallback (here: a fit-testing-only HYG item that is not auto-created) */
   await page.evaluate(() => openProject("podio-p0019502")); await sleep(700);
-  const card3 = await page.evaluate(() => (document.querySelector('[data-podio-item="9003"]') || {}).textContent || "");
-  check(`[${vp}] older event still shows Start fieldwork (fallback)`, /Start fieldwork/.test(card3), card3);
-  await shot(page, "03-project-backlog-start-fieldwork");
-  await page.click('[data-podio-start="9003"]'); await sleep(500);
+  const card3 = await page.evaluate(() => (document.querySelector('[data-podio-item="9050"]') || {}).textContent || "");
+  check(`[${vp}] item that is not auto-created still shows Start fieldwork (fallback)`, /Start fieldwork/.test(card3), card3);
+  const ui = await page.evaluate(() => { const t = document.getElementById("btnNewEventTop"), f = document.querySelector(".fab"), u = document.getElementById("btnUnplanned"); return { top: t && t.textContent, topCls: t && t.className, fab: f && !f.hidden && f.textContent, fabCls: f && f.className, un: u && u.textContent, unCls: u && u.className, hint: !!document.getElementById("v4814Hint") }; });
+  check(`[${vp}] v48.14 Podio-first: manual 'New project event' shown as a quiet 'Add event not in Podio' fallback (button + FAB)`, ui.top === "Add event not in Podio" && /ghost/.test(ui.topCls) && !/orange/.test(ui.topCls) && /Not in Podio/.test(ui.fab || "") && /v4814-fab/.test(ui.fabCls) && ui.un === "Add event not in Podio" && !/orange/.test(ui.unCls) && ui.hint, JSON.stringify(ui));
+  await shot(page, "03-project-fallback-start-fieldwork");
+  await page.evaluate(() => document.querySelector('[data-podio-start="9050"]').click()); await sleep(500);
   list = await evs(page);
-  const e3 = byItem(list, "9003");
-  check(`[${vp}] Start fieldwork creates one event, deterministic id, not marked auto`, e3.length === 1 && e3[0].id === "e-podio-9003" && e3[0].podioAuto === false && e3[0].audit[0].action === "Started from Podio (Start fieldwork)", JSON.stringify(e3));
+  const e3 = byItem(list, "9050");
+  check(`[${vp}] Start fieldwork creates one event, deterministic id, not marked auto`, e3.length === 1 && e3[0].id === "e-podio-9050" && e3[0].podioAuto === false && e3[0].audit[0].action === "Started from Podio (Start fieldwork)", JSON.stringify(e3));
+  await page.evaluate(() => openProject("podio-p0019500")); await sleep(500);
+  const fab2 = await page.evaluate(() => { const f = document.querySelector(".fab"); return f && f.className; });
+  await page.evaluate(() => openEvent("e-podio-9001")); await sleep(400);
+  const fab3 = await page.evaluate(() => { const f = document.querySelector(".fab"); return [f && f.className, f && f.textContent]; });
+  check(`[${vp}] FAB on the event screen is back to the normal 'Add sample'`, !/v4814-fab/.test(fab3[0]) && /Add sample/.test(fab3[1]), JSON.stringify([fab2, fab3]));
+
+  /* 4b. Kerr-like event screen: scope line + long task text collapsed */
+  await page.evaluate(() => openProject("podio-p0019517")); await sleep(600);
+  await shot(page, "03b-project-kerr-like-in-events-list");
+  await page.evaluate(() => openEvent("e-podio-9051")); await sleep(500);
+  const ks = await page.evaluate(() => ({ scope: (document.getElementById("v4814Scope") || {}).textContent || "", det: !!document.querySelector("#podioPrefill details.v4814-task"), open: (document.querySelector("#podioPrefill details.v4814-task") || {}).open, sum: ((document.querySelector("#podioPrefill details.v4814-task summary") || {}).textContent || "").length }));
+  check(`[${vp}] event shows 'Podio scope' with occupational noise in this event and fit testing as separate`, /NSEOC-ACA — occupational noise \+ airborne contaminants/.test(ks.scope) && /RFT — respirator fit testing \(a separate fit-test event/.test(ks.scope), ks.scope);
+  check(`[${vp}] long Podio task text shown collapsed (short preview + Show all)`, ks.det && !ks.open && ks.sum < 360, JSON.stringify(ks));
+  await page.evaluate(() => window.scrollTo(0, 0)); await shot(page, "03c-event-kerr-like-scope", false);
 
   /* 5. tombstoned Podio event: card wording + deliberate re-create gets a fresh id */
   await page.evaluate(() => openProject("podio-p0019503")); await sleep(700);

@@ -1,0 +1,161 @@
+WEBVTT
+
+1
+00:00:00.374 --> 00:00:06.694
+This is a quick guide to recording a respirator fit test in the ENVSS Field app on a
+Chromebook.
+
+2
+00:00:06.704 --> 00:00:11.670
+You'll need the job number, and a photo of the PortaCount fit test report.
+
+3
+00:00:11.680 --> 00:00:15.538
+The job and names in this video are example data.
+
+4
+00:00:16.202 --> 00:00:22.618
+Sign in with your ENVSS Google account as usual, then click the job on the Projects
+screen.
+
+5
+00:00:22.628 --> 00:00:27.123
+We're using job 0 0 1 9 3 8 9.
+
+6
+00:00:27.825 --> 00:00:30.058
+Click New project event.
+
+7
+00:00:30.068 --> 00:00:36.006
+Under Event type, choose Respirator fit testing, check the date, and click Create
+event.
+
+8
+00:00:42.244 --> 00:00:47.650
+The app numbers it for you: the job number, then FIT, then 0 0 1.
+
+9
+00:00:47.660 --> 00:00:52.480
+The next fit-testing event on this job will be FIT 0 0 2.
+
+10
+00:00:53.178 --> 00:00:58.512
+Now click Add individual report, and choose the photo of the TSI report.
+
+11
+00:00:58.522 --> 00:01:01.108
+On a phone this opens the camera.
+
+12
+00:01:01.118 --> 00:01:04.498
+On the Chromebook, pick the photo from Files.
+
+13
+00:01:04.508 --> 00:01:08.487
+Get the whole report in the shot, flat and in focus.
+
+14
+00:01:09.157 --> 00:01:12.208
+The app reads the photo with Google Vision.
+
+15
+00:01:12.218 --> 00:01:15.788
+Give it a few seconds, and stay on this screen.
+
+16
+00:01:16.466 --> 00:01:18.856
+Next is the confirm screen.
+
+17
+00:01:18.866 --> 00:01:30.091
+The photo is on the left, and the fields from the report are filled in on the right:
+the ID number, name, company, test and due dates, the PortaCount serial number, and
+the respirator.
+
+18
+00:01:32.587 --> 00:01:40.806
+Scroll down to check the protocol, pass level, the four exercises, the overall fit
+factor, and the PASS or FAIL result.
+
+19
+00:01:40.816 --> 00:01:44.255
+Anything the app isn't sure about is highlighted.
+
+20
+00:01:44.265 --> 00:01:48.727
+Check every field against the photo, and fix anything that's wrong.
+
+21
+00:01:48.837 --> 00:01:55.613
+The person who was tested still needs to sign; your ENVSS sign-off is filled in from
+your sign-in.
+
+22
+00:01:56.225 --> 00:02:01.090
+If you can't get the person's signature straight away, click Save without signing.
+
+23
+00:02:01.100 --> 00:02:06.209
+You'll get an unsigned PDF, and you can open the report later to sign it.
+
+24
+00:02:06.885 --> 00:02:11.378
+Otherwise, when everything's correct, click Continue to signature.
+
+25
+00:02:12.408 --> 00:02:23.511
+Your ENVSS sign-off is filled in automatically from your Google sign-in: your name,
+your envss.com.au email, and the date and time in AWST.
+
+26
+00:02:23.521 --> 00:02:25.757
+You do not need to sign.
+
+27
+00:02:26.461 --> 00:02:31.951
+Hand the device to the person who was tested, and they sign in the Person tested box.
+
+28
+00:02:31.961 --> 00:02:34.906
+Use Clear if you need to start again.
+
+29
+00:02:36.043 --> 00:02:38.577
+Click Save signed PDF.
+
+30
+00:02:39.223 --> 00:02:50.206
+The app makes a one page PDF in the TSI report layout, with the ENVSS header, your
+electronic sign-off, and the individual's signature, and downloads a copy.
+
+31
+00:02:50.216 --> 00:02:55.180
+It's named by surname, first name, mask model and test date.
+
+32
+00:02:55.757 --> 00:02:59.192
+Back on the event, the report shows as signed.
+
+33
+00:02:59.202 --> 00:03:07.245
+Under Files for Drive, the PDF is copied as a new file into the Fit-Tests folder in
+the job's Field App Drive folder.
+
+34
+00:03:07.255 --> 00:03:10.837
+Nothing already in the job folder is changed.
+
+35
+00:03:11.515 --> 00:03:14.530
+Add a report for each person you test.
+
+36
+00:03:14.540 --> 00:03:18.436
+When everyone has signed, click Mark event complete.
+
+37
+00:03:18.446 --> 00:03:23.770
+If you need this guide again, there's a How to link at the bottom of every fit-testing
+event.
+

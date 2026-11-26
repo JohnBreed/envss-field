@@ -109,7 +109,7 @@ async function shot(page, name, fullPage = false) {
 // ---------- Chromebook viewport (primary logic tests) ----------
 const page = await boot("chromebook");
 const ver = await page.evaluate(() => ({ app: APP_VERSION, title: document.title, header: document.getElementById("appVersion")?.textContent, noise: window.ENVSS_NOISE && window.ENVSS_NOISE.version }));
-check("version is 48.4", ver.app === "48.4" && /v48\.4/.test(ver.title || "") && ver.header === "v48.4", JSON.stringify(ver));
+check("version is 48.8", ver.app === "48.8" && /v48\.8/.test(ver.title || "") && ver.header === "v48.8", JSON.stringify(ver));
 check("noise module is 48.0", ver.noise === "48.0", ver.noise);
 
 const catalog = await page.evaluate(() => {
@@ -376,7 +376,7 @@ const phoneNz = await phone.evaluate(() => ({
   pouchRo: !!(document.getElementById("pouch") && (document.getElementById("pouch").readOnly || document.getElementById("pouch").disabled)),
   ver: document.getElementById("appVersion") && document.getElementById("appVersion").textContent
 }));
-check("pixel7: dose-badge hides heading and IRSST; sample no locked; no required", !phoneNz.heading.some(h => /Noise readings/i.test(h)) && !phoneNz.irsst && phoneNz.pouchRo && !phoneNz.required.includes("required") && phoneNz.ver === "v48.4", JSON.stringify(phoneNz));
+check("pixel7: dose-badge hides heading and IRSST; sample no locked; no required", !phoneNz.heading.some(h => /Noise readings/i.test(h)) && !phoneNz.irsst && phoneNz.pouchRo && !phoneNz.required.includes("required") && phoneNz.ver === "v48.8", JSON.stringify(phoneNz));
 await shot(phone, "pixel7-dose-badge", true);
 await phone.close();
 
