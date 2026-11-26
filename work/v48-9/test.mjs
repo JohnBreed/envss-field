@@ -112,7 +112,7 @@ async function run(vp) {
   const shot = (page, n, full = false) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   fs.readdirSync(OUT).filter(f => f.endsWith('.pdf') || f.endsWith('.zip')).forEach(f => fs.unlinkSync(path.join(OUT, f)));
   const page = await boot(vp, { status: 503, body: { error: "OCR_NOT_CONFIGURED", message: "OCR not set up yet, enter manually" } });
-  check(`[${vp}] app is v48.13 with fit-test module`, await page.evaluate(() => APP_VERSION === "48.13" && document.getElementById("appVersion").textContent === "v48.13" && document.title === "ENVSS Field v48.13" && !!(window.envssFit && envssFit.parseReport)), await page.evaluate(() => ({ v: APP_VERSION, t: document.title, fit: !!(window.envssFit) })));
+  check(`[${vp}] app is v48.14 with fit-test module`, await page.evaluate(() => APP_VERSION === "48.14" && document.getElementById("appVersion").textContent === "v48.14" && document.title === "ENVSS Field v48.14" && !!(window.envssFit && envssFit.parseReport)), await page.evaluate(() => ({ v: APP_VERSION, t: document.title, fit: !!(window.envssFit) })));
 
   const labels = await page.evaluate(() => {
     const ev = eventById("eFit"), hy = eventById("eH");

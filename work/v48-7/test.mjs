@@ -213,8 +213,20 @@ async function run(vp) {
   await page.evaluate(() => openProject("podio-p0019502")); await sleep(700);
   const card3 = await page.evaluate(() => (document.querySelector('[data-podio-item="9050"]') || {}).textContent || "");
   check(`[${vp}] item that is not auto-created still shows Start fieldwork (fallback)`, /Start fieldwork/.test(card3), card3);
-  const ui = await page.evaluate(() => { const t = document.getElementById("btnNewEventTop"), f = document.querySelector(".fab"), u = document.getElementById("btnUnplanned"); return { top: t && t.textContent, topCls: t && t.className, fab: f && !f.hidden && f.textContent, fabCls: f && f.className, un: u && u.textContent, unCls: u && u.className, hint: !!document.getElementById("v4814Hint") }; });
-  check(`[${vp}] v48.14 Podio-first: manual 'New project event' shown as a quiet 'Add event not in Podio' fallback (button + FAB)`, ui.top === "Add event not in Podio" && /ghost/.test(ui.topCls) && !/orange/.test(ui.topCls) && /Not in Podio/.test(ui.fab || "") && /v4814-fab/.test(ui.fabCls) && ui.un === "Add event not in Podio" && !/orange/.test(ui.unCls) && ui.hint, JSON.stringify(ui));
+  const ui = await page.evaluate(() => { const t = document.getElementById("btnNewEventTop"), f = document.querySelector(".fab"), u = document.getElementById("btnUnplanned"), nb = document.querySelector('[data-go="add"]'), mi = document.getElementById("menuAddEvent");
+    return { top: !!t, fabShown: !!f && !f.hidden && getComputedStyle(f).display !== "none", un: !!u, hint: (document.getElementById("v4814Hint") || {}).textContent || "", navAddHidden: !nb || getComputedStyle(nb).visibility === "hidden" || nb.disabled, menuItem: mi ? mi.textContent : "", inMenu: !!mi && !!mi.closest("#projectMenu") }; });
+  check(`[${vp}] v48.14 project page: no floating '+', no header or Podio-card add button, no bottom-bar '+'; 'Add event not in Podio' is in the ☰ menu`, !ui.top && !ui.fabShown && !ui.un && ui.navAddHidden && ui.menuItem === "Add event not in Podio" && ui.inMenu && /☰/.test(ui.hint), JSON.stringify(ui));
+  const before = (await evs(page)).length;
+  await page.evaluate(() => { document.querySelector("#projectMenu summary").click(); }); await sleep(150);
+  await page.evaluate(() => document.getElementById("menuAddEvent").click()); await sleep(300);
+  const pgNew = await page.evaluate(() => view.page);
+  check(`[${vp}] ☰ › Add event not in Podio opens the new-event form for this project (nothing made until saved)`, pgNew === "newEvent" && (await evs(page)).length === before, pgNew);
+  await page.evaluate(() => openProject("podio-p0019517")); await sleep(500);
+  const longCard = await page.evaluate(() => { const c = document.querySelector('[data-podio-item="9051"]'); return c ? { det: !!c.querySelector("details.v4814-task"), open: !!(c.querySelector("details.v4814-task") || {}).open, show: /Show all/.test(c.textContent) } : null; });
+  const afm = await page.evaluate(() => ({ btn: !!document.getElementById("btnAfmPodioRefresh"), note: !!document.getElementById("afmPodioNote") }));
+  check(`[${vp}] Planned in Podio card: long forwarded email collapsed behind 'Show all' (closed)`, longCard && longCard.det && !longCard.open && longCard.show, JSON.stringify(longCard));
+  await page.evaluate(() => openProject("podio-p0019502")); await sleep(500);
+  check(`[${vp}] AFM card: no 'Refresh AFM from Podio' button and no refresh note`, !afm.btn && !afm.note, JSON.stringify(afm));
   await shot(page, "03-project-fallback-start-fieldwork");
   await page.evaluate(() => document.querySelector('[data-podio-start="9050"]').click()); await sleep(500);
   list = await evs(page);
@@ -224,7 +236,7 @@ async function run(vp) {
   const fab2 = await page.evaluate(() => { const f = document.querySelector(".fab"); return f && f.className; });
   await page.evaluate(() => openEvent("e-podio-9001")); await sleep(400);
   const fab3 = await page.evaluate(() => { const f = document.querySelector(".fab"); return [f && f.className, f && f.textContent]; });
-  check(`[${vp}] FAB on the event screen is back to the normal 'Add sample'`, !/v4814-fab/.test(fab3[0]) && /Add sample/.test(fab3[1]), JSON.stringify([fab2, fab3]));
+  check(`[${vp}] floating '+ Add sample' still on the event screen (wide screens)`, /Add sample/.test(fab3[1]), JSON.stringify([fab2, fab3]));
 
   /* 4b. Kerr-like event screen: scope line + long task text collapsed */
   await page.evaluate(() => openProject("podio-p0019517")); await sleep(600);
