@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- ENVSS Field v48.14 (26 Nov 2026 AWST): Podio-first project screen (☰ menu: Add event not in Podio + Import field CSV; plain-English status bar; job number heading; long Podio notes collapsed; no separate AFM refresh). hygiene field events are created automatically from Podio HYG events (open item 11, PR #16) so they show in the events list; deleted ones are never re-created; Podio moves / cancellations / deletions are flagged for review, never applied; fit events are never touched. -->
 <!-- ENVSS Field v48.13 (26 Nov 2026 AWST): the technician’s fit-test sign-off is filled in from the signed-in Google account (name, email, date/time AWST) and only the person tested signs on the phone; fit-test How-to guide link (help/fit-test.html) and one Drive copy per fit-test PDF/zip (was queued twice, second copy _2; from PR #24); fit testing is a standalone event type (no linked hygiene event), Drive copies go to {job}_Field-App/Fit-Tests, and with no internet the report photo is read on the device (re-read with Google Vision when back online unless a field was changed). v48.12: closer TSI-layout fit-test PDF with branded ENVSS header. v48.11: TSI-layout fit-test OCR and PDF (no photo page). v48.10: Fit-test OCR uses Vision bounding boxes; photos/PDFs stay in IndexedDB. v48.9: Respirator fit testing event type ({job}-FIT-{seq}), photo OCR via Google Vision, two signatures, A4 PDF with original photo, Drive copy into {job}_Field-App/Fit Test. -->
 <!-- ENVSS Field v48.8 (25 Nov 2026 AWST): start flow pre-fills end flow; STOP asks if there was a deviation from the initial flow rate (No = end equals start, or enter a different end flow). Supersedes PR #15 guard (a). -->
 <!-- ENVSS Field v48.7 (25 Nov 2026 AWST): Linked Sample A, B, … at prep (no name needed); a person field changed on one linked sample asks before it fills the others; started samples and samples on another person are never filled. -->
@@ -12,7 +13,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.13</title>
+  <title>ENVSS Field v48.14</title>
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -288,6 +289,17 @@ input.pf-done, select.pf-done { border-left: 5px solid var(--go) !important; }
 .pouch { font-size: 28px; font-weight: 700; color: var(--hot) !important; }
 .muted, .help { color: var(--sub); }
 .muted { font-size: 15px; }
+/* v48.14: project screen header + ☰ menu */
+.proj-job { font: 800 26px/1.15 Montserrat, Arial, sans-serif; color: var(--text, #F2F4FA); margin-top: 4px; letter-spacing: .3px; }
+.proj-name { font-size: 16px; font-weight: 600; color: var(--text, inherit); margin-top: 2px; overflow-wrap: anywhere; }
+.v4814-has-menu { position: relative; }
+.v4814-menu { position: absolute; top: 14px; right: 14px; z-index: 20; }
+.v4814-menu > summary { list-style: none; cursor: pointer; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 26px; border-radius: 12px; border: 2px solid var(--edge, #3E4C7E); background: var(--surf, #1E2847); color: var(--text, #F2F4FA); user-select: none; }
+.v4814-menu > summary::-webkit-details-marker { display: none; }
+.v4814-menu-list { position: absolute; right: 0; top: 54px; min-width: 220px; background: var(--surf2, #27335A); border: 1px solid var(--edge, #3E4C7E); border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,.35); padding: 6px; }
+.v4814-menu-item { display: block; padding: 14px 16px; border-radius: 8px; cursor: pointer; font: 700 17px Montserrat, Arial, sans-serif; color: var(--text, #F2F4FA); }
+button.v4814-menu-item { width: 100%; text-align: left; background: none; border: 0; }
+.v4814-menu-item:hover { background: rgba(255,255,255,.08); }
 label { color: #D5DCF2; font-size: 14px; font-weight: 700; letter-spacing: .02em; }
 input, select, textarea { background: #0F1630; color: var(--text); border: 2px solid var(--edge); border-radius: 12px; min-height: 52px; font-size: 18px; }
 input::placeholder, textarea::placeholder { color: #8E98BA; }
@@ -396,7 +408,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.13</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.14</span></h1>
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -412,12 +424,12 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.13"></script>
+  <script src="config.js?v=48.14"></script>
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.13"; /* 2026-11-26 (AWST): v48.13 = v48.12 + technician electronic sign-off from the signed-in Google account (only the person tested signs on the phone), a How to link on fit-test events (help/fit-test.html: video + step guide), one Drive copy per fit-test PDF/zip (was queued twice, second copy named _2), fit testing as a standalone event type (no linked hygiene event picker; old parentEventId values are ignored), Drive folder {job}_Field-App/Fit-Tests, and an offline on-device OCR fallback (Tesseract.js 5.1.1, cached in Cache Storage after one online load; Vision re-reads it when back online only if no field was edited). 2026-11-25 (AWST): v48.12 = v48.11 + a closer TSI PortaCount PDF layout (right-aligned labels, signature lines, no boxes) and a slim branded header (ENVSS logo, clickable https://envss.com.au and mailto:admin@envss.com.au). 2026-11-25 (AWST): v48.11 = v48.10 + TSI-layout OCR (multi-column, taskbar clip, validated exercises, silent US dates) and a TSI-style signed/unsigned PDF with no photo page. 2026-11-25 (AWST): v48.10 = v48.9 + Vision box-based fit-test OCR and IndexedDB photo/PDF storage (no data URLs in localStorage or envss_fit_reports). 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.14"; /* 2026-11-26 (AWST): v48.14 = v48.13 + auto-create hygiene field events from Podio HYG events (item 11, PR #16; was numbered 48.7 in the draft). 2026-11-26 (AWST): v48.13 = v48.12 + technician electronic sign-off from the signed-in Google account (only the person tested signs on the phone), a How to link on fit-test events (help/fit-test.html: video + step guide), one Drive copy per fit-test PDF/zip (was queued twice, second copy named _2), fit testing as a standalone event type (no linked hygiene event picker; old parentEventId values are ignored), Drive folder {job}_Field-App/Fit-Tests, and an offline on-device OCR fallback (Tesseract.js 5.1.1, cached in Cache Storage after one online load; Vision re-reads it when back online only if no field was edited). 2026-11-25 (AWST): v48.12 = v48.11 + a closer TSI PortaCount PDF layout (right-aligned labels, signature lines, no boxes) and a slim branded header (ENVSS logo, clickable https://envss.com.au and mailto:admin@envss.com.au). 2026-11-25 (AWST): v48.11 = v48.10 + TSI-layout OCR (multi-column, taskbar clip, validated exercises, silent US dates) and a TSI-style signed/unsigned PDF with no photo page. 2026-11-25 (AWST): v48.10 = v48.9 + Vision box-based fit-test OCR and IndexedDB photo/PDF storage (no data URLs in localStorage or envss_fit_reports). 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -1175,16 +1187,28 @@ function fmtClock(iso) {
   const d = new Date(iso);
   return d.toLocaleString("en-AU", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" });
 }
+/* v48.14: plain times for the status bar: "3:58 pm" today, "yesterday 3:58 pm", else "26 Nov, 3:58 pm" */
+function fmtWhen(iso) {
+  if (!iso) return "not yet";
+  const d = new Date(iso); if (isNaN(d)) return "not yet";
+  const t = d.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", hour12: true }).replace(/\s+/g, " ").toLowerCase();
+  const day = x => x.toLocaleDateString("en-AU"), now = new Date(), y = new Date(now.getTime() - 864e5);
+  if (day(d) === day(now)) return t;
+  if (day(d) === day(y)) return "yesterday " + t;
+  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short" }).replace(".", "") + ", " + t;
+}
+window.fmtWhen = fmtWhen;
 function paintSyncBar() {
   const el = document.getElementById("syncBar");
   if (!el) return;
   const n = pendingCount();
   const parts = [];
-  parts.push(navigator.onLine && reachable ? "Online" : "Offline (working from this device)");
-  parts.push(n ? n + " change" + (n === 1 ? "" : "s") + " pending" : "All changes synced");
-  parts.push("last sync " + fmtClock(syncState.lastPushAt && syncState.lastPushAt > (syncState.lastPullAt || "") ? syncState.lastPushAt : syncState.lastPullAt));
-  if (projectsLoading) parts.push("loading projects…");
-  else parts.push("projects " + fmtClock(syncState.projectsAt));
+  /* v48.14: plain English (was "Online · 9 changes pending · last sync 26 Nov. 03:58 pm · projects 26 Nov. 03:58 pm") */
+  parts.push(navigator.onLine && reachable ? "Online" : "Offline. Your work is saved on this device");
+  parts.push(n ? n + " change" + (n === 1 ? "" : "s") + " still uploading…" : "Everything uploaded");
+  parts.push("Last synced " + fmtWhen(syncState.lastPushAt && syncState.lastPushAt > (syncState.lastPullAt || "") ? syncState.lastPushAt : syncState.lastPullAt));
+  if (projectsLoading) parts.push("Loading project list…");
+  else parts.push("Project list updated " + fmtWhen(syncState.projectsAt));
   let html = '<span id="syncText">' + esc(parts.join(" · ")) + "</span>";
   html += ' <button type="button" class="sync-link" id="btnSyncNow">Sync now</button>';
   html += ' <button type="button" class="sync-link" id="btnRefreshProjects">Refresh projects</button>';
@@ -1582,8 +1606,8 @@ function projectHtml() {
       <div class="row" style="margin-top:10px">
         <div class="grow">
           <h2 class="brand-type" style="margin:0;color:var(--navy)">Project events</h2>
-          <div class="muted">${p.number}</div>
-          <div class="muted">${esc(p.name || "")} · ${esc(p.site || "")}</div>
+          <div class="proj-job" role="heading" aria-level="3">${esc(p.number || "")}</div>
+          <div class="proj-name">${esc(p.name || "")}${p.site ? " · " + esc(p.site) : ""}</div>
         </div>
         <button class="btn orange" id="btnNewEventTop" onclick="openNewEvent('${p.id}')">New project event</button>
       </div>
@@ -3171,11 +3195,22 @@ function importFieldCsv(text) {
   openProject(p.id);
 }
 window.importFieldCsv = importFieldCsv;
+/* v48.14: Import field CSV lives in the ☰ menu at the top right of the project screen */
+function projectMenu(html) {
+  var menu = '<details class="v4814-menu" id="projectMenu"><summary aria-label="More actions" title="More actions">☰</summary><div class="v4814-menu-list">'
+    + '<button type="button" class="v4814-menu-item" id="menuAddEvent" onclick="openNewEvent(view.projectId)">Add event not in Podio</button>'
+    + '<label class="v4814-menu-item">Import field CSV<input id="importCsv" type="file" accept=".csv,text/csv" style="display:none"></label></div></details>';
+  return html.replace('<div class="wrap">', '<div class="wrap v4814-has-menu">' + menu);
+}
+document.addEventListener("click", function (e) {   /* tap outside the ☰ menu, or pick a file, closes it */
+  var m = document.getElementById("projectMenu"); if (m && m.open && !(e.target && e.target.closest && e.target.closest("#projectMenu"))) m.open = false;
+});
+document.addEventListener("change", function (e) { if (e.target && e.target.id === "importCsv") { var m = document.getElementById("projectMenu"); if (m) m.open = false; } }, true);
 var _projectSimple = projectHtml;
 projectHtml = function () {
   var html = _projectSimple();
   if (html.indexOf("importCsv") >= 0) return html;
-  return html.replace("</h2>", "</h2><label class=\"btn ghost\" style=\"display:inline-block\">Import field CSV<input id=\"importCsv\" type=\"file\" accept=\".csv,text/csv\" style=\"display:none\"></label>");
+  return projectMenu(html);
 };
 var _bindImport = bind;
 bind = function () {
@@ -3243,7 +3278,7 @@ var _projectCoc = projectHtml;
 projectHtml = function () {
   var html = _projectCoc();
   if (html.indexOf("importCsv") >= 0) return html;
-  return html.replace("</h2>", "</h2><label class=\"btn ghost\" style=\"display:inline-block\">Import field CSV<input id=\"importCsv\" type=\"file\" accept=\".csv,text/csv\" style=\"display:none\"></label>");
+  return projectMenu(html);
 };
 var _eventCoc = eventHtml;
 eventHtml = function () {
@@ -3369,7 +3404,7 @@ function deleteEvent(id) {
   const ts = trainsOf(id);
   if (!confirm("Delete event " + ev.code + " and its " + ts.length + " sample" + (ts.length === 1 ? "" : "s") + "? It is hidden everywhere; nothing is removed from the database.")) return;
   ts.forEach(t => v34Tomb({ id: t.id, trainId: t.id, eventId: id, pouch: t.pouch || t.sampleNo, kind: t.trainKind, detail: "event deleted" }));
-  v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: ev.projectId, code: ev.code, type: ev.type || "hygiene", detail: "event deleted" });
+  v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: ev.projectId, code: ev.code, type: ev.type || "hygiene", podioItemId: ev.podioItemId ? String(ev.podioItemId) : "", podioAuto: !!ev.podioAuto, podioUnplanned: !!ev.podioUnplanned, sampleCount: ts.length, detail: "event deleted" });   /* v48.7: podioItemId so auto-create never brings it back; kind + sample count decide whether its code may be reused */
   applyTombstones();
   view.page = "project"; view.projectId = ev.projectId; view.eventId = null;
   commit(); render();
@@ -3383,7 +3418,7 @@ function deleteProject(id) {
   if (!confirm("Delete project " + p.number + " and its " + evs.length + " event" + (evs.length === 1 ? "" : "s") + "? It is hidden everywhere; nothing is removed from the database.")) return;
   evs.forEach(ev => {
     trainsOf(ev.id).forEach(t => v34Tomb({ id: t.id, trainId: t.id, eventId: ev.id, pouch: t.pouch || t.sampleNo, kind: t.trainKind, detail: "project deleted" }));
-    v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: id, code: ev.code, type: ev.type || "hygiene", detail: "project deleted" });
+    v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: id, code: ev.code, type: ev.type || "hygiene", podioItemId: ev.podioItemId ? String(ev.podioItemId) : "", detail: "project deleted" });
   });
   v34Tomb({ id: p.id, tombstone: "project", projectId: p.id, number: p.number, name: p.name || "", detail: "project deleted" });
   applyTombstones();
@@ -4408,11 +4443,12 @@ if (typeof render === "function") render();
     const pg = view.page;
     if (pg === "train" && !view.eventId) { const tr = db.trains.find(x => x.id === view.trainId); if (tr) view.eventId = tr.eventId; }
     const canAdd = pg === "project" || ((pg === "event" || pg === "train") && !!view.eventId);
-    fab.hidden = !(pg === "project" || pg === "event");
-    fab.innerHTML = pg === "event" ? "<b>+</b>Add sample" : "<b>+</b>New project event";
+    fab.hidden = pg !== "event";   /* v48.14: on project pages, adding an event by hand lives in the ☰ menu */
+    fab.innerHTML = "<b>+</b>Add sample";
     document.body.classList.toggle("has-fab", !fab.hidden);
     const addBtn = nav.querySelector('[data-go="add"]');
-    addBtn.disabled = !canAdd; addBtn.querySelector("span").textContent = pg === "project" ? "Event" : (pg === "event" || pg === "train") ? "Sample" : "Add";
+    addBtn.disabled = !canAdd || pg === "project"; addBtn.querySelector("span").textContent = (pg === "event" || pg === "train") ? "Sample" : "Add";
+    addBtn.style.visibility = pg === "project" ? "hidden" : "";   /* v48.14: project pages use ☰ > Add event not in Podio; the bar keeps its layout */
     nav.querySelector('[data-go="event"]').disabled = !(view.eventId && eventById(view.eventId));
     nav.querySelectorAll("button").forEach(b => b.classList.toggle("on",
       (b.dataset.go === "dash" && (pg === "dash" || pg === "project")) || (b.dataset.go === "event" && (pg === "event" || pg === "train"))));
@@ -9324,11 +9360,16 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       return "";
     }
 
+    /* v48.7: Report Status (generate-final-report) options at or after "Final Report Generated" = the field visit is over.
+       Exact option texts from Podio app 24280319 (read 23 Nov 2026 AWST): active 67-72 plus the deleted legacy texts still on old items.
+       "Cancelled" is accepted as well as Podio's "Canceled". Earlier stages (Pending, drafting, review) still count as planned. */
+    const REPORT_DONE = new Set(["Final Report Generated", "*Send final Report to Client", "Report Sent", "Canceled", "Cancelled", "No Report Required", "Invoiced",
+      "Report Generated - Not Sent", "Report Sent to Client", "Event Canceled", "Event Cancelled"].map(s => s.toLowerCase()));
     function isPlanned(p) {
       const start = String(p.startStatus || "");
-      if (/not required/i.test(start)) return false;
+      if (start === "Site Works Not Required" || /not required/i.test(start)) return false;   /* exact Podio option 3, plus older wording */
       if (p.cocStatus === "Lab Results Received") return false;
-      if (p.reportStatus === "Report Sent") return false;
+      if (REPORT_DONE.has(String(p.reportStatus || "").trim().toLowerCase())) return false;   /* v48.7: report stage at or after Final Report Generated */
       if (!start) return true;
       return /tentative|confirmed/i.test(start);
     }
@@ -9382,7 +9423,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       payload.planned = isPlanned(payload);
       return payload;
     }
-    return { mapItem };
+    return { mapItem, isPlanned };
   })();
   const COOL_KEY = "envss-podio-cooldown-v46";
   let mirrorAt = 0;
@@ -9407,8 +9448,10 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (!res.ok) { podioState.err = "Could not load planned events (" + res.status + "). Planned events saved on this device still show."; podioState.note = ""; return false; }
     const items = await res.json();
     const byJob = {}; let planned = 0, newest = "";
+    const all = [];   /* v48.7: every live HYG item (planned or not) for auto-create and review flags */
     (items || []).forEach(it => {
       const pl = PodioMap.mapItem({ item_id: it.item_id, fields: it.fields || {} });
+      all.push({ itemId: pl.itemId, lastEdit: it.last_edit_on || "", payload: pl });
       if (it.synced_at && it.synced_at > newest) newest = it.synced_at;
       if (!pl.planned || !/^\d{7}$/.test(pl.jobNumber)) return;
       planned++;
@@ -9420,7 +9463,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (podioState.job) podioState.rows = byJob[podioState.job] || [];
     mirrorAt = Date.now();
     podioState.err = "";
-    podioState.note = "Refreshed from Podio: " + planned + " planned HYG event" + (planned === 1 ? "" : "s") + " across jobs" + (newest ? " (Podio copy updated " + fmtClock(newest) + ")" : "") + ".";
+    podioState.note = (newest ? "Podio jobs updated " + fmtWhen(newest) + ". " : "Checked Podio. ") + planned + " planned Podio event" + (planned === 1 ? "" : "s") + " across all jobs.";   /* v48.14 plain English */
+    /* v48.7: hand the full list to the auto-create layer (it only reads it; see the v48.7 script at the end) */
+    try { window.dispatchEvent(new CustomEvent("envss:podio-hyg", { detail: { rows: all, complete: Array.isArray(items) && items.length < 2000, at: new Date().toISOString(), newest } })); } catch (e) { console.warn("v48.7 hook", e); }
     return true;
   }
   async function loadPodioTable(job) {
@@ -9453,8 +9498,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const p = project(view.projectId);
     const row = podioRowsFor(jobNumberOf(p)).map(r => r.payload || r).find(x => String(x.itemId) === String(itemId));
     if (!p || !row) return;
-    const existing = (db.events || []).find(e => e.projectId === p.id && String(e.podioItemId || "") === String(row.itemId));
+    const existing = (db.events || []).find(e => String(e.podioItemId || "") === String(row.itemId));   /* v48.7: any project (one Podio event = one field event) */
     if (existing) { openEvent(existing.id); return; }
+    if (window.envssAuto && envssAuto.startManual) { const id = envssAuto.startManual(p, row); if (id) { openEvent(id); return; } }   /* v48.7: same record shape as auto-create */
     const codes = new Set((db.events || []).map(e => e.code));
     let code = row.fieldCode && !codes.has(row.fieldCode) ? row.fieldCode : "";
     if (!code) {
@@ -9489,12 +9535,15 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const who = [poc.first, poc.last].filter(Boolean).join(" ");
     const bits = [p.startDate || "date not set", p.startStatus || "", p.lab || ""].filter(Boolean).join(" · ");
     const started = (db.events || []).some(e => String(e.podioItemId || "") === String(p.itemId));
-    return '<div class="card podio-ev"><div class="brand-type" style="font-weight:700">' + esc(p.fieldCode || p.reference || "Podio event") + "</div>"
+    const v487 = window.envssAuto && envssAuto.card ? envssAuto.card(p) : null;   /* v48.7: Open / link offer / review instead of Start fieldwork */
+    return '<div class="card podio-ev" data-podio-item="' + esc(p.itemId) + '"><div class="brand-type" style="font-weight:700">' + esc(p.fieldCode || p.reference || "Podio event") + "</div>"
       + '<div class="muted">' + esc(bits) + "</div>"
       + (p.siteContact ? '<p class="help">Site contact: ' + esc(p.siteContact) + "</p>" : "")
       + (who || poc.company ? '<p class="help">POC: ' + esc([who, poc.role, poc.company, poc.phone, poc.email].filter(Boolean).join(" · ")) + "</p>" : "")
-      + (p.task ? '<p class="help">' + esc(p.task) + "</p>" : "")
-      + (started ? '<p class="help">Fieldwork started.</p>' : '<button type="button" class="btn green" data-podio-start="' + esc(p.itemId) + '">Start fieldwork</button>')
+      + (p.task ? (String(p.task).length > 320   /* v48.14: long notes (forwarded emails) collapsed, as on the event screen */
+          ? '<details class="help v4814-task"><summary>' + esc(String(p.task).replace(/\s+/g, " ").slice(0, 160)) + '… <b>Show all</b></summary><div style="white-space:pre-wrap">' + esc(p.task) + "</div></details>"
+          : '<p class="help">' + esc(p.task) + "</p>") : "")
+      + (v487 != null ? v487 : started ? '<p class="help">Fieldwork started.</p>' : '<button type="button" class="btn green" data-podio-start="' + esc(p.itemId) + '">Start fieldwork</button>')
       + "</div>";
   }
   function paintPodio() {
@@ -9508,7 +9557,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (!job) html += '<p class="help">This project has no 7-digit job number, so Podio events cannot be matched.</p>';
     else if (!rows.length) html += '<p class="help">No planned Podio events on this job yet. Use Refresh from Podio in the top bar to pull the latest.</p>';
     else html += rows.map(podioCard).join("");
-    html += '<button type="button" class="btn orange" id="btnUnplanned" style="margin-top:8px">Start an event not in Podio</button>';
+    html += '<p class="help" id="v4814Hint">Podio events appear in the events list by themselves. For work that is not in Podio, use ☰ (top right) › Add event not in Podio.</p>';   /* v48.14: one way in, from the menu */
     if (podioState.note) html += '<p class="help" id="podioNote">' + esc(podioState.note) + "</p>";
     if (podioState.err) html += '<p class="help" id="podioErr" style="color:var(--danger,#9B2C2C);font-weight:700">' + esc(podioState.err) + "</p>";
     html += "</div>";
@@ -9537,7 +9586,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
         + (ev.podioReference ? '<p class="help">Reference: ' + esc(ev.podioReference) + "</p>" : "")
         + (ev.siteContact ? '<p class="help">Site contact: ' + esc(ev.siteContact) + "</p>" : "")
         + (who || poc.company ? '<p class="help">POC: ' + esc([who, poc.role, poc.company, poc.phone, poc.email].filter(Boolean).join(" · ")) + "</p>" : "")
-        + (ev.taskDesc ? '<p class="help">Task: ' + esc(ev.taskDesc) + "</p>" : "")
+        + (ev.taskDesc ? (String(ev.taskDesc).length > 320
+            ? '<details class="help v4814-task"><summary>Task (from Podio): ' + esc(String(ev.taskDesc).replace(/\s+/g, " ").slice(0, 300)) + '… <b>Show all</b></summary><div style="white-space:pre-wrap">' + esc(ev.taskDesc) + "</div></details>"
+            : '<p class="help">Task: ' + esc(ev.taskDesc) + "</p>") : "")   /* v48.14: long text (forwarded emails) collapsed, nothing trimmed from the record */
         + '<p class="help">Turnaround: ' + esc(ev.turnaround || "standard") + (ev.lab ? " · Lab: " + esc(ev.lab) : "") + "</p>"
         + (ev.date ? '<p class="help">Start date: ' + esc(ev.date) + "</p>" : "")
         + "</div>";
@@ -9583,7 +9634,8 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     enqueueExport, onPhotoUploaded, run: runDrive, items: () => items.slice(), remote: () => Object.assign({}, remote),
     statusHtml, matchJobFolders: envssMatchJobFolders_, photoFileName: envssPhotoFileName_, versionedName: envssVersionedName_
   };
-  window.envssPodio = { refresh: () => refreshPodio(), refreshJob: refreshPodio, rows: podioRowsFor, start: startFromPodio, state: () => Object.assign({}, podioState) };
+  window.envssPodio = { refresh: () => refreshPodio(), refreshJob: refreshPodio, rows: podioRowsFor, start: startFromPodio, state: () => Object.assign({}, podioState),
+    pullQuiet: async () => { const n = podioState.note, er = podioState.err; try { return await pullMirror(); } finally { podioState.note = n; podioState.err = er; } },   /* background read: top-bar note unchanged */ mirrorAt: () => mirrorAt, map: PodioMap, repaint: () => { try { paintPodio(); } catch (e) {} } };   /* v48.7 */
 
   const st = document.createElement("style");
   st.textContent = ".drive-st{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:4px}"
@@ -9978,13 +10030,13 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       const el = document.getElementById("syncBar"); const tx = document.getElementById("syncText");
       const n = unsyncedCount();
       if (el && tx) {
-        if (n && !pendingCount()) tx.textContent = tx.textContent.replace("All changes synced", n + " change" + (n === 1 ? "" : "s") + " saved on this device, waiting to sync");
+        if (n && !pendingCount()) tx.textContent = tx.textContent.replace("Everything uploaded", n + " change" + (n === 1 ? "" : "s") + " saved on this device, still uploading…");
         el.dataset.unsynced = String(n);
         el.classList.toggle("pending", !!n);
         let s = document.getElementById("v46Safe");
         if (!s) { s = document.createElement("div"); s.id = "v46Safe"; s.className = "v46-safe"; el.appendChild(s); }
-        s.textContent = n ? "Saved on this device ✓ · " + n + " waiting for Supabase" + (syncState.lastError ? " (" + syncState.lastError + ")" : "") + (navigator.onLine ? " — retrying" : " — will send when back online")
-          : "Saved on this device ✓ · Supabase ✓";
+        s.textContent = n ? "Saved on this device ✓ " + n + " still to upload" + (navigator.onLine ? ", trying again now." : ", will upload when you are back online.") + (syncState.lastError ? " Last try: " + syncState.lastError : "")
+          : "Saved on this device ✓ Everything uploaded ✓";   /* v48.14: plain English, no "Supabase" */
         s.classList.toggle("ok", !n);
       }
     } catch (e) { console.warn("v46 sync bar", e); }
@@ -10048,7 +10100,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (h2 && !document.getElementById("v46SampleSync")) {
       const p = syncState.pending["trains:" + t.id]; const u = unsyncedOf("trains", t);
       const d = document.createElement("div"); d.id = "v46SampleSync"; d.className = "v46-sample-sync " + (u ? "wait" : "ok");
-      d.textContent = u ? "Saved on this device ✓ · waiting to sync to Supabase" + (p && p.tries ? " (" + p.tries + " tr" + (p.tries === 1 ? "y" : "ies") + (p.lastError ? ": " + p.lastError : "") + ")" : "") : "Saved on this device ✓ · synced to Supabase ✓";
+      d.textContent = u ? "Saved on this device ✓ Still uploading" + (p && p.tries ? " (" + p.tries + " tr" + (p.tries === 1 ? "y" : "ies") + (p.lastError ? ": " + p.lastError : "") + ")" : "") + "…" : "Saved on this device ✓ Uploaded ✓";
       (h2.closest(".row") || h2).insertAdjacentElement("afterend", d);
     }
     if (!personType(t)) return;
@@ -10413,7 +10465,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       st.at = Date.now(); st.err = "";
       const open = events.filter(e => e.open).length;
       st.note = "Refreshed AFM from Podio: " + open + " open AFM event" + (open === 1 ? "" : "s") + ", " + samples.length + " Podio sample" + (samples.length === 1 ? "" : "s")
-        + (newest ? " (Podio copy updated " + (typeof fmtClock === "function" ? fmtClock(newest) : newest) + ")" : "") + ". Nothing is sent to Podio.";
+        + (newest ? " (Podio jobs updated " + (typeof fmtWhen === "function" ? fmtWhen(newest) : newest) + ")" : "") + ". Nothing is sent to Podio.";
       return true;
     } finally { st.busy = false; paint(); }
   }
@@ -10573,9 +10625,8 @@ window.HIRE_CATALOG = HIRE_CATALOG;
           : '<button type="button" class="btn green" data-afm-start="' + e_(r.itemId) + '">Start AFM from Podio</button>')
         + "</div>";
     });
-    h += '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button type="button" class="btn ghost" id="btnAfmPodioRefresh"' + (st.busy ? " disabled" : "") + ">" + (st.busy ? "Refreshing AFM…" : "Refresh AFM from Podio") + "</button></div>";
+    /* v48.14: no separate AFM refresh; AFM is read when the project opens and with the top-bar Refresh from Podio */
     h += '<p class="help">Read only: Podio is not changed. Values already entered in the field app are kept.</p>';
-    if (st.note) h += '<p class="help" id="afmPodioNote">' + e_(st.note) + "</p>";
     if (st.err) h += '<p class="help" id="afmPodioErr" style="color:var(--danger,#9B2C2C);font-weight:700">' + e_(st.err) + "</p>";
     return h + "</div>";
   }
@@ -12011,9 +12062,587 @@ function fixOpen(ts) {
 })();
 </script>
 
+<script>
+/* ===== v48.14 draft (built as v48.7): open item 11 — field events are created automatically from Podio HYG events.
+   Rules (John, 20 Nov 2026 AWST; build approved 23 Nov 2026 AWST):
+   - A field event is created as soon as the HYG Assessment Event exists in Podio (app 24280319, read through the
+     read-only mirror view v_field_hyg_events). No wait for a confirmed date.
+   - Staff can still delete one made in error (admin, Delete event). The tombstone carries the Podio item id, and the
+     next sync never re-creates it (any device: tombstones in envss_deletions are checked before every create).
+   - If the Podio event is later moved (date / job), marked Not required, or deleted, the field event is NEVER changed
+     automatically. It is flagged for review on the event, the project's Podio list and the dashboard. Staff choose
+     "Use Podio date" or "Keep as is" (both audited).
+   - Replaces the Start fieldwork step. Start fieldwork stays as the fallback (older events, before the first sync,
+     or a deliberate re-create after a delete).
+   - A hand-made "Podio unplanned" event on the same job that looks like the same visit (same code, start dates within
+     3 days, or Podio has no date and the hand-made event is current) blocks auto-create; staff get "Link" or
+     "Create a separate event" instead, so no duplicates.
+   Safety: client-side only, no SQL needed. Runs only after this device has pulled events + tombstones + projects from
+   Supabase and is signed in. Event id is deterministic (e-podio-<Podio item id>), so two devices creating the same
+   event write the same row (idempotent upsert). Before the first send of a freshly auto-created event, Supabase is read
+   and an existing row (made by another device, edited, or deleted) always wins; nothing is overwritten. Nothing is
+   deleted. No Podio calls or writes. ===== */
+(function () {
+  const PodioMapIsPlanned = p => window.envssPodio && envssPodio.map && envssPodio.map.isPlanned ? envssPodio.map.isPlanned(p) : true;
+  const ALL_KEY = "envss-podio-hyg-all-v487", GONE_KEY = "envss-podio-deleted-items-v487", MADE_KEY = "envss-auto-made-v487";
+  /* v48.14 (John, 26 Nov 2026 2:57 pm AWST): "whatever events created in Podio should show; we default to adding from Podio".
+     Every planned (not finished / cancelled / not required) HYG event is created, whatever its date. null = no date limit. */
+  const BACK_DAYS = null;         /* was 7 in the v48.7 draft */
+  const NODATE_EDIT_DAYS = null;  /* was 60 in the v48.7 draft */
+  const HANDMADE_CURRENT_DAYS = 7; /* no Podio date: a hand-made event dated within the last 7 days (or undated) may be the same visit */
+  const MATCH_DAYS = 3;           /* hand-made event within 3 days of the Podio start date = possible duplicate */
+  const PULL_EVERY = 15 * 60e3;   /* background read of the mirror while the app is open */
+  const PF = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Perth", year: "numeric", month: "2-digit", day: "2-digit" });
+  const today = () => PF.format(new Date());
+  const addDays = (ymd, n) => { const d = new Date(ymd + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const dayDiff = (a, b) => Math.round((Date.parse(a + "T00:00:00Z") - Date.parse(b + "T00:00:00Z")) / 864e5);
+  const fmtDay = ymd => { if (!ymd) return "no date"; const d = new Date(ymd + "T00:00:00Z"); return d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }); };
+  function readJson(k, d) { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v == null ? d : v; } catch (e) { return d; } }
+  function writeJson(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  /* v48.14: Podio event apps that feed auto-create, and the field event each one makes (John, 26 Nov 2026 3:15 pm AWST).
+     HYG Assessment Events works now. The three new apps are read from the draft view v_field_podio_events
+     (work/hyg_v48_14_01_podio_events_view.sql, NOT applied); until that view exists (404) nothing changes for them.
+     Override per site with window.ENVSS_PODIO_EVENT_APPS in config.js.
+     fieldType: the field app's event type ("hygiene" or "fit"). kind: shown on the event and kept on the record (podioEventKind). */
+  const HYG_APP = "24280319";
+  const PODIO_EVENT_APPS = [
+    { appId: HYG_APP, name: "HYG Assessment Event", fieldType: "hygiene", kind: "", enabled: true },
+    /* created by John 26 Nov 2026 3:29 pm AWST in 1.6 ENVSS Project Events (copies of the HYG app: same field ids) */
+    { appId: "30888380", name: "Occ Noise Event", fieldType: "hygiene", kind: "noise", enabled: true },   /* occupational noise samples go in a hygiene event (noise.js) */
+    { appId: "30888385", name: "Vent Survey Event", fieldType: "hygiene", kind: "vent", enabled: true },
+    { appId: "30888384", name: "Onsite RFT Event", fieldType: "fit", kind: "fit", enabled: true }         /* {job}-FIT-nnn, fit-test.js */
+  ];
+  const appsCfg = () => (Array.isArray(window.ENVSS_PODIO_EVENT_APPS) ? window.ENVSS_PODIO_EVENT_APPS : PODIO_EVENT_APPS).map(a => Object.assign({}, a, { appId: String(a.appId || "") }));
+  const appOf = r => { const id = String((r && (r.appId || (r.payload && r.payload.appId))) || HYG_APP); return appsCfg().find(a => a.appId === id) || null; };
+  const extraApps = () => appsCfg().filter(a => a.enabled && a.appId && a.appId !== HYG_APP && (a.fieldType === "hygiene" || a.fieldType === "fit"));
+  const evApp = ev => String((ev && ev.podioAppId) || HYG_APP);
+  const isFitEv = e => typeof isFitEvent === "function" && isFitEvent(e);
+  const sameKind = (e, cfg) => cfg && cfg.fieldType === "fit" ? isFitEv(e) : isHyg(e);
+  let snap = readJson(ALL_KEY, null);                    /* last full mirror read: { rows:[{itemId,lastEdit,payload}], complete, at } */
+  const DELINFO_KEY = "envss-deleted-events-v487";
+  let delInfo = readJson(DELINFO_KEY, {});               /* deleted event id -> { podioItemId, podioAuto, podioUnplanned, type, samples } seen on tombstoned rows */
+  let goneSet = new Set(readJson(GONE_KEY, []));         /* Podio item ids whose field event was deleted (seen on tombstoned rows) */
+  let made = readJson(MADE_KEY, {});                     /* auto-created, not yet confirmed by Supabase: event id -> snapshot hash at creation */
+  let deletedInPodio = new Set();                        /* optional view v_field_hyg_deleted (draft SQL); empty until applied */
+  let offers = {};                                       /* Podio item id -> [hand-made event ids] */
+  const last = { at: "", created: [], adopted: [], skipped: {}, waiting: false };
+  let pulling = false;
+
+  /* v48.14: auto-create only ever makes and considers hygiene events; AFM (fibre) and fit-test events (type "fit", {job}-FIT-n) are never touched */
+  const isHyg = e => !!e && !isFibreEvent(e) && !(typeof isFitEvent === "function" && isFitEvent(e));
+  const idFor = itemId => "e-podio-" + String(itemId).replace(/[^0-9A-Za-z_-]/g, "");
+  const jobOf = p => { const m = String(p && p.number || "").trim().match(/^(\d{7})(?!\d)/); return m ? m[1] : ""; };
+  const isStub = p => /^podio-afm-job-/.test(String(p && p.id || ""));
+  /* work types from the Podio reference, e.g. 0019xxx-Client-HYG-RFT,NSEOC-ACA,VENT-Site -> ["RFT", "NSEOC-ACA", "VENT"] */
+  function typesOf(ref) {
+    const m = String(ref || "").match(/-(?:HYG|HAZ)-(.*)$/); if (!m) return [];
+    const take = [];
+    for (const seg of m[1].split("-")) { if (/^[A-Z_]+(?:[ ,]+[A-Z_]+)*$/.test(seg.trim())) take.push(seg.trim()); else break; }
+    return take.join("-").split(/\s*,\s*/).map(x => x.trim()).filter(Boolean);
+  }
+
+  const TYPE_HELP = { "NSEOC": "occupational noise (noise samples go in this event)", "NSEOC-ACA": "occupational noise + airborne contaminants (both in this event)",
+    "NSED": "noise dose", "ACA": "airborne contaminants", "ACA NSED": "airborne contaminants + noise dose", "ACS": "airborne contaminant sampling", "VENT": "ventilation",
+    "BAC_MLD": "bacteria / mould", "HHMP": "hazardous materials", "RFT": "respirator fit testing (a separate fit-test event; not created automatically)", "HPFT": "hearing protector fit testing (separate; not created automatically)",
+    "AT": "air testing", "ISS": "indoor / surface sampling", "DMIRS-SRS": "Mines (DMIRS) silica / respirable dust", "IAQ": "indoor air quality", "MLD": "mould",
+    "WBVIB": "whole-body vibration", "HAVIB": "hand-arm vibration", "AFM": "airborne fibre monitoring (AFM event)" };
+  /* v48.14: a HYG event whose only work is fit testing is not made into a hygiene event (fit events are made in Fit test, never automatically) */
+  function isFitOnly(ref) { const t = typesOf(ref); return t.length > 0 && t.every(x => x === "RFT" || x === "HPFT"); }
+  function isAfmOnly(ref) {
+    const m = String(ref || "").match(/-HYG-([^-]+)-/i);
+    if (!m) return false;
+    const t = m[1].split(/[,\s/&+]+/).filter(Boolean).map(x => x.toUpperCase());
+    return t.length > 0 && t.every(x => x === "AFM");    /* AFM-only HYG items belong to the AFM app flow (v48.5) */
+  }
+  function tombs() {
+    const items = new Set(goneSet), evs = new Set(), prs = new Set(), codes = new Set();
+    (db.deletions || []).forEach(d => {
+      if (!d) return;
+      if (d.tombstone === "project" && d.projectId) prs.add(d.projectId);
+      if (d.tombstone !== "event") return;
+      if (d.deletedEventId) evs.add(d.deletedEventId);
+      if (d.code) codes.add(d.code);
+      if (d.podioItemId) items.add(String(d.podioItemId));
+      const m = String(d.deletedEventId || "").match(/^e-podio-(.+)$/); if (m) items.add(m[1]);
+    });
+    return { items, evs, prs, codes };
+  }
+  /* events are merged before deletions inside one pull, so tombstone details (Podio item, hand-made, samples) are only complete
+     from the second successful pull on; that second pull is started straight after the first. */
+  let pullsOk = 0;
+  function ready() {
+    return pullsOk >= 2 && typeof activityLoaded !== "undefined" && activityLoaded && typeof projectsLoaded !== "undefined" && projectsLoaded
+      && typeof hasSession === "function" && hasSession() && navigator.onLine !== false && typeof db !== "undefined" && !!db;
+  }
+  function eligible(r) {
+    const pl = r.payload || {};
+    if (!pl.planned) return "not planned in Podio";
+    if (!/^\d{7}$/.test(pl.jobNumber || "")) return "no job number";
+    const cfg = appOf(r);
+    if (!cfg) return "Podio app not set up for auto-create";
+    if (!cfg.enabled) return "Podio app switched off for auto-create";
+    if (cfg.appId === HYG_APP && isAfmOnly(pl.reference)) return "AFM only";
+    if (cfg.appId === HYG_APP && isFitOnly(pl.reference)) return "fit testing only (RFT/HPFT): use Fit test, not a hygiene event";
+    const t = today();
+    if (pl.startDate) { if (BACK_DAYS != null && pl.startDate < addDays(t, -BACK_DAYS)) return "start date more than " + BACK_DAYS + " days ago"; }
+    else if (NODATE_EDIT_DAYS != null) { const le = String(r.lastEdit || "").slice(0, 10); if (!le || le < addDays(t, -NODATE_EDIT_DAYS)) return "no start date and not edited in " + NODATE_EDIT_DAYS + " days"; }
+    return "";
+  }
+  function projectFor(job, tb, pl) {
+    const ps = (db.projects || []).filter(p => jobOf(p) === job && !isStub(p) && !tb.prs.has(p.id));
+    /* v48.14: one job can have several Podio projects (0019185-001 … -004); use the one the Podio event is linked to */
+    const linked = pl && pl.projectItemId ? ps.find(p => String(p.podioItemId || "") === String(pl.projectItemId) || p.id === "podio-" + pl.projectItemId) : null;
+    return linked || ps.find(p => typeof isPodioProject === "function" && isPodioProject(p)) || ps[0] || null;
+  }
+  /* field code named in the Podio reference: the whole reference (0019185-001) or its start (0019185-002-Construction Sciences-…) */
+  const codeHint = pl => pl.fieldCode || ((String(pl.reference || "").match(/^(\d{7}-\d{3})-/) || [])[1] || "");
+  function handMade(p, pl, cfg) {
+    const t = today();
+    return (db.events || []).filter(e => e && e.projectId === p.id && !e.podioItemId && sameKind(e, cfg || appOf({ appId: pl.appId }))
+      && !(e.podioLinkDeclined || []).includes(String(pl.itemId))
+      && ((codeHint(pl) && e.code === codeHint(pl))
+        || (pl.startDate && e.date && Math.abs(dayDiff(e.date, pl.startDate)) <= MATCH_DAYS)
+        || (!pl.startDate && (!e.date || e.date >= addDays(t, -HANDMADE_CURRENT_DAYS)))));
+  }
+  function seenOf(pl) { return { startDate: pl.startDate || "", startStatus: pl.startStatus || "", reportStatus: pl.reportStatus || "", jobNumber: pl.jobNumber || "", reference: pl.reference || "", at: nowIso() }; }
+  const isCancelled = v => /^(event )?cancel+ed$/i.test(String(v || "").trim());
+  /* John, 23 Nov 2026 20:05 AWST: a deleted event's code may be reused by the auto-created Podio event ONLY when the deleted event was a
+     hand-made duplicate on this job (not e-podio-<item>, never linked to Podio, not auto-created, not AFM) with no samples at all.
+     Anything unknown keeps its code reserved. The deleted event itself is never re-created (its id stays tombstoned). */
+  function reusableCodes(p) {
+    const job = jobOf(p) || String(p.number || ""), out = new Set();
+    const withSamples = new Set();
+    (db.deletions || []).forEach(d => { if (d && d.trainId && d.eventId) withSamples.add(d.eventId); });
+    (db.trains || []).forEach(t => { if (t && t.eventId) withSamples.add(t.eventId); });
+    (db.deletions || []).forEach(d => {
+      if (!d || d.tombstone !== "event" || !d.code || !d.deletedEventId) return;
+      const id = d.deletedEventId, known = delInfo[id] || {}, info = Object.assign({}, known, d);
+      if (/^e-podio-/.test(id)) return;
+      if (!String(d.code).startsWith(job + "-")) return;
+      if (info.podioItemId || info.podioAuto || known.podioItemId || known.podioAuto || known.podioLinked) return;
+      if (String(info.type || "hygiene") !== "hygiene" || /(^|-)(AFM|FIT)-/i.test(String(d.code))) return;   /* never reuse AFM or fit codes */
+      if (!(d.podioUnplanned === true || known.podioUnplanned === true)) return;   /* must be known to be hand-made */
+      if (withSamples.has(id) || Number(d.sampleCount) > 0 || known.samples) return;
+      if (d.detail === "project deleted") return;
+      out.add(d.code);
+    });
+    return out;
+  }
+  function codeFor(p, pl, tb) {
+    const reuse = reusableCodes(p);
+    const codes = new Set((db.events || []).map(e => e.code).concat([...tb.codes].filter(c => !reuse.has(c))));
+    const hint = codeHint(pl);
+    if (hint && !codes.has(hint) && hint.slice(0, 7) === String(jobOf(p) || p.number)) return hint;
+    const job = jobOf(p) || p.number;
+    let n = (db.events || []).filter(e => e.projectId === p.id && isHyg(e)).length + 1;
+    /* v48.14 (0019300): never hand out a code another Podio event names in its reference (…-001-…); that event gets it */
+    const named = c => tb.hinted && tb.hinted.has(c) && c !== hint;
+    while (codes.has(job + "-" + String(n).padStart(3, "0")) || named(job + "-" + String(n).padStart(3, "0"))) n++;
+    return job + "-" + String(n).padStart(3, "0");
+  }
+  function build(p, pl, id, how, tb, cfg) {
+    const poc = pl.poc || {};
+    cfg = cfg || appOf({ appId: pl.appId }) || PODIO_EVENT_APPS[0];
+    const fit = cfg.fieldType === "fit" && window.envssFit && typeof envssFit.fitEventCode === "function";
+    const ev = {
+      id, projectId: p.id, type: fit ? "fit" : "hygiene", stage: "planned",
+      date: pl.startDate || (how === "auto" ? "" : new Date().toISOString().slice(0, 10)),
+      code: fit ? envssFit.fitEventCode(p, envssFit.nextFitSeq(p.id)) : codeFor(p, pl, tb), multiDay: false, minesAct: false, notes: "", uploadReady: false, operators: [],
+      turnaround: pl.turnaround || "standard", taskDesc: pl.task || "", lab: pl.lab || "", siteContact: pl.siteContact || "",
+      poc: { company: poc.company || "", first: poc.first || "", last: poc.last || "", role: poc.role || "", phone: poc.phone || "", email: poc.email || "" },
+      equipmentDetails: pl.equipment || "", podioDriveLink: pl.driveLink || "",
+      podioItemId: String(pl.itemId), podioReference: pl.reference || "", podioLinked: true, podioUnplanned: false,
+      podioAuto: how === "auto", podioSeen: seenOf(pl), podioTypes: typesOf(pl.reference),
+      podioAppId: cfg.appId, podioEventKind: cfg.kind || "",
+      audit: [{ at: nowIso(), who: how === "auto" ? "ENVSS Field (auto, " + whoText() + ")" : whoText(),
+        action: how === "auto" ? "Created automatically from Podio" : "Started from Podio (Start fieldwork)", field: "", from: "", to: "",
+        detail: "Podio " + (cfg.appId === HYG_APP ? "HYG" : cfg.name) + " event " + pl.itemId + (pl.reference ? " · " + pl.reference : "") + (pl.startDate ? " · start " + pl.startDate : " · no start date in Podio") + (pl.startStatus ? " · " + pl.startStatus : "") }]
+    };
+    if (cfg.appId === HYG_APP) { delete ev.podioAppId; delete ev.podioEventKind; }   /* HYG records stay exactly as before */
+    return ev;
+  }
+
+  /* ---------- auto-create ---------- */
+  let lastOffers = "{}";
+  function run() {
+    if (!snap || !Array.isArray(snap.rows)) return 0;
+    if (!ready()) { last.waiting = true; return 0; }
+    last.waiting = false;
+    const tb = tombs(), skipped = {}, out = [];
+    offers = {};
+    tb.hinted = new Set(snap.rows.map(r => codeHint(r.payload || {})).filter(Boolean));
+    const rows = snap.rows.slice().sort((a, b) => String((a.payload || {}).startDate || "9999").localeCompare(String((b.payload || {}).startDate || "9999")) || String(a.itemId).localeCompare(String(b.itemId)));
+    rows.forEach(r => {
+      const pl = r.payload || {}, item = String(pl.itemId || r.itemId || "");
+      const skip = why => { skipped[why] = (skipped[why] || 0) + 1; };
+      if (!item) return skip("no item id");
+      const why = eligible(r); if (why) return skip(why);
+      if ((db.events || []).some(e => String(e.podioItemId || "") === item)) return skip("field event already exists");
+      const id = idFor(item);
+      if (tb.items.has(item) || tb.evs.has(id)) return skip("deleted here (tombstone)");
+      if ((db.events || []).some(e => e.id === id)) return skip("field event already exists");
+      const p = projectFor(pl.jobNumber, tb, pl); if (!p) return skip("job not on the project list yet");
+      const cfg = appOf(r);
+      const m = handMade(p, pl, cfg);
+      if (m.length) { offers[item] = m.map(e => e.id); return skip("possible hand-made duplicate (link offered)"); }
+      const ev = build(p, pl, id, "auto", tb, cfg);
+      db.events.push(ev);
+      out.push(ev);
+    });
+    last.at = nowIso(); last.skipped = skipped; last.created = out.map(e => e.code + " (" + e.id + ")");
+    if (out.length) {
+      commit();                                                      /* scanDirty marks them pending; flush sends them */
+      out.forEach(ev => { made[ev.id] = snapOf("events", ev); });
+      writeJson(MADE_KEY, made);
+      if (!userIsTyping()) render();
+    } else if (JSON.stringify(offers) !== lastOffers) { try { if (!userIsTyping()) render(); } catch (e) {} }   /* v48.14: repaint only when the offers change */
+    lastOffers = JSON.stringify(offers);
+    return out.length;
+  }
+
+  /* Start fieldwork fallback: same record shape; deterministic id unless that id was deleted (then a fresh id, on purpose). */
+  function startManual(p, row) {
+    const pl = row.payload || row;
+    const tb = tombs(), id0 = idFor(pl.itemId);
+    const id = tb.evs.has(id0) || (db.events || []).some(e => e.id === id0) ? uid("e") : id0;
+    const ev = build(p, pl, id, "manual", tb);
+    db.events.push(ev);
+    commit();
+    return ev.id;
+  }
+
+  /* ---------- review flags (never change the event; staff decide) ---------- */
+  const rowFor = item => snap && Array.isArray(snap.rows) ? snap.rows.find(r => String(r.itemId) === String(item)) : null;
+  function flagsFor(ev) {
+    if (!ev || !ev.podioItemId || !snap || !Array.isArray(snap.rows)) return [];
+    if (!isHyg(ev) && !(isFitEv(ev) && ev.podioAppId)) return [];      /* fit events: only ones made from a Podio fit-test app */
+    const seen = ev.podioSeen || null, r = rowFor(ev.podioItemId), out = [];
+    if (!r) {
+      if (!snap.complete || (seen && seen.gone)) return [];
+      if (evApp(ev) !== HYG_APP && !(snap.apps || []).includes(evApp(ev))) return [];   /* that app was not read this time: never say "gone" */
+      out.push({ kind: "gone", text: deletedInPodio.has(String(ev.podioItemId)) ? "This event was deleted in Podio." : "This event is no longer in Podio (deleted, or the Podio copy no longer lists it)." });
+      return out;
+    }
+    const pl = r.payload || {};
+    const baseDate = seen ? (seen.startDate || "") : (ev.date || "");
+    const now = pl.startDate || "";
+    if (now !== baseDate) {
+      if (!baseDate) out.push({ kind: "date", to: now, text: "Podio now has a start date: " + fmtDay(now) + "." });
+      else if (!now) out.push({ kind: "date", to: "", text: "The start date was cleared in Podio (was " + fmtDay(baseDate) + ")." });
+      else out.push({ kind: "date", to: now, text: "Moved in Podio: " + fmtDay(baseDate) + " → " + fmtDay(now) + "." });
+    }
+    const proj = project(ev.projectId), baseJob = (seen && seen.jobNumber) || jobOf(proj);
+    if (pl.jobNumber && baseJob && pl.jobNumber !== baseJob) out.push({ kind: "job", text: "Moved to job " + pl.jobNumber + " in Podio (this event is on " + baseJob + ")." });
+    if (/not required/i.test(pl.startStatus || "") && !(seen && /not required/i.test(seen.startStatus || ""))) out.push({ kind: "status", text: "Marked Not required in Podio." });
+    if (isCancelled(pl.reportStatus) && !(seen && isCancelled(seen.reportStatus))) out.push({ kind: "status", text: "Marked Canceled in Podio." });
+    return out;
+  }
+  function allFlagged() {
+    return (db.events || []).map(ev => ({ ev, f: flagsFor(ev) })).filter(x => x.f.length);
+  }
+  function review(evId, useDate) {
+    const ev = eventById(evId); if (!ev) return;
+    const r = rowFor(ev.podioItemId), f = flagsFor(ev);
+    if (!f.length) return;
+    const pl = r ? (r.payload || {}) : null;
+    const text = f.map(x => x.text).join(" ");
+    ev.audit = Array.isArray(ev.audit) ? ev.audit : [];
+    if (useDate && pl && pl.startDate) {
+      if (!confirm("Change " + ev.code + " from " + fmtDay(ev.date) + " to " + fmtDay(pl.startDate) + " to match Podio? Samples keep their own dates.")) return;
+      ev.audit.push({ at: nowIso(), who: whoText(), action: "Date changed to match Podio", field: "date", from: ev.date || "", to: pl.startDate, detail: text });
+      ev.date = pl.startDate;
+    } else {
+      ev.audit.push({ at: nowIso(), who: whoText(), action: "Podio change reviewed: kept as is", field: "", from: "", to: "", detail: text });
+    }
+    ev.podioSeen = pl ? seenOf(pl) : Object.assign({}, ev.podioSeen || {}, { gone: true, at: nowIso() });
+    save();
+  }
+
+  /* ---------- link a hand-made event instead of creating a duplicate ---------- */
+  function link(evId, item) {
+    const ev = eventById(evId), r = rowFor(item); if (!ev || !r) return;
+    const pl = r.payload || {};
+    const other = (db.events || []).find(e => String(e.podioItemId || "") === String(item));
+    if (other) { alert("That Podio event is already linked to " + other.code + "."); return; }
+    const dateNote = pl.startDate && ev.date && pl.startDate !== ev.date ? " Podio's start date is " + fmtDay(pl.startDate) + "; this event stays on " + fmtDay(ev.date) + "." : "";
+    if (!confirm("Link " + ev.code + " to the Podio event " + (pl.reference || item) + "? Empty fields are filled from Podio; nothing already entered is changed." + dateNote)) return;
+    const filled = [];
+    const fill = (k, v) => { if (v && !ev[k]) { ev[k] = v; filled.push(k); } };
+    fill("date", pl.startDate); fill("lab", pl.lab); fill("siteContact", pl.siteContact); fill("taskDesc", pl.task);
+    fill("equipmentDetails", pl.equipment); fill("podioDriveLink", pl.driveLink); fill("turnaround", pl.turnaround);
+    const poc = pl.poc || {}; ev.poc = ev.poc || {};
+    ["company", "first", "last", "role", "phone", "email"].forEach(k => { if (poc[k] && !ev.poc[k]) { ev.poc[k] = poc[k]; filled.push("poc." + k); } });
+    ev.podioItemId = String(pl.itemId); ev.podioReference = pl.reference || ""; ev.podioLinked = true; ev.podioUnplanned = false;
+    ev.podioSeen = seenOf(pl);
+    ev.audit = Array.isArray(ev.audit) ? ev.audit : [];
+    ev.audit.push({ at: nowIso(), who: whoText(), action: "Linked to Podio event", field: "podioItemId", from: "", to: String(pl.itemId), detail: (pl.reference || "") + (filled.length ? " · filled from Podio: " + filled.join(", ") : " · nothing filled") });
+    delete offers[String(item)];
+    save();
+  }
+  function separate(item) {
+    const ids = offers[String(item)] || [];
+    const r = rowFor(item); const pl = r ? r.payload || {} : {};
+    if (!confirm("Create a separate field event for the Podio event " + (pl.reference || item) + "? " + ids.map(i => (eventById(i) || {}).code).filter(Boolean).join(", ") + " stays as it is.")) return;
+    ids.forEach(i => { const e = eventById(i); if (e) { e.podioLinkDeclined = (e.podioLinkDeclined || []).concat([String(item)]); e.audit = Array.isArray(e.audit) ? e.audit : []; e.audit.push({ at: nowIso(), who: whoText(), action: "Not the same as Podio event", field: "", from: "", to: "", detail: String(item) + " · " + (pl.reference || "") }); } });
+    commit();
+    run();
+    render();
+  }
+
+  /* ---------- painting ---------- */
+  function card(pl) {
+    if (!snap || !Array.isArray(snap.rows)) return null;
+    const item = String(pl.itemId || "");
+    const ev = (db.events || []).find(e => String(e.podioItemId || "") === item);
+    if (ev) {
+      const f = flagsFor(ev);
+      return '<p class="help">' + (ev.podioAuto ? "Field event " + esc(ev.code) + " was created automatically." : "Fieldwork started: " + esc(ev.code) + ".") + "</p>"
+        + (f.length ? '<p class="podio-flag v487-flag">Needs review: ' + esc(f.map(x => x.text).join(" ")) + "</p>" : "")
+        + '<button type="button" class="btn" data-v487-open="' + esc(ev.id) + '">Open project event ' + esc(ev.code) + "</button>";
+    }
+    const tb = tombs();
+    if (tb.items.has(item) || tb.evs.has(idFor(item))) {
+      return '<p class="help">The field event for this was deleted. It will not be created again automatically.</p>'
+        + '<button type="button" class="btn" data-podio-start="' + esc(item) + '">Start fieldwork again</button>';
+    }
+    if (offers[item] && offers[item].length) {
+      return '<div class="v487-offer"><p class="podio-flag">This may already be a hand-made event. Link it instead of creating a duplicate?</p>'
+        + offers[item].map(id => { const e = eventById(id); return e ? '<button type="button" class="btn green" data-v487-link="' + esc(id) + '" data-v487-item="' + esc(item) + '">Link ' + esc(e.code) + " (" + esc(fmtDay(e.date)) + ")</button> " : ""; }).join("")
+        + '<button type="button" class="btn" data-v487-separate="' + esc(item) + '">Create a separate event</button></div>';
+    }
+    return null;   /* not eligible yet (older, no project, waiting for sync): the v46 Start fieldwork button stays */
+  }
+  function paintEvent() {
+    if (view.page !== "event") return;
+    const ev = eventById(view.eventId); if (!ev) return;
+    const h = document.querySelector("#app h2"); if (!h) return;
+    let html = "";
+    const f = flagsFor(ev);
+    if (f.length) {
+      const dateTo = (f.find(x => x.kind === "date" && x.to) || {}).to;
+      html += '<div class="podio-flag" id="v487Flags"><div>Changed in Podio. Nothing here was changed automatically.</div><ul class="v487-list">'
+        + f.map(x => "<li>" + esc(x.text) + "</li>").join("") + "</ul>"
+        + (dateTo ? '<button type="button" class="btn" data-v487-usedate="' + esc(ev.id) + '">Use Podio date (' + esc(fmtDay(dateTo)) + ")</button> " : "")
+        + '<button type="button" class="btn" data-v487-keep="' + esc(ev.id) + '">Keep as is</button>'
+        + (f.some(x => x.kind === "gone" || x.kind === "status") ? '<p class="help" style="font-weight:400">If this event should not go ahead, an admin can delete it (Delete event). It will not come back.</p>' : "")
+        + "</div>";
+    }
+    if (ev.podioItemId && ev.podioAppId && evApp(ev) !== HYG_APP && !document.getElementById("v4814App")) {
+      const a = appsCfg().find(x => x.appId === evApp(ev));
+      html += '<p class="help" id="v4814App">From Podio app: ' + esc(a ? a.name : "Podio app " + evApp(ev)) + (ev.podioEventKind ? " (" + esc(ev.podioEventKind) + ")" : "") + ".</p>";
+    }
+    if (ev.podioItemId && isHyg(ev) && !document.getElementById("v4814Scope")) {
+      const ty = (ev.podioTypes && ev.podioTypes.length ? ev.podioTypes : typesOf(ev.podioReference));
+      if (ty.length) html += '<p class="help" id="v4814Scope">Podio scope: ' + ty.map(x => esc(x) + (TYPE_HELP[x] ? " — " + esc(TYPE_HELP[x]) : "")).join("; ") + ".</p>";
+    }
+    if (ev.podioAuto && !document.getElementById("v487Auto")) {
+      const a = (ev.audit || []).find(x => x && x.action === "Created automatically from Podio");
+      html += '<p class="help" id="v487Auto">Created automatically from Podio' + (a ? " on " + esc(fmtClock(a.at)) : "") + ". If it was made in error, an admin can delete it; it will not be created again.</p>";
+    }
+    if (!ev.podioItemId) {
+      const items = Object.keys(offers).filter(k => offers[k].includes(ev.id));
+      items.forEach(item => {
+        const r = rowFor(item); if (!r) return; const pl = r.payload || {};
+        html += '<div class="podio-flag v487-offer" data-v487-offer="' + esc(item) + '"><div>This may be the Podio event ' + esc(pl.reference || item) + " (" + esc(fmtDay(pl.startDate)) + ").</div>"
+          + '<button type="button" class="btn green" data-v487-link="' + esc(ev.id) + '" data-v487-item="' + esc(item) + '">Link to this Podio event</button> '
+          + '<button type="button" class="btn" data-v487-separate="' + esc(item) + '">Not this one</button></div>';
+      });
+    }
+    ["v487Flags", "v4814Scope", "v4814App"].forEach(id => { const o = document.getElementById(id); if (o) o.remove(); });
+    document.querySelectorAll("#app .v487-offer[data-v487-offer]").forEach(o => o.remove());
+    if (html) (h.closest(".row") || h).insertAdjacentHTML("afterend", html);   /* below the title row, full width */
+  }
+  /* v48.14: Podio is the default way in. On a project, events come from Podio by themselves; adding one by hand is a small fallback. */
+  function paintProjectDefaults() {
+    if (view.page !== "project") return;
+    const top = document.getElementById("btnNewEventTop");
+    if (top) top.remove();   /* v48.14: moved to ☰ > Add event not in Podio */
+  }
+  function paintDash() {
+    const old = document.getElementById("v487Dash"); if (old) old.remove();
+    if (view.page !== "dash" && view.page) return;
+    const fl = allFlagged(); if (!fl.length) return;
+    const wrap = document.querySelector("#app .wrap") || document.getElementById("app"); if (!wrap) return;
+    const html = '<div class="podio-flag" id="v487Dash">' + fl.length + " field event" + (fl.length === 1 ? "" : "s") + " changed in Podio and need" + (fl.length === 1 ? "s" : "") + " review: "
+      + fl.map(x => '<button type="button" class="sync-link" data-v487-open="' + esc(x.ev.id) + '">' + esc(x.ev.code) + "</button>").join(" ") + "</div>";
+    const anchor = wrap.querySelector("h2");
+    if (anchor) (anchor.closest(".row") || anchor).insertAdjacentHTML("afterend", html); else wrap.insertAdjacentHTML("afterbegin", html);
+  }
+  document.addEventListener("click", e => {
+    const b = e.target && e.target.closest ? e.target.closest("[data-v487-open],[data-v487-link],[data-v487-separate],[data-v487-keep],[data-v487-usedate]") : null;
+    if (!b) return;
+    e.preventDefault();
+    if (b.dataset.v487Open) openEvent(b.dataset.v487Open);
+    else if (b.dataset.v487Link) link(b.dataset.v487Link, b.dataset.v487Item);
+    else if (b.dataset.v487Separate) separate(b.dataset.v487Separate);
+    else if (b.dataset.v487Keep) review(b.dataset.v487Keep, false);
+    else if (b.dataset.v487Usedate) review(b.dataset.v487Usedate, true);
+  });
+  const _render = render;
+  render = function () {
+    const r = _render.apply(this, arguments);
+    try { paintEvent(); paintDash(); } catch (e) { console.warn("v48.7 paint", e); }
+    try { paintProjectDefaults(); } catch (e) { console.warn("v48.14 paint", e); }
+    return r;
+  };
+  window.render = render;
+
+  /* ---------- wiring ---------- */
+  async function loadDeleted() {
+    const c = sbCfg(); if (!c) return;
+    try {
+      const res = await sbFetch(c.supabaseUrl + "/rest/v1/v_field_hyg_deleted?select=item_id&limit=2000", { headers: sbHeaders() });
+      if (!res.ok) return;                                             /* view not applied yet: generic "no longer in Podio" wording */
+      const rows = await res.json();
+      deletedInPodio = new Set((rows || []).map(r => String(r.item_id)));
+    } catch (e) {}
+  }
+  /* v48.14: read the other configured Podio event apps from the draft view v_field_podio_events (read only). A missing view (404),
+     an error or a full page leaves those apps out: nothing is created for them and nothing is flagged as gone. */
+  /* new apps get external ids from their labels (work/podio-event-apps spec); map them onto the HYG ids PodioMap reads */
+  const FIELD_ALIAS = { "event-reference": "reference-3", "report-status": "generate-final-report", "coc-status": "generate-report",
+    "laboratory-turnaround-time": "selection", "site-works-attended-by": "report-submitted-by", "assigned-technician": "report-submitted-by",
+    "poc-organisation": "company", "poc-first-name": "first-name", "poc-last-name": "last-name", "poc-job-role": "job-role",
+    "poc-contact-number": "contact-number", "poc-email": "email", "all-equipment-required-details": "equipment-details",
+    "project-google-drive-job-folder-link": "google-drive-job-folder-link", "event-start-date": "site-works-start-date",
+    "event-start-date-status": "site-works-start-date-status" };
+  function aliasFields(f) {
+    const o = Object.assign({}, f);
+    Object.keys(FIELD_ALIAS).forEach(k => { if (o[k] != null && o[FIELD_ALIAS[k]] == null) o[FIELD_ALIAS[k]] = o[k]; });
+    return o;
+  }
+  let extraMissingUntil = 0;
+  async function pullExtra(apps) {
+    if (Date.now() < extraMissingUntil) return null;
+    try {
+      const c = typeof sbCfg === "function" && sbCfg(); if (!c) return null;
+      const ids = apps.map(a => a.appId).filter(x => /^\d+$/.test(x)); if (!ids.length) return null;
+      const res = await sbFetch(c.supabaseUrl + "/rest/v1/v_field_podio_events?select=app_id,item_id,title,last_edit_on,synced_at,fields&app_id=in.(" + ids.join(",") + ")&order=item_id.asc&limit=2000", { headers: sbHeaders() });
+      if (res && res.status === 404) { extraMissingUntil = Date.now() + 6 * 3600e3; return null; }   /* view not applied yet: ask again in 6 h */
+      if (!res || !res.ok) return null;
+      const items = await res.json(); if (!Array.isArray(items)) return null;
+      const rows = items.filter(it => ids.includes(String(it.app_id))).map(it => {
+        const pl = envssPodio.map.mapItem({ item_id: it.item_id, fields: aliasFields(it.fields || {}) }); pl.appId = String(it.app_id);
+        return { itemId: pl.itemId, appId: pl.appId, lastEdit: it.last_edit_on || "", payload: pl };
+      });
+      return { rows, apps: items.length < 2000 ? ids : [] };
+    } catch (e) { console.warn("v48.14 extra Podio apps", e); return null; }
+  }
+  /* v48.14: repaint after a Podio read only when the review flags changed (a repaint mid-tap swaps the button under the finger) */
+  let lastFlagSig = "[]";
+  function repaintIfChanged(force) {
+    try {
+      const sig = JSON.stringify(allFlagged().map(x => [x.ev.id, x.f.map(f => f.kind + ":" + (f.to || "") + (f.text || ""))]));
+      if ((force || sig !== lastFlagSig) && !userIsTyping()) render();
+      lastFlagSig = sig;
+    } catch (x) {}
+  }
+  window.addEventListener("envss:podio-hyg", e => {
+    const d = e.detail || {};
+    if (!Array.isArray(d.rows)) return;
+    snap = { rows: d.rows, complete: !!d.complete, at: d.at || nowIso(), apps: [HYG_APP] };
+    writeJson(ALL_KEY, snap);
+    run();                                                   /* HYG rows: straight away, exactly as before */
+    const extra = extraApps();
+    if (extra.length) pullExtra(extra).then(x => {          /* v48.14: other Podio event apps (read only); runs again only if any rows came back */
+      if (!x || !x.rows.length) return;
+      snap = { rows: d.rows.concat(x.rows), complete: snap.complete, at: snap.at, apps: [HYG_APP].concat(x.apps) }; writeJson(ALL_KEY, snap);
+      run(); repaintIfChanged(false);
+    });
+    const missing = (db.events || []).some(ev => ev.podioItemId && !isFibreEvent(ev) && !rowFor(ev.podioItemId));
+    (missing ? loadDeleted() : Promise.resolve()).then(() => repaintIfChanged(false));
+  });
+  /* tombstoned remote event rows: remember their Podio item (covers events deleted before v48.7 added podioItemId to tombstones) */
+  const _mr = mergeRemote;
+  mergeRemote = function (coll, rows) {
+    if (coll === "events") {
+      try {
+        const tb = tombs(); let add = false;
+        (rows || []).forEach(r => { const p = r && r.payload; const id = p && (p.id || r.id);
+          if (p && p.podioItemId && (tb.evs.has(id) || tb.prs.has(p.projectId)) && !goneSet.has(String(p.podioItemId))) { goneSet.add(String(p.podioItemId)); add = true; } });
+        if (add) writeJson(GONE_KEY, [...goneSet]);
+        let addI = false;
+        (rows || []).forEach(r => { const p = r && r.payload; const id = p && (p.id || r.id);
+          if (p && id && tb.evs.has(id)) { const v = { podioItemId: p.podioItemId ? String(p.podioItemId) : "", podioAuto: !!p.podioAuto, podioLinked: !!p.podioLinked, podioUnplanned: p.podioUnplanned === true, type: p.type || "hygiene", samples: !!(delInfo[id] && delInfo[id].samples) };
+            if (JSON.stringify(delInfo[id]) !== JSON.stringify(v)) { delInfo[id] = v; addI = true; } } });
+        if (addI) writeJson(DELINFO_KEY, delInfo);
+      } catch (e) {}
+    }
+    if (coll === "trains") {   /* samples of deleted events are filtered out before merge: remember that the event had samples */
+      try {
+        const tb = tombs(); let addS = false;
+        (rows || []).forEach(r => { const p = r && r.payload; const ev = p && p.eventId;
+          if (ev && tb.evs.has(ev) && !(delInfo[ev] && delInfo[ev].samples)) { delInfo[ev] = Object.assign({}, delInfo[ev] || {}, { samples: true }); addS = true; } });
+        if (addS) writeJson(DELINFO_KEY, delInfo);
+      } catch (e) {}
+    }
+    return _mr.apply(this, arguments);
+  };
+  window.mergeRemote = mergeRemote;
+  /* first send of an auto-created event: if Supabase already has that row (another device made it, edited it or
+     deleted it), take Supabase's copy and send nothing. */
+  const _send = sendOne;
+  sendOne = async function (p) {
+    if (p && p.coll === "events" && made[p.id]) {
+      const rec = findRec("events", p.id);
+      if (rec && !hasSnap("events", p.id) && snapOf("events", rec) === made[p.id]) {
+        const c = sbCfg();
+        const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_events?select=id,payload,updated_at&id=eq." + encodeURIComponent(p.id), { headers: sbHeaders() });
+        if (!res.ok) throw new Error("check auto event " + res.status);   /* stays queued */
+        const row = (await res.json())[0];
+        if (row && row.payload) {
+          const server = Object.assign({}, row.payload, { id: p.id, updatedAt: row.updated_at || "" });
+          const i = db.events.indexOf(rec); if (i >= 0) db.events[i] = server;
+          setSnap("events", server);
+          delete made[p.id]; writeJson(MADE_KEY, made);
+          last.adopted.push(p.id);
+          try { if (typeof applyTombstones === "function") applyTombstones(); } catch (e) {}
+          persist();
+          return null;
+        }
+      }
+    }
+    const sent = await _send.apply(this, arguments);
+    if (sent && p && p.coll === "events" && made[p.id]) { delete made[p.id]; writeJson(MADE_KEY, made); }
+    return sent;
+  };
+  window.sendOne = sendOne;
+  /* run after each pull (tombstones and other devices' events are known by then) and read the mirror every 15 min */
+  const _pa = pullActivity;
+  pullActivity = async function () {
+    const before = syncState.lastPullAt;
+    const r = await _pa.apply(this, arguments);
+    if (syncState.lastPullAt && syncState.lastPullAt !== before) { pullsOk++; if (pullsOk === 1) setTimeout(() => { try { pullActivity(); } catch (e) {} }, 50); }
+    try { if (last.waiting && ready()) run(); } catch (e) { console.warn("v48.7 run", e); }
+    return r;
+  };
+  window.pullActivity = pullActivity;
+  async function tick() {
+    if (pulling || !ready() || !window.envssPodio || !envssPodio.pullQuiet) return;
+    const at = envssPodio.mirrorAt ? envssPodio.mirrorAt() : 0;
+    if (Date.now() - at < PULL_EVERY) return;
+    pulling = true;
+    try { await envssPodio.pullQuiet(); if (envssPodio.repaint) envssPodio.repaint(); } catch (e) {} finally { pulling = false; }
+  }
+  setTimeout(tick, 4000);
+  setInterval(tick, 60e3);
+  if (snap) last.waiting = true;   /* a saved mirror copy is used as soon as this device has synced */
+
+  const st = document.createElement("style");
+  st.textContent = ".v487-list{margin:6px 0 8px 18px;padding:0;font-weight:400}.v487-list li{margin:2px 0}"
+    + ""
+    + "#v4814Scope{margin:6px 0}#v487Flags .btn,.v487-offer .btn{margin:4px 6px 0 0}#v487Dash{margin:10px 0}#v487Dash .sync-link{font-weight:700;margin:0 4px}";
+  document.head.appendChild(st);
+  window.envssAuto = { run, card, startManual, idFor, flagsFor, allFlagged, link, separate, review, eligible, isAfmOnly,
+    isPlanned: p => PodioMapIsPlanned(p), typesOf, isFitOnly, apps: appsCfg, appOf, offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
+})();
+</script>
+
+
   <!-- local review mockups only; not for publish -->
   <script src="work/projlist/review.js"></script>
-  <script src="fit-test.js?v=48.13"></script>
+  <script src="fit-test.js?v=48.14"></script>
 
 </body>
 </html>

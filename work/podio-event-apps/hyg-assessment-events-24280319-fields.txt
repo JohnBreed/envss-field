@@ -1,0 +1,90 @@
+type|external_id|label|required|status|hidden|referenced_app_ids|delta  (read only from Podio, 26 Nov 2026 AWST)
+calculation|afm-title|HYG Event Title|false|active|false||0
+text|reference-3|HYG Event Reference|false|active|false||1
+app|project|Project|false|active|false|25367600,21851342|2
+calculation|job-number|Job Number|false|active|false||3
+app|job-type-of-hyg-event-2|Job Type of HYG Event|false|deleted|false|18249487|4
+app|job-type-of-hyg-event-3|Job Type of HYG Event|false|deleted|false|18249487|4
+app|job-type-of-hyg-event-4|Job Type of HYG Event|false|deleted|false|18249487|4
+app|job-type-of-hyg-event-5|Job Type of HYG Event|false|deleted|false|18249487|4
+app|job-type-of-hyg-event|Job Type of HYG Event|false|active|false|18249487|4
+calculation|field|>|false|active|false||5
+location|job-location|Project location|false|active|false||6
+text|site-contact-namephone|Site Contact Name/Phone|false|active|false||7
+text|company|POC Organisation|false|active|false||8
+text|first-name|POC First Name|false|active|false||9
+text|last-name|POC Last Name|false|active|false||10
+text|job-role|POC Job Role|false|active|false||11
+phone|contact-number|POC Contact Number|false|active|false||12
+email|email|POC Email|false|active|false||13
+category|sample|Sample|false|active|false||14
+text|google-drive-job-folder-link|Project Google Drive Job Folder Link|false|active|false||14
+text|project-google-photos-link|Project Google Photos Link|false|active|false||15
+text|project-management-plan-link|Project Management Plan Link|false|active|false||16
+text|task-description|*** Task Description ***this is the work we are monitoring|false|active|false||17
+category|selection|Laboratory Turnaround Time|false|active|false||18
+calculation|field-2|>|false|active|false||18
+category|site-works-required|Site Works Required?|false|active|false||19
+embed|calendar-link|Calendar Link|false|active|false||20
+date|site-works-start-date|Site Works Start Date|false|active|false||21
+category|site-works-start-date-status|Site Works Start Date Status|false|active|false||22
+image|site-location-plan|Site Plan|false|deleted|false||23
+category|field-sheet-template|Field Sheet Template|false|active|false||23
+image|temp-drawing|Temp Drawing|false|deleted|false||24
+text|field-sheet-link|Field Sheet Link|false|active|false||24
+calculation|draw-2|Draw|false|deleted|false||25
+category|send-final-report-to-client|Send Final Report to Client|false|active|false||25
+category|equipment-bookings|Equipment Bookings|false|active|false||25
+text|editable-site-plan-link|Editable Site Plan Link|false|deleted|false||26
+text|equipment-details|All Equipment required Details|false|active|false||26
+text|required-rental-equipment-details|Required Rental Equipment Details|false|active|false||27
+app|equipment-booked-by| Equipment Booked By:|false|active|false|21061319|28
+category|report-resultreccomendation|Report Result/Reccomendation|false|active|false||29
+category|laboratory-cassette-bookings|Laboratory Cassette Bookings|true|active|false||29
+text|laboratory-cassette-booking-details|Laboratory Cassette Booking Details|false|active|false||30
+app|laboratory-cassette-booked-by|Laboratory Cassette Booked By:|false|active|false|21061319|31
+category|travel-bookings|Travel Bookings|true|active|false||32
+text|travel-booking-details|Travel Booking Details|false|active|false||33
+app|travel-booked-by|Travel Booked By: |false|active|false|21061319|34
+category|in-development-generate-jsa|*in development* Generate JSA |false|active|false||35
+text|jsa-draft-link|JSA Draft Link|false|active|false||36
+money|quoted-day-rate|Quoted Day Rate|false|active|false||37
+duration|quoted-no-site-hours|Quoted No. Site Hours|false|active|false||38
+duration|quoted-no-reporting-hours|Quoted No. Reporting Hours|false|active|false||39
+duration|quoted-no-travel-hours|Quoted No. Travel Hours|false|active|false||40
+money|quoted-lab-cost|Quoted Lab Cost|false|active|false||41
+money|quoted-travel-expense|Quoted Travel Expense|false|active|false||42
+money|quoted-equipment-hire-cost|Quoted Equipment Hire Cost|false|active|false||43
+money|costs-other-hire-equipment-subcontractors|Costs Other (Subcontractors)|false|active|false||44
+duration|actual-site-hours-total|Actual Site Hours Total|false|active|false||45
+duration|actual-reporting-hours|Actual Reporting Hours|false|active|false||46
+money|actual-lab-cost| Actual Lab Cost|false|active|false||47
+money|actual-travel-expense|Actual Travel Expense|false|active|false||48
+money|actual-equipment-hire-cost|Actual Equipment Hire Cost|false|active|false||49
+calculation|entry-cognito-form-link|Entry Cognito Form Link|false|active|false||50
+calculation|count-of-personal-monitoring-submission-forms-related|Count of Personal Monitoring Submission Forms Related|false|active|false||51
+date|samples-date|xx HYG Event Start Date|false|active|true||52
+calculation|field-3|>|false|active|false||53
+app|report-submitted-by|Site Works attended by|false|active|false|21061319|54
+app|which-laboratory-is-processing-samples|Which Laboratory is processing samples?|false|active|false|22142144|55
+category|generate-report|COC Status|false|active|false||56
+text|link-to-sample-coc-doc|Link to Sample COC Doc|false|active|false||57
+category|send-report|Send Lab Field Sheet/ COC to Lab|false|active|false||58
+image|lab-results-image|Lab Results Image|false|active|false||59
+date|lab-results-expected-by|Lab  Results Expected By|false|active|false||60
+calculation|envss-report-writer-role|ENVSS Report Writer Role|false|active|false||61
+app|envss-report-writer|Report Writer|false|active|false|21061319|62
+app|report-to-be-reviewed-by|Report to be Reviewed by|false|active|false|21061319|63
+app|report-to-be-authorized-by|Report to be Authorized by|false|active|false|21061319|64
+category|report-triggers|Choose Report Type|true|active|false||65
+category|generate-final-report|Report Status|true|active|false||66
+text|draft-report-link|Draft Report link|false|active|false||67
+calculation|id|ID|false|active|false||68
+text|final-report-count|Next Final Report Count|false|active|false||69
+text|lab-report-count|Next Field Sheet/COC Count|false|active|false||70
+category|mark-this-afm-as-invoiced|Mark This HYG Event as Invoiced?|false|active|true||71
+category|job-number-refresh-field|Job Number Refresh Field|false|active|false||72
+date|date-samples-submitted|Date Samples Submitted:|false|active|false||73
+date|date-sample-analysis-requested-by|Date sample analysis requested by:|false|active|false||74
+calculation|email-tracking|Email Tracking|false|active|false||75
+money|money|Money|false|active|false||76

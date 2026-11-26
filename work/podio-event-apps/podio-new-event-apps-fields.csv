@@ -1,0 +1,101 @@
+App,#,Field label (type exactly),Podio field type,External id Podio will give it,Options / settings,Required,Same as HYG Assessment field (app 24280319),How the ENVSS Field app uses it
+Occ Noise Event,1,Event Title,Calculation,event-title,Formula like HYG Event Title: start date YYYYMMDD + '-' + Job Number + '-' + client + '-' + site + ' NSEOC',auto,afm-title (HYG Event Title),Display only
+Occ Noise Event,2,Event Reference,Text (single line),event-reference,"Format {job}-{client}-HYG-NSEOC-{site}, e.g. 0019xxx-Client Pty Ltd-HYG-NSEOC-Site address",Yes,reference-3 (HYG Event Reference),"Job number fallback, Podio scope line, duplicate matching; a leading field code (0019358-002-…) is used as the event code when free"
+Occ Noise Event,3,Project,App reference,project,Reference the Projects app 21851342 (same as HYG; HYG also allows 25367600). One project.,Yes,project,Picks which field project the event goes on (one job can have several Podio projects)
+Occ Noise Event,4,Job Number,Calculation,job-number,Same formula as HYG Job Number (from the Project),auto,job-number,Matches the field project by job number
+Occ Noise Event,5,Project location,Location,project-location,,No,job-location,Not read
+Occ Noise Event,6,Site Contact Name/Phone,Text (single line),site-contact-namephone,,No,site-contact-namephone,Prefilled on the event
+Occ Noise Event,7,POC Organisation,Text,poc-organisation,,No,company,Prefilled POC
+Occ Noise Event,8,POC First Name,Text,poc-first-name,,No,first-name,Prefilled POC
+Occ Noise Event,9,POC Last Name,Text,poc-last-name,,No,last-name,Prefilled POC
+Occ Noise Event,10,POC Job Role,Text,poc-job-role,,No,job-role,Prefilled POC
+Occ Noise Event,11,POC Contact Number,Phone,poc-contact-number,,No,contact-number,Prefilled POC
+Occ Noise Event,12,POC Email,Email,poc-email,,No,email,Prefilled POC
+Occ Noise Event,13,Project Google Drive Job Folder Link,Text,project-google-drive-job-folder-link,,No,google-drive-job-folder-link,Drive link on the event
+Occ Noise Event,14,Task Description,Text (multi-line),task-description,The work being monitored. Long forwarded emails are fine: the app keeps it all and shows a short preview with Show all,No,task-description,Prefilled task (collapsed when long)
+Occ Noise Event,15,Site Works Start Date,Date (time optional),site-works-start-date,,Yes when known,site-works-start-date,"Event date; later moves are flagged for review, never applied"
+Occ Noise Event,16,Site Works Start Date Status,Category (single),site-works-start-date-status,Site Works Start Date is Tentative | Site Works Start Date is now Confirmed | Site Works Not Required — exact texts,Yes,site-works-start-date-status,Not Required = not created / flagged
+Occ Noise Event,17,Laboratory Turnaround Time,Category (single),laboratory-turnaround-time,Copy the HYG Laboratory Turnaround Time options exactly,No,selection,Turnaround on the event
+Occ Noise Event,18,Which Laboratory is processing samples?,App reference,which-laboratory-is-processing-samples,Laboratories app 22142144 — only if samples go to a lab,No,which-laboratory-is-processing-samples,Lab on the event
+Occ Noise Event,19,COC Status,Category (single),coc-status,Copy HYG COC Status options exactly (incl. Lab Results Received) — only if samples go to a lab,No,generate-report (COC Status),Lab Results Received = finished: not created
+Occ Noise Event,20,All Equipment required Details,Text (multi-line),all-equipment-required-details,,No,equipment-details,Equipment details on the event
+Occ Noise Event,21,Site Works attended by,App reference,site-works-attended-by,"Reference the Staff/Contacts app 21061319 (same as HYG), multiple allowed — the assigned technician(s)",No,report-submitted-by (label 'Site Works attended by'),Kept with the Podio data (not used to filter yet)
+Occ Noise Event,22,Report Status,Category (single),report-status,copy the active options from HYG Report Status exactly: Pending | *Draft Report | Report Drafted | Report in Review | Report ready for review… | (review options) | Final Report Generated | *Send final Report to Client | Report Sent | Canceled | No Report Required | Invoiced,Yes,generate-final-report (Report Status),"Final Report Generated or later, Canceled, No Report Required, Invoiced = finished: not created; Canceled later = flagged"
+Occ Noise Event,23,Report Writer,App reference,report-writer,Staff app 21061319,No,envss-report-writer,Not read
+Occ Noise Event,24,Report to be Reviewed by,App reference,report-to-be-reviewed-by,Staff app 21061319,No,report-to-be-reviewed-by,Not read
+Occ Noise Event,25,Report to be Authorized by,App reference,report-to-be-authorized-by,Staff app 21061319,No,report-to-be-authorized-by,Not read
+Occ Noise Event,26,Notes,Text (multi-line),notes,Office notes for the technician,No,(none in HYG),Not read yet (Task Description is the prefill); can be added
+Occ Noise Event,27,Field Sheet Link,Text,field-sheet-link,,No,field-sheet-link,Kept with the Podio data
+Occ Noise Event,28,ID,Calculation,id,Same as HYG ID,auto,id,Not read
+Occ Noise Event,29,Noise Assessment Type,Category (multiple),noise-assessment-type,Personal noise dosimetry (NSED) | Area survey with sound level meter (SLM) | Noise mapping | Hearing protector (earplug/earmuff) check,Yes,(new),Shown on the event; samples go in the event via noise.js
+Occ Noise Event,30,Number of Personal Dosimeters,Number,number-of-personal-dosimeters,0–50,No,(new),Shown; future: pre-make that many noise samples
+Occ Noise Event,31,Dosimeters Booked (serials),Text (multi-line)  — or App reference to the Equipment app if one exists,dosimeters-booked-serials,One serial per line,No,(new),Future prefill of dosimeter serial per sample
+Occ Noise Event,32,Sound Level Meter (SLM) Required,Category (single),sound-level-meter-slm-required,Yes | No,No,(new),Shown
+Occ Noise Event,33,SLM Serial,Text,slm-serial,,No,(new),Future prefill
+Occ Noise Event,34,Acoustic Calibrator Serial,Text,acoustic-calibrator-serial,,No,(new),Future prefill of pre/post calibration check
+Occ Noise Event,35,Calibrator Calibration Due,Date,calibrator-calibration-due,,No,(new),Future warning if overdue
+Occ Noise Event,36,Shift Length (hours),Number,shift-length-hours,"e.g. 8, 10, 12",No,(new),"For LAeq,8h normalisation"
+Occ Noise Event,37,Noise Exposure Standard,Category (single),noise-exposure-standard,"LAeq,8h 85 dB(A) / LC,peak 140 dB(C) (WHS Regs) | Mines (WHS Mines) | Other",No,(new),Shown
+Ventilation Survey Event,1,Event Title,Calculation,event-title,Formula like HYG Event Title: start date YYYYMMDD + '-' + Job Number + '-' + client + '-' + site + ' VENT',auto,afm-title (HYG Event Title),Display only
+Ventilation Survey Event,2,Event Reference,Text (single line),event-reference,"Format {job}-{client}-HYG-VENT-{site}, e.g. 0019xxx-Client Pty Ltd-HYG-VENT-Site address",Yes,reference-3 (HYG Event Reference),"Job number fallback, Podio scope line, duplicate matching; a leading field code (0019358-002-…) is used as the event code when free"
+Ventilation Survey Event,3,Project,App reference,project,Reference the Projects app 21851342 (same as HYG; HYG also allows 25367600). One project.,Yes,project,Picks which field project the event goes on (one job can have several Podio projects)
+Ventilation Survey Event,4,Job Number,Calculation,job-number,Same formula as HYG Job Number (from the Project),auto,job-number,Matches the field project by job number
+Ventilation Survey Event,5,Project location,Location,project-location,,No,job-location,Not read
+Ventilation Survey Event,6,Site Contact Name/Phone,Text (single line),site-contact-namephone,,No,site-contact-namephone,Prefilled on the event
+Ventilation Survey Event,7,POC Organisation,Text,poc-organisation,,No,company,Prefilled POC
+Ventilation Survey Event,8,POC First Name,Text,poc-first-name,,No,first-name,Prefilled POC
+Ventilation Survey Event,9,POC Last Name,Text,poc-last-name,,No,last-name,Prefilled POC
+Ventilation Survey Event,10,POC Job Role,Text,poc-job-role,,No,job-role,Prefilled POC
+Ventilation Survey Event,11,POC Contact Number,Phone,poc-contact-number,,No,contact-number,Prefilled POC
+Ventilation Survey Event,12,POC Email,Email,poc-email,,No,email,Prefilled POC
+Ventilation Survey Event,13,Project Google Drive Job Folder Link,Text,project-google-drive-job-folder-link,,No,google-drive-job-folder-link,Drive link on the event
+Ventilation Survey Event,14,Task Description,Text (multi-line),task-description,The work being monitored. Long forwarded emails are fine: the app keeps it all and shows a short preview with Show all,No,task-description,Prefilled task (collapsed when long)
+Ventilation Survey Event,15,Site Works Start Date,Date (time optional),site-works-start-date,,Yes when known,site-works-start-date,"Event date; later moves are flagged for review, never applied"
+Ventilation Survey Event,16,Site Works Start Date Status,Category (single),site-works-start-date-status,Site Works Start Date is Tentative | Site Works Start Date is now Confirmed | Site Works Not Required — exact texts,Yes,site-works-start-date-status,Not Required = not created / flagged
+Ventilation Survey Event,17,All Equipment required Details,Text (multi-line),all-equipment-required-details,,No,equipment-details,Equipment details on the event
+Ventilation Survey Event,18,Site Works attended by,App reference,site-works-attended-by,"Reference the Staff/Contacts app 21061319 (same as HYG), multiple allowed — the assigned technician(s)",No,report-submitted-by (label 'Site Works attended by'),Kept with the Podio data (not used to filter yet)
+Ventilation Survey Event,19,Report Status,Category (single),report-status,copy the active options from HYG Report Status exactly: Pending | *Draft Report | Report Drafted | Report in Review | Report ready for review… | (review options) | Final Report Generated | *Send final Report to Client | Report Sent | Canceled | No Report Required | Invoiced,Yes,generate-final-report (Report Status),"Final Report Generated or later, Canceled, No Report Required, Invoiced = finished: not created; Canceled later = flagged"
+Ventilation Survey Event,20,Report Writer,App reference,report-writer,Staff app 21061319,No,envss-report-writer,Not read
+Ventilation Survey Event,21,Report to be Reviewed by,App reference,report-to-be-reviewed-by,Staff app 21061319,No,report-to-be-reviewed-by,Not read
+Ventilation Survey Event,22,Report to be Authorized by,App reference,report-to-be-authorized-by,Staff app 21061319,No,report-to-be-authorized-by,Not read
+Ventilation Survey Event,23,Notes,Text (multi-line),notes,Office notes for the technician,No,(none in HYG),Not read yet (Task Description is the prefill); can be added
+Ventilation Survey Event,24,Field Sheet Link,Text,field-sheet-link,,No,field-sheet-link,Kept with the Podio data
+Ventilation Survey Event,25,ID,Calculation,id,Same as HYG ID,auto,id,Not read
+Ventilation Survey Event,26,Survey Type,Category (multiple),survey-type,LEV (local exhaust ventilation) test | Fume cupboard test | Spray booth test | Dilution / general ventilation | Confined space ventilation | Indoor air quality (CO2 / air changes) | Other,Yes,(new),Shown on the event
+Ventilation Survey Event,27,Number of Systems / Test Points,Number,number-of-systems-test-points,,No,(new),Shown; future: one record per system
+Ventilation Survey Event,28,Test Standard / Method,Category (single),test-standard-method,AS/NZS 2243.8 (fume cupboards) | AS 1668.2 | HSG258 (LEV) | Client spec | Other,No,(new),Shown
+Ventilation Survey Event,29,Instruments Required,Category (multiple),instruments-required,Thermal / vane anemometer | Manometer / pressure | Smoke tubes / generator | CO2 / IAQ meter | Other,No,(new),Shown; future equipment checklist
+Ventilation Survey Event,30,Previous Test Report Link,Text,previous-test-report-link,,No,(new),Shown
+Onsite Respirator Fit Test Event,1,Event Title,Calculation,event-title,Formula like HYG Event Title: start date YYYYMMDD + '-' + Job Number + '-' + client + '-' + site + ' RFT',auto,afm-title (HYG Event Title),Display only
+Onsite Respirator Fit Test Event,2,Event Reference,Text (single line),event-reference,"Format {job}-{client}-HYG-RFT-{site}, e.g. 0019xxx-Client Pty Ltd-HYG-RFT-Site address",Yes,reference-3 (HYG Event Reference),"Job number fallback, Podio scope line, duplicate matching; a leading field code (0019358-002-…) is used as the event code when free"
+Onsite Respirator Fit Test Event,3,Project,App reference,project,Reference the Projects app 21851342 (same as HYG; HYG also allows 25367600). One project.,Yes,project,Picks which field project the event goes on (one job can have several Podio projects)
+Onsite Respirator Fit Test Event,4,Job Number,Calculation,job-number,Same formula as HYG Job Number (from the Project),auto,job-number,Matches the field project by job number
+Onsite Respirator Fit Test Event,5,Project location,Location,project-location,,No,job-location,Not read
+Onsite Respirator Fit Test Event,6,Site Contact Name/Phone,Text (single line),site-contact-namephone,,No,site-contact-namephone,Prefilled on the event
+Onsite Respirator Fit Test Event,7,POC Organisation,Text,poc-organisation,,No,company,Prefilled POC
+Onsite Respirator Fit Test Event,8,POC First Name,Text,poc-first-name,,No,first-name,Prefilled POC
+Onsite Respirator Fit Test Event,9,POC Last Name,Text,poc-last-name,,No,last-name,Prefilled POC
+Onsite Respirator Fit Test Event,10,POC Job Role,Text,poc-job-role,,No,job-role,Prefilled POC
+Onsite Respirator Fit Test Event,11,POC Contact Number,Phone,poc-contact-number,,No,contact-number,Prefilled POC
+Onsite Respirator Fit Test Event,12,POC Email,Email,poc-email,,No,email,Prefilled POC
+Onsite Respirator Fit Test Event,13,Project Google Drive Job Folder Link,Text,project-google-drive-job-folder-link,,No,google-drive-job-folder-link,Drive link on the event
+Onsite Respirator Fit Test Event,14,Task Description,Text (multi-line),task-description,The work being monitored. Long forwarded emails are fine: the app keeps it all and shows a short preview with Show all,No,task-description,Prefilled task (collapsed when long)
+Onsite Respirator Fit Test Event,15,Site Works Start Date,Date (time optional),site-works-start-date,,Yes when known,site-works-start-date,"Event date; later moves are flagged for review, never applied"
+Onsite Respirator Fit Test Event,16,Site Works Start Date Status,Category (single),site-works-start-date-status,Site Works Start Date is Tentative | Site Works Start Date is now Confirmed | Site Works Not Required — exact texts,Yes,site-works-start-date-status,Not Required = not created / flagged
+Onsite Respirator Fit Test Event,17,All Equipment required Details,Text (multi-line),all-equipment-required-details,,No,equipment-details,Equipment details on the event
+Onsite Respirator Fit Test Event,18,Site Works attended by,App reference,site-works-attended-by,"Reference the Staff/Contacts app 21061319 (same as HYG), multiple allowed — the assigned technician(s)",No,report-submitted-by (label 'Site Works attended by'),Kept with the Podio data (not used to filter yet)
+Onsite Respirator Fit Test Event,19,Report Status,Category (single),report-status,copy the active options from HYG Report Status exactly: Pending | *Draft Report | Report Drafted | Report in Review | Report ready for review… | (review options) | Final Report Generated | *Send final Report to Client | Report Sent | Canceled | No Report Required | Invoiced,Yes,generate-final-report (Report Status),"Final Report Generated or later, Canceled, No Report Required, Invoiced = finished: not created; Canceled later = flagged"
+Onsite Respirator Fit Test Event,20,Report Writer,App reference,report-writer,Staff app 21061319,No,envss-report-writer,Not read
+Onsite Respirator Fit Test Event,21,Report to be Reviewed by,App reference,report-to-be-reviewed-by,Staff app 21061319,No,report-to-be-reviewed-by,Not read
+Onsite Respirator Fit Test Event,22,Report to be Authorized by,App reference,report-to-be-authorized-by,Staff app 21061319,No,report-to-be-authorized-by,Not read
+Onsite Respirator Fit Test Event,23,Notes,Text (multi-line),notes,Office notes for the technician,No,(none in HYG),Not read yet (Task Description is the prefill); can be added
+Onsite Respirator Fit Test Event,24,Field Sheet Link,Text,field-sheet-link,,No,field-sheet-link,Kept with the Podio data
+Onsite Respirator Fit Test Event,25,ID,Calculation,id,Same as HYG ID,auto,id,Not read
+Onsite Respirator Fit Test Event,26,Fit Test Type,Category (multiple),fit-test-type,Respirator quantitative (PortaCount) | Respirator qualitative | Hearing protector (earplug) fit test,Yes,(new),Event type fit ({job}-FIT-nnn)
+Onsite Respirator Fit Test Event,27,Number of Attendees,Number,number-of-attendees,,No,(new),Shown
+Onsite Respirator Fit Test Event,28,Attendee List,Text (multi-line),attendee-list,One name per line (or a link to the client's list),No,(new),Future: pre-make one individual fit-test report per attendee
+Onsite Respirator Fit Test Event,29,Respirators to Test,Text (multi-line),respirators-to-test,Brand / model / size per line,No,(new),Future prefill of the individual report
+Onsite Respirator Fit Test Event,30,PortaCount S/N,Text,portacount-sn,Same as the existing Fit Test app,No,(new),Future prefill
+Onsite Respirator Fit Test Event,31,Fit Test Protocol,Category (single),fit-test-protocol,OSHA Fast (Filtering facepiece) | OSHA Fast (Elastomeric) | OSHA Standard (Modified ISO) | ISO 16975-3 | Other — match fit-test.js protocol names,No,(new),Future prefill
+Onsite Respirator Fit Test Event,32,Site Access / Induction Requirements,Text (multi-line),site-access-induction-requirements,,No,(new),Shown
+Onsite Respirator Fit Test Event,33,Fit Test Reports Drive Folder Link,Text,fit-test-reports-drive-folder-link,,No,(new),Fit-Tests Drive folder
