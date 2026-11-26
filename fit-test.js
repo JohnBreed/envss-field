@@ -2,8 +2,9 @@
    closer TSI PDF with branded header, no photo page, How-to guide link, one Drive copy per PDF/zip).
    Event type "fit", codes {job}-FIT-{seq}; it does not link to any other event. Photo + Google Vision OCR (default);
    with no internet the photo is read on the device (Tesseract.js, cached for offline use) and re-read with Vision
-   when back online if nobody has edited it yet. Confirm, two signatures, A4 TSI-layout PDF (signed or unsigned),
-   Drive copy into {job}_Field-App/Fit-Tests, zip download. No Podio writes. */
+   when back online if nobody has edited it yet. Confirm, the individual signs on the phone, and the ENVSS
+   technician’s sign-off is filled in from their Google sign-in (name, email, date and time AWST). A4 TSI-layout
+   PDF (signed or unsigned), Drive copy into {job}_Field-App/Fit-Tests, zip download. No Podio writes. */
 (function (root) {
   "use strict";
   const VERSION = "48.13";
@@ -1373,7 +1374,8 @@
   const api = {
     version: VERSION, isFitEvent, fitSeqOf, nextFitSeq, fitEventCode, fileNameFor,
     parseReport, parseTsiDate, parseFf, ffMeets, safeToken, parseYesNo, wordsFromVision, findLabelHits, parseExercisesFromWords, parseReportFromBoxes, joinWords, clipWordsToReport, slimOcrWords, normalizeDeviceWords,
-    driveSubfolder: DRIVE_SUBFOLDER, tesseractAssets: TESS
+    driveSubfolder: DRIVE_SUBFOLDER, tesseractAssets: TESS,
+    isReportSigned, makeTechSignOff, techDisplayName, techSignOffLine, formatAwst, formatDateOnly
   };
   root.envssFit = api;
 
@@ -1458,11 +1460,47 @@
     }
   }
 
+  function operatorRecord() {
+    try {
+      if (typeof root.getOperator === "function") return root.getOperator() || null;
+      if (typeof getOperator === "function") return getOperator() || null;
+    } catch (e) {}
+    return null;
+  }
+  function makeTechSignOff(at) {
+    const o = operatorRecord() || {};
+    return {
+      name: trim(o.name || ""),
+      email: trim(o.email || ""),
+      signedAt: at || new Date().toISOString(),
+      source: o.source || ""
+    };
+  }
+  function techDisplayName(off) {
+    off = off || {};
+    return trim(off.name) || trim(off.email) || "";
+  }
+  function techSignOffLine(off) {
+    const name = techDisplayName(off) || "Unknown";
+    const email = trim(off && off.email || "");
+    const when = formatAwst(off && off.signedAt);
+    if (email && name !== email) return "Electronically signed by " + name + " (" + email + ") " + when;
+    if (email) return "Electronically signed by " + email + " " + when;
+    return "Electronically signed by " + name + " " + when;
+  }
+  /* A report is complete once the person tested has signed. New reports also store signedAt + techSignOff
+     (identity from the signed-in Google account). Older reports that already have a technician pad image
+     still count as signed when both pad images are present. */
+  function isReportSigned(rep) {
+    if (!rep || !rep.sigClient) return false;
+    return !!(rep.signedAt || rep.sigTech);
+  }
+
   function stageOf(ev) {
     if (!isFitEvent(ev)) return null;
     const reps = reportsOf(ev.id);
     if (!reps.length) return ev.uploadReady ? "upload_ready" : "planned";
-    const allSigned = reps.every(r => !!(r.signedAt || (r.sigTech && r.sigClient)));
+    const allSigned = reps.every(isReportSigned);
     if (allSigned && ev.uploadReady) return "upload_ready";
     if (allSigned) return "ev_complete";
     return "ev_needs";
@@ -1483,7 +1521,7 @@
       exerciseFails: [],
       flags: [], missing: [], low: [],
       photo: "", photoDataUrl: "",
-      sigTech: "", sigClient: "", signedAt: "",
+      sigTech: "", sigClient: "", signedAt: "", techSignOff: null,
       pdfName: "", ocrStatus: "", ocrMessage: "",
       audit: [],
       updatedAt: new Date().toISOString()
@@ -1626,7 +1664,7 @@
     return "<div class=\"wrap fit-screen\" id=\"fitConfirm\">"
       + "<button class=\"btn ghost back-ctl\" id=\"fitBackEvent\">← " + esc(ev.code) + "</button>"
       + "<h2 class=\"brand-type\" style=\"color:var(--navy)\">Confirm fit-test report</h2>"
-      + "<p class=\"help\">Check every field against the photo before you sign. Nothing is signed automatically.</p>"
+      + "<p class=\"help\">Check every field against the photo before the person who was tested signs. Your ENVSS sign-off is filled in from your sign-in.</p>"
       + msg
       + (flags ? "<ul class=\"fit-flags\">" + flags + "</ul>" : "")
       + fails
@@ -1670,19 +1708,33 @@
       + "</div></div>"
       + "<div class=\"footer-actions\">"
       + "<button type=\"button\" class=\"btn mid\" id=\"fitSaveDraft\">Save without signing</button>"
-      + "<button type=\"button\" class=\"btn orange\" id=\"fitToSign\">Continue to signatures</button>"
+      + "<button type=\"button\" class=\"btn orange\" id=\"fitToSign\">Continue to signature</button>"
       + "</div></div>";
   }
 
   function signHtml(rep, ev) {
+    const existing = rep && rep.techSignOff && (rep.techSignOff.name || rep.techSignOff.email) ? rep.techSignOff : null;
+    const off = existing || makeTechSignOff(rep && rep.signedAt);
+    const who = techDisplayName(off);
+    const email = trim(off.email || "");
+    const recorded = existing && (rep.signedAt || off.signedAt);
+    let preview;
+    if (who) {
+      preview = "<p class=\"fit-esign-name\">" + esc(who) + "</p>"
+        + (email && who !== email ? "<p class=\"help\">" + esc(email) + "</p>" : "")
+        + (recorded
+          ? "<p class=\"help\">" + esc(techSignOffLine(off)) + "</p>"
+          : "<p class=\"help\">This is filled in from your ENVSS sign-in. The date and time (AWST) are recorded when you save the signed PDF.</p>");
+    } else {
+      preview = "<p class=\"help fit-warn\">No signed-in name or email was found on this device. You can still collect the individual’s signature; the technician line will show as Unknown.</p>";
+    }
     return "<div class=\"wrap fit-screen\" id=\"fitSign\">"
       + "<button class=\"btn ghost back-ctl\" id=\"fitBackConfirm\">← Back to details</button>"
       + "<h2 class=\"brand-type\" style=\"color:var(--navy)\">Sign fit-test report</h2>"
       + "<p class=\"help\">" + esc([rep.lastName, rep.firstName].filter(Boolean).join(", ") || "Unnamed") + " · " + esc(rep.model || rep.respirator || "") + " · " + esc(rep.result || "result not set") + "</p>"
-      + "<p class=\"help\">The ENVSS technician signs first, then hand the phone to the client. Signatures are not filled in automatically.</p>"
-      + "<div class=\"card\"><label>ENVSS technician</label><canvas id=\"fitSigTech\" class=\"fit-sig\" width=\"700\" height=\"220\"></canvas>"
-      + "<button type=\"button\" class=\"btn ghost\" id=\"fitClearTech\">Clear</button></div>"
-      + "<div class=\"card\"><label>Client</label><canvas id=\"fitSigClient\" class=\"fit-sig\" width=\"700\" height=\"220\"></canvas>"
+      + "<p class=\"help\">Your ENVSS sign-off is filled in from your sign-in. Hand the phone to the person who was tested so they can sign.</p>"
+      + "<div class=\"card\" id=\"fitTechSignOff\"><label>ENVSS technician</label>" + preview + "</div>"
+      + "<div class=\"card\"><label>Person tested</label><canvas id=\"fitSigClient\" class=\"fit-sig\" width=\"700\" height=\"220\"></canvas>"
       + "<button type=\"button\" class=\"btn ghost\" id=\"fitClearClient\">Clear</button></div>"
       + "<div class=\"footer-actions\"><button type=\"button\" class=\"btn orange\" id=\"fitMakePdf\">Save signed PDF</button></div>"
       + "</div>";
@@ -1692,7 +1744,7 @@
     const p = root.project && root.project(ev.projectId);
     const reps = reportsOf(ev.id);
     const rows = reps.length ? reps.map(r => {
-      const signed = !!(r.signedAt || (r.sigTech && r.sigClient));
+      const signed = isReportSigned(r);
       const who = [r.lastName, r.firstName].filter(Boolean).join(", ") || "Details not filled in";
       const res = r.result ? "<strong>" + esc(r.result) + "</strong>" : "No result yet";
       const fail = (r.exerciseFails || []).length ? " · exercise fail: " + esc(r.exerciseFails.join(", ")) : "";
@@ -2071,7 +2123,7 @@
     let n = 0;
     try {
       const reps = ((typeof db !== "undefined" && db && db.fitReports) || []).filter(function (r) {
-        return r && r.ocrPendingVision && !r.fieldsEdited && !r.signedAt && !r.sigTech;
+        return r && r.ocrPendingVision && !r.fieldsEdited && !isReportSigned(r);
       });
       for (const rep of reps) {
         const blob = await loadPending(rep.id);
@@ -2081,7 +2133,7 @@
         if (visionUnreachable(out)) break;
         if (!out.res.ok) continue;
         /* The tech may have started typing while Vision was reading. */
-        if (rep.fieldsEdited || rep.signedAt || !rep.ocrPendingVision) continue;
+        if (rep.fieldsEdited || isReportSigned(rep) || !rep.ocrPendingVision) continue;
         const wasDevice = rep.ocrSource === "device";
         const parsed = applyVision(rep, out.j);
         rep.ocrRereadAt = new Date().toISOString();
@@ -2276,6 +2328,7 @@
     if (!a4) page.setSize(595.28, 841.89);
     const font = await doc.embedFont(lib.StandardFonts.Helvetica);
     const bold = await doc.embedFont(lib.StandardFonts.HelveticaBold);
+    const italic = await doc.embedFont(lib.StandardFonts.TimesRomanItalic);
     const black = lib.rgb(0, 0, 0);
     const navy = lib.rgb(33 / 255, 55 / 255, 108 / 255);
     const W = 595.28, H = 841.89, L = 42, R = 560;
@@ -2460,10 +2513,13 @@
 
     y -= 36;
 
-    /* Signature lines: marks sit on the line; names centred under it; DATE + date on the right. */
+    /* Signature lines: marks sit on the line; names centred under it; DATE + date on the right.
+       New reports: the technician line is an electronic sign-off (italic name + attestation), not a drawn image.
+       Older reports that already have a technician pad image are drawn the same way as before. */
     const lineStart = 150, dateLabW = bold.widthOfTextAtSize("DATE", size);
     const dateLabX = 400, dateLineX = dateLabX + dateLabW + 8;
-    const signDate = signed && rep.signedAt ? formatDateOnly(rep.signedAt) : "";
+    const signDate = signed && (rep.signedAt || (rep.techSignOff && rep.techSignOff.signedAt))
+      ? formatDateOnly(rep.signedAt || rep.techSignOff.signedAt) : "";
     const operatorUnder = fieldText(rep, "operator");
     const first = trim(fieldText(rep, "firstName"));
     const last = trim(fieldText(rep, "lastName"));
@@ -2489,19 +2545,48 @@
         text(signDate, dateLineX + Math.max(4, (R - dateLineX - dw) / 2), lineY + 2, size, font);
       }
     }
+    function paintElectronicSignOff(off, x0, x1, lineY) {
+      if (!signed || !off) return 0;
+      const display = techDisplayName(off) || "Unknown";
+      const maxW = Math.max(48, x1 - x0 - 8);
+      let sz = 13;
+      const safe = pdfSafe(display);
+      while (sz > 8 && italic.widthOfTextAtSize(safe, sz) > maxW) sz -= 0.5;
+      const dw = italic.widthOfTextAtSize(safe, sz);
+      text(safe, (x0 + x1) / 2 - dw / 2, lineY + 3, sz, italic);
+      const email = trim(off.email || "");
+      const who = (email && display !== email) ? (display + " (" + email + ")") : (email || display);
+      const lines = wrapPdfText(font, pdfSafe("Electronically signed by " + who), 7, maxW);
+      lines.push(formatAwst(off.signedAt));
+      lines.forEach(function (ln, i) {
+        centerAt(ln, (x0 + x1) / 2, lineY - 10 - i * 9, 7, font);
+      });
+      return lines.length;
+    }
 
+    const sigX0 = lineStart, sigX1 = dateLabX - 16;
     rightLabel("FITTEST OPERATOR", lineStart - 8, y);
-    underlineAt(lineStart, y, dateLabX - 16 - lineStart, 0.7);
-    await paintSigOnLine(rep.sigTech, lineStart, dateLabX - 16, y);
+    underlineAt(lineStart, y, sigX1 - lineStart, 0.7);
+    let techUnder = 12;
+    if (signed && rep.sigTech) {
+      await paintSigOnLine(rep.sigTech, sigX0, sigX1, y);
+      centerAt(operatorUnder, (sigX0 + sigX1) / 2, y - 12, size, font);
+    } else if (signed && rep.techSignOff) {
+      /* The italic name and attestation already identify the ENVSS technician; keep the PortaCount
+         operator initials off this line so they do not sit under the sign-off. */
+      const nLines = paintElectronicSignOff(rep.techSignOff, sigX0, sigX1, y);
+      techUnder = 10 + nLines * 9;
+    } else {
+      centerAt(operatorUnder, (sigX0 + sigX1) / 2, y - 12, size, font);
+    }
     paintDateLine(y);
-    centerAt(operatorUnder, (lineStart + dateLabX - 16) / 2, y - 12, size, font);
 
-    y -= 40;
+    y -= Math.max(40, techUnder + 28);
     rightLabel("NAME", lineStart - 8, y);
-    underlineAt(lineStart, y, dateLabX - 16 - lineStart, 0.7);
-    await paintSigOnLine(rep.sigClient, lineStart, dateLabX - 16, y);
+    underlineAt(lineStart, y, sigX1 - lineStart, 0.7);
+    await paintSigOnLine(rep.sigClient, sigX0, sigX1, y);
     paintDateLine(y);
-    centerAt(nameUnder, (lineStart + dateLabX - 16) / 2, y - 12, size, font);
+    centerAt(nameUnder, (sigX0 + sigX1) / 2, y - 12, size, font);
 
     /* NOTE: bottom left. Keep it on this page; drop no fields. */
     y = Math.min(y - 36, 72);
@@ -2519,7 +2604,7 @@
   }
 
   async function buildPdf(rep, ev) {
-    return buildReportPdf(rep, { signed: !!(rep && (rep.signedAt || (rep.sigTech && rep.sigClient))) });
+    return buildReportPdf(rep, { signed: isReportSigned(rep) });
   }
 
   /* v48.13 (from PR #24): the app-wide download() already queues a Drive copy of every export, so only queue here when it is
@@ -2540,7 +2625,7 @@
   }
 
   async function finishPdf(rep, ev, signed) {
-    const out = await buildReportPdf(rep, { signed: signed !== false && !!(rep.signedAt || (rep.sigTech && rep.sigClient)) });
+    const out = await buildReportPdf(rep, { signed: signed !== false && isReportSigned(rep) });
     rep.pdfName = out.name;
     rep.pdfBytes = out.bytes;
     evLog(ev, "Fit-test PDF created", out.name + " (" + out.bytes + " bytes)");
@@ -2551,7 +2636,7 @@
   }
 
   async function zipAll(ev) {
-    const reps = reportsOf(ev.id).filter(r => r.signedAt || r.sigTech);
+    const reps = reportsOf(ev.id).filter(isReportSigned);
     if (!reps.length) { alert("Sign at least one report first."); return; }
     await loadScript(ZIP_LIB);
     const JSZ = root.JSZip || (typeof JSZip !== "undefined" ? JSZip : null);
@@ -2559,7 +2644,7 @@
     const zip = new JSZ();
     const used = [];
     for (const r of reps) {
-      const out = await buildReportPdf(r, { signed: !!(r.signedAt || (r.sigTech && r.sigClient)) });
+      const out = await buildReportPdf(r, { signed: isReportSigned(r) });
       let name = out.name;
       if (root.envssDrive && root.envssDrive.versionedName) name = root.envssDrive.versionedName(name, used);
       else if (used.indexOf(name) >= 0) name = name.replace(/\.pdf$/i, "_2.pdf");
@@ -2657,7 +2742,7 @@
       if (!isFitEvent(ev)) return _mark ? _mark.apply(this, arguments) : null;
       const reps = reportsOf(ev.id);
       if (!reps.length) { alert("Add and sign at least one fit-test report before marking this event complete."); return; }
-      const unsigned = reps.filter(r => !(r.signedAt || (r.sigTech && r.sigClient)));
+      const unsigned = reps.filter(r => !isReportSigned(r));
       if (unsigned.length) { alert("This event cannot be marked complete until every report is signed.\nUnsigned: " + unsigned.length + "."); return; }
       ev.uploadReady = true;
       evLog(ev, "Marked event complete", "All fit-test reports signed");
@@ -2788,26 +2873,28 @@
       };
       const backC = document.getElementById("fitBackConfirm");
       if (backC) backC.onclick = () => { const r = reportById(view.fitReportId); if (r) openConfirm(r); };
-      const techC = document.getElementById("fitSigTech");
+      if (document.getElementById("fitSign") && typeof window.scrollTo === "function") {
+        try { window.scrollTo(0, 0); } catch (e) {}
+      }
       const cliC = document.getElementById("fitSigClient");
       let pads = null;
-      if (techC && cliC) {
+      if (cliC) {
         const rec = reportById(view.fitReportId);
-        pads = { tech: wirePad(techC, rec && rec.sigTech), client: wirePad(cliC, rec && rec.sigClient) };
-        const ct = document.getElementById("fitClearTech");
+        pads = { client: wirePad(cliC, rec && rec.sigClient) };
         const cc = document.getElementById("fitClearClient");
-        if (ct) ct.onclick = () => pads.tech.clear();
         if (cc) cc.onclick = () => pads.client.clear();
       }
       const make = document.getElementById("fitMakePdf");
       if (make) make.onclick = async () => {
         const rep = reportById(view.fitReportId);
-        if (!rep || !pads) return;
-        if (!pads.tech.isDirty() || !pads.client.isDirty()) { alert("Both the ENVSS technician and the client need to sign."); return; }
-        rep.sigTech = pads.tech.toDataURL();
+        if (!rep || !pads || !pads.client) return;
+        if (!pads.client.isDirty()) { alert("The person who was tested needs to sign."); return; }
+        const at = new Date().toISOString();
         rep.sigClient = pads.client.toDataURL();
-        rep.signedAt = new Date().toISOString();
-        evLog(ev, "Fit-test report signed", [rep.lastName, rep.firstName].filter(Boolean).join(", "));
+        /* Do not invent a handwritten technician image. Keep any legacy pad image already stored. */
+        rep.techSignOff = makeTechSignOff(at);
+        rep.signedAt = at;
+        evLog(ev, "Fit-test report signed", [rep.lastName, rep.firstName].filter(Boolean).join(", ") + " · " + techSignOffLine(rep.techSignOff));
         save();
         try {
           make.disabled = true;
@@ -2842,6 +2929,7 @@
       + ".fit-ex-wrap{overflow:auto}.fit-ex{width:100%;border-collapse:collapse;font-size:13px}"
       + ".fit-ex th,.fit-ex td{padding:4px;border-bottom:1px solid var(--edge,#3A4A7A)}"
       + ".fit-sig{width:100%;height:180px;background:#fff;border:2px solid var(--edge,#3A4A7A);border-radius:12px;touch-action:none}"
+      + ".fit-esign-name{font-family:Georgia,\"Times New Roman\",Times,serif;font-style:italic;font-size:28px;color:#111;margin:8px 0 4px;padding:10px 14px;background:#fff;border-radius:10px;line-height:1.25}"
       + ".fit-device{display:inline-block;margin:6px 0 0;padding:3px 10px;border-radius:999px;background:#FFF4E5;color:#8A4B08;font-weight:700;font-size:13px}"
       + ".s-ok{background:#E5F4EE;color:#1F6B4A}.s-needs{background:#FFF4E5;color:#8A4B08}";
     document.head.appendChild(st);

@@ -170,23 +170,34 @@ async function run(vp) {
   await sleep(200);
   await page.evaluate(() => { const b = document.getElementById("fitToSign"); if (b) b.click(); });
   await sleep(600);
-  const onSign = await page.evaluate(() => !!(document.getElementById("fitSigTech") && document.getElementById("fitSigClient")));
-  check(`[${vp}] continue opens the two signature pads`, onSign, await page.evaluate(() => document.getElementById("fitConfirm") ? "still on confirm: " + (document.body.innerText || "").slice(0, 200) : "no sign, no confirm"));
-  if (!onSign) return;
+  const onSign = await page.evaluate(() => {
+    const body = document.body.innerText || "";
+    return {
+      client: !!document.getElementById("fitSigClient"),
+      noTechPad: !document.getElementById("fitSigTech"),
+      card: !!document.getElementById("fitTechSignOff"),
+      name: /V46 Test/.test(body),
+      email: /field\.test@envss\.com\.au/.test(body),
+      person: /Person tested/.test(body),
+      auto: /filled in from your ENVSS sign-in/.test(body)
+    };
+  });
+  check(`[${vp}] continue opens only the individual’s signature pad and shows the electronic tech sign-off`, onSign.client && onSign.noTechPad && onSign.card && onSign.name && onSign.email && onSign.person && onSign.auto, JSON.stringify(onSign) + (await page.evaluate(() => document.getElementById("fitConfirm") ? " still on confirm" : "")));
+  if (!onSign.client) return;
+  await page.evaluate(() => { try { window.scrollTo(0, 0); } catch (e) {} });
+  await sleep(200);
   await shot(page, "03-signatures");
+  await page.screenshot({ path: path.join(OUT, `${vp}-03-signatures-full.png`), fullPage: true });
 
-  await signPad(page, "#fitSigTech");
   await signPad(page, "#fitSigClient");
-  // Programmatic strokes as a fallback if the headless mouse did not mark the pads dirty.
+  // Programmatic strokes as a fallback if the headless mouse did not mark the pad dirty.
   await page.evaluate(() => {
-    ["fitSigTech", "fitSigClient"].forEach(id => {
-      const c = document.getElementById(id); if (!c) return;
-      const ev = (type, x, y) => c.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y, buttons: 1 }));
-      const r = c.getBoundingClientRect();
-      ev("mousedown", r.left + 10, r.top + 10);
-      ev("mousemove", r.left + 80, r.top + 40);
-      ev("mouseup", r.left + 80, r.top + 40);
-    });
+    const c = document.getElementById("fitSigClient"); if (!c) return;
+    const ev = (type, x, y) => c.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y, buttons: 1 }));
+    const r = c.getBoundingClientRect();
+    ev("mousedown", r.left + 10, r.top + 10);
+    ev("mousemove", r.left + 80, r.top + 40);
+    ev("mouseup", r.left + 80, r.top + 40);
   });
   page.dialogs.length = 0;
   const cdp = await page.target().createCDPSession();
@@ -197,9 +208,11 @@ async function run(vp) {
   for (let i = 0; i < 30 && !(await page.evaluate(() => !!(db.fitReports[0] && db.fitReports[0].pdfName))); i++) await sleep(500);
   const afterPdf = await page.evaluate(() => {
     const r = (db.fitReports || [])[0] || {};
-    return { signed: !!r.signedAt, name: r.pdfName || "", result: r.result, last: r.lastName, evStage: deriveEventStage(eventById("eFit")), n: (db.fitReports || []).length, pdfLib: !!(window.PDFLib) };
+    return { signed: !!r.signedAt, name: r.pdfName || "", result: r.result, last: r.lastName, evStage: deriveEventStage(eventById("eFit")), n: (db.fitReports || []).length, pdfLib: !!(window.PDFLib),
+      tech: r.techSignOff || null, sigTech: !!(r.sigTech), sigClient: !!(r.sigClient), isSigned: !!(envssFit.isReportSigned && envssFit.isReportSigned(r)) };
   });
   check(`[${vp}] signed PDF is named Surname_First_Model_DD-MM-YYYY.pdf`, afterPdf.signed && afterPdf.name === "Breed_John_Aura-9322A_25-11-2026.pdf" && afterPdf.result === "PASS", JSON.stringify(afterPdf) + " dialogs=" + JSON.stringify(page.dialogs));
+  check(`[${vp}] payload stores tech sign-off from the signed-in account and no tech pad image`, !!(afterPdf.tech && afterPdf.tech.name === "V46 Test" && afterPdf.tech.email === "field.test@envss.com.au" && afterPdf.tech.signedAt && afterPdf.signed && !afterPdf.sigTech && afterPdf.sigClient && afterPdf.isSigned), JSON.stringify(afterPdf.tech) + " sigTech=" + afterPdf.sigTech);
   check(`[${vp}] after signing, event stage is samples-complete (signed reports)`, afterPdf.evStage === "ev_complete", afterPdf.evStage);
   const pdfFiles = fs.readdirSync(OUT).filter(f => f.endsWith(".pdf") && /Breed_John/.test(f));
   check(`[${vp}] a PDF file was saved`, pdfFiles.length > 0, pdfFiles.join(","));
@@ -270,17 +283,14 @@ async function run(vp) {
   }
   await page3.evaluate(() => { const b = document.getElementById("fitToSign"); if (b) { b.scrollIntoView({ block: "center" }); b.click(); } });
   await sleep(600);
-  await signPad(page3, "#fitSigTech");
   await signPad(page3, "#fitSigClient");
   await page3.evaluate(() => {
-    ["fitSigTech", "fitSigClient"].forEach(id => {
-      const c = document.getElementById(id); if (!c) return;
-      const ev = (type, x, y) => c.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y, buttons: 1 }));
-      const r = c.getBoundingClientRect();
-      ev("mousedown", r.left + 10, r.top + 10);
-      ev("mousemove", r.left + 80, r.top + 40);
-      ev("mouseup", r.left + 80, r.top + 40);
-    });
+    const c = document.getElementById("fitSigClient"); if (!c) return;
+    const ev = (type, x, y) => c.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y, buttons: 1 }));
+    const r = c.getBoundingClientRect();
+    ev("mousedown", r.left + 10, r.top + 10);
+    ev("mousemove", r.left + 80, r.top + 40);
+    ev("mouseup", r.left + 80, r.top + 40);
   });
   const cdp3 = await page3.target().createCDPSession();
   await cdp3.send("Page.setDownloadBehavior", { behavior: "allow", downloadPath: OUT });
@@ -302,7 +312,68 @@ async function run(vp) {
     execSync("pdftoppm -png -r 140 " + JSON.stringify(pdfPath) + " " + JSON.stringify(path.join(OUT, vp + "-07-pdf")));
   }
   check(`[${vp}] signed PDF is a one-page TSI layout with signatures and no photo page`, pages === 1 && /FIT TEST REPORT/.test(signedLine) && /FITTEST OPERATOR/.test(signedLine) && /NOTE:/.test(signedLine) && /envss\.com\.au/.test(signedLine) && /admin@envss\.com\.au/.test(signedLine) && !/ENVSS technician/.test(signedLine) && photoPdfs.length > 0, JSON.stringify({ pages, files: photoPdfs, signed: signedLine.slice(0, 500) }));
+  const signedFlat = signedLine.replace(/\s+/g, " ");
+  check(`[${vp}] signed PDF has the electronic tech sign-off, not a handwritten technician mark`, /Electronically signed by V46 Test \(field\.test@envss\.com\.au\)/.test(signedFlat) && /\d{2}\/\d{2}\/2026 \d{2}:\d{2} AWST/.test(signedFlat) && /V46 Test/.test(signedFlat), signedFlat.slice(signedFlat.lastIndexOf("FITTEST OPERATOR")));
   await page3.close();
+
+  /* Direct PDF cases: email-only sign-off, and an older report that already has a technician pad image. */
+  const page4 = await boot(vp, { status: 503, body: { error: "OCR_NOT_CONFIGURED", message: "OCR not set up yet, enter manually" } });
+  const cases = await page4.evaluate(async () => {
+    const ev = eventById("eFit");
+    function base() {
+      const r = envssFit.blankReport(ev);
+      r.lastName = "Breed"; r.firstName = "John"; r.model = "Aura 9322A+";
+      r.testDateDisplay = "25/11/2026"; r.result = "PASS"; r.operator = "EA";
+      r.signedAt = "2026-11-26T03:05:00.000Z";
+      const c = document.createElement("canvas"); c.width = 200; c.height = 80;
+      const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, 200, 80);
+      x.strokeStyle = "#111"; x.lineWidth = 3; x.beginPath(); x.moveTo(10, 50); x.quadraticCurveTo(80, 10, 190, 40); x.stroke();
+      r.sigClient = c.toDataURL("image/png");
+      return { r, pad: c.toDataURL("image/png") };
+    }
+    const emailOnly = base();
+    emailOnly.r.techSignOff = { name: "", email: "solo@envss.com.au", signedAt: "2026-11-26T03:05:00.000Z", source: "google" };
+    const emailPdf = await envssFit.buildReportPdf(emailOnly.r, { signed: true });
+    const legacy = base();
+    legacy.r.sigTech = legacy.pad;
+    const legacyPdf = await envssFit.buildReportPdf(legacy.r, { signed: true });
+    const flags = {
+      clientOnly: envssFit.isReportSigned({ sigClient: "x", signedAt: "t" }),
+      bothPads: envssFit.isReportSigned({ sigTech: "x", sigClient: "x" }),
+      techOnly: envssFit.isReportSigned({ sigTech: "x", signedAt: "t" }),
+      blank: envssFit.isReportSigned({}),
+      line: envssFit.techSignOffLine({ name: "", email: "solo@envss.com.au", signedAt: "2026-11-26T03:05:00.000Z" }),
+      awst: envssFit.formatAwst("2026-11-26T03:05:00.000Z")
+    };
+    function b64(bytes, name) {
+      const u = new Uint8Array(bytes);
+      let s = ""; const step = 0x8000;
+      for (let i = 0; i < u.length; i += step) s += String.fromCharCode.apply(null, u.subarray(i, i + step));
+      return { name, b64: btoa(s), bytes: u.length };
+    }
+    /* buildReportPdf returns blob, not raw bytes — read the blob */
+    return {
+      flags,
+      email: { name: emailPdf.name, bytes: emailPdf.bytes, b64: await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.readAsDataURL(emailPdf.blob); }) },
+      legacy: { name: legacyPdf.name, bytes: legacyPdf.bytes, b64: await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.readAsDataURL(legacyPdf.blob); }) }
+    };
+  });
+  function writePdf(name, b64) {
+    const dest = path.join(OUT, `${vp}-${name}.pdf`);
+    fs.writeFileSync(dest, Buffer.from(b64, "base64"));
+    return dest;
+  }
+  const emailPath = writePdf("email-only-signoff", cases.email.b64);
+  const legacyPath = writePdf("legacy-tech-pad", cases.legacy.b64);
+  const emailText = execSync("pdftotext -layout " + JSON.stringify(emailPath) + " -", { encoding: "utf8" });
+  const legacyText = execSync("pdftotext -layout " + JSON.stringify(legacyPath) + " -", { encoding: "utf8" });
+  execSync("pdftoppm -png -r 140 " + JSON.stringify(emailPath) + " " + JSON.stringify(path.join(OUT, vp + "-08-email-only-pdf")));
+  execSync("pdftoppm -png -r 140 " + JSON.stringify(legacyPath) + " " + JSON.stringify(path.join(OUT, vp + "-09-legacy-tech-pdf")));
+  const emailFlat = emailText.replace(/\s+/g, " ");
+  check(`[${vp}] isReportSigned: individual + signedAt, or legacy both pads; not tech-only`, cases.flags.clientOnly && cases.flags.bothPads && !cases.flags.techOnly && !cases.flags.blank && cases.flags.awst === "26/11/2026 11:05 AWST" && /Electronically signed by solo@envss\.com\.au 26\/11\/2026 11:05 AWST/.test(cases.flags.line), JSON.stringify(cases.flags));
+  check(`[${vp}] PDF falls back to the email when no sign-in name is stored`, /Electronically signed by solo@envss\.com\.au/.test(emailFlat) && /26\/11\/2026 11:05 AWST/.test(emailFlat) && /solo@envss\.com\.au/.test(emailFlat) && !/Electronically signed by \(/.test(emailFlat), emailFlat.slice(emailFlat.lastIndexOf("FITTEST OPERATOR")));
+  check(`[${vp}] older report with a technician pad image still renders that image and has no electronic sign-off line`, /FITTEST OPERATOR/.test(legacyText) && !/Electronically signed by/.test(legacyText) && /EA/.test(legacyText), legacyText.slice(legacyText.indexOf("FITTEST OPERATOR"), legacyText.indexOf("FITTEST OPERATOR") + 400));
+  await page4.close();
 
   const pageErrs = page.errs.filter(e => !/Failed to load|ocr-fit-report|jszip|pdf-lib/i.test(e));
   check(`[${vp}] no unexpected page errors`, pageErrs.length === 0, pageErrs.join(" | "));
