@@ -12,8 +12,8 @@ const html = fs.readFileSync(path.join(SRC, "field.html"), "utf8");
 const sw = fs.readFileSync(path.join(SRC, "sw-field.js"), "utf8");
 const BADGE = "Photo saved to device. Drive upload pending";
 const span = '<span class="drive-st drive-wait">Photo saved to device.<br> Drive upload pending</span>';
-check("field.html APP_VERSION is 48.17", /const APP_VERSION = "48\.17";/.test(html));
-check("sw-field.js is v48.17 with cache envss-field-v48-17", /const VERSION = "48\.17";/.test(sw) && /const CACHE = "envss-field-v48-17";/.test(sw));
+check("field.html APP_VERSION is 48.18", /const APP_VERSION = "48\.18";/.test(html));
+check("sw-field.js is v48.18 with cache envss-field-v48-18", /const VERSION = "48\.18";/.test(sw) && /const CACHE = "envss-field-v48-18";/.test(sw));
 check("user-visible badge text is exactly the new wording in both sites (line break between the two sentences)", (html.split(span).length - 1) === 2);
 check("the old 'Waiting for Drive' badge text is gone (only comments may mention it)", !/drive-wait">Waiting for Drive</.test(html));
 check("'In Drive' wording is unchanged", /drive-ok">In Drive</.test(html));
@@ -102,7 +102,7 @@ async function waitBadge(page, ms = 8000) {
 
 async function run(vp) {
   const page = await boot(vp);
-  check(`[${vp}] app is v48.17`, await page.evaluate(() => APP_VERSION === "48.17" && document.getElementById("appVersion").textContent === "v48.17" && document.title === "ENVSS Field v48.17"));
+  check(`[${vp}] app is v48.18`, await page.evaluate(() => APP_VERSION === "48.18" && document.getElementById("appVersion").textContent === "v48.18" && document.title === "ENVSS Field v48.18"));
   await page.evaluate(() => openTrain("h1")); await sleep(400);
   const pid = await addDailyLogPhoto(page); await sleep(400);
   const info = await waitBadge(page);
