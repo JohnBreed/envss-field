@@ -57,7 +57,7 @@
  {
   "name": "[chromebook] the 48.17 worker installed in the background and is waiting; the old worker still controls the page",
   "ok": true,
-  "detail": "http://127.0.0.1:43577/sw-field.js / 48.16"
+  "detail": "http://127.0.0.1:45373/sw-field.js / 48.16"
  },
  {
   "name": "[chromebook] the typed text is still in the box (nothing reloaded)",
@@ -67,12 +67,12 @@
  {
   "name": "[chromebook] while the box holds unsaved typing the update stays held",
   "ok": true,
-  "detail": "[\"typing\",\"unsaved typing\",\"1 change to upload\"] LOG 06:00:54.158 NAV about:blank | 06:00:54.176 NAV http://127.0.0.1:43577/field.html | 06:00:54.792 NAV http://127.0.0.1:43577/field.html | 06:00:57.895 [ENVSS update] check open | 06:00:58.818 [ENVSS update] check test | 06:01:00.136 [ENVSS update] check test | 06:01:00.155 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload"
+  "detail": "[\"typing\",\"unsaved typing\",\"1 change to upload\"] LOG 08:02:41.406 NAV about:blank | 08:02:41.436 NAV http://127.0.0.1:45373/field.html | 08:02:42.100 NAV http://127.0.0.1:45373/field.html | 08:02:45.235 [ENVSS update] check open | 08:02:46.119 [ENVSS update] check test | 08:02:47.449 [ENVSS update] check test | 08:02:47.474 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload"
  },
  {
   "name": "[chromebook] after blur the edit is saved on the device and queued; upload failing -> update still held (change to upload)",
   "ok": true,
-  "detail": "{\"reasons\":[\"1 change to upload\"],\"pend\":1,\"ls\":true} LOG 06:00:54.158 NAV about:blank | 06:00:54.176 NAV http://127.0.0.1:43577/field.html | 06:00:54.792 NAV http://127.0.0.1:43577/field.html | 06:00:57.895 [ENVSS update] check open | 06:00:58.818 [ENVSS update] check test | 06:01:00.136 [ENVSS update] check test | 06:01:00.155 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload | 06:01:03.028 [ENVSS update] not safe (saved): recent edit, 2 changes to upload | 06:01:03.393 [ENVSS update] not safe (sync): recent edit, 1 change to upload"
+  "detail": "{\"reasons\":[\"1 change to upload\"],\"pend\":1,\"ls\":true} LOG 08:02:41.406 NAV about:blank | 08:02:41.436 NAV http://127.0.0.1:45373/field.html | 08:02:42.100 NAV http://127.0.0.1:45373/field.html | 08:02:45.235 [ENVSS update] check open | 08:02:46.119 [ENVSS update] check test | 08:02:47.449 [ENVSS update] check test | 08:02:47.474 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload | 08:02:50.343 [ENVSS update] not safe (saved): recent edit, 2 changes to upload | 08:02:50.708 [ENVSS update] not safe (sync): recent edit, 1 change to upload"
  },
  {
   "name": "[chromebook] still v48.16 while the change is queued",
@@ -177,7 +177,7 @@
  {
   "name": "[chromebook] gate: STOP on a running sample still works (already-captured work can be finished)",
   "ok": true,
-  "detail": "{\"s\":\"ended\",\"e\":\"2026-11-27T06:01:20.669Z\",\"dialogs\":[]}"
+  "detail": "{\"s\":\"ended\",\"e\":\"2026-11-27T08:03:08.024Z\",\"dialogs\":[]}"
  },
  {
   "name": "[chromebook] gate: viewing records still works",
@@ -192,7 +192,7 @@
  {
   "name": "[chromebook] back online + queue uploaded -> forced update applied: v48.17, banner gone, toast",
   "ok": true,
-  "detail": "{\"st\":{\"reasons\":[],\"pending\":false,\"log\":[\"06:01:24 updated from 48.16\"]},\"v\":\"48.17\",\"banner\":false,\"toast\":\"Updated to v48.17\"}"
+  "detail": "{\"st\":{\"reasons\":[],\"pending\":false,\"log\":[\"08:03:11 updated from 48.16\"]},\"v\":\"48.17\",\"banner\":false,\"toast\":\"Updated to v48.17\"}"
  },
  {
   "name": "[chromebook] the change queued under the gate reached Supabase (mock) and is on the device",
@@ -247,7 +247,7 @@
  {
   "name": "[pixel7] the 48.17 worker installed in the background and is waiting; the old worker still controls the page",
   "ok": true,
-  "detail": "http://127.0.0.1:43577/sw-field.js / 48.16"
+  "detail": "http://127.0.0.1:45373/sw-field.js / 48.16"
  },
  {
   "name": "[pixel7] the typed text is still in the box (nothing reloaded)",
@@ -257,12 +257,12 @@
  {
   "name": "[pixel7] while the box holds unsaved typing the update stays held",
   "ok": true,
-  "detail": "[\"typing\",\"unsaved typing\",\"1 change to upload\"] LOG 06:01:38.921 NAV about:blank | 06:01:38.932 NAV http://127.0.0.1:43577/field.html | 06:01:39.515 NAV http://127.0.0.1:43577/field.html | 06:01:42.623 [ENVSS update] check open | 06:01:43.531 [ENVSS update] check test | 06:01:44.894 [ENVSS update] check test | 06:01:44.911 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload"
+  "detail": "[\"typing\",\"unsaved typing\",\"1 change to upload\"] LOG 08:03:26.654 NAV about:blank | 08:03:26.670 NAV http://127.0.0.1:45373/field.html | 08:03:27.214 NAV http://127.0.0.1:45373/field.html | 08:03:30.333 [ENVSS update] check open | 08:03:31.230 [ENVSS update] check test | 08:03:32.613 [ENVSS update] check test | 08:03:32.631 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload"
  },
  {
   "name": "[pixel7] after blur the edit is saved on the device and queued; upload failing -> update still held (change to upload)",
   "ok": true,
-  "detail": "{\"reasons\":[\"1 change to upload\"],\"pend\":1,\"ls\":true} LOG 06:01:38.921 NAV about:blank | 06:01:38.932 NAV http://127.0.0.1:43577/field.html | 06:01:39.515 NAV http://127.0.0.1:43577/field.html | 06:01:42.623 [ENVSS update] check open | 06:01:43.531 [ENVSS update] check test | 06:01:44.894 [ENVSS update] check test | 06:01:44.911 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload | 06:01:47.850 [ENVSS update] not safe (saved): recent edit, 2 changes to upload | 06:01:48.215 [ENVSS update] not safe (sync): recent edit, 1 change to upload"
+  "detail": "{\"reasons\":[\"1 change to upload\"],\"pend\":1,\"ls\":true} LOG 08:03:26.654 NAV about:blank | 08:03:26.670 NAV http://127.0.0.1:45373/field.html | 08:03:27.214 NAV http://127.0.0.1:45373/field.html | 08:03:30.333 [ENVSS update] check open | 08:03:31.230 [ENVSS update] check test | 08:03:32.613 [ENVSS update] check test | 08:03:32.631 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload | 08:03:35.615 [ENVSS update] not safe (saved): recent edit, 2 changes to upload | 08:03:35.980 [ENVSS update] not safe (sync): recent edit, 1 change to upload"
  },
  {
   "name": "[pixel7] still v48.16 while the change is queued",
@@ -367,7 +367,7 @@
  {
   "name": "[pixel7] gate: STOP on a running sample still works (already-captured work can be finished)",
   "ok": true,
-  "detail": "{\"s\":\"ended\",\"e\":\"2026-11-27T06:02:05.984Z\",\"dialogs\":[]}"
+  "detail": "{\"s\":\"ended\",\"e\":\"2026-11-27T08:03:53.740Z\",\"dialogs\":[]}"
  },
  {
   "name": "[pixel7] gate: viewing records still works",
@@ -382,7 +382,7 @@
  {
   "name": "[pixel7] back online + queue uploaded -> forced update applied: v48.17, banner gone, toast",
   "ok": true,
-  "detail": "{\"st\":{\"reasons\":[],\"pending\":false,\"log\":[\"06:02:09 updated from 48.16\"]},\"v\":\"48.17\",\"banner\":false,\"toast\":\"Updated to v48.17\"}"
+  "detail": "{\"st\":{\"reasons\":[],\"pending\":false,\"log\":[\"08:03:56 updated from 48.16\"]},\"v\":\"48.17\",\"banner\":false,\"toast\":\"Updated to v48.17\"}"
  },
  {
   "name": "[pixel7] the change queued under the gate reached Supabase (mock) and is on the device",
