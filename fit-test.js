@@ -7,7 +7,7 @@
    PDF (signed or unsigned), Drive copy into {job}_Field-App/Fit-Tests, zip download. No Podio writes. */
 (function (root) {
   "use strict";
-  const VERSION = "48.18";   /* v48.18: version bump only (fit testing unchanged) */
+  const VERSION = "48.19";   /* v48.19: version bump only (fit testing unchanged). v48.18: version bump only */
 
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
