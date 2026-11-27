@@ -66,7 +66,12 @@ const browser = await launch();
 const ext = [];
 
 async function boot(vp, ocr) {
-  const page = await browser.newPage(); page.errs = []; page.on("pageerror", e => page.errs.push(String(e)));
+  /* v48.18: each boot is its own browser context so the second-tab lock does not make later pages read-only. */
+  const ctx = await browser.createBrowserContext();
+  const page = await ctx.newPage(); page._envssCtx = ctx;
+  const _close = page.close.bind(page);
+  page.close = async function () { try { await _close(); } finally { try { await ctx.close(); } catch (e) {} } };
+  page.errs = []; page.on("pageerror", e => page.errs.push(String(e)));
   await page.setViewport(VIEWPORTS[vp].viewport); await page.setUserAgent(VIEWPORTS[vp].ua);
   await page.setRequestInterception(true);
   const store = { ocrStatus: (ocr && ocr.status) || 503, ocrBody: (ocr && ocr.body) || { error: "OCR_NOT_CONFIGURED", message: "OCR not set up yet, enter manually" } };
@@ -112,7 +117,7 @@ async function run(vp) {
   const shot = (page, n, full = false) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   fs.readdirSync(OUT).filter(f => f.endsWith('.pdf') || f.endsWith('.zip')).forEach(f => fs.unlinkSync(path.join(OUT, f)));
   const page = await boot(vp, { status: 503, body: { error: "OCR_NOT_CONFIGURED", message: "OCR not set up yet, enter manually" } });
-  check(`[${vp}] app is v48.16 with fit-test module`, await page.evaluate(() => APP_VERSION === "48.16" && document.getElementById("appVersion").textContent === "v48.16" && document.title === "ENVSS Field v48.16" && !!(window.envssFit && envssFit.parseReport)), await page.evaluate(() => ({ v: APP_VERSION, t: document.title, fit: !!(window.envssFit) })));
+  check(`[${vp}] app is v48.18 with fit-test module`, await page.evaluate(() => APP_VERSION === "48.18" && document.getElementById("appVersion").textContent === "v48.18" && document.title === "ENVSS Field v48.18" && !!(window.envssFit && envssFit.parseReport)), await page.evaluate(() => ({ v: APP_VERSION, t: document.title, fit: !!(window.envssFit) })));
 
   const labels = await page.evaluate(() => {
     const ev = eventById("eFit"), hy = eventById("eH");

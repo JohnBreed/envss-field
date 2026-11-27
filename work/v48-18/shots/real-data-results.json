@@ -1,0 +1,52 @@
+[
+  {
+    "name": "[real pixel7] loaded v48.18 copy of 0019185-002 (10 samples)",
+    "ok": true,
+    "detail": "{\"v\":\"48.18\",\"ev\":true,\"n\":10,\"t\":true}"
+  },
+  {
+    "name": "[real pixel7] rapid edits kept last location, no self-merge",
+    "ok": true,
+    "detail": "{\"after\":{\"loc\":\"Rapid loc 3\",\"merges\":0},\"svLoc\":\"Rapid loc 3\",\"sm\":0}"
+  },
+  {
+    "name": "[real pixel7] second tab is read-only with a banner",
+    "ok": true,
+    "detail": "{\"ro\":true,\"banner\":\"ENVSS Field is already open in another tab or window on this device. This tab is read-only so the two can't clash. Changes here are not saved.\\nUse this tab instead\",\"v\":\"48.18\"}"
+  },
+  {
+    "name": "[real pixel7] second tab does not change the copy",
+    "ok": true,
+    "detail": "Rapid loc 3"
+  },
+  {
+    "name": "[real pixel7] no page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "[real chromebook] loaded v48.18 copy of 0019185-002 (10 samples)",
+    "ok": true,
+    "detail": "{\"v\":\"48.18\",\"ev\":true,\"n\":10,\"t\":true}"
+  },
+  {
+    "name": "[real chromebook] rapid edits kept last location, no self-merge",
+    "ok": true,
+    "detail": "{\"after\":{\"loc\":\"Rapid loc 3\",\"merges\":0},\"svLoc\":\"Rapid loc 3\",\"sm\":0}"
+  },
+  {
+    "name": "[real chromebook] second tab is read-only with a banner",
+    "ok": true,
+    "detail": "{\"ro\":true,\"banner\":\"ENVSS Field is already open in another tab or window on this device. This tab is read-only so the two can't clash. Changes here are not saved.\\nUse this tab instead\",\"v\":\"48.18\"}"
+  },
+  {
+    "name": "[real chromebook] second tab does not change the copy",
+    "ok": true,
+    "detail": "Rapid loc 3"
+  },
+  {
+    "name": "[real chromebook] no page errors",
+    "ok": true,
+    "detail": ""
+  }
+]
