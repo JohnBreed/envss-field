@@ -94,9 +94,8 @@ await ev(() => openProject("podio-3387717386"));
 await sleep(300);
 await ev(() => envssAfmPodio.pull());
 await sleep(300);
-const card = await ev(() => ({ html: (document.getElementById("afmPodioPlan") || {}).innerText || "", btn: !!document.querySelector("[data-afm-start='3393177640']"), hyg: !!document.getElementById("podioPlan") }));
-ok("project: 'AFM planned in Podio' card lists ENVSS-HAZ-AFM-0017889-0011-20261113", /ENVSS-HAZ-AFM-0017889-0011-20261113/.test(card.html) && card.btn, card.html.slice(0, 200));
-ok("project: card shows field blank 0 + 10 pumps", /field blank 0 \+ 10 pumps/.test(card.html), card.html);
+const card = await ev(() => ({ section: !!document.getElementById("afmPodioPlan"), menu: (document.querySelector("#projectMenu [data-afm-start='3393177640']") || {}).textContent || "", hyg: !!document.getElementById("podioPlan") }));
+ok("project (v48.15): no 'AFM planned in Podio' section; ☰ menu offers Start AFM from Podio for 0017889's open AFM event", !card.section && /^Start AFM from Podio/.test(card.menu), JSON.stringify(card));
 ok("project: hygiene 'Planned in Podio' card still there", card.hyg);
 await shot("project-0017889");
 await ev(() => document.querySelector("[data-afm-start='3393177640']").click());
@@ -118,6 +117,9 @@ ok("start: nothing STARTed — Podio planned times are not used as START/STOP", 
 ok("start: Podio planned start kept for display only", e1.p1.podioAfm && /2026-11-13 07:00/.test(e1.p1.podioAfm.plannedStart || ""), JSON.stringify(e1.p1.podioAfm));
 ok("start: 'From Podio (AFM)' card shows reference, site and what came from Podio", /From Podio \(AFM\)/.test(e1.card) && /Burswood WA 6100/.test(e1.card) && /came from Podio/.test(e1.card), e1.card.slice(0, 200));
 await shot("event-0017889");
+await ev(() => openProject("podio-3387717386")); await sleep(400);
+const afterStart = await ev(() => ({ row: [...document.querySelectorAll("#app .wrap *")].some(el => el.children.length === 0 && el.textContent.trim() === "ENVSS-HAZ-AFM-0017889-0011-20261113"), menu: !!document.querySelector("#projectMenu [data-afm-start='3393177640']"), section: !!document.getElementById("afmPodioPlan") }));
+ok("project (v48.15): started AFM event shows in the events list; ☰ no longer offers it; still no AFM section", afterStart.row && !afterStart.menu && !afterStart.section, JSON.stringify(afterStart));
 await ev(() => { const e = db.events.find(x => x.podioAfmItemId === "3393177640"); openTrain(trainsOf(e.id).find(t => sampleNoOf(t) === 1).id); });
 await sleep(300);
 const tl = await ev(() => (document.getElementById("afmPodioTrain") || {}).textContent || "");
@@ -202,8 +204,8 @@ const stub = await ev(() => {
 ok("dash: 0019438 appears as a read-only stub (not in envss_projects)", stub.stub && stub.id === "podio-afm-job-0019438" && stub.shown && stub.count === 1, JSON.stringify(stub));
 await ev(id => openProject(id), stub.id);
 await sleep(300);
-const stubCard = await ev(() => ({ html: (document.getElementById("afmPodioPlan") || {}).innerText || "", btn: !!document.querySelector("[data-afm-start='3393691658']") }));
-ok("0019438 project: AFM card lists 16 Nov event and Start AFM from Podio", /ENVSS-HAZ-AFM-0019438-001-20261116/.test(stubCard.html) && stubCard.btn && /not yet on the usual project list/.test(stubCard.html), stubCard.html.slice(0, 240));
+const stubCard = await ev(() => ({ section: !!document.getElementById("afmPodioPlan"), menu: (document.querySelector("#projectMenu [data-afm-start='3393691658']") || {}).textContent || "" }));
+ok("0019438 project (v48.15): no AFM section; ☰ menu offers Start AFM from Podio (16 Nov event)", !stubCard.section && /^Start AFM from Podio/.test(stubCard.menu), JSON.stringify(stubCard));
 await ev(() => document.querySelector("[data-afm-start='3393691658']").click());
 await sleep(400);
 const e9438 = await ev(() => {

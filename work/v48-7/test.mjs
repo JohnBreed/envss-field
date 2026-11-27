@@ -78,6 +78,8 @@ function remoteFixture() {
       ["eFitDel", { id: "eFitDel", payload: { id: "eFitDel", tombstone: "event", deletedEventId: "eFitDel", eventId: "eFitDel", projectId: "podio-p0019520", code: "0019520-FIT-001", type: "fit", podioUnplanned: true, sampleCount: 0, at: NOW, detail: "event deleted" }, updated_at: NOW }],
       ["tS1", { id: "tS1", payload: { id: "tS1", trainId: "tS1", eventId: "eHandS", pouch: 1, kind: "airborne_personal", at: NOW, detail: "event deleted" }, updated_at: NOW }],
       ["e-podio-9004", { id: "e-podio-9004", payload: { id: "e-podio-9004", tombstone: "event", deletedEventId: "e-podio-9004", eventId: "e-podio-9004", projectId: "podio-p0019503", code: "0019503-001", type: "hygiene", at: NOW, detail: "event deleted" }, updated_at: NOW }]]),
+    /* v48.15: the staff-only sync view: when the Podio sync last read each event app */
+    v_field_podio_sync: new Map([["24280319", { app_id: 24280319, checked_at: new Date(Date.now() - 7 * 60e3).toISOString() }], ["30888380", { app_id: 30888380, checked_at: new Date(Date.now() - 9 * 60e3).toISOString() }]]),
     envss_trains: new Map([["tS1", { id: "tS1", payload: { id: "tS1", eventId: "eHandS", trainKind: "airborne_personal", sampleNo: 1, status: "prepped", pumpSerial: "88001" }, updated_at: NOW }]]), envss_hires: new Map()
   };
 }
@@ -109,7 +111,7 @@ async function run(vp) {
   const shot = (page, n, full = true) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const store = remoteFixture();
   const page = await boot(vp, store);
-  check(`[${vp}] app is v48.14`, await page.evaluate(() => APP_VERSION === "48.14" && document.getElementById("appVersion").textContent === "v48.14" && document.title === "ENVSS Field v48.14"));
+  check(`[${vp}] app is v48.15`, await page.evaluate(() => APP_VERSION === "48.15" && document.getElementById("appVersion").textContent === "v48.15" && document.title === "ENVSS Field v48.15"));
   await waitFor(page, () => activityLoaded && projectsLoaded);
   const appsDefault = await page.evaluate(() => envssAuto.apps().map(a => [a.appId, a.fieldType, a.kind, a.enabled]));
   check(`[${vp}] default Podio event apps: HYG 24280319 hygiene; Occ Noise 30888380 hygiene/noise; Vent Survey 30888385 hygiene/vent; Onsite RFT 30888384 fit`,
@@ -183,8 +185,8 @@ async function run(vp) {
   /* 3. project page: auto-created card + screenshots */
   await page.evaluate(() => openProject("podio-p0019500")); await sleep(700);
   const card1 = await page.evaluate(() => (document.querySelector('[data-podio-item="9001"]') || {}).textContent || "");
-  const openBtn = await page.evaluate(() => { const b = document.querySelector('[data-podio-item="9001"] [data-v487-open]'); const e = db.events.find(x => x.podioItemId === "9001"); return { text: b ? b.textContent.trim() : "", code: e ? e.code : "" }; });
-  check(`[${vp}] Podio card button reads exactly 'Open project event ' + the event's real code`, openBtn.code && openBtn.text === "Open project event " + openBtn.code, JSON.stringify(openBtn));
+  const cardInfo = await page.evaluate(() => { const c = document.querySelector('[data-podio-item="9001"]'); const e = db.events.find(x => x.podioItemId === "9001"); return { openBtn: !!(c && c.querySelector("[data-v487-open]")), anyBtn: c ? c.querySelectorAll("button").length : -1, text: c ? (c.querySelector(".v4815-ev") || {}).textContent || "" : "", code: e ? e.code : "", rowInList: !!e && [...document.querySelectorAll("#app .wrap *")].some(el => el.children.length === 0 && el.textContent.trim() === e.code) }; });
+  check(`[${vp}] v48.15 Planned in Podio card: no Open button; says the event code, that it is in the events list; the event row is in the list`, !cardInfo.openBtn && cardInfo.anyBtn === 0 && cardInfo.text.includes(cardInfo.code) && /events list below/.test(cardInfo.text) && cardInfo.rowInList, JSON.stringify(cardInfo));
   const ui2 = await page.evaluate(() => {
     const bar = (document.getElementById("syncBar") || {}).textContent || "";
     const menu = document.getElementById("projectMenu"), imp = document.getElementById("importCsv");
@@ -195,6 +197,10 @@ async function run(vp) {
       jobText: job ? job.textContent.trim() : "", jobPx: job ? parseFloat(getComputedStyle(job).fontSize) : 0,
       oldImportOutside: [...document.querySelectorAll("#app label")].some(l => /Import field CSV/.test(l.textContent) && !l.closest("#projectMenu")) };
   });
+  const pnote = await page.evaluate(hygCheck => { return { note: envssPodio.state().note || "", bar: (document.getElementById("syncBar") || {}).textContent || "", expect: "Checked Podio " + fmtWhen(hygCheck) }; }, store.v_field_podio_sync.get("24280319").checked_at);
+  check(`[${vp}] v48.15 Podio status: 'Checked Podio <sync check time of the HYG app> · last Podio change <time> · N planned Podio events', no 'Podio jobs updated'`, pnote.note.startsWith(pnote.expect + " · last Podio change ") && /· \d+ planned Podio events?\.$/.test(pnote.note) && !/Podio jobs updated/.test(pnote.bar) && pnote.bar.includes(pnote.note), JSON.stringify(pnote));
+  const unitSt = await page.evaluate(() => [envssPodioStatus("", "2026-11-26T06:50:57Z", 19), envssPodioStatus("", "", 1), fmtWhen(new Date(Date.now() - 864e5).toISOString()).startsWith("yesterday ")]);
+  check(`[${vp}] v48.15 status without a sync time: 'Last Podio change … · 19 planned Podio events.' (no made-up check time)`, /^Last Podio change .+ · 19 planned Podio events\.$/.test(unitSt[0]) && unitSt[1] === "1 planned Podio event." && unitSt[2], JSON.stringify(unitSt));
   check(`[${vp}] status bar in plain English: 'Last synced', 'Project list updated', no 'Supabase', no 'pending'`, /Last synced /.test(ui2.bar) && /Project list updated /.test(ui2.bar) && !/Supabase/i.test(ui2.bar) && !/pending/.test(ui2.bar) && !/last sync /.test(ui2.bar), ui2.bar);
   check(`[${vp}] Import field CSV is in the ☰ menu at the top right (closed until tapped), not on the page`, ui2.menuTopRight && ui2.importInMenu && ui2.importLabel === "Import field CSV" && ui2.importHiddenUntilOpen && !ui2.oldImportOutside, JSON.stringify(ui2));
   check(`[${vp}] job number is a heading (0019500, at least 22px)`, ui2.jobText === "0019500" && ui2.jobPx >= 22, JSON.stringify(ui2));
@@ -202,7 +208,7 @@ async function run(vp) {
   const menuOpen = await page.evaluate(() => { const m = document.getElementById("projectMenu"), l = document.getElementById("importCsv").closest("label"); return m.open && l.getBoundingClientRect().height > 30; });
   check(`[${vp}] tapping ☰ shows Import field CSV`, menuOpen);
   await page.evaluate(() => { const m = document.getElementById("projectMenu"); if (m) m.open = false; });
-  check(`[${vp}] project's Podio list says created automatically, with 'Open project event <code>' (no Start fieldwork)`, /created automatically/.test(card1) && /Open project event 0019500-00\d/.test(card1) && !/Start fieldwork/.test(card1), card1);
+  check(`[${vp}] project's Podio list says created automatically, names the event (no Open, no Start fieldwork)`, /created automatically/.test(card1) && /0019500-00\d/.test(card1) && !/Open project event/.test(card1) && !/Start fieldwork/.test(card1), card1);
   await shot(page, "01-project-auto-created");
   await page.evaluate(() => openEvent("e-podio-9001")); await sleep(400);
   const autoNote = await page.evaluate(() => (document.getElementById("v487Auto") || {}).textContent || "");
@@ -401,11 +407,13 @@ async function runApps(vp) {
   check(`[${vp}] apps: event says which Podio app it came from`, /From Podio app: Occ Noise Event \(noise\)/.test(lbl), lbl);
   if (vp === "chromebook") { await page.evaluate(() => openProject("podio-p0019530")); await sleep(700); await page.screenshot({ path: path.join(OUT, vp + "-20-new-apps-events-list.png"), fullPage: true }); }
   /* view missing (404): HYG keeps working, nothing from new apps, nothing flagged gone */
-  const store2 = remoteFixture(); const p2 = await boot(vp, store2, false, pre, { tableStatus: { v_field_podio_events: 404 } });
+  const store2 = remoteFixture(); const p2 = await boot(vp, store2, false, pre, { tableStatus: { v_field_podio_events: 404, v_field_podio_sync: 404 } });
   await waitFor(p2, () => activityLoaded && projectsLoaded);
   await refresh(p2); await waitFor(p2, () => db.events.some(e => e.id === "e-podio-9001"), null, 8000);
   const l2 = await evs(p2);
   check(`[${vp}] apps: extra view missing -> HYG still auto-creates, no new-app events, no errors`, l2.some(e => e.id === "e-podio-9001") && !l2.some(e => e.podioAppId) && !p2.errs.length, p2.errs.join(" | "));
+  const n2 = await p2.evaluate(() => envssPodio.state().note || "");
+  check(`[${vp}] v48.15: sync view missing (404) -> 'Last Podio change …', no 'Checked Podio', no error`, /^Last Podio change .+ planned Podio events?\.$/.test(n2) && !/Checked Podio/.test(n2) && !p2.errs.length, n2);
   await p2.close(); await page.close();
 }
 const which = process.argv[2] ? [process.argv[2]] : ["pixel7", "chromebook"];

@@ -1,7 +1,7 @@
--- DRAFT, NOT APPLIED. ENVSS Field v48.14: auto-create field events from the NEW Podio event apps John is creating in
+-- APPLIED 26 Nov 2026 6:31 pm AWST to Supabase luyprcmjyruznluboyms (migration hyg_v48_14_01_podio_events_view), with v48.14 going live. ENVSS Field v48.14: auto-create field events from the NEW Podio event apps John is creating in
 -- "1.6 ENVSS Project Events" (26 Nov 2026 AWST): Occ Noise Event (30888380), Vent Survey Event (30888385), Onsite RFT Event (30888384).
 -- Read only, staff only, additive (one new view; v_field_hyg_events is unchanged). Rollback: hyg_v48_14_01_podio_events_view_rollback.sql
--- BEFORE APPLYING: 1) the Dashboard Bot Podio sync must copy the new apps into podio_items (check: select app_id, app_name, count(*)
+-- (Checked before applying; kept for the record) the Podio sync must copy the new apps into podio_items (check: select app_id, app_name, count(*)
 --   from podio_items where app_id in (30888380,30888384,30888385) group by 1,2). App ids resolved read-only 26 Nov 2026 3:30 pm AWST;
 --   the same ids are in PODIO_EVENT_APPS in field.html. Until this view exists the field app gets 404 and ignores the new apps.
 create or replace view public.v_field_podio_events with (security_invoker = false) as
