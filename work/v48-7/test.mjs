@@ -78,6 +78,8 @@ function remoteFixture() {
       ["eFitDel", { id: "eFitDel", payload: { id: "eFitDel", tombstone: "event", deletedEventId: "eFitDel", eventId: "eFitDel", projectId: "podio-p0019520", code: "0019520-FIT-001", type: "fit", podioUnplanned: true, sampleCount: 0, at: NOW, detail: "event deleted" }, updated_at: NOW }],
       ["tS1", { id: "tS1", payload: { id: "tS1", trainId: "tS1", eventId: "eHandS", pouch: 1, kind: "airborne_personal", at: NOW, detail: "event deleted" }, updated_at: NOW }],
       ["e-podio-9004", { id: "e-podio-9004", payload: { id: "e-podio-9004", tombstone: "event", deletedEventId: "e-podio-9004", eventId: "e-podio-9004", projectId: "podio-p0019503", code: "0019503-001", type: "hygiene", at: NOW, detail: "event deleted" }, updated_at: NOW }]]),
+    /* v48.15: the staff-only sync view: when the Podio sync last read each event app */
+    v_field_podio_sync: new Map([["24280319", { app_id: 24280319, checked_at: new Date(Date.now() - 7 * 60e3).toISOString() }], ["30888380", { app_id: 30888380, checked_at: new Date(Date.now() - 9 * 60e3).toISOString() }]]),
     envss_trains: new Map([["tS1", { id: "tS1", payload: { id: "tS1", eventId: "eHandS", trainKind: "airborne_personal", sampleNo: 1, status: "prepped", pumpSerial: "88001" }, updated_at: NOW }]]), envss_hires: new Map()
   };
 }
@@ -109,7 +111,7 @@ async function run(vp) {
   const shot = (page, n, full = true) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const store = remoteFixture();
   const page = await boot(vp, store);
-  check(`[${vp}] app is v48.14`, await page.evaluate(() => APP_VERSION === "48.14" && document.getElementById("appVersion").textContent === "v48.14" && document.title === "ENVSS Field v48.14"));
+  check(`[${vp}] app is v48.15`, await page.evaluate(() => APP_VERSION === "48.15" && document.getElementById("appVersion").textContent === "v48.15" && document.title === "ENVSS Field v48.15"));
   await waitFor(page, () => activityLoaded && projectsLoaded);
   const appsDefault = await page.evaluate(() => envssAuto.apps().map(a => [a.appId, a.fieldType, a.kind, a.enabled]));
   check(`[${vp}] default Podio event apps: HYG 24280319 hygiene; Occ Noise 30888380 hygiene/noise; Vent Survey 30888385 hygiene/vent; Onsite RFT 30888384 fit`,
@@ -140,7 +142,8 @@ async function run(vp) {
   check(`[${vp}] hygiene event beside a fit event on the same job + date: hygiene auto-created, no link offer to the fit event`, h19.length === 1 && h19[0].type === "hygiene" && /^0019519-00\d$/.test(h19[0].code) && !(await page.evaluate(() => envssAuto.offers()))["9052"], JSON.stringify(h19.map(e => e.code)));
   check(`[${vp}] fit event untouched (type, code, no Podio link, no audit added)`, fitE && fitE.type === "fit" && fitE.code === "0019519-FIT-001" && !fitE.podioItemId && !fitE.podioLinked && (fitE.audit || []).length === 0, JSON.stringify(fitE));
   const offers20 = (await page.evaluate(() => envssAuto.offers()))["9054"];
-  check(`[${vp}] 0019389-like (hand-made -001 alive + tombstoned FIT event): link offered to the hand-made event, nothing created, FIT code not reused`, byItem(list, "9054").length === 0 && JSON.stringify(offers20) === '["eHand20"]' && !list.some(e => e.projectId === "podio-p0019520" && e.type === "fit") && JSON.stringify(await page.evaluate(() => envssAuto.reusableCodes("podio-p0019520"))) === "[]", JSON.stringify([offers20, await page.evaluate(() => envssAuto.reusableCodes("podio-p0019520"))]));
+  const e20 = byItem(list, "9054");
+  check(`[${vp}] v48.15 0019389-like (hand-made -001 alive + tombstoned FIT event): Podio event auto-created as its own event (-002), no link offer, hand-made untouched, FIT code not reused`, e20.length === 1 && e20[0].code === "0019520-002" && e20[0].type === "hygiene" && !offers20 && !list.find(e => e.id === "eHand20").podioItemId && !list.some(e => e.projectId === "podio-p0019520" && e.type === "fit") && JSON.stringify(await page.evaluate(() => envssAuto.reusableCodes("podio-p0019520"))) === "[]", JSON.stringify([e20.map(e => e.code), offers20]));
   check(`[${vp}] event deleted here (tombstone) is NOT re-created`, byItem(list, "9004").length === 0 && !list.some(e => e.id === "e-podio-9004"));
   check(`[${vp}] AFM-only HYG item is skipped (AFM flow owns it)`, byItem(list, "9005").length === 0);
   check(`[${vp}] Podio 'Not required' item is not created`, byItem(list, "9011").length === 0);
@@ -154,12 +157,12 @@ async function run(vp) {
       pending: P("Pending"), drafted: P("Report Drafted"), review: P("Report in Review"), authorise: P("I have conducted a review and authorise the report to be sent to client once Pdf'd"), blank: P(""), tentative: P("", "Site Works Start Date is Tentative"), nostatus: P("", "") }; });
   const off = ["invoiced", "nrr", "canceled", "cancelled", "cancelledCase", "frg", "send", "sent", "legacyCancel", "legacyNotSent", "legacySent", "swnr", "lab"], on = ["pending", "drafted", "review", "authorise", "blank", "tentative", "nostatus"];
   check(`[${vp}] isPlanned on exact Podio option texts: done stages false, earlier stages true`, off.every(k => unit[k] === false) && on.every(k => unit[k] === true), JSON.stringify(unit));
-  check(`[${vp}] hand-made 0019401-001 on the same job + date blocks a duplicate: link offered instead`, byItem(list, "9006").length === 0 && JSON.stringify((await page.evaluate(() => envssAuto.offers()))["9006"]) === '["eHand"]', JSON.stringify(await page.evaluate(() => envssAuto.offers())));
+  check(`[${vp}] v48.15 (John: "if created in Podio just add"): Podio event beside hand-made 0019401-001 on the same date is created (0019401-002), no link offer, hand-made untouched`, byItem(list, "9006").length === 1 && byItem(list, "9006")[0].code === "0019401-002" && JSON.stringify(await page.evaluate(() => envssAuto.offers())) === "{}" && !list.find(e => e.id === "eHand").podioItemId, JSON.stringify([byItem(list, "9006").map(e => e.code), await page.evaluate(() => envssAuto.offers())]));
   check(`[${vp}] already-linked events are not duplicated (9008 stays one event)`, byItem(list, "9008").length === 1);
   const last = await page.evaluate(() => envssAuto.last());
   check(`[${vp}] 0019300-like: two Podio events on one project + date -> two field events (Podio is the source), no link offer between them`, byItem(list, "9055").length === 1 && byItem(list, "9056").length === 1 && !(await page.evaluate(() => envssAuto.offers()))["9056"]);
   check(`[${vp}] 0019300-like: the Podio event whose reference says -001 gets 0019521-001; the other gets -002`, byItem(list, "9056")[0].code === "0019521-001" && byItem(list, "9055")[0].code === "0019521-002", JSON.stringify([byItem(list, "9055")[0].code, byItem(list, "9056")[0].code]));
-  check(`[${vp}] run summary created 16 (9001, 9002, 9003, 9010, 9029, 9030, 9040-9044, 9051-9053, 9055, 9056)`, last.created.length === 16, JSON.stringify(last));
+  check(`[${vp}] run summary created 18 (9001, 9002, 9003, 9006, 9010, 9029, 9030, 9040-9044, 9051-9056)`, last.created.length === 18, JSON.stringify(last));
   /* code reuse (John, 23 Nov 2026 20:05 AWST) */
   const codeOf = i => (byItem(list, i)[0] || {}).code;
   check(`[${vp}] deleted hand-made duplicate with no samples: auto event reuses its code (0019511-001)`, codeOf("9040") === "0019511-001", codeOf("9040"));
@@ -183,8 +186,8 @@ async function run(vp) {
   /* 3. project page: auto-created card + screenshots */
   await page.evaluate(() => openProject("podio-p0019500")); await sleep(700);
   const card1 = await page.evaluate(() => (document.querySelector('[data-podio-item="9001"]') || {}).textContent || "");
-  const openBtn = await page.evaluate(() => { const b = document.querySelector('[data-podio-item="9001"] [data-v487-open]'); const e = db.events.find(x => x.podioItemId === "9001"); return { text: b ? b.textContent.trim() : "", code: e ? e.code : "" }; });
-  check(`[${vp}] Podio card button reads exactly 'Open project event ' + the event's real code`, openBtn.code && openBtn.text === "Open project event " + openBtn.code, JSON.stringify(openBtn));
+  const cardInfo = await page.evaluate(() => { const c = document.querySelector('[data-podio-item="9001"]'); const e = db.events.find(x => x.podioItemId === "9001"); return { openBtn: !!(c && c.querySelector("[data-v487-open]")), anyBtn: c ? c.querySelectorAll("button").length : -1, text: c ? (c.querySelector(".v4815-ev") || {}).textContent || "" : "", code: e ? e.code : "", rowInList: !!e && [...document.querySelectorAll("#app .wrap *")].some(el => el.children.length === 0 && el.textContent.trim() === e.code) }; });
+  check(`[${vp}] v48.15 Planned in Podio card: no Open button; says the event code, that it is in the events list; the event row is in the list`, !cardInfo.openBtn && cardInfo.anyBtn === 0 && cardInfo.text.includes(cardInfo.code) && /events list below/.test(cardInfo.text) && cardInfo.rowInList, JSON.stringify(cardInfo));
   const ui2 = await page.evaluate(() => {
     const bar = (document.getElementById("syncBar") || {}).textContent || "";
     const menu = document.getElementById("projectMenu"), imp = document.getElementById("importCsv");
@@ -195,6 +198,10 @@ async function run(vp) {
       jobText: job ? job.textContent.trim() : "", jobPx: job ? parseFloat(getComputedStyle(job).fontSize) : 0,
       oldImportOutside: [...document.querySelectorAll("#app label")].some(l => /Import field CSV/.test(l.textContent) && !l.closest("#projectMenu")) };
   });
+  const pnote = await page.evaluate(hygCheck => { return { note: envssPodio.state().note || "", bar: (document.getElementById("syncBar") || {}).textContent || "", expect: "Checked Podio " + fmtWhen(hygCheck) }; }, store.v_field_podio_sync.get("24280319").checked_at);
+  check(`[${vp}] v48.15 Podio status: 'Checked Podio <sync check time of the HYG app> · last Podio change <time> · N planned Podio events', no 'Podio jobs updated'`, pnote.note.startsWith(pnote.expect + " · last Podio change ") && /· \d+ planned Podio events?\.$/.test(pnote.note) && !/Podio jobs updated/.test(pnote.bar) && pnote.bar.includes(pnote.note), JSON.stringify(pnote));
+  const unitSt = await page.evaluate(() => [envssPodioStatus("", "2026-11-26T06:50:57Z", 19), envssPodioStatus("", "", 1), fmtWhen(new Date(Date.now() - 864e5).toISOString()).startsWith("yesterday ")]);
+  check(`[${vp}] v48.15 status without a sync time: 'Last Podio change … · 19 planned Podio events.' (no made-up check time)`, /^Last Podio change .+ · 19 planned Podio events\.$/.test(unitSt[0]) && unitSt[1] === "1 planned Podio event." && unitSt[2], JSON.stringify(unitSt));
   check(`[${vp}] status bar in plain English: 'Last synced', 'Project list updated', no 'Supabase', no 'pending'`, /Last synced /.test(ui2.bar) && /Project list updated /.test(ui2.bar) && !/Supabase/i.test(ui2.bar) && !/pending/.test(ui2.bar) && !/last sync /.test(ui2.bar), ui2.bar);
   check(`[${vp}] Import field CSV is in the ☰ menu at the top right (closed until tapped), not on the page`, ui2.menuTopRight && ui2.importInMenu && ui2.importLabel === "Import field CSV" && ui2.importHiddenUntilOpen && !ui2.oldImportOutside, JSON.stringify(ui2));
   check(`[${vp}] job number is a heading (0019500, at least 22px)`, ui2.jobText === "0019500" && ui2.jobPx >= 22, JSON.stringify(ui2));
@@ -202,7 +209,7 @@ async function run(vp) {
   const menuOpen = await page.evaluate(() => { const m = document.getElementById("projectMenu"), l = document.getElementById("importCsv").closest("label"); return m.open && l.getBoundingClientRect().height > 30; });
   check(`[${vp}] tapping ☰ shows Import field CSV`, menuOpen);
   await page.evaluate(() => { const m = document.getElementById("projectMenu"); if (m) m.open = false; });
-  check(`[${vp}] project's Podio list says created automatically, with 'Open project event <code>' (no Start fieldwork)`, /created automatically/.test(card1) && /Open project event 0019500-00\d/.test(card1) && !/Start fieldwork/.test(card1), card1);
+  check(`[${vp}] project's Podio list says created automatically, names the event (no Open, no Start fieldwork)`, /created automatically/.test(card1) && /0019500-00\d/.test(card1) && !/Open project event/.test(card1) && !/Start fieldwork/.test(card1), card1);
   await shot(page, "01-project-auto-created");
   await page.evaluate(() => openEvent("e-podio-9001")); await sleep(400);
   const autoNote = await page.evaluate(() => (document.getElementById("v487Auto") || {}).textContent || "");
@@ -253,19 +260,19 @@ async function run(vp) {
   check(`[${vp}] deleted event's card says it will not be created again, offers Start fieldwork again`, /will not be created again/.test(card4) && /Start fieldwork again/.test(card4), card4);
   await shot(page, "04-project-deleted-not-recreated");
 
-  /* 6. hand-made duplicate -> link offer */
+  /* 6. v48.15: hand-made event on the same job + date -> no prompt, the Podio event has its own field event */
   await page.evaluate(() => openProject("podio-p0019401")); await sleep(700);
   const card6 = await page.evaluate(() => (document.querySelector('[data-podio-item="9006"]') || {}).textContent || "");
-  check(`[${vp}] project shows 'Link 0019401-001' and 'Create a separate event'`, /Link 0019401-001/.test(card6) && /Create a separate event/.test(card6), card6);
-  await shot(page, "05-project-link-offer");
+  check(`[${vp}] v48.15 project card: no 'Link' / 'Create a separate event' prompt; says 0019401-002 was created automatically`, !/Link 0019401-001/.test(card6) && !/Create a separate event/.test(card6) && /0019401-002 was created automatically/.test(card6), card6);
+  const rows6 = await page.evaluate(() => [...document.querySelectorAll("#app .brand-type")].map(x => x.textContent.trim()));
+  check(`[${vp}] v48.15 events list shows both 0019401-001 (hand-made) and 0019401-002 (Podio)`, rows6.some(x => /^0019401-001/.test(x)) && rows6.some(x => /^0019401-002/.test(x)), JSON.stringify(rows6));
+  await shot(page, "05-project-no-link-prompt");
   await page.evaluate(() => openEvent("eHand")); await sleep(400);
-  const offerEv = await page.evaluate(() => (document.querySelector('[data-v487-offer="9006"]') || {}).textContent || "");
-  check(`[${vp}] hand-made event screen offers 'Link to this Podio event'`, /Link to this Podio event/.test(offerEv), offerEv);
-  await page.evaluate(() => window.scrollTo(0, 0)); await shot(page, "06-event-link-offer", false);
-  await page.click('[data-v487-link="eHand"]'); await sleep(500);
+  const offerEv = await page.evaluate(() => document.querySelectorAll("[data-v487-offer],[data-v487-link],[data-v487-separate]").length);
+  check(`[${vp}] v48.15 hand-made event screen: no 'Link to this Podio event' prompt`, offerEv === 0, String(offerEv));
   list = await evs(page);
   const hand = list.find(e => e.id === "eHand");
-  check(`[${vp}] Link: hand-made event becomes linked (no new event), blanks filled, date and Mines Act kept`, hand.podioItemId === "9006" && hand.podioUnplanned === false && hand.podioLinked === true && hand.lab === "Test Lab" && hand.date === D(12) && hand.minesAct === true && byItem(list, "9006").length === 1 && hand.audit.some(a => a.action === "Linked to Podio event"), JSON.stringify(hand));
+  check(`[${vp}] hand-made event unchanged (no Podio link, date and Mines Act kept)`, !hand.podioItemId && hand.date === D(12) && hand.minesAct === true, JSON.stringify(hand));
 
   /* 7. Podio event moved -> flagged, never changed automatically */
   const moved = list.find(e => e.id === "e-podio-9008");
@@ -394,18 +401,47 @@ async function runApps(vp) {
   check(`[${vp}] apps: new-app field labels (event-reference, report-status, poc-first-name) are mapped`, g(9606) && g(9606).date === D(9) && g(9606).poc.first === "Alia" && /Aliases/.test(g(9606).podioReference), JSON.stringify(g(9606) && { d: g(9606).date, p: g(9606).poc }));
   check(`[${vp}] apps: finished new-app item (Report Status Invoiced) not created`, !g(9607));
   const off = await page.evaluate(() => envssAuto.offers());
-  check(`[${vp}] apps: Podio fit event beside a hand-made fit event on the same date -> link offered to the fit event, not created`, !g(9605) && JSON.stringify(off["9605"]) === '["eFitHand"]', JSON.stringify(off));
+  check(`[${vp}] v48.15 apps: Podio fit event beside a hand-made fit event on the same date -> created as its own fit event (0019531-FIT-002), no offer`, g(9605) && g(9605).type === "fit" && g(9605).code === "0019531-FIT-002" && JSON.stringify(off) === "{}", JSON.stringify([g(9605) && g(9605).code, off]));
   check(`[${vp}] apps: HYG records unchanged (no podioAppId on HYG events)`, g(9001) && !("podioAppId" in g(9001)));
   await page.evaluate(() => openEvent("e-podio-9601")); await sleep(500);
   const lbl = await page.evaluate(() => (document.getElementById("v4814App") || {}).textContent || "");
   check(`[${vp}] apps: event says which Podio app it came from`, /From Podio app: Occ Noise Event \(noise\)/.test(lbl), lbl);
-  if (vp === "chromebook") { await page.evaluate(() => openProject("podio-p0019530")); await sleep(700); await page.screenshot({ path: path.join(OUT, vp + "-20-new-apps-events-list.png"), fullPage: true }); }
+  const evHead = await page.evaluate(() => [...document.querySelectorAll("#app .muted")].map(x => x.textContent.trim()).find(x => /^(Hygiene event|Noise event|Vent survey|Airborne fibre monitoring|Respirator fit testing)$/.test(x)) || "");
+  check(`[${vp}] v48.15: Occ Noise event screen says 'Noise event'`, evHead === "Noise event", evHead);
+  await page.evaluate(() => openProject("podio-p0019530")); await sleep(700);
+  const rowLabels = await page.evaluate(() => Object.fromEntries(db.events.filter(e => e.projectId === "podio-p0019530").map(e => { const leaf = [...document.querySelectorAll("#app .brand-type")].find(el => el.textContent.trim().split(" · ")[0] === e.code); const row = leaf && leaf.parentElement; const m = row && row.querySelector(".muted"); return [e.podioItemId || e.id, m ? m.textContent.split("·")[0].trim() : ""]; })));
+  check(`[${vp}] v48.15 events list labels: Occ Noise 'Noise event', Vent Survey 'Vent survey', fit 'Respirator fit testing', HYG still 'Hygiene event'`, rowLabels["9601"] === "Noise event" && rowLabels["9602"] === "Vent survey" && rowLabels["9603"] === "Respirator fit testing" && rowLabels["9606"] === "Noise event" && Object.entries(rowLabels).filter(([k]) => !["9601","9602","9603","9605","9606","eFitHand"].includes(k)).every(([, v]) => v === "Hygiene event"), JSON.stringify(rowLabels));
+  check(`[${vp}] v48.15: hire / label helper uses the same type label`, await page.evaluate(() => eventTypeLabel({ type: "hygiene", podioEventKind: "noise" }) === "Noise event" && eventTypeLabel({ type: "hygiene", podioEventKind: "vent" }) === "Vent survey" && eventTypeLabel({ type: "hygiene" }) === "Hygiene event" && eventTypeLabel({ type: "fibre" }) === "Airborne fibre monitoring"));
+  const svc = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll("#app .brand-type")].map(x => [x.textContent.split(" · ")[0].trim(), ((x.querySelector(".ev-svc") || {}).textContent || "").replace(/^\s*·\s*/, "")])));
+  const codeOfItem = i => (g(i) || {}).code;
+  check(`[${vp}] v48.15 service codes on rows: Occ Noise -> NSEOC, Vent -> VENT, Onsite RFT -> RFT (app defaults)`, svc[codeOfItem(9601)] === "NSEOC" && svc[codeOfItem(9602)] === "VENT" && svc[codeOfItem(9603)] === "RFT", JSON.stringify(svc));
+  const unitSvc = await page.evaluate(() => {
+    const jt = t => ({ title: t, app_id: 18249487, item_id: 1 });
+    const pl = envssPodio.map.mapItem({ item_id: 1, fields: [{ external_id: "job-type-of-hyg-event", values: [{ value: jt("DMIRS-SRS, DMIRS - Safety Regulation System Monitoring") }, { value: jt("NSEOC, Detailed Occupational Noise Assessment (HYG)") }, { value: jt("RFT, Respirator Fit Testing") }] }] });
+    const pl2 = envssPodio.map.mapItem({ item_id: 2, fields: { "job-type-of-hyg-event": [jt("ACA NSED, Airborne contaminants and noise dose")] } });
+    return { jt: pl.jobTypes, jt2: pl2.jobTypes,
+      hyg: eventServiceCodes({ type: "hygiene", podioItemId: "x", podioJobTypes: ["DMIRS-SRS", "NSEOC", "RFT"] }),
+      noise: eventServiceCodes({ type: "hygiene", podioEventKind: "noise", podioItemId: "x", podioJobTypes: ["DMIRS-SRS", "NSEOC", "RFT"] }),
+      noiseAca: eventServiceCodes({ type: "hygiene", podioEventKind: "noise", podioItemId: "x", podioJobTypes: ["NSEOC-ACA", "VENT", "RFT"] }),
+      vent: eventServiceCodes({ type: "hygiene", podioEventKind: "vent", podioItemId: "x", podioJobTypes: ["NSEOC-ACA", "VENT", "RFT"] }),
+      fit: eventServiceCodes({ type: "fit", podioItemId: "x", podioJobTypes: ["NSEOC-ACA", "VENT", "RFT"] }),
+      handMade: eventServiceCodes({ type: "hygiene" }), fibre: eventServiceCodes({ type: "fibre", podioItemId: "x" }),
+      fromRef: eventServiceCodes({ type: "hygiene", podioItemId: "x", podioTypes: ["ACA", "NSED"] }) }; });
+  check(`[${vp}] v48.15 Job Type codes read from Podio titles; HYG shows all, noise/vent/fit keep their own; hand-made + AFM show none`, JSON.stringify(unitSvc.jt) === '["DMIRS-SRS","NSEOC","RFT"]' && JSON.stringify(unitSvc.jt2) === '["ACA NSED"]' && unitSvc.hyg.join() === "DMIRS-SRS,NSEOC,RFT" && unitSvc.noise.join() === "NSEOC" && unitSvc.noiseAca.join() === "NSEOC-ACA" && unitSvc.vent.join() === "VENT" && unitSvc.fit.join() === "RFT" && !unitSvc.handMade.length && !unitSvc.fibre.length && unitSvc.fromRef.join() === "ACA,NSED", JSON.stringify(unitSvc));
+  /* undated Podio event (as live 0019389-002): row says "No date in Podio", not a blank (test copy only) */
+  const nod = await page.evaluate(() => { db.events.push({ id: "tNoDate", code: "0019530-099", projectId: "podio-p0019530", type: "hygiene", podioEventKind: "noise", podioItemId: "99", date: "", stage: "planned" }); render();
+    const el = [...document.querySelectorAll("#app .brand-type")].find(x => /^0019530-099/.test(x.textContent.trim())); const m = el && el.parentElement.querySelector(".muted"); const out = m ? m.textContent : "";
+    db.events = db.events.filter(e => e.id !== "tNoDate"); return out; });
+  check(`[${vp}] v48.15 undated Podio event row: 'Noise event · No date in Podio · 0 samples'`, nod === "Noise event · No date in Podio · 0 samples", nod);
+  if (vp === "chromebook") { await page.evaluate(() => { render(); }); await sleep(300); await page.screenshot({ path: path.join(OUT, vp + "-20-new-apps-events-list.png"), fullPage: true }); }
   /* view missing (404): HYG keeps working, nothing from new apps, nothing flagged gone */
-  const store2 = remoteFixture(); const p2 = await boot(vp, store2, false, pre, { tableStatus: { v_field_podio_events: 404 } });
+  const store2 = remoteFixture(); const p2 = await boot(vp, store2, false, pre, { tableStatus: { v_field_podio_events: 404, v_field_podio_sync: 404 } });
   await waitFor(p2, () => activityLoaded && projectsLoaded);
   await refresh(p2); await waitFor(p2, () => db.events.some(e => e.id === "e-podio-9001"), null, 8000);
   const l2 = await evs(p2);
   check(`[${vp}] apps: extra view missing -> HYG still auto-creates, no new-app events, no errors`, l2.some(e => e.id === "e-podio-9001") && !l2.some(e => e.podioAppId) && !p2.errs.length, p2.errs.join(" | "));
+  const n2 = await p2.evaluate(() => envssPodio.state().note || "");
+  check(`[${vp}] v48.15: sync view missing (404) -> 'Last Podio change …', no 'Checked Podio', no error`, /^Last Podio change .+ planned Podio events?\.$/.test(n2) && !/Checked Podio/.test(n2) && !p2.errs.length, n2);
   await p2.close(); await page.close();
 }
 const which = process.argv[2] ? [process.argv[2]] : ["pixel7", "chromebook"];

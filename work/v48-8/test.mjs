@@ -92,7 +92,7 @@ const flows = (page, id) => page.evaluate(i => {
 async function run(vp) {
   const shot = (page, n, full = false) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const page = await boot(vp);
-  check(`[${vp}] app is v48.14 (suite still covers v48.8 end-flow behaviour)`, await page.evaluate(() => APP_VERSION === "48.14" && document.getElementById("appVersion").textContent === "v48.14" && document.title === "ENVSS Field v48.14" && !!window.v488));
+  check(`[${vp}] app is v48.15 (suite still covers v48.8 end-flow behaviour)`, await page.evaluate(() => APP_VERSION === "48.15" && document.getElementById("appVersion").textContent === "v48.15" && document.title === "ENVSS Field v48.15" && !!window.v488));
 
   /* 1. typing start flow pre-fills empty end flow */
   await open(page, "h1");
