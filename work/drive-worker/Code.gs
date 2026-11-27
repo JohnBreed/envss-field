@@ -12,6 +12,10 @@
  * New bytes are created with Drive.Files.create only, as children of {job}_Field-App.
  * A name that already exists gets _2, _3, … A source_key that already has a file is not uploaded again.
  *
+ * v48.13a (27 Nov 2026 AWST, REQ-043): the manifest is read with readOurFileText_() (Drive v3 REST + the script's
+ * own OAuth token) instead of Drive.Files.get(alt=media), which threw "Response Code: 200" after the file was already
+ * created, so rows were never marked copied. A manifest error no longer blocks marking a row copied.
+ *
  * v48.13 (25 Nov 2026 AWST): based on the 25 Nov drive-fix version (outermost job-folder match, manifest found by
  * appProperties, patch by row id with checked responses) plus fit testing. Fit-test PDFs and zips (event code
  * {job}-FIT-{seq}) go to {job}_Field-App/Fit-Tests, created only if it is missing. An older "Fit Test" folder, if one
@@ -235,11 +239,24 @@ function appendManifest_(folderId, line, sourceKey) {
     return;
   }
   if (!existing.appProperties || existing.appProperties.envssManifest !== "1") return;
-  var got = Drive.Files.get(existing.id, { alt: "media", supportsAllDrives: true });
-  var text = got.getDataAsString();
+  var text = readOurFileText_(existing.id);
   if (text.indexOf(sourceKey) >= 0) return;
   var updated = text.replace(/\s*$/, "") + "\n" + line + "\n";
   Drive.Files.update({}, existing.id, Utilities.newBlob(updated, "text/csv", existing.name || "manifest.csv"), { supportsAllDrives: true });
+}
+
+/** Read-only download of a file this script created (our manifest). The Drive advanced service's
+ *  Files.get(id, {alt: "media"}) throws "Response Code: 200. Message: <file body>" (it tries to parse the CSV
+ *  as JSON), which left every copy after a job's first one stuck as queued from 26 Nov 2026 (REQ-043).
+ *  This uses the Drive v3 REST endpoint with the script's own token: no new scopes, no write. */
+function readOurFileText_(fileId) {
+  var res = UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(fileId) + "?alt=media&supportsAllDrives=true", {
+    method: "get",
+    headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() !== 200) throw new Error("manifest read " + res.getResponseCode());
+  return res.getContentText() || "";
 }
 
 function csv_(v) {
@@ -312,7 +329,10 @@ function copyOne_(row) {
     file = createFile_(folderId, finalName, blob, row.source_key);
   }
   var line = [new Date().toISOString(), row.job_number, row.event_code || "", row.kind, finalName || file.name, file.id, row.source_key, row.bytes || ""].map(csv_).join(",");
-  appendManifest_(manifestFolderId, line, row.source_key);
+  /* The manifest is a convenience list. A manifest error must never stop the row being marked copied:
+     the file is already in Drive, and leaving the row queued is what caused REQ-043's endless retries. */
+  try { appendManifest_(manifestFolderId, line, row.source_key); }
+  catch (me) { Logger.log("manifest not updated for " + row.id + ": " + String(me && me.message || me).slice(0, 200)); }
   var url = file.webViewLink || ("https://drive.google.com/file/d/" + file.id + "/view");
   requirePatch_(patchRow_(row.id, {
     status: "copied",
