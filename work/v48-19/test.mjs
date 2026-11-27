@@ -38,6 +38,8 @@ function fixture() {
       H("o2", "eO", 2, { status: "ended", startAt: ago(9), endAt: ago(3), endFlow: "2.1", rotameter: "23555270", trainKind: "airborne_personal", mode: "personal", person: person("Kim", "Other", "Downer") }),
       H("o3", "eO", 3, { status: "ended", startAt: ago(9), endAt: ago(3), endFlow: "2.0", trainKind: "airborne_personal", mode: "personal", person: person("Pat", "Other", "Black Cat Syndicate") }),
       H("o4", "eO", 4, { status: "ended", startAt: ago(9), endAt: ago(3), endFlow: "2.0", trainKind: "airborne_personal", mode: "personal", person: person("Jo", "Other", "black cat  syndicate ") }),
+      H("o5", "eO", 5, { status: "ended", startAt: ago(9), endAt: ago(3), endFlow: "2.0", trainKind: "airborne_personal", mode: "personal", person: person("Max", "Other", "MacMahon") }),
+      H("o6", "eO", 6, { status: "ended", startAt: ago(9), endAt: ago(3), endFlow: "2.0", trainKind: "airborne_personal", mode: "personal", person: person("Cy", "Other", "Black Cate Syndicate") }),
       NZ("n1", "eN", 1), NZ("n2", "eN2", 1),
       H("l1", "eL", 1, { status: "ended", startAt: ago(7), endAt: ago(1), endFlow: "2.0", trainKind: "airborne_personal", mode: "personal", location: "", person: person("Ann", "Nolocation", "Acme Mining"), rejectAsked: "no", equipAsked: "no", commentAsked: "no", rpdAsked: "no" }),
       H("l2", "eL", 2, { status: "ended", startAt: ago(7), endAt: ago(1), endFlow: "2.0", rejectAsked: "no", equipAsked: "no", commentAsked: "no" }),
@@ -81,6 +83,8 @@ async function press(page, sel, opts) {
   }
   await sleep(300); return seen;
 }
+const AWST = s => Date.parse(s + "+08:00");   /* a wall-clock time in Perth */
+const setNow = (page, m) => page.evaluate(v => { if (v == null) delete window.__g19Now; else window.__g19Now = v; render(); }, m == null ? null : m);
 const scrollTo = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); if (e) { e.scrollIntoView({ block: "center" }); } }, sel);
 
 async function run(vp) {
@@ -170,8 +174,18 @@ async function run(vp) {
   await page.evaluate((d, tm) => { document.getElementById("v483d-start").value = d; document.getElementById("v483t-start").value = tm; }, PF.format(st60), perthHM(st60));
   await page.click("#v483Save"); await sleep(250);
   const lateErr = await page.evaluate(() => [document.getElementById("v483Err").textContent, (document.getElementById("v483rHint") || {}).textContent]);
-  check(`[${vp}] (8) manual start typed an hour late needs a comment (not saved yet)`, /Add a comment saying why START wasn't pressed/.test(lateErr[0]) && /required/.test(lateErr[1]) && !(await T(page, "h7")).startAt, JSON.stringify(lateErr));
-  await shot(page, "06-late-manual-start-comment");
+  check(`[${vp}] (8) until 3 Dec: manual start typed an hour late asks for a comment, says it is required from 4 December 2026 (not saved yet)`, /Add a comment saying why START wasn't pressed/.test(lateErr[0]) && /From 4 December 2026 the comment will be required/.test(lateErr[0]) && /asked/.test(lateErr[1]) && !(await T(page, "h7")).startAt, JSON.stringify(lateErr));
+  await shot(page, "06-late-manual-start-comment-warning");
+  /* from 4 Dec: Save again is refused */
+  await setNow(page, AWST("2026-12-04T00:00:05"));
+  await page.evaluate(() => { document.querySelector('.v483-modal[data-v483="time"]').dataset.g19lateWarned = ""; });
+  await page.click("#v483Save"); await sleep(250); await page.click("#v483Save"); await sleep(250);
+  const lateReq = await page.evaluate(() => [document.getElementById("v483Err").textContent, (document.getElementById("v483rHint") || {}).textContent]);
+  check(`[${vp}] (8) from 4 Dec 2026 00:00 AWST the comment is required (Save twice still refused)`, /required/.test(lateReq[1]) && !/Press Save again/.test(lateReq[0]) && !(await T(page, "h7")).startAt, JSON.stringify(lateReq));
+  await shot(page, "06b-late-manual-start-comment-required");
+  await setNow(page, AWST("2026-12-03T23:59:30"));
+  check(`[${vp}] (8) 3 Dec 23:59 AWST is still the warning`, await page.evaluate(() => !v4819.lateBlocks()));
+  await setNow(page, null);
   await page.type("#v483rText", "Phone was flat at the pump"); await page.click("#v483Save"); await sleep(400);
   t = await T(page, "h7");
   check(`[${vp}] (8) with the comment it saves as a manual time`, !!t.startAt && t.audit.some(a => a.te && a.te.manual && a.te.reasonText === "Phone was flat at the pump"), JSON.stringify(t.audit.slice(-1)));
@@ -181,6 +195,13 @@ async function run(vp) {
   await page.evaluate((d, tm) => { document.getElementById("v483d-start").value = d; document.getElementById("v483t-start").value = tm; }, PF.format(st5), perthHM(st5));
   await page.click("#v483Save"); await sleep(400);
   check(`[${vp}] (8) a manual start within 15 min needs no comment`, !!(await T(page, "h8")).startAt);
+  await open(page, "h6");
+  await page.evaluate(() => { const t = db.trains.find(x => x.id === "h6"); t.startAt = ""; t.endAt = ""; t.status = "prepped"; t.audit = []; t.needsOfficeApproval = false; persist(); render(); }); await sleep(200);
+  await page.evaluate(() => v483.openTimeDialog(db.trains.find(x => x.id === "h6"), "start")); await sleep(200);
+  await page.evaluate((d, tm) => { document.getElementById("v483d-start").value = d; document.getElementById("v483t-start").value = tm; }, PF.format(st60), perthHM(st60));
+  await page.click("#v483Save"); await sleep(250); await page.click("#v483Save"); await sleep(400);
+  t = await T(page, "h6");
+  check(`[${vp}] (8) until 3 Dec: Save again carries on without a comment, noted in the audit trail`, !!t.startAt && t.audit.some(a => /Late manual start saved without a comment — confirmed/.test(a.action) && a.g19latenc >= 59), JSON.stringify(t.audit.map(a => a.action)));
 
   /* 2b. typed times 14-24 h apart */
   await open(page, "h6");
@@ -212,7 +233,7 @@ async function run(vp) {
   await open(page, "h4");
   await page.click("#company"); await sleep(200);
   const sug = await page.evaluate(() => [...document.querySelectorAll("#sug-company [data-v]")].map(d => d.textContent));
-  check(`[${vp}] (4) suggestions: project client first, then companies used before; duplicates by case / spaces merged`, /Acme Mining\s*project client/.test(sug[0] || "") && sug.some(s => /BHP Contractors/.test(s)) && sug.some(s => /^Downer/.test(s)) && sug.filter(s => /black cat/i.test(s)).length === 1, JSON.stringify(sug));
+  check(`[${vp}] (4) suggestions: project client first, then companies used before; duplicates by case / spaces merged; a near-duplicate is tagged 'check spelling'`, /Acme Mining\s*project client/.test(sug[0] || "") && sug.some(s => /BHP Contractors/.test(s)) && sug.some(s => /^Downer/.test(s)) && sug.filter(s => /^black cat syndicate/i.test(s)).length === 1 && sug.some(s => /^Black Cate Syndicate\s*check spelling: also “Black Cat Syndicate”/.test(s)), JSON.stringify(sug));
   await page.type("#company", "Dow"); await sleep(200);
   await shot(page, "09-company-suggestions");
   await page.evaluate(() => { const d = document.querySelector('#sug-company [data-v="Downer"]'); d.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); }); await sleep(300);
@@ -225,15 +246,82 @@ async function run(vp) {
   await open(page, "o1"); await page.click("#company"); await page.evaluate(() => { const c = document.getElementById("company"); c.value = ""; }); await page.type("#company", "newco"); await sleep(200);
   const sug2 = await page.evaluate(() => [...document.querySelectorAll("#sug-company [data-v]")].map(d => d.dataset.v));
   check(`[${vp}] (4) next time the new company is in the list`, sug2.includes("Newco Scaffolding"), JSON.stringify(sug2));
+  await page.evaluate(() => { const c = document.getElementById("company"); c.value = ""; c.focus(); }); await page.type("#company", "Black Cate Syndicate"); await sleep(600);
+  let dym = await page.evaluate(() => (document.getElementById("g19Dym") || {}).textContent || "");
+  check(`[${vp}] (4) typing 'Black Cate Syndicate': 'Did you mean Black Cat Syndicate?'`, /Did you mean Black Cat Syndicate\?/.test(dym) && /spelling/.test(dym), dym);
+  await page.evaluate(() => document.getElementById("company").blur()); await sleep(400);
+  await scrollTo(page, "#company"); await shot(page, "09b-company-did-you-mean");
+  await page.evaluate(() => document.querySelector("#g19Dym [data-g19dym]").click()); await sleep(300);
+  check(`[${vp}] (4) tapping the suggestion uses it`, (await T(page, "o1")).person.company === "Black Cat Syndicate");
+  await page.evaluate(() => { const c = document.getElementById("company"); c.value = ""; c.focus(); }); await page.type("#company", "Mac"); await page.evaluate(() => document.getElementById("company").blur()); await sleep(600);
+  dym = await page.evaluate(() => (document.getElementById("g19Dym") || {}).textContent || "");
+  check(`[${vp}] (4) 'Mac': 'Did you mean MacMahon?' (short form)`, /Did you mean MacMahon\?/.test(dym), dym);
+  await page.evaluate(() => document.getElementById("g19DymKeep").click()); await sleep(200);
+  check(`[${vp}] (4) 'Keep' leaves it exactly as typed and hides the prompt`, (await T(page, "o1")).person.company === "Mac" && !(await page.evaluate(() => !!document.getElementById("g19Dym"))));
+  const near = await page.evaluate(() => [v4819.nearWhy("Macmahon", "MacMahon"), v4819.nearWhy("Black Cat Syndicate", "black cat  syndicate "), v4819.nearWhy("Black Cate Syndicate", "Black Cat Syndicate"), v4819.nearWhy("Downer", "Acme Mining"), v4819.nearWhy("BHP", "BMD")].join(","));
+  check(`[${vp}] (4) near-duplicate rules: case, spacing, spelling; unrelated names are not flagged`, near === "case,case,spelling,,", near);
+  /* 4b. capitalisation (John 27 Nov 2026): suggest Proper Case on blur, accept or keep; never rewrite stored data */
+  const setType = async (sel, v) => { await page.evaluate(s => { const c = document.querySelector(s); c.value = ""; c.focus(); }, sel); await page.type(sel, v); await page.evaluate(s => document.querySelector(s).blur(), sel); await sleep(500); };
+  const capOf = id => page.evaluate(i => (document.getElementById("g19Case-" + i) || {}).textContent || "", id);
+  await setType("#first", "lee");
+  let cap = await capOf("first");
+  check(`[${vp}] (4b) first name 'lee' on blur: 'use Lee?' (all lower case)`, /all lower case/.test(cap) && /use Lee\?/.test(cap), cap);
+  await setType("#last", "MCDONALD-O'BRIEN");
+  cap = await capOf("last");
+  check(`[${vp}] (4b) last name 'MCDONALD-O'BRIEN': 'use McDonald-O'Brien?' (ALL CAPS, Mc / O' / hyphen)`, /ALL CAPS/.test(cap) && /use McDonald-O'Brien\?/.test(cap), cap);
+  await scrollTo(page, "#first"); await shot(page, "16-name-capitalisation");
+  await page.evaluate(() => document.querySelector("#g19Case-last [data-g19case]").click()); await sleep(300);
+  await page.evaluate(() => document.querySelector("#g19Case-first [data-g19keep]").click()); await sleep(300);
+  t = await T(page, "o1");
+  check(`[${vp}] (4b) 'use' applies McDonald-O'Brien; 'Keep' leaves 'lee' exactly as typed`, t.person.last === "McDonald-O'Brien" && t.person.first === "lee" && !(await capOf("first")) && !(await capOf("last")), JSON.stringify(t.person));
+  await setType("#first", "jOHN");
+  check(`[${vp}] (4b) mixed-up caps 'jOHN' -> John`, /mixed/.test(await capOf("first")) && /use John\?/.test(await capOf("first")));
+  await setType("#first", "Jan van der Berg");
+  check(`[${vp}] (4b) a properly cased name (with van der) is not flagged`, !(await capOf("first")));
+  await setType("#company", "zeta drilling pty ltd");
+  cap = await capOf("company");
+  check(`[${vp}] (4b) company 'zeta drilling pty ltd' -> 'Zeta Drilling Pty Ltd'`, /use Zeta Drilling Pty Ltd\?/.test(cap), cap);
+  await scrollTo(page, "#company"); await shot(page, "17-company-capitalisation");
+  await setType("#company", "newco scaffolding");
+  check(`[${vp}] (4b) a company already used with other caps gets 'Did you mean Newco Scaffolding?' instead (no double prompt)`, /Did you mean Newco Scaffolding\?/.test(await page.evaluate(() => (document.getElementById("g19Dym") || {}).textContent || "")) && !(await capOf("company")));
+  const cr = await page.evaluate(() => [["BHP", "company"], ["JBS&G", "company"], ["BHP Contractors", "company"], ["WA LIMESTONE", "company"], ["MacMahon", "person"], ["O'Brien", "person"]].map(([v, k]) => v + "=" + (v4819.caseIssue(v, k) ? v4819.properCase(v, k) : "ok")).join(", "));
+  check(`[${vp}] (4b) acronyms and correct names are left alone; ALL CAPS company keeps state codes`, cr === "BHP=ok, JBS&G=ok, BHP Contractors=ok, WA LIMESTONE=WA Limestone, MacMahon=ok, O'Brien=ok", cr);
+  await page.evaluate(() => { const x = db.trains.find(y => y.id === "o1"); x.person.first = "Lee"; x.person.last = "Other"; persist(); }); await open(page, "o1");
+  const cw = await page.evaluate(() => { const extra = ["x1", "x2", "x3"].map(id => ({ id, eventId: "eO", person: { company: "Acme Minning" }, audit: [] })); db.trains.push(...extra);
+    const r = { typo: v4819.didYouMean("Acme Minning").map(h => h.name), client: v4819.didYouMean("Acme Mining").map(h => h.name), swap: v4819.nearWhy("Aztech Servcies", "AZTech Services"), far: [v4819.nearWhy("Fred Young", "Greg Young"), v4819.nearWhy("Eastern Metropolitan Regional Council", "Western Metropolitan Regional Council"), v4819.nearWhy("SLH Industries", "Sun Industries")].join("") };
+    db.trains = db.trains.filter(x => !/^x\d$/.test(x.id)); return r; });
+  check(`[${vp}] (4) the project client's spelling wins over a more common typo; swapped letters count; different names are not flagged`, cw.typo[0] === "Acme Mining" && !cw.client.length && cw.swap === "spelling" && cw.far === "", JSON.stringify(cw));
   await page.evaluate(() => { const c = document.getElementById("company"); c.value = "BHP Contractors"; c.blur(); }); await sleep(200);
+  await open(page, "o6");
+  dym = await page.evaluate(() => (document.getElementById("g19Dym") || {}).textContent || "");
+  check(`[${vp}] (4) a stored typo is flagged on the sample but not rewritten`, /Did you mean Black Cat Syndicate\?/.test(dym) && (await T(page, "o6")).person.company === "Black Cate Syndicate" && !(await T(page, "o6")).audit.length, dym);
 
-  /* 5. noise: no calibration = blocked; drift > 0.5 dB = warn and confirm */
+  /* 5. noise: no calibration = warn + confirm until 30 Nov, blocked from 1 Dec 2026 AWST; drift > 0.5 dB = warn and confirm */
   await open(page, "n2");
   const nd = page.dialogs.length;
-  check(`[${vp}] (5) no calibration today: START gap + notice`, await page.evaluate(() => startGaps(db.trains.find(x => x.id === "n2")).some(s => /Start-of-day calibration/.test(s)) && !!document.getElementById("g19CalGate")));
-  await scrollTo(page, "#btnStart"); await shot(page, "11-noise-no-calibration");
+  const cg = await page.evaluate(() => { const g = document.getElementById("g19CalGate"); return { gap: startGaps(db.trains.find(x => x.id === "n2")).some(s => /Start-of-day calibration/.test(s)), txt: g ? g.textContent : "", mode: g ? g.dataset.mode : "" }; });
+  check(`[${vp}] (5) until 30 Nov: no calibration is a notice (not a START gap) saying dose badges can't start from 1 December 2026`, !cg.gap && cg.mode === "warn" && /From 1 December 2026, a dose badge without a pre-start calibration won't be able to start/.test(cg.txt), JSON.stringify(cg));
+  await scrollTo(page, "#btnStart"); await shot(page, "11-noise-no-calibration-notice");
   await page.click("#btnStart"); await sleep(300);
-  check(`[${vp}] (5) START refused, calibration listed`, (await T(page, "n2")).status === "prepped" && page.dialogs.slice(nd).some(d => /Start-of-day calibration/.test(d)), JSON.stringify(page.dialogs.slice(nd)));
+  m = await modalOf(page, "nocal");
+  check(`[${vp}] (5) START asks to confirm (still prepped), same 1 December 2026 message`, m && /From 1 December 2026, a dose badge without a pre-start calibration won't be able to start/.test(m) && (await T(page, "n2")).status === "prepped", m);
+  await shot(page, "11b-noise-no-calibration-warning");
+  await page.click("#g19No"); await sleep(300);
+  check(`[${vp}] (5) 'Record calibration': not started`, (await T(page, "n2")).status === "prepped");
+  /* the switch: 30 Nov 23:59 AWST still warns; 1 Dec 00:00 AWST blocks */
+  await setNow(page, AWST("2026-11-30T23:59:30"));
+  check(`[${vp}] (5) 30 Nov 23:59:30 AWST: still the warning`, await page.evaluate(() => !v4819.calBlocks() && !startGaps(db.trains.find(x => x.id === "n2")).some(s => /calibration/.test(s))));
+  await setNow(page, AWST("2026-12-01T00:00:10")); await open(page, "n2");
+  const cb = await page.evaluate(() => ({ gap: startGaps(db.trains.find(x => x.id === "n2")).some(s => /Start-of-day calibration/.test(s)), mode: (document.getElementById("g19CalGate") || {}).dataset ? document.getElementById("g19CalGate").dataset.mode : "" }));
+  check(`[${vp}] (5) from 1 Dec 2026 00:00 AWST: START gap + 'START is locked' notice`, cb.gap && cb.mode === "block", JSON.stringify(cb));
+  await scrollTo(page, "#btnStart"); await shot(page, "11c-noise-no-calibration-blocked");
+  await page.click("#btnStart"); await sleep(400);
+  check(`[${vp}] (5) from 1 Dec: START refused, calibration listed`, (await T(page, "n2")).status === "prepped" && page.dialogs.slice(nd).some(d => /Start-of-day calibration/.test(d)), JSON.stringify(page.dialogs.slice(nd)));
+  await page.evaluate(() => document.querySelectorAll(".g19-modal").forEach(m => m.remove()));
+  await setNow(page, null); await open(page, "n2");
+  seen = await press(page, "#btnStart");
+  t = await T(page, "n2");
+  check(`[${vp}] (5) until 30 Nov: 'Start anyway' starts it and logs it`, t.status === "running" && t.audit.some(a => /START with no start-of-day calibration — confirmed/.test(a.action) && a.g19nocal), JSON.stringify(seen));
   await open(page, "n1");
   const dr = await page.evaluate(() => (document.getElementById("g19CalDrift") || {}).textContent || "");
   check(`[${vp}] (5) calibration 0.8 dB off: inline warning`, /off by 0\.8 dB/.test(dr), dr);
@@ -261,23 +349,39 @@ async function run(vp) {
   await page.evaluate(() => openNewEvent("p19")); await sleep(300);
   check(`[${vp}] (10) new-event form rotameter is a pick-list`, await page.evaluate(() => !!document.getElementById("g19NewRotaSel")));
 
-  /* 9. Location before complete / COC */
-  check(`[${vp}] (9) a stopped sample with no location still has 'Location' to answer`, await page.evaluate(() => answerGaps(db.trains.find(x => x.id === "l1")).some(g => g.key === "location") && !answerGaps(db.trains.find(x => x.id === "l2")).some(g => g.key === "location")));
-  await page.evaluate(() => openEvent("eL")); await sleep(300);
-  await page.evaluate(() => markEventUpload("eL")); await sleep(300);
+  /* 9. Location missing: notify the sampler (sample + event screens), Mark complete / COC confirm, not a block */
+  check(`[${vp}] (9) Location is not a required answer (it would block complete)`, await page.evaluate(() => !answerGaps(db.trains.find(x => x.id === "l1")).some(g => g.key === "location")));
+  await page.evaluate(() => openEvent("eL")); await sleep(400);
+  const evl = await page.evaluate(() => ({ line: (document.getElementById("g19EvLoc") || {}).textContent || "", chips: [...document.querySelectorAll(".g19-chip-loc")].length }));
+  check(`[${vp}] (9) event screen: '1 sample has no location: Sample 1' + chip on the row`, /1 sample has no location/.test(evl.line) && evl.chips === 1, JSON.stringify(evl));
+  await shot(page, "14c-location-missing-event");
+  await page.evaluate(() => { markEventUpload("eL"); }); await sleep(300);
   m = await modalOf(page, "locgate");
-  check(`[${vp}] (9) Mark event complete blocked: lists sample 1 (no location), not the blank or sample 2`, m && /1 sample has no location/.test(m) && /Ann Nolocation/.test(m) && !/Sample 2/.test(m), m);
-  await shot(page, "14-location-needed-complete");
-  await page.click("#g19Yes"); await sleep(150);
+  check(`[${vp}] (9) Mark event complete: warning lists sample 1 (no location), not the blank or sample 2, and can be confirmed`, m && /Location missing/.test(m) && /1 sample has no location/.test(m) && /Ann Nolocation/.test(m) && !/Sample 2/.test(m) && /Mark the event complete anyway/.test(m) && /Go back/.test(m), m);
+  await shot(page, "14-location-missing-complete");
+  await page.click("#g19No"); await sleep(250);
+  check(`[${vp}] (9) Go back: event not marked complete`, await page.evaluate(() => !eventById("eL").uploadReady));
   await page.evaluate(() => { view.eventId = "eL"; createCoc(); }); await sleep(300);
-  check(`[${vp}] (9) Create COC blocked the same way`, /no location/.test(await modalOf(page, "locgate") || ""));
+  m = await modalOf(page, "locgate");
+  check(`[${vp}] (9) Create COC shows the same warning`, m && /no location/.test(m) && /Create the COC anyway/.test(m), m);
   await page.evaluate(() => document.querySelector("[data-g19open]").click()); await sleep(500);
   const onL1 = await page.evaluate(() => view.page === "train" && view.trainId === "l1");
-  await page.evaluate(() => { const l = document.getElementById("location"); l.value = "Pottery room"; l.dispatchEvent(new Event("change", { bubbles: true })); l.blur(); }); await sleep(300);
-  check(`[${vp}] (9) 'open' goes to the sample; an empty Location on a stopped sample can be filled with no reason`, onL1 && (await T(page, "l1")).location === "Pottery room" && !(await modalOf(page, "edit")));
-  await page.evaluate(() => openEvent("eL")); await sleep(200);
-  await page.evaluate(() => markEventUpload("eL")); await sleep(300);
-  check(`[${vp}] (9) with locations in, the location gate no longer stops it`, !(await modalOf(page, "locgate")));
+  const lm = await page.evaluate(() => (document.getElementById("g19LocMiss") || {}).textContent || "");
+  check(`[${vp}] (9) the link opens the sample, which shows 'Location missing'`, onL1 && /Location missing/.test(lm), lm);
+  await scrollTo(page, "#location"); await shot(page, "14b-location-missing-sample");
+  /* carry on anyway: a second event-level check with a temporary sample, then remove it */
+  await page.evaluate(() => openEvent("eL")); await sleep(300);
+  await page.evaluate(() => { markEventUpload("eL"); }); await sleep(300);
+  await page.click("#g19Yes"); await sleep(600);
+  const anyway = await page.evaluate(() => ({ ready: !!eventById("eL").uploadReady, a: db.trains.find(x => x.id === "l1").audit.filter(a => a.g19noloc).map(a => a.g19noloc) }));
+  check(`[${vp}] (9) 'Mark the event complete anyway' marks it, notes it on the sample, and 'Create COC now?' does not ask twice`, anyway.ready && anyway.a[0] === "complete" && !(await modalOf(page, "locgate")), JSON.stringify(anyway));
+  await page.evaluate(() => { document.querySelectorAll(".v483-modal, .g19-modal, #cocTatModal").forEach(m => m.remove()); eventById("eL").uploadReady = false; persist(); });
+  await open(page, "l1");
+  await page.evaluate(() => { const l = document.getElementById("location"); l.value = "Pottery room"; l.dispatchEvent(new Event("input", { bubbles: true })); l.dispatchEvent(new Event("change", { bubbles: true })); l.blur(); }); await sleep(300);
+  check(`[${vp}] (9) an empty Location on a stopped sample can be filled with no reason; the notice goes`, (await T(page, "l1")).location === "Pottery room" && !(await modalOf(page, "edit")) && await page.evaluate(() => { const m = document.getElementById("g19LocMiss"); return !m || m.style.display === "none"; }));
+  await page.evaluate(() => openEvent("eL")); await sleep(300);
+  await page.evaluate(() => { markEventUpload("eL"); }); await sleep(300);
+  check(`[${vp}] (9) with locations in, no warning and no event notice`, !(await modalOf(page, "locgate")) && !(await page.evaluate(() => !!document.getElementById("g19EvLoc"))));
   await page.evaluate(() => document.querySelectorAll(".v483-modal, .g19-modal, #cocTatModal").forEach(m => m.remove()));
 
   /* 7. admin approval (Chromebook presses) */
@@ -289,6 +393,15 @@ async function run(vp) {
     await page.evaluate(() => openEvent("eH")); await sleep(400);
     const ev = await page.evaluate(() => ({ chip: document.querySelectorAll(".g19-chip").length, line: (document.getElementById("g19EvAppr") || {}).textContent || "" }));
     check(`[chromebook] (7) event list shows chips and a count`, ev.chip >= 2 && /need(s)? office approval/.test(ev.line), JSON.stringify(ev));
+    /* staff (not admin) see the flag too, without the Approve button */
+    await page.evaluate(() => { window.__adm = ENVSS_CONFIG.admins; ENVSS_CONFIG.admins = []; }); await open(page, "h1"); await sleep(300);
+    const staff = await page.evaluate(() => ({ card: (document.getElementById("g19ApprStaff") || {}).innerText || "", admin: !!document.getElementById("g19Approve"), btn: !!document.getElementById("g19ApproveBtn") }));
+    check(`[chromebook] (7) staff see 'Flagged to the office' and are told to correct the time on their phone; no Approve button`, /Flagged to the office/.test(staff.card) && /on your phone/.test(staff.card) && /START pressed on a Chromebook/.test(staff.card) && !staff.admin && !staff.btn, JSON.stringify(staff));
+    await scrollTo(page, "#g19ApprStaff"); await shot(page, "15b-office-flag-staff");
+    await page.evaluate(() => openEvent("eH")); await sleep(400);
+    const sev = await page.evaluate(() => ({ chip: [...document.querySelectorAll(".g19-chip")].filter(c => /flagged to office/.test(c.textContent)).length, line: (document.getElementById("g19EvAppr") || {}).textContent || "" }));
+    check(`[chromebook] (7) staff event list: 'flagged to office' chips + count with the phone hint`, sev.chip >= 2 && /correct it on your phone/.test(sev.line), JSON.stringify(sev));
+    await page.evaluate(() => { ENVSS_CONFIG.admins = window.__adm; });
     await open(page, "h1"); await sleep(300);
     const hit = await page.evaluate(() => { const b = document.getElementById("g19ApproveBtn"); if (!b) return "no button"; b.scrollIntoView({ block: "center" }); const r = b.getBoundingClientRect(); const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return el === b ? "ok" : (el ? el.tagName + "#" + el.id + "." + el.className : "none"); });
 
@@ -296,6 +409,13 @@ async function run(vp) {
     t = await T(page, "h1");
     check(`[chromebook] (7) Approve clears the flag and keeps who / when`, t.needsOfficeApproval === false && t.officeApproval && t.officeApproval.count >= 1, JSON.stringify({f: t.needsOfficeApproval, a: t.officeApproval, btn: await page.evaluate(() => !!document.getElementById("g19ApproveBtn"))}));
   } else {
+    /* a laptop-flagged sample viewed on the phone: staff see it there (that is where they fix it) */
+    await page.evaluate(() => { window.__adm = ENVSS_CONFIG.admins; ENVSS_CONFIG.admins = []; const x = db.trains.find(y => y.id === "o5"); x.needsOfficeApproval = true; render(); });
+    await open(page, "o5"); await sleep(300);
+    const ps = await page.evaluate(() => (document.getElementById("g19ApprStaff") || {}).innerText || "");
+    check(`[pixel7] (7) staff on the phone see the office flag on a laptop-entered sample, told to use Edit time`, /Flagged to the office/.test(ps) && /use Edit time on this sample/.test(ps), ps);
+    await scrollTo(page, "#g19ApprStaff"); await shot(page, "15b-office-flag-staff");
+    await page.evaluate(() => { ENVSS_CONFIG.admins = window.__adm; const x = db.trains.find(y => y.id === "o5"); delete x.needsOfficeApproval; persist(); });
     check(`[pixel7] (7) phone presses are never flagged`, await page.evaluate(() => !db.trains.some(x => x.needsOfficeApproval)));
   }
 
@@ -303,8 +423,8 @@ async function run(vp) {
   await page.reload({ waitUntil: "networkidle0" }); await sleep(900);
   const fin = await page.evaluate(() => ["h1", "h2", "h4", "h7", "l1", "n1"].map(i => { const x = db.trains.find(y => y.id === i); return [i, x.status, x.location || "", (x.person || {}).company || "", x.rotameter || ""].join(":"); }).join(" "));
   check(`[${vp}] reload keeps the saved values`, fin === "h1:running::Acme Mining:FR4A40BNBN-NL-02 h2:ended:Bay 2 south::FR4A40BNBN-NL-02 h4:prepped::Newco Scaffolding:FR4A40BNBN-NL-02 h7:running:Bay 7::4435 l1:ended:Pottery room:Acme Mining:FR4A40BNBN-NL-02 n1:running:Workshop:Acme Mining:", fin);
-  const oth = await page.evaluate(() => JSON.stringify(["o2", "o3", "o4", "f9", "l2"].map(i => db.trains.find(x => x.id === i)).map(x => [x.status, x.audit.length, !!x.needsOfficeApproval, x.rotameter])));
-  check(`[${vp}] other samples untouched`, oth === JSON.stringify([["ended", 0, false, "23555270"], ["ended", 0, false, "FR4A40BNBN-NL-02"], ["ended", 0, false, "FR4A40BNBN-NL-02"], ["running", 0, false, "FR4A40BNBN-NL-01"], ["ended", 0, false, "FR4A40BNBN-NL-02"]]), oth);
+  const oth = await page.evaluate(() => JSON.stringify(["o2", "o3", "o4", "f9", "l2", "o6"].map(i => db.trains.find(x => x.id === i)).map(x => [x.status, x.audit.length, !!x.needsOfficeApproval, x.rotameter])));
+  check(`[${vp}] other samples untouched`, oth === JSON.stringify([["ended", 0, false, "23555270"], ["ended", 0, false, "FR4A40BNBN-NL-02"], ["ended", 0, false, "FR4A40BNBN-NL-02"], ["running", 0, false, "FR4A40BNBN-NL-01"], ["ended", 0, false, "FR4A40BNBN-NL-02"], ["ended", 0, false, "FR4A40BNBN-NL-02"]]), oth);
   check(`[${vp}] no page errors`, !page.errs.length, page.errs.join(" | "));
   const unexpected = page.dialogs.filter(d => !/Cannot start until|Event marked complete/.test(d));   /* both existing prompts */
   check(`[${vp}] no unexpected native alerts`, !unexpected.length, unexpected.join(" | "));
@@ -323,8 +443,50 @@ async function narrowLaptop() {
   await page.screenshot({ path: path.join(OUT, "pixel7-01b-laptop-stop-warning.png") });
   await page.close(); await page.ctx.close();
 }
+/* deep link #event=…&sample=… : straight in when signed in; stashed across sign-in otherwise */
+async function deepLink(vp) {
+  const page = await boot(vp);
+  await page.goto(url + "/field.html#event=eL&sample=l2", { waitUntil: "networkidle0" }); await sleep(1500);
+  let st = await page.evaluate(() => ({ p: view.page, t: view.trainId, h: location.hash }));
+  check(`[${vp} deep link] signed in: #event=eL&sample=l2 opens that sample and clears the hash`, st.p === "train" && st.t === "l2" && !st.h, JSON.stringify(st));
+  await page.evaluateOnNewDocument(() => { try { if (sessionStorage.getItem("__signout") === "1") { sessionStorage.removeItem("__signout"); localStorage.removeItem("envss-field-auth-v45"); } } catch (e) {} });
+  await page.evaluate(() => sessionStorage.setItem("__signout", "1"));
+  await page.goto("about:blank");
+  await page.goto(url + "/field.html#event=eH&sample=h3", { waitUntil: "networkidle0" }); await sleep(1200);
+  const pre = await page.evaluate(k => ({ gate: !!document.getElementById("loginGate") && !document.getElementById("loginGate").classList.contains("hidden"), stash: sessionStorage.getItem(k) }), "envss-deeplink-v4819");
+  check(`[${vp} deep link] signed out: sign-in screen, link kept in sessionStorage`, pre.gate && /"sample":"h3"/.test(pre.stash || ""), JSON.stringify(pre));
+  await page.evaluate(SESSION);
+  await page.goto("about:blank");
+  await page.goto(url + "/field.html", { waitUntil: "networkidle0" }); await sleep(1800);   /* back from Google: no hash */
+  st = await page.evaluate(k => ({ p: view.page, t: view.trainId, stash: sessionStorage.getItem(k) }), "envss-deeplink-v4819");
+  check(`[${vp} deep link] after sign-in the stashed sample opens once`, st.p === "train" && st.t === "h3" && !st.stash, JSON.stringify(st));
+  await page.evaluate(() => { location.hash = "#event=eF"; }); await sleep(1500);
+  st = await page.evaluate(() => ({ p: view.page, e: view.eventId }));
+  check(`[${vp} deep link] #event= only opens the event`, st.p === "event" && st.e === "eF", JSON.stringify(st));
+  check(`[${vp} deep link] no page errors`, !page.errs.length, page.errs.join(" | "));
+  await page.close(); await page.ctx.close();
+}
+/* sync counter: a deleted sample with an old silent "Not stated" (live: 21 such rows) must not show as "still uploading" */
+async function counter(vp) {
+  const ctx = await browser.createBrowserContext(); const page = await ctx.newPage(); page.errs = []; page.on("pageerror", e => page.errs.push(String(e)));
+  await page.setViewport(VIEWPORTS[vp].viewport); await page.setUserAgent(VIEWPORTS[vp].ua);
+  await page.setRequestInterception(true);
+  const store = { envss_trains: new Map(), envss_deletions: new Map() };
+  for (let i = 1; i <= 21; i++) { const id = "dz" + i; store.envss_trains.set(id, { id, updated_at: "2026-11-02T08:43:15Z", payload: { id, eventId: "eGone", trainKind: "airborne_personal", status: "prepped", person: { first: "", last: "", sex: "not_stated" }, audit: [] } }); store.envss_deletions.set("d" + i, { id: "d" + i, payload: { id: "d" + i, trainId: id, at: "2026-11-02T08:43:15Z" } }); }
+  const mlog = mockSupabase(page, store, {});
+  const texts = [];
+  await page.goto(url + "/field.html", { waitUntil: "domcontentloaded" });   /* signed out, clean device */
+  const t0 = Date.now(); while (Date.now() - t0 < 6000) { texts.push(await page.evaluate(() => [(document.getElementById("syncText") || {}).textContent || "", Object.keys(syncState.pending).length].join(" | ")).catch(() => "")); await sleep(50); }
+  const st = await page.evaluate(() => ({ pending: Object.keys(syncState.pending).length, trains: db.trains.length, text: (document.getElementById("syncText") || {}).textContent }));
+  check(`[${vp} counter] clean signed-out device: 21 deleted samples with an old 'Not stated' never show as 'still uploading'`, !texts.some(x => /still uploading/.test(x)) && st.pending === 0 && st.trains === 0 && /Everything uploaded/.test(st.text), JSON.stringify({ st, bad: texts.filter(x => /still uploading/.test(x)).slice(0, 2) }));
+  check(`[${vp} counter] only reads were made`, !mlog.some(l => /^(POST|PATCH|DELETE) /.test(l)), mlog.filter(l => !/^GET|^OPTIONS/.test(l)).join(" | "));
+  check(`[${vp} counter] no page errors`, !page.errs.length, page.errs.join(" | "));
+  await ctx.close();
+}
 const vps = process.argv[2] ? [process.argv[2]] : ["pixel7", "chromebook"];
 for (const vp of vps) { try { await run(vp); } catch (e) { check(`[${vp}] run completed`, false, e.stack); } }
+for (const vp of vps) { try { await counter(vp); } catch (e) { check(`[${vp} counter] run completed`, false, e.stack); } }
+for (const vp of vps) { try { await deepLink(vp); } catch (e) { check(`[${vp} deep link] run completed`, false, e.stack); } }
 if (!process.argv[2] || process.argv[2] === "pixel7") { try { await narrowLaptop(); } catch (e) { check("[narrow Chromebook] run completed", false, e.stack); } }
 check("no request left the box except the CDN libraries; every Supabase call was answered by the in-memory mock", !ext.length, ext.join("\n"));
 fs.writeFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), "test-results.json"), JSON.stringify({ passed: results.filter(r => r.ok).length, failed: results.filter(r => !r.ok).length, results }, null, 1));
