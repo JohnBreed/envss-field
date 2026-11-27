@@ -8,6 +8,7 @@
 (function (root) {
   "use strict";
   const VERSION = "48.18";   /* v48.18: version bump only (fit testing unchanged) */
+
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
   const OCR_FN = "ocr-fit-report";

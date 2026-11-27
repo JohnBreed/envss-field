@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48.18 (27 Nov 2026 AWST): same-device save clash fix (a pull can no longer undo or out-date this device's own save; merges keep every list entry from both sides; repeated same-device 'Merged with a newer copy' audits are not written again) + second tab on the same device is read-only with a banner and "Use this tab instead". Stacked after v48.17 (Drive badge wording). Auto-update from v48.16 is unchanged and will not reload while a save is in flight. Rollback: tag rollback-v48.17 / v48.17 (or rollback-v48.16 if v48.17 is not yet live). -->
+<!-- ENVSS Field v48.18 (27 Nov 2026 AWST): same-device save clash fix (a pull can no longer undo or out-date this device's own save; merges keep every list entry from both sides; repeated same-device 'Merged with a newer copy' audits are not written again) + second tab on the same device is read-only with a banner and "Use this tab instead". Stacked after v48.17 (Drive badge wording, PR #29). Auto-update from v48.16 is unchanged and will not reload while a save is in flight. Rollback: tag rollback-v48.17 / v48.17. -->
+<!-- ENVSS Field v48.17 (27 Nov 2026 AWST): the photo Drive-status badge reads "Photo saved to device. Drive upload pending" (was "Waiting for Drive"); "In Drive" is unchanged. The longer text wraps under the thumbnail. Built on v48.16 safe auto-update + minimum version. Rollback: tag rollback-v48.16 / v48.16. -->
 <!-- ENVSS Field v48.16 (27 Nov 2026 AWST): the app updates itself. It checks on open, when it comes back to the front and every 15 min; the new version installs in the background and is switched in (reload) only when nothing is typed/open and everything has uploaded, then says "Updated to v48.16". Minimum version: app_settings.min_field_app_version (SQL work/settings_v48_16_01_app_settings.sql, not applied) forces the update and, until it applies, blocks new events/samples/START with a banner (viewing, STOP and syncing keep working; offline or no setting = nothing blocked). Rollback: tag rollback-v48.15 / v48.15. -->
+
 <!-- ENVSS Field v48.15 (27 Nov 2026 AWST): events made from the Podio Occ Noise / Vent Survey apps are labelled "Noise event" / "Vent survey"; Podio status reads "Checked Podio 9:02 am · last Podio change yesterday 2:50 pm" (check time = when the Podio sync last read the event apps, from the staff-only view v_field_podio_sync; last change = newest Podio edit). Rollback: tag rollback-v48.14 / v48.14. -->
 <!-- ENVSS Field v48.14 (26 Nov 2026 AWST): Podio-first project screen (☰ menu: Add event not in Podio + Import field CSV; plain-English status bar; job number heading; long Podio notes collapsed; no separate AFM refresh). hygiene field events are created automatically from Podio HYG events (open item 11, PR #16) so they show in the events list; deleted ones are never re-created; Podio moves / cancellations / deletions are flagged for review, never applied; fit events are never touched. -->
 <!-- ENVSS Field v48.13 (26 Nov 2026 AWST): the technician’s fit-test sign-off is filled in from the signed-in Google account (name, email, date/time AWST) and only the person tested signs on the phone; fit-test How-to guide link (help/fit-test.html) and one Drive copy per fit-test PDF/zip (was queued twice, second copy _2; from PR #24); fit testing is a standalone event type (no linked hygiene event), Drive copies go to {job}_Field-App/Fit-Tests, and with no internet the report photo is read on the device (re-read with Google Vision when back online unless a field was changed). v48.12: closer TSI-layout fit-test PDF with branded ENVSS header. v48.11: TSI-layout fit-test OCR and PDF (no photo page). v48.10: Fit-test OCR uses Vision bounding boxes; photos/PDFs stay in IndexedDB. v48.9: Respirator fit testing event type ({job}-FIT-{seq}), photo OCR via Google Vision, two signatures, A4 PDF with original photo, Drive copy into {job}_Field-App/Fit Test. -->
@@ -17,6 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
   <title>ENVSS Field v48.18</title>
+
   <link rel="icon" href="logo.svg">
   <style>
 /* styles.css inlined (main @ 95a1dab) */
@@ -414,6 +417,7 @@ body.has-fab { padding-bottom: 104px; }
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
       <h1>ENVSS Field <span class="app-version" id="appVersion">v48.18</span></h1>
+
       <p id="whoLabel">Capture</p>
     </div>
     <div id="onlineDot" class="online-dot"></div>
@@ -430,11 +434,13 @@ body.has-fab { padding-bottom: 104px; }
   </div>
   <div id="app"></div>
   <script src="config.js?v=48.18"></script>
+
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.18"; /* 2026-11-27 (AWST): v48.18 = v48.16 + same-device save clash fix (stale-pull guard, own-save memory, list-union merge) + second tab read-only + quieter same-device merge audits; auto-update never reloads while a save is in flight. 2026-11-27 (AWST): v48.16 = v48.15 + safe auto-update (new worker waits and is switched in with a reload only when nothing is being edited or uploaded; "Updated to v48.16" toast) and a minimum version from app_settings.min_field_app_version (below it, online: forced update, new work blocked until it applies; fails open). 2026-11-27 (AWST): v48.15 = v48.14 + plain "Checked Podio … · last Podio change …" status (sync check time from v_field_podio_sync). 2026-11-26 (AWST): v48.14 = v48.13 + auto-create hygiene field events from Podio HYG events (item 11, PR #16; was numbered 48.7 in the draft). 2026-11-26 (AWST): v48.13 = v48.12 + technician electronic sign-off from the signed-in Google account (only the person tested signs on the phone), a How to link on fit-test events (help/fit-test.html: video + step guide), one Drive copy per fit-test PDF/zip (was queued twice, second copy named _2), fit testing as a standalone event type (no linked hygiene event picker; old parentEventId values are ignored), Drive folder {job}_Field-App/Fit-Tests, and an offline on-device OCR fallback (Tesseract.js 5.1.1, cached in Cache Storage after one online load; Vision re-reads it when back online only if no field was edited). 2026-11-25 (AWST): v48.12 = v48.11 + a closer TSI PortaCount PDF layout (right-aligned labels, signature lines, no boxes) and a slim branded header (ENVSS logo, clickable https://envss.com.au and mailto:admin@envss.com.au). 2026-11-25 (AWST): v48.11 = v48.10 + TSI-layout OCR (multi-column, taskbar clip, validated exercises, silent US dates) and a TSI-style signed/unsigned PDF with no photo page. 2026-11-25 (AWST): v48.10 = v48.9 + Vision box-based fit-test OCR and IndexedDB photo/PDF storage (no data URLs in localStorage or envss_fit_reports). 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.18"; /* 2026-11-27 (AWST): v48.18 = v48.17 + same-device save clash fix (stale-pull guard, own-save memory, list-union merge) + second tab read-only + quieter same-device merge audits; auto-update never reloads while a save is in flight. 2026-11-27 (AWST): v48.17 = v48.16 + photo Drive-status badge "Photo saved to device. Drive upload pending" (was "Waiting for Drive"; "In Drive" unchanged), wrapping under the thumbnail. 2026-11-27 (AWST): v48.16 = v48.15 + safe auto-update (new worker waits and is switched in with a reload only when nothing is being edited or uploaded; "Updated to v48.16" toast) and a minimum version from app_settings.min_field_app_version (below it, online: forced update, new work blocked until it applies; fails open). 2026-11-27 (AWST): v48.15 = v48.14 + plain "Checked Podio … · last Podio change …" status (sync check time from v_field_podio_sync). 2026-11-26 (AWST): v48.14 = v48.13 + auto-create hygiene field events from Podio HYG events (item 11, PR #16; was numbered 48.7 in the draft). 2026-11-26 (AWST): v48.13 = v48.12 + technician electronic sign-off from the signed-in Google account (only the person tested signs on the phone), a How to link on fit-test events (help/fit-test.html: video + step guide), one Drive copy per fit-test PDF/zip (was queued twice, second copy named _2), fit testing as a standalone event type (no linked hygiene event picker; old parentEventId values are ignored), Drive folder {job}_Field-App/Fit-Tests, and an offline on-device OCR fallback (Tesseract.js 5.1.1, cached in Cache Storage after one online load; Vision re-reads it when back online only if no field was edited). 2026-11-25 (AWST): v48.12 = v48.11 + a closer TSI PortaCount PDF layout (right-aligned labels, signature lines, no boxes) and a slim branded header (ENVSS logo, clickable https://envss.com.au and mailto:admin@envss.com.au). 2026-11-25 (AWST): v48.11 = v48.10 + TSI-layout OCR (multi-column, taskbar clip, validated exercises, silent US dates) and a TSI-style signed/unsigned PDF with no photo page. 2026-11-25 (AWST): v48.10 = v48.9 + Vision box-based fit-test OCR and IndexedDB photo/PDF storage (no data URLs in localStorage or envss_fit_reports). 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
 const NOISE_STUB = {
@@ -9051,7 +9057,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (kind === "missing") return '<span class="drive-st drive-wait">Drive copy waiting: job folder not found</span>';
     if (kind === "many") return '<span class="drive-st drive-wait">Drive copy waiting: job folder not unique</span>';
     if (kind === "stopped") return '<span class="drive-st drive-wait">Drive copy stopped' + (row.message ? ": " + esc(row.message) : "") + "</span>";
-    return '<span class="drive-st drive-wait">Waiting for Drive</span>';
+    return '<span class="drive-st drive-wait">Photo saved to device.<br> Drive upload pending</span>';
   }
   function merged(sourceKey) {
     const local = items.find(x => x.sourceKey === sourceKey);
@@ -9226,7 +9232,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
         badge.dataset.pid = pid;
         im.insertAdjacentElement("afterend", badge);
       }
-      badge.innerHTML = statusHtml(merged("photo:" + pid)) || '<span class="drive-st drive-wait">Waiting for Drive</span>';
+      badge.innerHTML = statusHtml(merged("photo:" + pid)) || '<span class="drive-st drive-wait">Photo saved to device.<br> Drive upload pending</span>';
     });
     if (view.page === "event" && !document.getElementById("driveCopies")) {
       const ev = eventOf(view.eventId);
@@ -9696,9 +9702,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     pullQuiet: async () => { const n = podioState.note, er = podioState.err; let ok = false; try { ok = await pullMirror(); return ok; } finally { if (!ok) { podioState.note = n; podioState.err = er; } } },   /* v48.15: a good background read refreshes "Checked Podio …"; a failed one leaves the bar as it was */   /* background read: top-bar note unchanged */ mirrorAt: () => mirrorAt, map: PodioMap, repaint: () => { try { paintPodio(); } catch (e) {} } };   /* v48.7 */
 
   const st = document.createElement("style");
-  st.textContent = ".drive-st{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:4px}"
+  st.textContent = ".drive-st{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:4px;white-space:normal;max-width:100%;line-height:1.25;text-align:center;box-sizing:border-box;overflow-wrap:break-word}"
     + ".drive-ok{background:#E5F4EE;color:#1F6B4A}.drive-wait{background:#FFF4E5;color:#8A4B08}"
-    + ".drive-st-wrap{margin:4px 0 8px}.drive-list{margin:6px 0 0 18px;padding:0}.drive-list li{margin:4px 0}"
+    + ".drive-st-wrap{margin:4px 0 8px;max-width:100%}.drive-list{margin:6px 0 0 18px;padding:0}.drive-list li{margin:4px 0}"
     + ".podio-flag{margin:8px 0;padding:8px 10px;border-radius:10px;background:#FFF4E5;color:#8A4B08;font-weight:700}"
     + ".podio-ev{margin-top:8px}";
   document.head.appendChild(st);
@@ -12739,7 +12745,7 @@ function fixOpen(ts) {
 
   <!-- local review mockups only; not for publish -->
   <script src="work/projlist/review.js"></script>
-  <script src="fit-test.js?v=48.16"></script>
+  <script src="fit-test.js?v=48.17"></script>
 <script>
 /* ===== v48.16: safe auto-update + minimum version (John t651u/t652u, 27 Nov 2026 AWST) =====
    1. Checks for a new version when the app opens, when it comes back to the front (visibilitychange / focus, at most once a

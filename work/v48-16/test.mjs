@@ -3,11 +3,11 @@
    Two copies of the app are served from one local origin: "old" = this branch (v48.18) and "new" = the same files with the
    version bumped to 48.19 (a pretend next deploy). The test switches which copy the server returns to simulate a publish.
    Supabase is mocked in memory (*.supabase.co mapped to a dead local port, every request answered by the mock), so nothing
-   reaches production. Fixture names are made up. Screenshots: OUT (default /workspace/fit-shots/v4816). */
+   reaches production. Fixture names are made up. Screenshots: OUT (default /workspace/fit-shots/v4817-autoupdate). */
 import fs from "fs"; import path from "path"; import http from "http"; import { execSync } from "child_process";
 import { launch, VIEWPORTS, mockSupabase, sleep, SESSION } from "../v48-7/harness.mjs";
-const SRC = process.env.ROOT || "/workspace/envss-v4816";
-const OUT = process.env.OUT || "/workspace/fit-shots/v4816"; fs.mkdirSync(OUT, { recursive: true });
+const SRC = process.env.ROOT || "/workspace/envss-v4817";
+const OUT = process.env.OUT || "/workspace/fit-shots/v4817-autoupdate"; fs.mkdirSync(OUT, { recursive: true });
 const results = [];
 function check(name, ok, detail) { results.push({ name, ok: !!ok, detail: detail == null ? "" : String(detail) }); console.log((ok ? "PASS" : "FAIL") + "  " + name + (detail && !ok ? " — " + String(detail).slice(0, 700) : "")); }
 
@@ -53,7 +53,7 @@ const H = (id, n, extra) => Object.assign({ id, eventId: "eU", trainKind: "airbo
 const row = o => [o.id, { id: o.id, payload: o, updated_at: NOW, updated_by: "Other Device <office@envss.com.au>" }];
 function store(min) {
   return {
-    envss_projects: new Map([row({ id: "p4816", number: "0019816", name: "v48.16 update test", source: "field", site: "Test site", status: "Active" })]),
+    envss_projects: new Map([row({ id: "p4816", number: "0019816", name: "v48.17 update test", source: "field", site: "Test site", status: "Active" })]),
     envss_events: new Map([row({ id: "eU", projectId: "p4816", code: "0019816-001", type: "hygiene", date: TODAY, stage: "planned", audit: [] })]),
     envss_trains: new Map([row(H("u1", 1)), row(H("u2", 2, { status: "running", startAt: ago(2) })), row(H("u3", 3))]),
     envss_deletions: new Map(), envss_hires: new Map(), envss_fit_reports: new Map(),
@@ -100,7 +100,7 @@ async function run(vp) {
   let s0 = await page.evaluate(() => envssUpdate.check("test").then(s => ({ pending: s.pending, remote: s.remote, min: s.min, minErr: s.minErr })));
   check(`[${vp}] no new deploy: nothing pending; missing settings row = no minimum (fail open)`, s0.pending === false && s0.remote === "48.18" && s0.min === null && /no row/.test(s0.minErr), JSON.stringify(s0));
   await page.evaluate(() => { openProject("p4816"); }); await sleep(300);
-  await shot(page, "01-old-v48-16");
+  await shot(page, "01-old-v48-17");
 
   /* edit in progress */
   await page.evaluate(() => openTrain("u1")); await sleep(400);

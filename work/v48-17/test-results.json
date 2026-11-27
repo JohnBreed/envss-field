@@ -1,0 +1,107 @@
+[
+ {
+  "name": "field.html APP_VERSION is 48.18",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "sw-field.js is v48.18 with cache envss-field-v48-18",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "user-visible badge text is exactly the new wording in both sites (line break between the two sentences)",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "the old 'Waiting for Drive' badge text is gone (only comments may mention it)",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "'In Drive' wording is unchanged",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "badge CSS wraps: white-space normal, max-width 100%",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] app is v48.18",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[pixel7] daily log card shows the new Drive badge text",
+  "ok": true,
+  "detail": "{\"text\":\"Photo saved to device. Drive upload pending\",\"cls\":\"drive-st drive-wait\",\"figW\":96,\"badgeW\":96,\"badgeH\":64,\"overflow\":0} pid=49732507-5f91-42d8-9444-c86e1bd7366e"
+ },
+ {
+  "name": "[pixel7] badge keeps the drive-st drive-wait class",
+  "ok": true,
+  "detail": "drive-st drive-wait"
+ },
+ {
+  "name": "[pixel7] badge stays within the 96px thumbnail column (no overflow)",
+  "ok": true,
+  "detail": "{\"text\":\"Photo saved to device. Drive upload pending\",\"cls\":\"drive-st drive-wait\",\"figW\":96,\"badgeW\":96,\"badgeH\":64,\"overflow\":0}"
+ },
+ {
+  "name": "[pixel7] longer text wraps to more than one line",
+  "ok": true,
+  "detail": "{\"text\":\"Photo saved to device. Drive upload pending\",\"cls\":\"drive-st drive-wait\",\"figW\":96,\"badgeW\":96,\"badgeH\":64,\"overflow\":0}"
+ },
+ {
+  "name": "[pixel7] wrote phone-daily-log-badge.png",
+  "ok": true,
+  "detail": "/tmp/v4818-restack-shots/phone-daily-log-badge.png"
+ },
+ {
+  "name": "[pixel7] no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] app is v48.18",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "[chromebook] daily log card shows the new Drive badge text",
+  "ok": true,
+  "detail": "{\"text\":\"Photo saved to device. Drive upload pending\",\"cls\":\"drive-st drive-wait\",\"figW\":96,\"badgeW\":96,\"badgeH\":64,\"overflow\":0} pid=6a456371-0d9a-4822-898d-0c3aee724b1e"
+ },
+ {
+  "name": "[chromebook] badge keeps the drive-st drive-wait class",
+  "ok": true,
+  "detail": "drive-st drive-wait"
+ },
+ {
+  "name": "[chromebook] badge stays within the 96px thumbnail column (no overflow)",
+  "ok": true,
+  "detail": "{\"text\":\"Photo saved to device. Drive upload pending\",\"cls\":\"drive-st drive-wait\",\"figW\":96,\"badgeW\":96,\"badgeH\":64,\"overflow\":0}"
+ },
+ {
+  "name": "[chromebook] longer text wraps to more than one line",
+  "ok": true,
+  "detail": "{\"text\":\"Photo saved to device. Drive upload pending\",\"cls\":\"drive-st drive-wait\",\"figW\":96,\"badgeW\":96,\"badgeH\":64,\"overflow\":0}"
+ },
+ {
+  "name": "[chromebook] wrote chromebook-daily-log-badge.png",
+  "ok": true,
+  "detail": "/tmp/v4818-restack-shots/chromebook-daily-log-badge.png"
+ },
+ {
+  "name": "[chromebook] no page errors",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "no request left the box except the CDN libraries; every Supabase call was answered by the in-memory mock",
+  "ok": true,
+  "detail": ""
+ }
+]
