@@ -1,4 +1,4 @@
--- DRAFT, NOT APPLIED. ENVSS Field v48.15: lets the field app say "Checked Podio 9:02 am" (when the Podio sync last read the
+-- APPLIED 27 Nov 2026 4:02 pm AWST to Supabase luyprcmjyruznluboyms (migration hyg_v48_15_01_podio_sync_view), with v48.15 going live. ENVSS Field v48.15: lets the field app say "Checked Podio 9:02 am" (when the Podio sync last read the
 -- Podio event apps). Staff cannot read podio_sync_state / podio_sync_log (RLS on, no grants to authenticated), so this
 -- exposes only the per-app last-check time of the four event apps. Read only, staff only, additive.
 -- Rollback: hyg_v48_15_01_podio_sync_view_rollback.sql. Until it exists the app shows "Last Podio change …" only (404 is cached 6 h).
