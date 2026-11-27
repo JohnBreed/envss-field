@@ -111,7 +111,7 @@ async function run(vp) {
   const shot = (page, n, full = true) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const store = remoteFixture();
   const page = await boot(vp, store);
-  check(`[${vp}] app is v48.17`, await page.evaluate(() => APP_VERSION === "48.17" && document.getElementById("appVersion").textContent === "v48.17" && document.title === "ENVSS Field v48.17"));
+  check(`[${vp}] app is v48.18`, await page.evaluate(() => APP_VERSION === "48.18" && document.getElementById("appVersion").textContent === "v48.18" && document.title === "ENVSS Field v48.18"));
   await waitFor(page, () => activityLoaded && projectsLoaded);
   const appsDefault = await page.evaluate(() => envssAuto.apps().map(a => [a.appId, a.fieldType, a.kind, a.enabled]));
   check(`[${vp}] default Podio event apps: HYG 24280319 hygiene; Occ Noise 30888380 hygiene/noise; Vent Survey 30888385 hygiene/vent; Onsite RFT 30888384 fit`,

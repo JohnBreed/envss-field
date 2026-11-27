@@ -1,6 +1,6 @@
 [
  {
-  "name": "[pixel7] app is v48.17 (suite still covers v48.8 end-flow behaviour)",
+  "name": "[pixel7] app is v48.18 (suite still covers v48.8 end-flow behaviour)",
   "ok": true,
   "detail": ""
  },
@@ -82,7 +82,7 @@
  {
   "name": "[pixel7] No: sample stops, end flow = 2.0, audit records 'No'",
   "ok": true,
-  "detail": "[{\"at\":\"2026-11-27T09:03:59.695Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:03:59.695Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-27T09:03:59.695Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:03:59.695Z\",\"detail\":\"(empty) → 27 Nov, 05:03:59 pm AWST\"},{\"at\":\"2026-11-27T09:03:59.711Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
+  "detail": "[{\"at\":\"2026-11-27T09:00:50.767Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:00:50.767Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-27T09:00:50.767Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:00:50.767Z\",\"detail\":\"(empty) → 27 Nov, 05:00:50 pm AWST\"},{\"at\":\"2026-11-27T09:00:50.782Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
  },
  {
   "name": "[pixel7] the deviation prompt is gone after No",
@@ -102,7 +102,7 @@
  {
   "name": "[pixel7] Save: sample stops, end flow = 1.5, audit records the entered value and 'Flow outside tolerance'",
   "ok": true,
-  "detail": "[{\"at\":\"2026-11-27T09:04:01.490Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:04:01.490Z\",\"action\":\"Flow outside tolerance\",\"detail\":\"25.0% vs ±10%\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:04:01.490Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-27T09:04:01.490Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:04:01.490Z\",\"detail\":\"(empty) → 27 Nov, 05:04:01 pm AWST\"},{\"at\":\"2026-11-27T09:04:01.505Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
+  "detail": "[{\"at\":\"2026-11-27T09:00:52.565Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:00:52.565Z\",\"action\":\"Flow outside tolerance\",\"detail\":\"25.0% vs ±10%\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:00:52.565Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-27T09:00:52.565Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:00:52.565Z\",\"detail\":\"(empty) → 27 Nov, 05:00:52 pm AWST\"},{\"at\":\"2026-11-27T09:00:52.581Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
  },
  {
   "name": "[pixel7] after Save, the sample screen still shows the tolerance warning",
@@ -117,7 +117,7 @@
  {
   "name": "[pixel7] AFM No: stops with end flow 2.0 and the same audit wording",
   "ok": true,
-  "detail": "[{\"at\":\"2026-11-27T09:04:03.144Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:04:03.145Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-27T09:04:03.145Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:04:03.144Z\",\"detail\":\"(empty) → 27 Nov, 05:04:03 pm AWST\"},{\"at\":\"2026-11-27T09:04:03.155Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
+  "detail": "[{\"at\":\"2026-11-27T09:00:54.202Z\",\"action\":\"STOP pressed\",\"detail\":\"\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:00:54.202Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-27T09:00:54.202Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:00:54.202Z\",\"detail\":\"(empty) → 27 Nov, 05:00:54 pm AWST\"},{\"at\":\"2026-11-27T09:00:54.211Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}]"
  },
  {
   "name": "[pixel7] noise STOP does not show the flow prompt and still stops",
@@ -140,7 +140,7 @@
   "detail": ""
  },
  {
-  "name": "[chromebook] app is v48.17 (suite still covers v48.8 end-flow behaviour)",
+  "name": "[chromebook] app is v48.18 (suite still covers v48.8 end-flow behaviour)",
   "ok": true,
   "detail": ""
  },
@@ -222,7 +222,7 @@
  {
   "name": "[chromebook] No: sample stops, end flow = 2.0, audit records 'No'",
   "ok": true,
-  "detail": "[{\"at\":\"2026-11-27T09:04:16.219Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:04:16.219Z\",\"detail\":\"(empty) → 27 Nov, 05:04:16 pm AWST\"},{\"at\":\"2026-11-27T09:04:16.234Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:04:16.246Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-27T09:04:16.419Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
+  "detail": "[{\"at\":\"2026-11-27T09:01:07.267Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:01:07.267Z\",\"detail\":\"(empty) → 27 Nov, 05:01:07 pm AWST\"},{\"at\":\"2026-11-27T09:01:07.282Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:01:07.295Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-27T09:01:07.467Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
  },
  {
   "name": "[chromebook] the deviation prompt is gone after No",
@@ -242,7 +242,7 @@
  {
   "name": "[chromebook] Save: sample stops, end flow = 1.5, audit records the entered value and 'Flow outside tolerance'",
   "ok": true,
-  "detail": "[{\"at\":\"2026-11-27T09:04:17.950Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-27T09:04:17.950Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:04:17.950Z\",\"detail\":\"(empty) → 27 Nov, 05:04:17 pm AWST\"},{\"at\":\"2026-11-27T09:04:17.965Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:04:17.978Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-27T09:04:18.150Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
+  "detail": "[{\"at\":\"2026-11-27T09:01:08.985Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Status\",\"field\":\"status\",\"from\":\"running\",\"to\":\"ended\",\"detail\":\"running → ended\"},{\"at\":\"2026-11-27T09:01:08.985Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:01:08.984Z\",\"detail\":\"(empty) → 27 Nov, 05:01:08 pm AWST\"},{\"at\":\"2026-11-27T09:01:08.999Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:01:09.024Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-27T09:01:09.185Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
  },
  {
   "name": "[chromebook] after Save, the sample screen still shows the tolerance warning",
@@ -257,7 +257,7 @@
  {
   "name": "[chromebook] AFM No: stops with end flow 2.0 and the same audit wording",
   "ok": true,
-  "detail": "[{\"at\":\"2026-11-27T09:04:19.511Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:04:19.511Z\",\"detail\":\"(empty) → 27 Nov, 05:04:19 pm AWST\"},{\"at\":\"2026-11-27T09:04:19.519Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:04:19.700Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-27T09:04:19.711Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
+  "detail": "[{\"at\":\"2026-11-27T09:01:10.546Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Stop time\",\"field\":\"endAt\",\"from\":\"\",\"to\":\"2026-11-27T09:01:10.546Z\",\"detail\":\"(empty) → 27 Nov, 05:01:10 pm AWST\"},{\"at\":\"2026-11-27T09:01:10.557Z\",\"action\":\"Stop location\",\"detail\":\"no fix\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\"},{\"at\":\"2026-11-27T09:01:10.739Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true},{\"at\":\"2026-11-27T09:01:10.746Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"STOP pressed on a Chromebook\",\"detail\":\"Laptop / desktop press (shown the phone reminder). Not blocked.\",\"lap\":true}]"
  },
  {
   "name": "[chromebook] noise STOP does not show the flow prompt and still stops",

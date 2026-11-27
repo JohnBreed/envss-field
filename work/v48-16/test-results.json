@@ -1,6 +1,6 @@
 [
  {
-  "name": "sw-field.js is v48.17 with cache envss-field-v48-17",
+  "name": "sw-field.js is v48.18 with cache envss-field-v48-18",
   "ok": true,
   "detail": ""
  },
@@ -35,9 +35,9 @@
   "detail": ""
  },
  {
-  "name": "[chromebook] old deploy: app is v48.17 and the v48.17 worker controls the page",
+  "name": "[chromebook] old deploy: app is v48.18 and the v48.18 worker controls the page",
   "ok": true,
-  "detail": "48.17 / 48.17"
+  "detail": "48.18 / 48.18"
  },
  {
   "name": "[chromebook] project data pulled (3 samples on 0019816-001)",
@@ -47,17 +47,17 @@
  {
   "name": "[chromebook] no new deploy: nothing pending; missing settings row = no minimum (fail open)",
   "ok": true,
-  "detail": "{\"pending\":false,\"remote\":\"48.17\",\"min\":null,\"minErr\":\"no row\"}"
+  "detail": "{\"pending\":false,\"remote\":\"48.18\",\"min\":null,\"minErr\":\"no row\"}"
  },
  {
-  "name": "[chromebook] new deploy found (48.18) while typing: update pending, NOT applied (reason: typing)",
+  "name": "[chromebook] new deploy found (48.19) while typing: update pending, NOT applied (reason: typing)",
   "ok": true,
-  "detail": "{\"pending\":true,\"remote\":\"48.18\",\"reasons\":[\"typing\",\"unsaved typing\",\"recent edit\",\"1 change to upload\"]}"
+  "detail": "{\"pending\":true,\"remote\":\"48.19\",\"reasons\":[\"typing\",\"unsaved typing\",\"recent edit\",\"1 change to upload\"]}"
  },
  {
-  "name": "[chromebook] the 48.18 worker installed in the background and is waiting; the old worker still controls the page",
+  "name": "[chromebook] the 48.19 worker installed in the background and is waiting; the old worker still controls the page",
   "ok": true,
-  "detail": "http://127.0.0.1:33431/sw-field.js / 48.17"
+  "detail": "http://127.0.0.1:42011/sw-field.js / 48.18"
  },
  {
   "name": "[chromebook] the typed text is still in the box (nothing reloaded)",
@@ -67,32 +67,32 @@
  {
   "name": "[chromebook] while the box holds unsaved typing the update stays held",
   "ok": true,
-  "detail": "[\"typing\",\"unsaved typing\",\"1 change to upload\"] LOG 09:02:13.273 NAV about:blank | 09:02:13.294 NAV http://127.0.0.1:33431/field.html | 09:02:13.864 NAV http://127.0.0.1:33431/field.html | 09:02:16.967 [ENVSS update] check open | 09:02:17.890 [ENVSS update] check test | 09:02:19.203 [ENVSS update] check test | 09:02:19.223 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload"
+  "detail": "[\"typing\",\"unsaved typing\",\"1 change to upload\"] LOG 09:07:57.814 NAV about:blank | 09:07:57.842 NAV http://127.0.0.1:42011/field.html | 09:07:58.556 NAV http://127.0.0.1:42011/field.html | 09:08:01.660 [ENVSS update] check open | 09:08:02.573 [ENVSS update] check test | 09:08:03.894 [ENVSS update] check test | 09:08:03.915 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload"
  },
  {
   "name": "[chromebook] after blur the edit is saved on the device and queued; upload failing -> update still held (change to upload)",
   "ok": true,
-  "detail": "{\"reasons\":[\"1 change to upload\"],\"pend\":1,\"ls\":true} LOG 09:02:13.273 NAV about:blank | 09:02:13.294 NAV http://127.0.0.1:33431/field.html | 09:02:13.864 NAV http://127.0.0.1:33431/field.html | 09:02:16.967 [ENVSS update] check open | 09:02:17.890 [ENVSS update] check test | 09:02:19.203 [ENVSS update] check test | 09:02:19.223 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload | 09:02:22.088 [ENVSS update] not safe (saved): recent edit, 2 changes to upload | 09:02:22.456 [ENVSS update] not safe (sync): recent edit, 1 change to upload"
+  "detail": "{\"reasons\":[\"1 change to upload\"],\"pend\":1,\"ls\":true} LOG 09:07:57.814 NAV about:blank | 09:07:57.842 NAV http://127.0.0.1:42011/field.html | 09:07:58.556 NAV http://127.0.0.1:42011/field.html | 09:08:01.660 [ENVSS update] check open | 09:08:02.573 [ENVSS update] check test | 09:08:03.894 [ENVSS update] check test | 09:08:03.915 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload | 09:08:06.781 [ENVSS update] not safe (saved): recent edit, 2 changes to upload | 09:08:07.150 [ENVSS update] not safe (sync): recent edit, 1 change to upload"
  },
  {
-  "name": "[chromebook] still v48.17 while the change is queued",
+  "name": "[chromebook] still v48.18 while the change is queued",
   "ok": true,
   "detail": ""
  },
  {
-  "name": "[chromebook] once the queue uploaded and the screen was idle, the app switched itself to v48.18",
+  "name": "[chromebook] once the queue uploaded and the screen was idle, the app switched itself to v48.19",
   "ok": true,
-  "detail": "48.18"
+  "detail": "48.19"
  },
  {
-  "name": "[chromebook] toast after the reload: 'Updated to v48.18'",
+  "name": "[chromebook] toast after the reload: 'Updated to v48.19'",
   "ok": true,
-  "detail": "{\"text\":\"Updated to v48.18\",\"show\":true}"
+  "detail": "{\"text\":\"Updated to v48.19\",\"show\":true}"
  },
  {
-  "name": "[chromebook] the new worker controls the page (48.18)",
+  "name": "[chromebook] the new worker controls the page (48.19)",
   "ok": true,
-  "detail": "48.18"
+  "detail": "48.19"
  },
  {
   "name": "[chromebook] queued edit survived: in Supabase (mock) and on the device after the update",
@@ -107,12 +107,12 @@
  {
   "name": "[chromebook] no localStorage key lost; IndexedDB databases unchanged",
   "ok": true,
-  "detail": "{\"before\":{\"ls\":[\"envss-field-auth-v45\",\"envss-field-login-daily-00000000-0000-0000-0000-00000000test\",\"envss-field-next-v32\",\"envss-field-next-v32-sync\",\"envss-field-operator\"],\"idb\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\",\"envss-test-marker\"],\"caches\":[\"envss-field-v48-17\"]},\"after\":{\"ls\":[\"envss-field-auth-v45\",\"envss-field-login-daily-00000000-0000-0000-0000-00000000test\",\"envss-field-next-v32\",\"envss-field-next-v32-sync\",\"envss-field-operator\",\"envss-podio-afm-v49\",\"envss-podio-hyg-all-v487\"],\"idb\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\",\"envss-test-marker\"],\"caches\":[\"envss-field-v48-18\"]}}"
+  "detail": "{\"before\":{\"ls\":[\"envss-field-auth-v45\",\"envss-field-login-daily-00000000-0000-0000-0000-00000000test\",\"envss-field-next-v32\",\"envss-field-next-v32-sync\",\"envss-field-operator\"],\"idb\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\",\"envss-test-marker\"],\"caches\":[\"envss-field-v48-18\"]},\"after\":{\"ls\":[\"envss-field-auth-v45\",\"envss-field-login-daily-00000000-0000-0000-0000-00000000test\",\"envss-field-next-v32\",\"envss-field-next-v32-sync\",\"envss-field-operator\",\"envss-podio-afm-v49\",\"envss-podio-hyg-all-v487\"],\"idb\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\",\"envss-test-marker\"],\"caches\":[\"envss-field-v48-19\"]}}"
  },
  {
-  "name": "[chromebook] caches: envss-field-v48-18 present, old envss-field-v48-17 dropped",
+  "name": "[chromebook] caches: envss-field-v48-19 present, old envss-field-v48-18 dropped",
   "ok": true,
-  "detail": "envss-field-v48-18"
+  "detail": "envss-field-v48-19"
  },
  {
   "name": "[chromebook] address bar cleaned (no ?u=) and update flag cleared",
@@ -122,7 +122,7 @@
  {
   "name": "[chromebook] after the update nothing is pending (no reload loop)",
   "ok": true,
-  "detail": "{\"pending\":false,\"remote\":\"48.18\"}"
+  "detail": "{\"pending\":false,\"remote\":\"48.19\"}"
  },
  {
   "name": "[chromebook] blocker: new-event form open",
@@ -150,19 +150,19 @@
   "detail": ""
  },
  {
-  "name": "[chromebook] min 48.18 but only 48.17 is published: nothing blocked (fail open, cannot update yet)",
+  "name": "[chromebook] min 48.19 but only 48.18 is published: nothing blocked (fail open, cannot update yet)",
   "ok": true,
-  "detail": "{\"forced\":false,\"min\":\"48.18\",\"remote\":\"48.17\",\"banner\":false}"
+  "detail": "{\"forced\":false,\"min\":\"48.19\",\"remote\":\"48.18\",\"banner\":false}"
  },
  {
-  "name": "[chromebook] below the minimum, online, 48.18 published: forced update path + banner (says why it is waiting)",
+  "name": "[chromebook] below the minimum, online, 48.19 published: forced update path + banner (says why it is waiting)",
   "ok": true,
-  "detail": "{\"forced\":true,\"min\":\"48.18\",\"remote\":\"48.18\",\"reasons\":[\"1 change to upload\"],\"banner\":\"Update needed. This app is v48.17; v48.18 or newer is required. It updates by itself as soon as your changes have uploaded and nothing is open for editing. Until then you can view jobs, STOP running samples and finish what you have entered, but you can't add new events or samples or press START. Waiting for: 1 change to upload.\"}"
+  "detail": "{\"forced\":true,\"min\":\"48.19\",\"remote\":\"48.19\",\"reasons\":[\"1 change to upload\"],\"banner\":\"Update needed. This app is v48.18; v48.19 or newer is required. It updates by itself as soon as your changes have uploaded and nothing is open for editing. Until then you can view jobs, STOP running samples and finish what you have entered, but you can't add new events or samples or press START. Waiting for: 1 change to upload.\"}"
  },
  {
   "name": "[chromebook] gate: adding a sample is blocked (.fab) with a toast; nothing added",
   "ok": true,
-  "detail": "{\"addSel\":\".fab\",\"nBefore\":3,\"nAfter\":3,\"tst\":\"Blocked until the app updates to v48.18. Your data is safe.\",\"pageAfterAdd\":\"event\",\"dialogs\":[]}"
+  "detail": "{\"addSel\":\".fab\",\"nBefore\":3,\"nAfter\":3,\"tst\":\"Blocked until the app updates to v48.19. Your data is safe.\",\"pageAfterAdd\":\"event\",\"dialogs\":[]}"
  },
  {
   "name": "[chromebook] gate: nothing opened by the blocked add (still on the event screen)",
@@ -177,7 +177,7 @@
  {
   "name": "[chromebook] gate: STOP on a running sample still works (already-captured work can be finished)",
   "ok": true,
-  "detail": "{\"s\":\"ended\",\"e\":\"2026-11-27T09:02:39.649Z\",\"dialogs\":[]}"
+  "detail": "{\"s\":\"ended\",\"e\":\"2026-11-27T09:08:24.487Z\",\"dialogs\":[]}"
  },
  {
   "name": "[chromebook] gate: viewing records still works",
@@ -190,9 +190,9 @@
   "detail": "{\"forced\":false,\"banner\":false}"
  },
  {
-  "name": "[chromebook] back online + queue uploaded -> forced update applied: v48.18, banner gone, toast",
+  "name": "[chromebook] back online + queue uploaded -> forced update applied: v48.19, banner gone, toast",
   "ok": true,
-  "detail": "{\"st\":{\"reasons\":[],\"pending\":false,\"log\":[\"09:02:43 updated from 48.17\"]},\"v\":\"48.18\",\"banner\":false,\"toast\":\"Updated to v48.18\"}"
+  "detail": "{\"st\":{\"reasons\":[],\"pending\":false,\"log\":[\"09:08:28 updated from 48.18\"]},\"v\":\"48.19\",\"banner\":false,\"toast\":\"Updated to v48.19\"}"
  },
  {
   "name": "[chromebook] the change queued under the gate reached Supabase (mock) and is on the device",
@@ -225,9 +225,9 @@
   "detail": "{\"forced\":false,\"min\":null,\"minErr\":\"not a version\"}"
  },
  {
-  "name": "[pixel7] old deploy: app is v48.17 and the v48.17 worker controls the page",
+  "name": "[pixel7] old deploy: app is v48.18 and the v48.18 worker controls the page",
   "ok": true,
-  "detail": "48.17 / 48.17"
+  "detail": "48.18 / 48.18"
  },
  {
   "name": "[pixel7] project data pulled (3 samples on 0019816-001)",
@@ -237,17 +237,17 @@
  {
   "name": "[pixel7] no new deploy: nothing pending; missing settings row = no minimum (fail open)",
   "ok": true,
-  "detail": "{\"pending\":false,\"remote\":\"48.17\",\"min\":null,\"minErr\":\"no row\"}"
+  "detail": "{\"pending\":false,\"remote\":\"48.18\",\"min\":null,\"minErr\":\"no row\"}"
  },
  {
-  "name": "[pixel7] new deploy found (48.18) while typing: update pending, NOT applied (reason: typing)",
+  "name": "[pixel7] new deploy found (48.19) while typing: update pending, NOT applied (reason: typing)",
   "ok": true,
-  "detail": "{\"pending\":true,\"remote\":\"48.18\",\"reasons\":[\"typing\",\"unsaved typing\",\"recent edit\",\"1 change to upload\"]}"
+  "detail": "{\"pending\":true,\"remote\":\"48.19\",\"reasons\":[\"typing\",\"unsaved typing\",\"recent edit\",\"1 change to upload\"]}"
  },
  {
-  "name": "[pixel7] the 48.18 worker installed in the background and is waiting; the old worker still controls the page",
+  "name": "[pixel7] the 48.19 worker installed in the background and is waiting; the old worker still controls the page",
   "ok": true,
-  "detail": "http://127.0.0.1:33431/sw-field.js / 48.17"
+  "detail": "http://127.0.0.1:42011/sw-field.js / 48.18"
  },
  {
   "name": "[pixel7] the typed text is still in the box (nothing reloaded)",
@@ -257,32 +257,32 @@
  {
   "name": "[pixel7] while the box holds unsaved typing the update stays held",
   "ok": true,
-  "detail": "[\"typing\",\"unsaved typing\",\"1 change to upload\"] LOG 09:02:57.971 NAV about:blank | 09:02:57.988 NAV http://127.0.0.1:33431/field.html | 09:02:58.530 NAV http://127.0.0.1:33431/field.html | 09:03:01.634 [ENVSS update] check open | 09:03:02.546 [ENVSS update] check test | 09:03:03.903 [ENVSS update] check test | 09:03:03.922 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload"
+  "detail": "[\"typing\",\"unsaved typing\",\"1 change to upload\"] LOG 09:08:42.890 NAV about:blank | 09:08:42.902 NAV http://127.0.0.1:42011/field.html | 09:08:43.484 NAV http://127.0.0.1:42011/field.html | 09:08:46.594 [ENVSS update] check open | 09:08:47.499 [ENVSS update] check test | 09:08:48.873 [ENVSS update] check test | 09:08:48.895 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload"
  },
  {
   "name": "[pixel7] after blur the edit is saved on the device and queued; upload failing -> update still held (change to upload)",
   "ok": true,
-  "detail": "{\"reasons\":[\"1 change to upload\"],\"pend\":1,\"ls\":true} LOG 09:02:57.971 NAV about:blank | 09:02:57.988 NAV http://127.0.0.1:33431/field.html | 09:02:58.530 NAV http://127.0.0.1:33431/field.html | 09:03:01.634 [ENVSS update] check open | 09:03:02.546 [ENVSS update] check test | 09:03:03.903 [ENVSS update] check test | 09:03:03.922 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload | 09:03:06.858 [ENVSS update] not safe (saved): recent edit, 2 changes to upload | 09:03:07.222 [ENVSS update] not safe (sync): recent edit, 1 change to upload"
+  "detail": "{\"reasons\":[\"1 change to upload\"],\"pend\":1,\"ls\":true} LOG 09:08:42.890 NAV about:blank | 09:08:42.902 NAV http://127.0.0.1:42011/field.html | 09:08:43.484 NAV http://127.0.0.1:42011/field.html | 09:08:46.594 [ENVSS update] check open | 09:08:47.499 [ENVSS update] check test | 09:08:48.873 [ENVSS update] check test | 09:08:48.895 [ENVSS update] not safe (check): typing, unsaved typing, recent edit, 1 change to upload | 09:08:51.847 [ENVSS update] not safe (saved): recent edit, 2 changes to upload | 09:08:52.216 [ENVSS update] not safe (sync): recent edit, 1 change to upload"
  },
  {
-  "name": "[pixel7] still v48.17 while the change is queued",
+  "name": "[pixel7] still v48.18 while the change is queued",
   "ok": true,
   "detail": ""
  },
  {
-  "name": "[pixel7] once the queue uploaded and the screen was idle, the app switched itself to v48.18",
+  "name": "[pixel7] once the queue uploaded and the screen was idle, the app switched itself to v48.19",
   "ok": true,
-  "detail": "48.18"
+  "detail": "48.19"
  },
  {
-  "name": "[pixel7] toast after the reload: 'Updated to v48.18'",
+  "name": "[pixel7] toast after the reload: 'Updated to v48.19'",
   "ok": true,
-  "detail": "{\"text\":\"Updated to v48.18\",\"show\":true}"
+  "detail": "{\"text\":\"Updated to v48.19\",\"show\":true}"
  },
  {
-  "name": "[pixel7] the new worker controls the page (48.18)",
+  "name": "[pixel7] the new worker controls the page (48.19)",
   "ok": true,
-  "detail": "48.18"
+  "detail": "48.19"
  },
  {
   "name": "[pixel7] queued edit survived: in Supabase (mock) and on the device after the update",
@@ -297,12 +297,12 @@
  {
   "name": "[pixel7] no localStorage key lost; IndexedDB databases unchanged",
   "ok": true,
-  "detail": "{\"before\":{\"ls\":[\"envss-field-auth-v45\",\"envss-field-login-daily-00000000-0000-0000-0000-00000000test\",\"envss-field-next-v32\",\"envss-field-next-v32-sync\",\"envss-field-operator\"],\"idb\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\",\"envss-test-marker\"],\"caches\":[\"envss-field-v48-17\"]},\"after\":{\"ls\":[\"envss-field-auth-v45\",\"envss-field-login-daily-00000000-0000-0000-0000-00000000test\",\"envss-field-next-v32\",\"envss-field-next-v32-sync\",\"envss-field-operator\",\"envss-podio-afm-v49\",\"envss-podio-hyg-all-v487\"],\"idb\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\",\"envss-test-marker\"],\"caches\":[\"envss-field-v48-18\"]}}"
+  "detail": "{\"before\":{\"ls\":[\"envss-field-auth-v45\",\"envss-field-login-daily-00000000-0000-0000-0000-00000000test\",\"envss-field-next-v32\",\"envss-field-next-v32-sync\",\"envss-field-operator\"],\"idb\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\",\"envss-test-marker\"],\"caches\":[\"envss-field-v48-18\"]},\"after\":{\"ls\":[\"envss-field-auth-v45\",\"envss-field-login-daily-00000000-0000-0000-0000-00000000test\",\"envss-field-next-v32\",\"envss-field-next-v32-sync\",\"envss-field-operator\",\"envss-podio-afm-v49\",\"envss-podio-hyg-all-v487\"],\"idb\":[\"envss-field-drive\",\"envss-field-photos\",\"envss-field-v46\",\"envss-test-marker\"],\"caches\":[\"envss-field-v48-19\"]}}"
  },
  {
-  "name": "[pixel7] caches: envss-field-v48-18 present, old envss-field-v48-17 dropped",
+  "name": "[pixel7] caches: envss-field-v48-19 present, old envss-field-v48-18 dropped",
   "ok": true,
-  "detail": "envss-field-v48-18"
+  "detail": "envss-field-v48-19"
  },
  {
   "name": "[pixel7] address bar cleaned (no ?u=) and update flag cleared",
@@ -312,7 +312,7 @@
  {
   "name": "[pixel7] after the update nothing is pending (no reload loop)",
   "ok": true,
-  "detail": "{\"pending\":false,\"remote\":\"48.18\"}"
+  "detail": "{\"pending\":false,\"remote\":\"48.19\"}"
  },
  {
   "name": "[pixel7] blocker: new-event form open",
@@ -340,19 +340,19 @@
   "detail": ""
  },
  {
-  "name": "[pixel7] min 48.18 but only 48.17 is published: nothing blocked (fail open, cannot update yet)",
+  "name": "[pixel7] min 48.19 but only 48.18 is published: nothing blocked (fail open, cannot update yet)",
   "ok": true,
-  "detail": "{\"forced\":false,\"min\":\"48.18\",\"remote\":\"48.17\",\"banner\":false}"
+  "detail": "{\"forced\":false,\"min\":\"48.19\",\"remote\":\"48.18\",\"banner\":false}"
  },
  {
-  "name": "[pixel7] below the minimum, online, 48.18 published: forced update path + banner (says why it is waiting)",
+  "name": "[pixel7] below the minimum, online, 48.19 published: forced update path + banner (says why it is waiting)",
   "ok": true,
-  "detail": "{\"forced\":true,\"min\":\"48.18\",\"remote\":\"48.18\",\"reasons\":[\"1 change to upload\"],\"banner\":\"Update needed. This app is v48.17; v48.18 or newer is required. It updates by itself as soon as your changes have uploaded and nothing is open for editing. Until then you can view jobs, STOP running samples and finish what you have entered, but you can't add new events or samples or press START. Waiting for: 1 change to upload.\"}"
+  "detail": "{\"forced\":true,\"min\":\"48.19\",\"remote\":\"48.19\",\"reasons\":[\"1 change to upload\"],\"banner\":\"Update needed. This app is v48.18; v48.19 or newer is required. It updates by itself as soon as your changes have uploaded and nothing is open for editing. Until then you can view jobs, STOP running samples and finish what you have entered, but you can't add new events or samples or press START. Waiting for: 1 change to upload.\"}"
  },
  {
   "name": "[pixel7] gate: adding a sample is blocked ([data-go=\"add\"]) with a toast; nothing added",
   "ok": true,
-  "detail": "{\"addSel\":\"[data-go=\\\"add\\\"]\",\"nBefore\":3,\"nAfter\":3,\"tst\":\"Blocked until the app updates to v48.18. Your data is safe.\",\"pageAfterAdd\":\"event\",\"dialogs\":[]}"
+  "detail": "{\"addSel\":\"[data-go=\\\"add\\\"]\",\"nBefore\":3,\"nAfter\":3,\"tst\":\"Blocked until the app updates to v48.19. Your data is safe.\",\"pageAfterAdd\":\"event\",\"dialogs\":[]}"
  },
  {
   "name": "[pixel7] gate: nothing opened by the blocked add (still on the event screen)",
@@ -367,7 +367,7 @@
  {
   "name": "[pixel7] gate: STOP on a running sample still works (already-captured work can be finished)",
   "ok": true,
-  "detail": "{\"s\":\"ended\",\"e\":\"2026-11-27T09:03:24.814Z\",\"dialogs\":[]}"
+  "detail": "{\"s\":\"ended\",\"e\":\"2026-11-27T09:09:09.984Z\",\"dialogs\":[]}"
  },
  {
   "name": "[pixel7] gate: viewing records still works",
@@ -380,9 +380,9 @@
   "detail": "{\"forced\":false,\"banner\":false}"
  },
  {
-  "name": "[pixel7] back online + queue uploaded -> forced update applied: v48.18, banner gone, toast",
+  "name": "[pixel7] back online + queue uploaded -> forced update applied: v48.19, banner gone, toast",
   "ok": true,
-  "detail": "{\"st\":{\"reasons\":[],\"pending\":false,\"log\":[\"09:03:27 updated from 48.17\"]},\"v\":\"48.18\",\"banner\":false,\"toast\":\"Updated to v48.18\"}"
+  "detail": "{\"st\":{\"reasons\":[],\"pending\":false,\"log\":[\"09:09:13 updated from 48.18\"]},\"v\":\"48.19\",\"banner\":false,\"toast\":\"Updated to v48.19\"}"
  },
  {
   "name": "[pixel7] the change queued under the gate reached Supabase (mock) and is on the device",
