@@ -105,7 +105,7 @@ async function mockTesseract(page) {
 async function run(vp) {
   const shot = (page, n, full = false) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const page = await boot(vp);
-  check(`[${vp}] app is v48.15`, await page.evaluate(() => APP_VERSION === "48.15" && document.title === "ENVSS Field v48.15" && envssFit.version === "48.15"), await page.evaluate(() => [APP_VERSION, document.title, envssFit.version].join(" ")));
+  check(`[${vp}] app is v48.16`, await page.evaluate(() => APP_VERSION === "48.16" && document.title === "ENVSS Field v48.16" && envssFit.version === "48.16"), await page.evaluate(() => [APP_VERSION, document.title, envssFit.version].join(" ")));
 
   await page.evaluate(() => openEvent("eFit")); await sleep(400);
   const ui = await page.evaluate(() => ({ picker: !!document.getElementById("fitParent"), linked: /linked hygiene|hygiene event/i.test(document.getElementById("fitEvent").innerText), /* the v48.4 ‹ previous / next › event arrows are project navigation, not a link */
@@ -235,7 +235,7 @@ for (const vp of vps) await run(vp);
 for (const vp of vps) real[vp] = await runReal(vp);
 await browser.close(); server.close();
 const sw = fs.readFileSync(path.join(REPO, "sw-field.js"), "utf8");
-check("sw-field.js precaches fit-test.js?v=<version> (fit testing loads offline)", /"fit-test\.js\?v=" \+ VERSION/.test(sw) && /envss-field-v48-15/.test(sw));
+check("sw-field.js precaches fit-test.js?v=<version> (fit testing loads offline)", /"fit-test\.js\?v=" \+ VERSION/.test(sw) && /envss-field-v48-16/.test(sw));
 check("sw-field.js only deletes envss-field-* caches (envss-ocr-* survives app updates)", /k\.startsWith\("envss-field-"\)/.test(sw));
 const html = fs.readFileSync(path.join(REPO, "field.html"), "utf8");
 check("help/fit-test.html guide is in the branch (from PR #24)", fs.existsSync(path.join(REPO, "help/fit-test.html")) && fs.existsSync(path.join(REPO, "help/assets/fit-test/fit-test-how-to.mp4")));
