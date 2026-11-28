@@ -231,7 +231,7 @@ async function run(vp) {
       const r = (window.envssUpdate && envssUpdate.blockers()) || [];
       return { v: APP_VERSION, hasUpdate: !!(window.envssUpdate && envssUpdate.safe), flushing, busy: !!(window.v4818Sync && v4818Sync.busy()), blockers: r };
     });
-    check(`${tag} 7a app is v48.18 and auto-update hooks are present`, idle.v === "48.18" && idle.hasUpdate, JSON.stringify(idle));
+    check(`${tag} 7a app is v48.19 and auto-update hooks are present`, idle.v === "48.19" && idle.hasUpdate, JSON.stringify(idle));
     check(`${tag} 7b idle tab is not blocked by a save in flight`, !idle.flushing && !idle.busy && !idle.blockers.includes("uploading") && !idle.blockers.includes("save in flight"), JSON.stringify(idle.blockers));
     const flushingBlock = await page.evaluate(() => {
       const was = flushing; flushing = true;

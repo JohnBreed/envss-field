@@ -1,19 +1,19 @@
 /* ENVSS Field v48.13: Respirator fit testing (standalone event type, TSI-layout Vision OCR with an on-device fallback,
    closer TSI PDF with branded header, no photo page, How-to guide link, one Drive copy per PDF/zip).
-   Event type "fit", codes {job}-FIT-{seq}; it does not link to any other event. Photo + Google Vision OCR (default);
+   Event type "fit", codes {job}-RFT-{seq} (legacy {job}-FIT-{seq} still recognised); it does not link to any other event. Photo + Google Vision OCR (default);
    with no internet the photo is read on the device (Tesseract.js, cached for offline use) and re-read with Vision
    when back online if nobody has edited it yet. Confirm, the individual signs on the phone, and the ENVSS
    technician’s sign-off is filled in from their Google sign-in (name, email, date and time AWST). A4 TSI-layout
    PDF (signed or unsigned), Drive copy into {job}_Field-App/Fit-Tests, zip download. No Podio writes. */
 (function (root) {
   "use strict";
-  const VERSION = "48.18";   /* v48.18: version bump only (fit testing unchanged) */
+  const VERSION = "48.19";   /* v48.19: version bump only (fit testing unchanged). v48.18: version bump only */
 
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
   const OCR_FN = "ocr-fit-report";
   /* Drive copy worker (Apps Script v48.13) files fit-test PDFs and zips in {job}_Field-App/Fit-Tests (it routes on the
-     -FIT- event code; this name is for display and tests). */
+     -RFT- / legacy -FIT- event code; this name is for display and tests). */
   const DRIVE_SUBFOLDER = "Fit-Tests";
   /* On-device OCR (offline fallback). Pinned versions; assets are kept in their own Cache Storage bucket. */
   const TESS = {
@@ -62,23 +62,23 @@
   function esc(s) { return typeof root.esc === "function" ? root.esc(s) : String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
   function isFitEvent(ev) {
-    return !!(ev && (ev.type === "fit" || /-FIT-\d+/i.test(String(ev.code || ""))));
+    return !!(ev && (ev.type === "fit" || /-(FIT|RFT|HPFT)-\d+/i.test(String(ev.code || ""))));
   }
   function fitSeqOf(code) {
-    const m = String(code || "").match(/-FIT-(\d+)/i);
+    const m = String(code || "").match(/-(?:FIT|RFT|HPFT)-(\d+)/i);
     return m ? m[1] : "";
   }
   function nextFitSeq(projectId, events, deletions) {
     const evs = events || (typeof db !== "undefined" && db && db.events) || [];
     const dels = deletions || (typeof db !== "undefined" && db && db.deletions) || [];
     const codes = evs.filter(e => e.projectId === projectId && isFitEvent(e)).map(e => e.code)
-      .concat(dels.filter(d => d && d.tombstone === "event" && d.projectId === projectId && (d.type === "fit" || /-FIT-\d+/i.test(String(d.code || "")))).map(d => d.code));
+      .concat(dels.filter(d => d && d.tombstone === "event" && d.projectId === projectId && (d.type === "fit" || /-(FIT|RFT|HPFT)-\d+/i.test(String(d.code || "")))).map(d => d.code));
     const max = codes.map(c => parseInt(fitSeqOf(c), 10) || 0).reduce((a, b) => Math.max(a, b), 0);
     return String(max + 1).padStart(3, "0");
   }
   function fitEventCode(project, seq) {
     const num = (project && project.number) || "";
-    return num + "-FIT-" + seq;
+    return num + "-RFT-" + seq;
   }
 
   function safeToken(s, fallback) {
@@ -2679,7 +2679,7 @@
         if (html.indexOf("id=\"fitEventFields\"") === -1) {
           html = html.replace("<div class=\"footer-actions\">",
             "<div id=\"fitEventFields\" style=\"display:none\">"
-            + "<p class=\"help\">Code: {job}-FIT-001, 002, … — its own event under this job. There is no laboratory COC for fit testing.</p>"
+            + "<p class=\"help\">Code: {job}-RFT-001, 002, … — its own event under this job. There is no laboratory COC for fit testing.</p>"
             + "</div><div class=\"footer-actions\">");
         }
         return html;
@@ -2704,6 +2704,7 @@
     root.createEvent = function () {
       const type = (document.getElementById("ntype") || {}).value || "hygiene";
       if (type !== "fit") return _ce ? _ce.apply(this, arguments) : null;
+      if (typeof root.envssManualEventsAllowed === "function" && !root.envssManualEventsAllowed()) return null;   /* v48.19: events come from Podio */
       const projectId = view.projectId;
       const p = root.project && root.project(projectId);
       if (!p) { alert("Open a project first."); return; }

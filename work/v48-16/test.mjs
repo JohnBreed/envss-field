@@ -1,11 +1,14 @@
 /* v48.16 tests: safe auto-update + minimum version (run against the current app version).
    Usage: ROOT=/workspace/envss-v4816 node work/v48-16/test.mjs [chromebook|pixel7]   (default: both)
-   Two copies of the app are served from one local origin: "old" = this branch (v48.18) and "new" = the same files with the
-   version bumped to 48.19 (a pretend next deploy). The test switches which copy the server returns to simulate a publish.
+   Two copies of the app are served from one local origin: "old" = this branch (v48.19) and "new" = the same files with the
+   version bumped to 48.20 (a pretend next deploy). The test switches which copy the server returns to simulate a publish.
    Supabase is mocked in memory (*.supabase.co mapped to a dead local port, every request answered by the mock), so nothing
    reaches production. Fixture names are made up. Screenshots: OUT (default /workspace/fit-shots/v4817-autoupdate). */
 import fs from "fs"; import path from "path"; import http from "http"; import { execSync } from "child_process";
 import { launch, VIEWPORTS, mockSupabase, sleep, SESSION } from "../v48-7/harness.mjs";
+
+/* v48.19: START / STOP on a Chromebook first shows the "Not at the pump?" warning; confirm it so the older flow under test runs. */
+async function g19ok(page) { await new Promise(r => setTimeout(r, 250)); for (let i = 0; i < 3; i++) { const has = await page.evaluate(() => { const m = document.querySelector('.g19-modal[data-g19="laptop"]'); if (!m) return false; document.getElementById("g19Yes").click(); return true; }); if (!has) break; await new Promise(r => setTimeout(r, 300)); } }
 const SRC = process.env.ROOT || "/workspace/envss-v4817";
 const OUT = process.env.OUT || "/workspace/fit-shots/v4817-autoupdate"; fs.mkdirSync(OUT, { recursive: true });
 const results = [];
@@ -16,7 +19,7 @@ const tmp = "/tmp/v4816-" + process.pid; const OLD = tmp + "/old", NEW = tmp + "
 const FILES = ["field.html", "sw-field.js", "noise.js", "config.js", "fit-test.js", "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css", "manifest.json", "icon.svg"];
 execSync(`rm -rf ${tmp} && mkdir -p ${OLD}/work/projlist ${NEW}/work/projlist`);
 for (const d of [OLD, NEW]) { for (const f of FILES) if (fs.existsSync(path.join(SRC, f))) fs.copyFileSync(path.join(SRC, f), path.join(d, f)); fs.copyFileSync(path.join(SRC, "work/projlist/review.js"), path.join(d, "work/projlist/review.js")); }
-const bump = f => { const p = path.join(NEW, f); fs.writeFileSync(p, fs.readFileSync(p, "utf8").replace(/48\.18/g, "48.19").replace(/48-18/g, "48-19")); };
+const bump = f => { const p = path.join(NEW, f); fs.writeFileSync(p, fs.readFileSync(p, "utf8").replace(/48\.19/g, "48.20").replace(/48-19/g, "48-20")); };
 ["field.html", "sw-field.js", "fit-test.js"].forEach(bump);
 const deploy = { root: OLD };
 const server = http.createServer((req, res) => {
@@ -35,12 +38,12 @@ const base = "http://127.0.0.1:" + server.address().port;
 
 /* ---------- static checks ---------- */
 const sw = fs.readFileSync(path.join(SRC, "sw-field.js"), "utf8"), html = fs.readFileSync(path.join(SRC, "field.html"), "utf8");
-check("sw-field.js is v48.18 with cache envss-field-v48-18", /const VERSION = "48\.18";/.test(sw) && /const CACHE = "envss-field-v48-18";/.test(sw));
+check("sw-field.js is v48.19 with cache envss-field-v48-19", /const VERSION = "48\.19";/.test(sw) && /const CACHE = "envss-field-v48-19";/.test(sw));
 check("sw-field.js install no longer calls skipWaiting (an update waits for the page)", !/install[\s\S]{0,900}await self\.skipWaiting\(\)/.test(sw.split('self.addEventListener("activate"')[0]));
 check("sw-field.js skips waiting only on the page's SKIP_WAITING message", /d\.type === "SKIP_WAITING"\) self\.skipWaiting\(\)/.test(sw));
 check("sw-field.js activate deletes only old envss-field-v* caches (IndexedDB / localStorage / OCR caches untouched)", /k\.startsWith\("envss-field-"\) && k !== CACHE/.test(sw) && !/indexedDB|localStorage/.test(sw.replace(/\/\*[\s\S]*?\*\//g, "")));
 check("sw-field.js still refreshes noise.js on its own (no-cache, network first)", /key === NOISE\) \{ event\.respondWith\(networkFirst\(new Request\(NOISE, \{ cache: "no-cache" \}\)/.test(sw));
-check("field.html APP_VERSION matches the worker VERSION (the version check reads sw-field.js)", /const APP_VERSION = "48\.18";/.test(html));
+check("field.html APP_VERSION matches the worker VERSION (the version check reads sw-field.js)", /const APP_VERSION = "48\.19";/.test(html));
 check("SQL migration + rollback exist and the migration is marked NOT APPLIED", fs.existsSync(path.join(SRC, "work/settings_v48_16_01_app_settings.sql")) && fs.existsSync(path.join(SRC, "work/settings_v48_16_01_app_settings_rollback.sql")) && /NOT APPLIED/.test(fs.readFileSync(path.join(SRC, "work/settings_v48_16_01_app_settings.sql"), "utf8")));
 
 /* ---------- fixture (Supabase side) ---------- */
@@ -70,6 +73,7 @@ async function boot(vp, st, opts) {
   await page.setViewport(VIEWPORTS[vp].viewport); await page.setUserAgent(VIEWPORTS[vp].ua);
   await page.setRequestInterception(true); page.mlog = mockSupabase(page, st, opts);
   page.dialogs = []; page.on("dialog", async d => { page.dialogs.push(d.message()); await d.accept(); });
+  await page.evaluateOnNewDocument(() => { window.ENVSS_ALLOW_MANUAL_EVENTS = true; });   /* v48.19: manual events are off by default; this suite covers the manual-event form behind the flag */
   await page.goto(base + "/field.html", { waitUntil: "domcontentloaded" }); await page.evaluate(SESSION);
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await page.reload({ waitUntil: "networkidle0" }); await sleep(1500);
@@ -92,25 +96,25 @@ async function run(vp) {
   deploy.root = OLD;
   const S = store(); const opts = {};
   const page = await boot(vp, S, opts);
-  check(`[${vp}] old deploy: app is v48.18 and the v48.18 worker controls the page`, (await ver(page)) === "48.18" && (await swVer(page)) === "48.18", (await ver(page)) + " / " + (await swVer(page)));
+  check(`[${vp}] old deploy: app is v48.19 and the v48.19 worker controls the page`, (await ver(page)) === "48.19" && (await swVer(page)) === "48.19", (await ver(page)) + " / " + (await swVer(page)));
   await page.evaluate(() => new Promise((res, rej) => { const r = indexedDB.open("envss-test-marker", 1); r.onupgradeneeded = () => r.result.createObjectStore("m", { keyPath: "id" });
     r.onsuccess = () => { const t = r.result.transaction("m", "readwrite"); t.objectStore("m").put({ id: "keep", v: "before update" }); t.oncomplete = () => { r.result.close(); res(); }; }; r.onerror = () => rej(r.error); }));
   const before = await storageSnap(page);
   check(`[${vp}] project data pulled (3 samples on 0019816-001)`, await page.evaluate(() => db.trains.filter(t => t.eventId === "eU").length === 3));
   let s0 = await page.evaluate(() => envssUpdate.check("test").then(s => ({ pending: s.pending, remote: s.remote, min: s.min, minErr: s.minErr })));
-  check(`[${vp}] no new deploy: nothing pending; missing settings row = no minimum (fail open)`, s0.pending === false && s0.remote === "48.18" && s0.min === null && /no row/.test(s0.minErr), JSON.stringify(s0));
+  check(`[${vp}] no new deploy: nothing pending; missing settings row = no minimum (fail open)`, s0.pending === false && s0.remote === "48.19" && s0.min === null && /no row/.test(s0.minErr), JSON.stringify(s0));
   await page.evaluate(() => { openProject("p4816"); }); await sleep(300);
   await shot(page, "01-old-v48-17");
 
   /* edit in progress */
   await page.evaluate(() => openTrain("u1")); await sleep(400);
   await page.click("#comments"); await page.type("#comments", "Typed during update test", { delay: 15 });
-  deploy.root = NEW;   /* publish 48.19 */
+  deploy.root = NEW;   /* publish 48.20 */
   const s1 = await page.evaluate(() => envssUpdate.check("test").then(s => ({ pending: s.pending, remote: s.remote, reasons: envssUpdate.blockers() })));
   await sleep(2500);
-  check(`[${vp}] new deploy found (48.19) while typing: update pending, NOT applied (reason: typing)`, s1.pending && s1.remote === "48.19" && s1.reasons.includes("typing") && (await ver(page)) === "48.18", JSON.stringify(s1));
+  check(`[${vp}] new deploy found (48.20) while typing: update pending, NOT applied (reason: typing)`, s1.pending && s1.remote === "48.20" && s1.reasons.includes("typing") && (await ver(page)) === "48.19", JSON.stringify(s1));
   const w1 = await waitingVer(page);
-  check(`[${vp}] the 48.19 worker installed in the background and is waiting; the old worker still controls the page`, !!w1 && (await swVer(page)) === "48.18", w1 + " / " + (await swVer(page)));
+  check(`[${vp}] the 48.20 worker installed in the background and is waiting; the old worker still controls the page`, !!w1 && (await swVer(page)) === "48.19", w1 + " / " + (await swVer(page)));
   check(`[${vp}] the typed text is still in the box (nothing reloaded)`, (await page.$eval("#comments", el => el.value)) === "Typed during update test");
   /* focus moved away without the autosave having a chance (e.g. a tap on a non-input area): still "unsaved typing" until change/blur ran */
   const r2 = await page.evaluate(() => envssUpdate.blockers());
@@ -123,7 +127,7 @@ async function run(vp) {
   const q = await page.evaluate(() => ({ reasons: envssUpdate.blockers(), pend: pendingCount(), ls: localStorage.getItem(KEY).includes("Typed during update test") }));
   check(`[${vp}] after blur the edit is saved on the device and queued; upload failing -> update still held (change to upload)`, q.ls && q.pend >= 1 && q.reasons.some(r => /to upload|uploading/.test(r)), JSON.stringify(q) + " LOG " + page.ulog.slice(-15).join(" | "));
   await page.evaluate(() => envssUpdate.tryApply("test")); await sleep(1500);
-  check(`[${vp}] still v48.18 while the change is queued`, (await ver(page)) === "48.18");
+  check(`[${vp}] still v48.19 while the change is queued`, (await ver(page)) === "48.19");
   await page.evaluate(() => { view.page = "dash"; render(); }); await sleep(400);
   await shot(page, "03-queued-upload-holds-update");
 
@@ -131,23 +135,23 @@ async function run(vp) {
   opts.failTables = [];
   const nav = page.waitForNavigation({ timeout: 40000 }).catch(e => null);
   await page.evaluate(() => { envssSync.flushQueue(); });
-  await nav; const okV = await waitVer(page, "48.19");
+  await nav; const okV = await waitVer(page, "48.20");
   await sleep(600);
-  check(`[${vp}] once the queue uploaded and the screen was idle, the app switched itself to v48.19`, okV, await ver(page));
+  check(`[${vp}] once the queue uploaded and the screen was idle, the app switched itself to v48.20`, okV, await ver(page));
   const toast = await page.evaluate(() => { const t = document.getElementById("v4816Toast"); return t ? { text: t.textContent, show: t.classList.contains("show") } : null; });
-  check(`[${vp}] toast after the reload: 'Updated to v48.19'`, toast && toast.show && toast.text === "Updated to v48.19", JSON.stringify(toast));
+  check(`[${vp}] toast after the reload: 'Updated to v48.20'`, toast && toast.show && toast.text === "Updated to v48.20", JSON.stringify(toast));
   await shot(page, "04-updated-toast");
-  check(`[${vp}] the new worker controls the page (48.19)`, (await swVer(page)) === "48.19", await swVer(page));
+  check(`[${vp}] the new worker controls the page (48.20)`, (await swVer(page)) === "48.20", await swVer(page));
   const remoteRow = S.envss_trains.get("u1"); const local = await train(page, "u1");
   check(`[${vp}] queued edit survived: in Supabase (mock) and on the device after the update`, remoteRow && JSON.stringify(remoteRow).includes("Typed during update test") && local && local.comments === "Typed during update test");
   const after = await storageSnap(page);
   const marker = await page.evaluate(() => new Promise(res => { const r = indexedDB.open("envss-test-marker", 1); r.onsuccess = () => { const q = r.result.transaction("m").objectStore("m").get("keep"); q.onsuccess = () => res(q.result ? q.result.v : null); q.onerror = () => res(null); }; r.onerror = () => res(null); }));
   check(`[${vp}] an IndexedDB record written before the update is still there after it`, marker === "before update", String(marker));
   check(`[${vp}] no localStorage key lost; IndexedDB databases unchanged`, before.ls.every(k => after.ls.includes(k)) && JSON.stringify(before.idb) === JSON.stringify(after.idb), JSON.stringify({ before, after }));
-  check(`[${vp}] caches: envss-field-v48-19 present, old envss-field-v48-18 dropped`, after.caches.includes("envss-field-v48-19") && !after.caches.includes("envss-field-v48-18"), after.caches.join(","));
+  check(`[${vp}] caches: envss-field-v48-20 present, old envss-field-v48-19 dropped`, after.caches.includes("envss-field-v48-20") && !after.caches.includes("envss-field-v48-19"), after.caches.join(","));
   check(`[${vp}] address bar cleaned (no ?u=) and update flag cleared`, await page.evaluate(() => !/[?&]u=/.test(location.search) && !localStorage.getItem(envssUpdate.flagKey)));
   const s2 = await page.evaluate(() => envssUpdate.check("test").then(s => ({ pending: s.pending, remote: s.remote })));
-  check(`[${vp}] after the update nothing is pending (no reload loop)`, s2.pending === false && s2.remote === "48.19", JSON.stringify(s2));
+  check(`[${vp}] after the update nothing is pending (no reload loop)`, s2.pending === false && s2.remote === "48.20", JSON.stringify(s2));
 
   /* other blockers (unit level, on the updated page) */
   const b = await page.evaluate(async () => {
@@ -169,10 +173,10 @@ async function run(vp) {
 
   /* ===== B: minimum version gate ===== */
   deploy.root = OLD;
-  const S2 = store("48.19"); const o2 = {};
+  const S2 = store("48.20"); const o2 = {};
   const g = await boot(vp, S2, o2);
   let m0 = await g.evaluate(() => envssUpdate.check("test").then(s => ({ forced: s.forced, min: s.min, remote: s.remote, banner: !!document.getElementById("v4816Banner") })));
-  check(`[${vp}] min 48.19 but only 48.18 is published: nothing blocked (fail open, cannot update yet)`, m0.min === "48.19" && m0.remote === "48.18" && !m0.forced && !m0.banner, JSON.stringify(m0));
+  check(`[${vp}] min 48.20 but only 48.19 is published: nothing blocked (fail open, cannot update yet)`, m0.min === "48.20" && m0.remote === "48.19" && !m0.forced && !m0.banner, JSON.stringify(m0));
   deploy.root = NEW;
   o2.failTables = ["envss_trains"];   /* keeps the update from applying: a change cannot upload */
   await g.evaluate(() => { openTrain("u3"); }); await sleep(300);
@@ -180,7 +184,7 @@ async function run(vp) {
   await g.evaluate(() => { openProject("p4816"); }); await sleep(300);
   m0 = await g.evaluate(() => envssUpdate.check("test").then(s => ({ forced: s.forced, min: s.min, remote: s.remote, reasons: envssUpdate.blockers(), banner: (document.getElementById("v4816Banner") || {}).textContent || "" })));
   await sleep(800);
-  check(`[${vp}] below the minimum, online, 48.19 published: forced update path + banner (says why it is waiting)`, m0.forced && /Update needed/.test(m0.banner) && /v48\.19 or newer is required/.test(m0.banner) && /Waiting for: .*to upload/.test(m0.banner) && (await ver(g)) === "48.18", JSON.stringify(m0));
+  check(`[${vp}] below the minimum, online, 48.20 published: forced update path + banner (says why it is waiting)`, m0.forced && /Update needed/.test(m0.banner) && /v48\.20 or newer is required/.test(m0.banner) && /Waiting for: .*to upload/.test(m0.banner) && (await ver(g)) === "48.19", JSON.stringify(m0));
   await g.evaluate(() => window.scrollTo(0, 0)); await sleep(200);
   await shot(g, "05-min-version-banner");
   await g.evaluate(() => openEvent("eU")); await sleep(400);
@@ -194,12 +198,12 @@ async function run(vp) {
   check(`[${vp}] gate: nothing opened by the blocked add (still on the event screen)`, pageAfterAdd === "event", pageAfterAdd);
   await shot(g, "06-min-version-add-blocked");
   await g.evaluate(() => openTrain("u1")); await sleep(400);
-  if (await g.$("#btnStart")) await g.click("#btnStart"); await sleep(500);
+  if (await g.$("#btnStart")) await g.click("#btnStart"); await g19ok(g); await sleep(500);
   const u1 = await train(g, "u1");
   check(`[${vp}] gate: START on a prepped sample is blocked`, !u1.startAt && u1.status === "prepped", JSON.stringify({ s: u1.status, a: u1.startAt }));
   await shot(g, "07-min-version-start-blocked");
   await g.evaluate(() => openTrain("u2")); await sleep(400);
-  if (await g.$("#btnStop")) await g.click("#btnStop"); await sleep(900);
+  if (await g.$("#btnStop")) await g.click("#btnStop"); await g19ok(g); await sleep(900);
   for (let i = 0; i < 4; i++) {   /* answer the STOP dialogs a tech would see (Chromebook laptop reminder, flow deviation) */
     const clicked = await g.evaluate(() => { const no = document.getElementById("v488No"); if (no) { no.click(); return "v488No"; }
       const got = Array.from(document.querySelectorAll(".v483-modal button")).find(b => /Got it/i.test(b.textContent)); if (got) { got.click(); return "Got it"; } return ""; });
@@ -217,9 +221,9 @@ async function run(vp) {
   const nav2 = g.waitForNavigation({ timeout: 40000 }).catch(() => null);
   o2.failTables = [];
   await g.evaluate(() => { view.page = "dash"; render(); envssUpdate.check("online"); envssSync.flushQueue(); });
-  await nav2; const ok2 = await waitVer(g, "48.19"); await sleep(600);
+  await nav2; const ok2 = await waitVer(g, "48.20"); await sleep(600);
   const fin = await g.evaluate(() => ({ st: (s => ({ reasons: envssUpdate.blockers(), pending: s.pending, log: s.log.slice(-12) }))(envssUpdate.state()), v: APP_VERSION, banner: !!document.getElementById("v4816Banner"), toast: (document.getElementById("v4816Toast") || {}).textContent || "" }));
-  check(`[${vp}] back online + queue uploaded -> forced update applied: v48.19, banner gone, toast`, ok2 && !fin.banner && fin.toast === "Updated to v48.19", JSON.stringify(fin));
+  check(`[${vp}] back online + queue uploaded -> forced update applied: v48.20, banner gone, toast`, ok2 && !fin.banner && fin.toast === "Updated to v48.20", JSON.stringify(fin));
   const r3 = S2.envss_trains.get("u3");
   check(`[${vp}] the change queued under the gate reached Supabase (mock) and is on the device`, r3 && JSON.stringify(r3).includes("Queued before gate") && ((await train(g, "u3")) || {}).comments === "Queued before gate");
   const u2b = S2.envss_trains.get("u2");
@@ -230,7 +234,7 @@ async function run(vp) {
 
   /* ===== C: fail open on a bad / unreadable setting ===== */
   deploy.root = OLD;
-  for (const [label, st, o] of [["value 'abc'", store("abc"), {}], ["table missing (404)", store("48.19"), { tableStatus: { app_settings: 404 } }], ["value '0'", store("0"), {}]]) {
+  for (const [label, st, o] of [["value 'abc'", store("abc"), {}], ["table missing (404)", store("48.20"), { tableStatus: { app_settings: 404 } }], ["value '0'", store("0"), {}]]) {
     deploy.root = OLD;
     const p = await boot(vp, st, o); deploy.root = NEW;
     const r = await p.evaluate(() => envssUpdate.check("test").then(s => ({ forced: s.forced, min: s.min, minErr: s.minErr })));

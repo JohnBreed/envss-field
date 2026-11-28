@@ -90,6 +90,7 @@ const ext = [];
 async function boot(vp, store, keepStorage, pre, mopts) {
   const ctx = await (browser.createBrowserContext ? browser.createBrowserContext() : browser.createIncognitoBrowserContext());   /* own storage + IndexedDB = a separate device */
   const page = await ctx.newPage();
+  await page.evaluateOnNewDocument(() => { window.ENVSS_ALLOW_MANUAL_EVENTS = true; });   /* v48.19: manual events are off by default; this suite covers the manual-event entry points behind the flag (multi.test.mjs covers it off) */
   if (pre) await page.evaluateOnNewDocument(pre); page.errs = []; page.on("pageerror", e => page.errs.push(String(e)));
   page.on("console", m => { if (m.type() === "warning" && /v48\.7/.test(m.text())) page.errs.push(m.text()); });
   await page.setViewport(VIEWPORTS[vp].viewport); await page.setUserAgent(VIEWPORTS[vp].ua);
@@ -111,7 +112,7 @@ async function run(vp) {
   const shot = (page, n, full = true) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const store = remoteFixture();
   const page = await boot(vp, store);
-  check(`[${vp}] app is v48.18`, await page.evaluate(() => APP_VERSION === "48.18" && document.getElementById("appVersion").textContent === "v48.18" && document.title === "ENVSS Field v48.18"));
+  check(`[${vp}] app is v48.19`, await page.evaluate(() => APP_VERSION === "48.19" && document.getElementById("appVersion").textContent === "v48.19" && document.title === "ENVSS Field v48.19"));
   await waitFor(page, () => activityLoaded && projectsLoaded);
   const appsDefault = await page.evaluate(() => envssAuto.apps().map(a => [a.appId, a.fieldType, a.kind, a.enabled]));
   check(`[${vp}] default Podio event apps: HYG 24280319 hygiene; Occ Noise 30888380 hygiene/noise; Vent Survey 30888385 hygiene/vent; Onsite RFT 30888384 fit`,
@@ -128,22 +129,22 @@ async function run(vp) {
   await waitFor(page, () => db.events.some(e => e.id === "e-podio-9001"));
   let list = await evs(page);
   const e1 = list.find(e => e.id === "e-podio-9001"), e2 = list.find(e => e.id === "e-podio-9002");
-  check(`[${vp}] confirmed Podio event -> field event e-podio-9001 on the right project with Podio details`, e1 && e1.projectId === "podio-p0019500" && e1.date === D(2) && e1.podioAuto === true && e1.podioLinked === true && e1.lab === "Test Lab" && e1.poc.first === "Pat" && /^0019500-00\d$/.test(e1.code) && e1.podioSeen.startDate === D(2), JSON.stringify(e1));
+  check(`[${vp}] confirmed Podio event -> field event e-podio-9001 on the right project with Podio details`, e1 && e1.projectId === "podio-p0019500" && e1.date === D(2) && e1.podioAuto === true && e1.podioLinked === true && e1.lab === "Test Lab" && e1.poc.first === "Pat" && /^0019500-ACA-NSED-00\d$/.test(e1.code) && e1.podioSeen.startDate === D(2), JSON.stringify(e1));
   check(`[${vp}] audit says 'Created automatically from Podio'`, e1 && e1.audit.length === 1 && e1.audit[0].action === "Created automatically from Podio", JSON.stringify(e1 && e1.audit));
   check(`[${vp}] tentative Podio event with no date is created too (no wait for confirmed), date left blank`, e2 && e2.date === "" && e2.podioItemId === "9002", JSON.stringify(e2));
   check(`[${vp}] v48.14: backlog event (start 30 days ago) IS auto-created now (no date window)`, byItem(list, "9003").length === 1 && byItem(list, "9003")[0].podioAuto === true, JSON.stringify(byItem(list, "9003")));
   check(`[${vp}] v48.14: Podio event with no date, last edited 200 days ago, is auto-created too`, byItem(list, "9053").length === 1);
   check(`[${vp}] fit-testing-only HYG item (RFT,HPFT) is not made into a hygiene event`, byItem(list, "9050").length === 0);
   const k = byItem(list, "9051")[0];
-  check(`[${vp}] Kerr-like item (RFT,NSEOC-ACA,VENT + long forwarded email) -> ONE hygiene event, never a fit event`, byItem(list, "9051").length === 1 && k.type === "hygiene" && /^0019517-00\d$/.test(k.code) && !list.some(e => e.projectId === "podio-p0019517" && e.type === "fit"), JSON.stringify(k && { type: k.type, code: k.code }));
+  check(`[${vp}] Kerr-like item (RFT,NSEOC-ACA,VENT + long forwarded email) -> ONE hygiene event coded {job}-NSEOC-ACA-001 (RFT skipped; first remaining Job Type is primary), never a fit event`, byItem(list, "9051").length === 1 && k.type === "hygiene" && k.code === "0019517-NSEOC-ACA-001" && !list.some(e => e.projectId === "podio-p0019517" && e.type === "fit"), JSON.stringify(k && { type: k.type, code: k.code }));
   check(`[${vp}] long Podio task text kept in full on the record (nothing trimmed), notes left empty`, k && k.taskDesc.length > 3000 && /Forwarded message/.test(k.taskDesc) && !k.notes, k && k.taskDesc.length);
   check(`[${vp}] Podio scope stored from the reference: RFT, NSEOC-ACA, VENT`, k && JSON.stringify(k.podioTypes) === '["RFT","NSEOC-ACA","VENT"]', JSON.stringify(k && k.podioTypes));
   const fitE = list.find(e => e.id === "eFit"), h19 = byItem(list, "9052");
-  check(`[${vp}] hygiene event beside a fit event on the same job + date: hygiene auto-created, no link offer to the fit event`, h19.length === 1 && h19[0].type === "hygiene" && /^0019519-00\d$/.test(h19[0].code) && !(await page.evaluate(() => envssAuto.offers()))["9052"], JSON.stringify(h19.map(e => e.code)));
-  check(`[${vp}] fit event untouched (type, code, no Podio link, no audit added)`, fitE && fitE.type === "fit" && fitE.code === "0019519-FIT-001" && !fitE.podioItemId && !fitE.podioLinked && (fitE.audit || []).length === 0, JSON.stringify(fitE));
+  check(`[${vp}] hygiene event beside a fit event on the same job + date: hygiene auto-created as {job}-ACA-NSED-001, no link offer to the fit event`, h19.length === 1 && h19[0].type === "hygiene" && /^0019519-ACA-NSED-00\d$/.test(h19[0].code) && !(await page.evaluate(() => envssAuto.offers()))["9052"], JSON.stringify(h19.map(e => e.code)));
+  check(`[${vp}] hand-made unstarted fit event: type and no Podio link unchanged; code FIT-001 becomes RFT-001`, fitE && fitE.type === "fit" && fitE.code === "0019519-RFT-001" && !fitE.podioItemId && !fitE.podioLinked && (fitE.audit || []).some(a => /RFT, not FIT/.test(a.detail || a.action || "")), JSON.stringify(fitE));
   const offers20 = (await page.evaluate(() => envssAuto.offers()))["9054"];
   const e20 = byItem(list, "9054");
-  check(`[${vp}] v48.15 0019389-like (hand-made -001 alive + tombstoned FIT event): Podio event auto-created as its own event (-002), no link offer, hand-made untouched, FIT code not reused`, e20.length === 1 && e20[0].code === "0019520-002" && e20[0].type === "hygiene" && !offers20 && !list.find(e => e.id === "eHand20").podioItemId && !list.some(e => e.projectId === "podio-p0019520" && e.type === "fit") && JSON.stringify(await page.evaluate(() => envssAuto.reusableCodes("podio-p0019520"))) === "[]", JSON.stringify([e20.map(e => e.code), offers20]));
+  check(`[${vp}] v48.15 0019389-like (hand-made -001 alive + tombstoned FIT event): Podio event auto-created as 0019520-ACA-NSED-001, no link offer, hand-made code untouched, FIT/RFT sequence not used`, e20.length === 1 && e20[0].code === "0019520-ACA-NSED-001" && e20[0].type === "hygiene" && !offers20 && !list.find(e => e.id === "eHand20").podioItemId && !list.some(e => e.projectId === "podio-p0019520" && e.type === "fit") && JSON.stringify(await page.evaluate(() => envssAuto.reusableCodes("podio-p0019520"))) === "[]", JSON.stringify([e20.map(e => e.code), offers20]));
   check(`[${vp}] event deleted here (tombstone) is NOT re-created`, byItem(list, "9004").length === 0 && !list.some(e => e.id === "e-podio-9004"));
   check(`[${vp}] AFM-only HYG item is skipped (AFM flow owns it)`, byItem(list, "9005").length === 0);
   check(`[${vp}] Podio 'Not required' item is not created`, byItem(list, "9011").length === 0);
@@ -157,20 +158,20 @@ async function run(vp) {
       pending: P("Pending"), drafted: P("Report Drafted"), review: P("Report in Review"), authorise: P("I have conducted a review and authorise the report to be sent to client once Pdf'd"), blank: P(""), tentative: P("", "Site Works Start Date is Tentative"), nostatus: P("", "") }; });
   const off = ["invoiced", "nrr", "canceled", "cancelled", "cancelledCase", "frg", "send", "sent", "legacyCancel", "legacyNotSent", "legacySent", "swnr", "lab"], on = ["pending", "drafted", "review", "authorise", "blank", "tentative", "nostatus"];
   check(`[${vp}] isPlanned on exact Podio option texts: done stages false, earlier stages true`, off.every(k => unit[k] === false) && on.every(k => unit[k] === true), JSON.stringify(unit));
-  check(`[${vp}] v48.15 (John: "if created in Podio just add"): Podio event beside hand-made 0019401-001 on the same date is created (0019401-002), no link offer, hand-made untouched`, byItem(list, "9006").length === 1 && byItem(list, "9006")[0].code === "0019401-002" && JSON.stringify(await page.evaluate(() => envssAuto.offers())) === "{}" && !list.find(e => e.id === "eHand").podioItemId, JSON.stringify([byItem(list, "9006").map(e => e.code), await page.evaluate(() => envssAuto.offers())]));
+  check(`[${vp}] v48.15 (John: "if created in Podio just add"): Podio event beside hand-made 0019401-001 on the same date is created (0019401-ACA-NSED-001), no link offer, hand-made untouched`, byItem(list, "9006").length === 1 && byItem(list, "9006")[0].code === "0019401-ACA-NSED-001" && JSON.stringify(await page.evaluate(() => envssAuto.offers())) === "{}" && !list.find(e => e.id === "eHand").podioItemId, JSON.stringify([byItem(list, "9006").map(e => e.code), await page.evaluate(() => envssAuto.offers())]));
   check(`[${vp}] already-linked events are not duplicated (9008 stays one event)`, byItem(list, "9008").length === 1);
   const last = await page.evaluate(() => envssAuto.last());
   check(`[${vp}] 0019300-like: two Podio events on one project + date -> two field events (Podio is the source), no link offer between them`, byItem(list, "9055").length === 1 && byItem(list, "9056").length === 1 && !(await page.evaluate(() => envssAuto.offers()))["9056"]);
-  check(`[${vp}] 0019300-like: the Podio event whose reference says -001 gets 0019521-001; the other gets -002`, byItem(list, "9056")[0].code === "0019521-001" && byItem(list, "9055")[0].code === "0019521-002", JSON.stringify([byItem(list, "9055")[0].code, byItem(list, "9056")[0].code]));
+  check(`[${vp}] 0019300-like: both Podio events get {job}-ACA-NSED-00N (reference 0019521-001 is not used as a field code; it looks like a project)`, byItem(list, "9055")[0].code === "0019521-ACA-NSED-001" && byItem(list, "9056")[0].code === "0019521-ACA-NSED-002", JSON.stringify([byItem(list, "9055")[0].code, byItem(list, "9056")[0].code]));
   check(`[${vp}] run summary created 18 (9001, 9002, 9003, 9006, 9010, 9029, 9030, 9040-9044, 9051-9056)`, last.created.length === 18, JSON.stringify(last));
   /* code reuse (John, 23 Nov 2026 20:05 AWST) */
   const codeOf = i => (byItem(list, i)[0] || {}).code;
-  check(`[${vp}] deleted hand-made duplicate with no samples: auto event reuses its code (0019511-001)`, codeOf("9040") === "0019511-001", codeOf("9040"));
+  check(`[${vp}] deleted hand-made duplicate with no samples: auto event gets {job}-ACA-NSED-001 (project-style 0019511-001 is not reused)`, codeOf("9040") === "0019511-ACA-NSED-001", codeOf("9040"));
   check(`[${vp}] the deleted hand-made event itself is not re-created`, !list.some(e => e.id === "eHandDel") && store.envss_events.get("eHandDel").payload.podioUnplanned === true && !store.envss_events.get("eHandDel").payload.podioItemId);
-  check(`[${vp}] deleted hand-made event that had samples keeps its code reserved (0019512-002)`, codeOf("9041") === "0019512-002", codeOf("9041"));
-  check(`[${vp}] deleted auto-created event keeps its code reserved (0019513-002)`, codeOf("9042") === "0019513-002", codeOf("9042"));
-  check(`[${vp}] deleted Podio-linked event keeps its code reserved (0019514-002)`, codeOf("9043") === "0019514-002", codeOf("9043"));
-  check(`[${vp}] deleted event of unknown kind (no hand-made flag) keeps its code reserved (0019515-002)`, codeOf("9044") === "0019515-002", codeOf("9044"));
+  check(`[${vp}] deleted hand-made event that had samples: new event is {job}-ACA-NSED-001; project-style 0019512-001 stays reserved (not reused)`, codeOf("9041") === "0019512-ACA-NSED-001", codeOf("9041"));
+  check(`[${vp}] deleted auto-created event: new event is {job}-ACA-NSED-001; project-style 0019513-001 stays reserved`, codeOf("9042") === "0019513-ACA-NSED-001", codeOf("9042"));
+  check(`[${vp}] deleted Podio-linked event: new event is {job}-ACA-NSED-001; project-style 0019514-001 stays reserved`, codeOf("9043") === "0019514-ACA-NSED-001", codeOf("9043"));
+  check(`[${vp}] deleted event of unknown kind: new event is {job}-ACA-NSED-001; project-style 0019515-001 stays reserved`, codeOf("9044") === "0019515-ACA-NSED-001", codeOf("9044"));
   await waitFor(page, () => !syncState.pending["events:e-podio-9001"] && !syncState.pending["events:e-podio-9010"]);
   check(`[${vp}] auto-created events reach Supabase (mock) as upserts`, store.envss_events.has("e-podio-9001") && store.envss_events.get("e-podio-9001").payload.podioItemId === "9001" && store.envss_events.get("e-podio-9001").project_id === "podio-p0019500");
 
@@ -209,7 +210,7 @@ async function run(vp) {
   const menuOpen = await page.evaluate(() => { const m = document.getElementById("projectMenu"), l = document.getElementById("importCsv").closest("label"); return m.open && l.getBoundingClientRect().height > 30; });
   check(`[${vp}] tapping ☰ shows Import field CSV`, menuOpen);
   await page.evaluate(() => { const m = document.getElementById("projectMenu"); if (m) m.open = false; });
-  check(`[${vp}] project's Podio list says created automatically, names the event (no Open, no Start fieldwork)`, /created automatically/.test(card1) && /0019500-00\d/.test(card1) && !/Open project event/.test(card1) && !/Start fieldwork/.test(card1), card1);
+  check(`[${vp}] project's Podio list says created automatically, names the event (no Open, no Start fieldwork)`, /created automatically/.test(card1) && /0019500-ACA-NSED-00\d/.test(card1) && !/Open project event/.test(card1) && !/Start fieldwork/.test(card1), card1);
   await shot(page, "01-project-auto-created");
   await page.evaluate(() => openEvent("e-podio-9001")); await sleep(400);
   const autoNote = await page.evaluate(() => (document.getElementById("v487Auto") || {}).textContent || "");
@@ -263,9 +264,9 @@ async function run(vp) {
   /* 6. v48.15: hand-made event on the same job + date -> no prompt, the Podio event has its own field event */
   await page.evaluate(() => openProject("podio-p0019401")); await sleep(700);
   const card6 = await page.evaluate(() => (document.querySelector('[data-podio-item="9006"]') || {}).textContent || "");
-  check(`[${vp}] v48.15 project card: no 'Link' / 'Create a separate event' prompt; says 0019401-002 was created automatically`, !/Link 0019401-001/.test(card6) && !/Create a separate event/.test(card6) && /0019401-002 was created automatically/.test(card6), card6);
+  check(`[${vp}] v48.15 project card: no 'Link' / 'Create a separate event' prompt; says 0019401-ACA-NSED-001 was created automatically`, !/Link 0019401-001/.test(card6) && !/Create a separate event/.test(card6) && /0019401-ACA-NSED-001 was created automatically/.test(card6), card6);
   const rows6 = await page.evaluate(() => [...document.querySelectorAll("#app .brand-type")].map(x => x.textContent.trim()));
-  check(`[${vp}] v48.15 events list shows both 0019401-001 (hand-made) and 0019401-002 (Podio)`, rows6.some(x => /^0019401-001/.test(x)) && rows6.some(x => /^0019401-002/.test(x)), JSON.stringify(rows6));
+  check(`[${vp}] v48.15 events list shows both 0019401-001 (hand-made) and 0019401-ACA-NSED-001 (Podio)`, rows6.some(x => /^0019401-001/.test(x)) && rows6.some(x => /^0019401-ACA-NSED-001/.test(x)), JSON.stringify(rows6));
   await shot(page, "05-project-no-link-prompt");
   await page.evaluate(() => openEvent("eHand")); await sleep(400);
   const offerEv = await page.evaluate(() => document.querySelectorAll("[data-v487-offer],[data-v487-link],[data-v487-separate]").length);
@@ -279,7 +280,7 @@ async function run(vp) {
   check(`[${vp}] Podio moved 9008 (start +5 -> +6): field event date NOT changed`, moved.date === D(5), moved.date);
   await page.evaluate(() => { view.page = "dash"; render(); }); await sleep(300);
   const dash = await page.evaluate(() => (document.getElementById("v487Dash") || {}).textContent || "");
-  check(`[${vp}] dashboard lists events that changed in Podio (0019508-001 moved, 0019509-001 gone)`, /0019508-001/.test(dash) && /0019509-001/.test(dash), dash);
+  check(`[${vp}] dashboard lists events that changed in Podio (unstarted 0019508-001 was renamed 0019508-ACA-NSED-001 and moved; 0019509-001 gone)`, /0019508-ACA-NSED-001/.test(dash) && /0019509-001/.test(dash), dash);
   await page.evaluate(() => window.scrollTo(0, 0)); await shot(page, "07-dashboard-review", false);
   await page.evaluate(() => openEvent("e-podio-9008")); await sleep(400);
   const flag = await page.evaluate(() => (document.getElementById("v487Flags") || {}).textContent || "");
@@ -315,7 +316,7 @@ async function run(vp) {
   const fresh = await boot(vp, store);    /* another device, empty storage, same Supabase */
   await waitFor(fresh, () => activityLoaded && projectsLoaded); await refresh(fresh); await fresh.evaluate(() => envssAuto.run()); await sleep(600);
   const fl = await evs(fresh);
-  check(`[${vp}] fresh device: same codes (reuse only for the hand-made one), no new events`, byItem(fl, "9040").length === 1 && byItem(fl, "9040")[0].code === "0019511-001" && byItem(fl, "9041")[0].code === "0019512-002" && !fl.some(e => e.id === "eHandDel" || e.id === "eHandS"), JSON.stringify(["9040", "9041"].map(i => byItem(fl, i).map(e => e.code))));
+  check(`[${vp}] fresh device: same typed codes, no new events`, byItem(fl, "9040").length === 1 && byItem(fl, "9040")[0].code === "0019511-ACA-NSED-001" && byItem(fl, "9041")[0].code === "0019512-ACA-NSED-001" && !fl.some(e => e.id === "eHandDel" || e.id === "eHandS"), JSON.stringify(["9040", "9041"].map(i => byItem(fl, i).map(e => e.code))));
   check(`[${vp}] fresh device: deleted event not re-created; others not duplicated`, byItem(fl, "9002").length === 0 && byItem(fl, "9004").length === 0 && byItem(fl, "9001").length === 1 && byItem(fl, "9006").length === 1, JSON.stringify(["9001", "9002", "9004", "9006"].map(i => byItem(fl, i).length)));
   await fresh.close();
 
@@ -328,7 +329,7 @@ async function run(vp) {
   store.v_field_hyg_events.set("9045", item(9045, "0019516", "Deleted here", D(4), "Site Works Start Date is now Confirmed"));
   await refresh(page); await page.evaluate(() => envssAuto.run()); await sleep(300);
   const l16 = await evs(page);
-  check(`[${vp}] after deleting a hand-made event here, the Podio event gets 0019516-001; the deleted one stays deleted`, (byItem(l16, "9045")[0] || {}).code === "0019516-001" && !l16.some(e => e.id === "eLocalHand"), JSON.stringify(byItem(l16, "9045")));
+  check(`[${vp}] after deleting a hand-made event here, the Podio event gets 0019516-ACA-NSED-001; the deleted one stays deleted`, (byItem(l16, "9045")[0] || {}).code === "0019516-ACA-NSED-001" && !l16.some(e => e.id === "eLocalHand"), JSON.stringify(byItem(l16, "9045")));
 
   /* 10. race: another device creates + edits the same event between this device's run and its first send -> Supabase wins */
   const race = await boot(vp, store);
@@ -337,15 +338,15 @@ async function run(vp) {
   await race.evaluate(() => { flushing = true; });            /* hold this device's queue */
   await refresh(race); await race.evaluate(() => envssAuto.run());
   const localMade = await race.evaluate(() => !!db.events.find(e => e.id === "e-podio-9012"));
-  store.envss_events.set("e-podio-9012", ev("e-podio-9012", "0019510", "0019510-002", D(5), { podioItemId: "9012", podioAuto: true, operators: ["Minah"], notes: "edited on the other device" }));
+  store.envss_events.set("e-podio-9012", ev("e-podio-9012", "0019510", "0019510-ACA-NSED-002", D(5), { podioItemId: "9012", podioAuto: true, podioLinked: true, podioReference: "0019510-Test Client-HYG-ACA NSED-Race two", podioTitle: "Race two", operators: ["Minah"], notes: "edited on the other device" }));
   await race.evaluate(() => { flushing = false; flushQueue(); }); await sleep(1200);
   const rRow = store.envss_events.get("e-podio-9012"), rLocal = (await evs(race)).find(e => e.id === "e-podio-9012");
   check(`[${vp}] race: Supabase row made/edited by another device is kept, never overwritten; this device adopts it`, localMade && rRow.updated_by === "Other Device <minah@envss.com.au>" && rRow.payload.notes === "edited on the other device" && rLocal && rLocal.notes === "edited on the other device" && JSON.stringify(rLocal.operators) === '["Minah"]' && (await race.evaluate(() => envssAuto.last().adopted)).includes("e-podio-9012"), JSON.stringify({ rRow, rLocal }));
   /* race with a tombstone: another device deleted it already */
   store.v_field_hyg_events.set("9013", item(9013, "0019510", "Race three", D(6), "Site Works Start Date is now Confirmed"));
   await race.evaluate(() => { flushing = true; }); await refresh(race); await race.evaluate(() => envssAuto.run());
-  store.envss_events.set("e-podio-9013", ev("e-podio-9013", "0019510", "0019510-003", D(6), { podioItemId: "9013", podioAuto: true }));
-  store.envss_deletions.set("e-podio-9013", { id: "e-podio-9013", payload: { id: "e-podio-9013", tombstone: "event", deletedEventId: "e-podio-9013", eventId: "e-podio-9013", projectId: "podio-p0019510", code: "0019510-003", podioItemId: "9013", at: NOW }, updated_at: NOW });
+  store.envss_events.set("e-podio-9013", ev("e-podio-9013", "0019510", "0019510-ACA-NSED-003", D(6), { podioItemId: "9013", podioAuto: true, podioLinked: true, podioReference: "0019510-Test Client-HYG-ACA NSED-Race three", podioTitle: "Race three" }));
+  store.envss_deletions.set("e-podio-9013", { id: "e-podio-9013", payload: { id: "e-podio-9013", tombstone: "event", deletedEventId: "e-podio-9013", eventId: "e-podio-9013", projectId: "podio-p0019510", code: "0019510-ACA-NSED-003", podioItemId: "9013", at: NOW }, updated_at: NOW });
   await race.evaluate(() => { flushing = false; flushQueue(); }); await sleep(1000);
   await race.evaluate(() => pullActivity()); await sleep(600); await race.evaluate(() => envssAuto.run()); await sleep(300);
   check(`[${vp}] race with a delete on another device: row not overwritten, event hidden, not re-created`, store.envss_events.get("e-podio-9013").updated_by === "Other Device <minah@envss.com.au>" && byItem(await evs(race), "9013").length === 0);
@@ -371,10 +372,10 @@ async function run(vp) {
 async function runApps(vp) {
   const store = remoteFixture();
   store.envss_projects.set("podio-p0019530", proj("0019530", "New apps")); store.envss_projects.set("podio-p0019531", proj("0019531", "Hand-made fit"));
-  const ni = (app, id, job, title, start, extraF) => Object.assign(item(id, job, title, start, "Site Works Start Date is now Confirmed", { fields: extraF || {} }), { app_id: app });
+  const ni = (app, id, job, title, start, extraF, types) => Object.assign(item(id, job, title, start, "Site Works Start Date is now Confirmed", { types, fields: extraF || {} }), { app_id: app });
   store.v_field_podio_events = new Map([
-    ni(7001, 9601, "0019530", "Occ noise", D(3)), ni(7002, 9602, "0019530", "Vent", D(3)), ni(7003, 9603, "0019530", "Onsite fit", D(3)), ni(7004, 9604, "0019530", "Switched off", D(3)),
-    ni(7003, 9605, "0019531", "Fit beside hand-made fit", D(5)),
+    ni(7001, 9601, "0019530", "Occ noise", D(3), {}, "NSEOC"), ni(7002, 9602, "0019530", "Vent", D(3), {}, "VENT"), ni(7003, 9603, "0019530", "Onsite fit", D(3), {}, "RFT"), ni(7004, 9604, "0019530", "Switched off", D(3)),
+    ni(7003, 9605, "0019531", "Fit beside hand-made fit", D(5), {}, "RFT"),
     /* labels of the new apps give other external ids: aliases map them */
     Object.assign({ item_id: 9606, app_id: 7001, title: "aliases", last_edit_on: NOW, synced_at: NOW, fields: { project: { title: "0019530 x", item_id: 1 }, "event-reference": "0019530-Test Client-HYG-NSEOC-Aliases",
       "site-works-start-date": { start: D(9) + " 00:00:00" }, "site-works-start-date-status": "Site Works Start Date is now Confirmed", "report-status": "Pending", "poc-first-name": "Alia" } }),
@@ -394,14 +395,14 @@ async function runApps(vp) {
   const list = await evs(page);
   const g = id => list.find(e => e.id === "e-podio-" + id);
   check(`[${vp}] apps: HYG rows still auto-create alongside new apps`, !!g(9001));
-  check(`[${vp}] apps: Occ Noise Event -> hygiene event, kind noise, app id kept`, g(9601) && g(9601).type === "hygiene" && g(9601).podioEventKind === "noise" && g(9601).podioAppId === "7001" && /^0019530-00\d$/.test(g(9601).code), JSON.stringify(g(9601) && { t: g(9601).type, k: g(9601).podioEventKind, c: g(9601).code }));
+  check(`[${vp}] apps: Occ Noise Event -> hygiene event, kind noise, app id kept`, g(9601) && g(9601).type === "hygiene" && g(9601).podioEventKind === "noise" && g(9601).podioAppId === "7001" && g(9601).code === "0019530-NSEOC-001", JSON.stringify(g(9601) && { t: g(9601).type, k: g(9601).podioEventKind, c: g(9601).code }));
   check(`[${vp}] apps: Ventilation Survey Event -> hygiene event, kind vent`, g(9602) && g(9602).type === "hygiene" && g(9602).podioEventKind === "vent");
-  check(`[${vp}] apps: Onsite Fit Test Event -> fit event {job}-FIT-001`, g(9603) && g(9603).type === "fit" && g(9603).code === "0019530-FIT-001", JSON.stringify(g(9603) && { t: g(9603).type, c: g(9603).code }));
+  check(`[${vp}] apps: Onsite Fit Test Event -> fit event {job}-RFT-001`, g(9603) && g(9603).type === "fit" && g(9603).code === "0019530-RFT-001", JSON.stringify(g(9603) && { t: g(9603).type, c: g(9603).code }));
   check(`[${vp}] apps: switched-off app creates nothing`, !g(9604));
   check(`[${vp}] apps: new-app field labels (event-reference, report-status, poc-first-name) are mapped`, g(9606) && g(9606).date === D(9) && g(9606).poc.first === "Alia" && /Aliases/.test(g(9606).podioReference), JSON.stringify(g(9606) && { d: g(9606).date, p: g(9606).poc }));
   check(`[${vp}] apps: finished new-app item (Report Status Invoiced) not created`, !g(9607));
   const off = await page.evaluate(() => envssAuto.offers());
-  check(`[${vp}] v48.15 apps: Podio fit event beside a hand-made fit event on the same date -> created as its own fit event (0019531-FIT-002), no offer`, g(9605) && g(9605).type === "fit" && g(9605).code === "0019531-FIT-002" && JSON.stringify(off) === "{}", JSON.stringify([g(9605) && g(9605).code, off]));
+  check(`[${vp}] v48.15 apps: Podio fit event beside a hand-made fit event on the same date -> created as its own fit event (0019531-RFT-002; the hand-made unstarted FIT-001 is renamed RFT-001), no offer`, g(9605) && g(9605).type === "fit" && g(9605).code === "0019531-RFT-002" && JSON.stringify(off) === "{}", JSON.stringify([g(9605) && g(9605).code, off]));
   check(`[${vp}] apps: HYG records unchanged (no podioAppId on HYG events)`, g(9001) && !("podioAppId" in g(9001)));
   await page.evaluate(() => openEvent("e-podio-9601")); await sleep(500);
   const lbl = await page.evaluate(() => (document.getElementById("v4814App") || {}).textContent || "");

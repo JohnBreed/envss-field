@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- ENVSS Field v48.18 (27 Nov 2026 AWST): same-device save clash fix (a pull can no longer undo or out-date this device's own save; merges keep every list entry from both sides; repeated same-device 'Merged with a newer copy' audits are not written again) + second tab on the same device is read-only with a banner and "Use this tab instead". Stacked after v48.17 (Drive badge wording, PR #29). Auto-update from v48.16 is unchanged and will not reload while a save is in flight. Rollback: tag rollback-v48.17 / v48.17. -->
+<!-- ENVSS Field v48.19 (27 Nov 2026 AWST): lock-down guards, see the v48.19 layer at the end. v48.18 (27 Nov 2026 AWST): same-device save clash fix (a pull can no longer undo or out-date this device's own save; merges keep every list entry from both sides; repeated same-device 'Merged with a newer copy' audits are not written again) + second tab on the same device is read-only with a banner and "Use this tab instead". Stacked after v48.17 (Drive badge wording, PR #29). Auto-update from v48.16 is unchanged and will not reload while a save is in flight. Rollback: tag rollback-v48.17 / v48.17. -->
 <!-- ENVSS Field v48.17 (27 Nov 2026 AWST): the photo Drive-status badge reads "Photo saved to device. Drive upload pending" (was "Waiting for Drive"); "In Drive" is unchanged. The longer text wraps under the thumbnail. Built on v48.16 safe auto-update + minimum version. Rollback: tag rollback-v48.16 / v48.16. -->
 <!-- ENVSS Field v48.16 (27 Nov 2026 AWST): the app updates itself. It checks on open, when it comes back to the front and every 15 min; the new version installs in the background and is switched in (reload) only when nothing is typed/open and everything has uploaded, then says "Updated to v48.16". Minimum version: app_settings.min_field_app_version (SQL work/settings_v48_16_01_app_settings.sql, not applied) forces the update and, until it applies, blocks new events/samples/START with a banner (viewing, STOP and syncing keep working; offline or no setting = nothing blocked). Rollback: tag rollback-v48.15 / v48.15. -->
 
@@ -15,10 +15,12 @@
 <!-- ENVSS Field v36 single-file build v44 (field.html, live; v44d: photos shrunk, kept in IndexedDB and uploaded to the private field-photos bucket, record keeps references only; v44: Rotameter on airborne samples and Field calibrator on noise samples (picker + free text, last used in the event, required on new samples, use for all samples); daily log (worker field sheet) on personal samples, informational only; v43: hover on project rows (any-hover), sample status filter chips, one New project event control; v42: event status = least-progressed sample, Mark event complete, back controls, event audit of sample activity; v41: one shared rule for sample status and the still-to-answer count; v40 promoted from the field-next test copy). v36: plain-word "Is this a mining job?" and "Is this a multiple day/shift job?" questions. v35: rejected samples go on the COC marked "voided needs clean and return". v34: AFM fibre events, Mines Act toggle + SRS search, admin-only tombstone deletes, GPS lines, COC Form 302 fixes (see the v34 layer at the end). v33: Podio is the source of truth; Podio project fields are read-only and never written. Based on field.html @ 95a1dab; v32 adds per-record sync, trimmed storage and offline reload (sw-next.js). -->
 <html lang="en">
 <head>
+<script>/* v4819 deep link stash: #event=…&sample=… survives the Google sign-in round trip (the hash is lost there) */
+try { (function () { var q = new URLSearchParams(location.hash.replace(/^#/, "")); var e = q.get("event"), t = q.get("sample"); if (e || t) sessionStorage.setItem("envss-deeplink-v4819", JSON.stringify({ event: e || "", sample: t || "", at: Date.now() })); })(); } catch (e) {}</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2D3A6A">
-  <title>ENVSS Field v48.18</title>
+  <title>ENVSS Field v48.19</title>
 
   <link rel="icon" href="logo.svg">
   <style>
@@ -416,7 +418,7 @@ body.has-fab { padding-bottom: 104px; }
   <header class="app-header">
     <img src="vOSog.png" alt="Environmental Site Services" onerror="this.src='logo.svg'">
     <div class="titles">
-      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.18</span></h1>
+      <h1>ENVSS Field <span class="app-version" id="appVersion">v48.19</span></h1>
 
       <p id="whoLabel">Capture</p>
     </div>
@@ -433,13 +435,18 @@ body.has-fab { padding-bottom: 104px; }
     </div>
   </div>
   <div id="app"></div>
-  <script src="config.js?v=48.18"></script>
+  <script src="config.js?v=48.19"></script>
 
   <script src="noise.js"></script>
   <script>
 /* Core script inlined from app.js @ 138a583 (previously loaded via jsDelivr pin). Only change: APP_VERSION 30 -> 31. */
 const KEY = "envss-field-next-v32"; /* live field.html uses "envss-field-v04"; see LEGACY_KEY */
-const APP_VERSION = "48.18"; /* 2026-11-27 (AWST): v48.18 = v48.17 + same-device save clash fix (stale-pull guard, own-save memory, list-union merge) + second tab read-only + quieter same-device merge audits; auto-update never reloads while a save is in flight. 2026-11-27 (AWST): v48.17 = v48.16 + photo Drive-status badge "Photo saved to device. Drive upload pending" (was "Waiting for Drive"; "In Drive" unchanged), wrapping under the thumbnail. 2026-11-27 (AWST): v48.16 = v48.15 + safe auto-update (new worker waits and is switched in with a reload only when nothing is being edited or uploaded; "Updated to v48.16" toast) and a minimum version from app_settings.min_field_app_version (below it, online: forced update, new work blocked until it applies; fails open). 2026-11-27 (AWST): v48.15 = v48.14 + plain "Checked Podio … · last Podio change …" status (sync check time from v_field_podio_sync). 2026-11-26 (AWST): v48.14 = v48.13 + auto-create hygiene field events from Podio HYG events (item 11, PR #16; was numbered 48.7 in the draft). 2026-11-26 (AWST): v48.13 = v48.12 + technician electronic sign-off from the signed-in Google account (only the person tested signs on the phone), a How to link on fit-test events (help/fit-test.html: video + step guide), one Drive copy per fit-test PDF/zip (was queued twice, second copy named _2), fit testing as a standalone event type (no linked hygiene event picker; old parentEventId values are ignored), Drive folder {job}_Field-App/Fit-Tests, and an offline on-device OCR fallback (Tesseract.js 5.1.1, cached in Cache Storage after one online load; Vision re-reads it when back online only if no field was edited). 2026-11-25 (AWST): v48.12 = v48.11 + a closer TSI PortaCount PDF layout (right-aligned labels, signature lines, no boxes) and a slim branded header (ENVSS logo, clickable https://envss.com.au and mailto:admin@envss.com.au). 2026-11-25 (AWST): v48.11 = v48.10 + TSI-layout OCR (multi-column, taskbar clip, validated exercises, silent US dates) and a TSI-style signed/unsigned PDF with no photo page. 2026-11-25 (AWST): v48.10 = v48.9 + Vision box-based fit-test OCR and IndexedDB photo/PDF storage (no data URLs in localStorage or envss_fit_reports). 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+const APP_VERSION = "48.19"; /* 2026-11-27 (AWST): v48.19 = v48.18 + lock-down guards (laptop START/STOP warning + office approval, 14 h STOP warning, head/cowl already running, company suggestions, noise calibration warning (blocks from 1 Dec 2026) + drift warning, reason to change a stopped sample after a 5 min grace, late manual start comment (required from 4 Dec 2026), missing-location notice, rotameter pick-list, company "Did you mean", name / company capitalisation, sample deep links, sync counter fix for deleted samples). v48.18 = v48.17 + same-device save clash fix (stale-pull guard, own-save memory, list-union merge) + second tab read-only + quieter same-device merge audits; auto-update never reloads while a save is in flight. 2026-11-27 (AWST): v48.17 = v48.16 + photo Drive-status badge "Photo saved to device. Drive upload pending" (was "Waiting for Drive"; "In Drive" unchanged), wrapping under the thumbnail. 2026-11-27 (AWST): v48.16 = v48.15 + safe auto-update (new worker waits and is switched in with a reload only when nothing is being edited or uploaded; "Updated to v48.16" toast) and a minimum version from app_settings.min_field_app_version (below it, online: forced update, new work blocked until it applies; fails open). 2026-11-27 (AWST): v48.15 = v48.14 + plain "Checked Podio … · last Podio change …" status (sync check time from v_field_podio_sync). 2026-11-26 (AWST): v48.14 = v48.13 + auto-create hygiene field events from Podio HYG events (item 11, PR #16; was numbered 48.7 in the draft). 2026-11-26 (AWST): v48.13 = v48.12 + technician electronic sign-off from the signed-in Google account (only the person tested signs on the phone), a How to link on fit-test events (help/fit-test.html: video + step guide), one Drive copy per fit-test PDF/zip (was queued twice, second copy named _2), fit testing as a standalone event type (no linked hygiene event picker; old parentEventId values are ignored), Drive folder {job}_Field-App/Fit-Tests, and an offline on-device OCR fallback (Tesseract.js 5.1.1, cached in Cache Storage after one online load; Vision re-reads it when back online only if no field was edited). 2026-11-25 (AWST): v48.12 = v48.11 + a closer TSI PortaCount PDF layout (right-aligned labels, signature lines, no boxes) and a slim branded header (ENVSS logo, clickable https://envss.com.au and mailto:admin@envss.com.au). 2026-11-25 (AWST): v48.11 = v48.10 + TSI-layout OCR (multi-column, taskbar clip, validated exercises, silent US dates) and a TSI-style signed/unsigned PDF with no photo page. 2026-11-25 (AWST): v48.10 = v48.9 + Vision box-based fit-test OCR and IndexedDB photo/PDF storage (no data URLs in localStorage or envss_fit_reports). 2026-11-25 (AWST): v48.9 = v48.8 + respirator fit testing (type fit, {job}-FIT-{seq}, photo OCR, signatures, A4 PDF, Drive Fit Test folder). 2026-11-25 (AWST): v48.8 = v48.7 + start flow pre-fills end flow on airborne (hygiene + AFM) samples, and STOP asks “Was there a deviation from the initial flow rate?” (No = end flow equals start, or enter a different end flow; audit records the choice; existing tolerance warnings stay). This supersedes draft PR #15 guard (a) (end flow locked until STOP; warn if end equals start). 2026-11-25: v48.7 = v48.6 + Linked Sample A, B, … (link personal samples at prep with no name; confirm before a name / DOB / sex / company / occupation / SEG / respirator answer fills the rest of the group; person fields never fill started samples, respirator answers do after the confirm; never rejected / fault samples or another person). 2026-11-23: v48.6 = v48.5 + project list Layout A (grouped by when work is happening, one card per job, Site Works Attended by on hygiene events and Sample Submitted by on AFM samples). Drafts #14–#17 still titled v48.6/v48.7 will be renumbered later. v48.5 = v48.4 + AFM pull of every event at Podio Report not sent (and a read-only project stub when that job is missing from envss_projects). v48.4 = v48.3 + next / previous arrows. v48.3 = time capture lock, COC / Mark complete gate, not used / void. v48.2 = AFM field-app + read-only Podio pull. */
+/* v48.19 (John, 28 Nov 2026 2:35 pm AWST): events come from Podio. Creating one by hand is switched off. Set to true to bring the
+   entry points back (☰ > Add event not in Podio, Create event, the fit "New event" type) if Podio fails. Existing hand-made events
+   still open, edit, sync and export. Tests can set window.ENVSS_ALLOW_MANUAL_EVENTS = true before load. */
+const ALLOW_MANUAL_EVENTS = typeof window !== "undefined" && typeof window.ENVSS_ALLOW_MANUAL_EVENTS === "boolean" ? window.ENVSS_ALLOW_MANUAL_EVENTS : false;
+window.envssManualEventsAllowed = () => ALLOW_MANUAL_EVENTS;
 
 /* v46: noise lives in noise.js (own NOISE_VERSION, refreshed on its own by sw-field.js). If it did not load, noise
    samples cannot start (nothing is lost; reload the app) and everything else keeps working. */
@@ -986,15 +993,50 @@ async function sbUpsert(table, row) {
 /* The ONE place that decides where the project list comes from.
    Today: envss_projects, paged. Later: swap to the Dashboard Bot's read-only view (v_dash_projects) by
    returning rows shaped as { id, payload: { id, source, number, name, status, ... }, updated_at }. */
-async function fetchProjectRows() {
-  const c = sbCfg();
+/* v48.19: download only what the app can use. Before: every Podio project ever copied (5,187 rows, 6 requests, about 2.6 MB)
+   on every start. Now: (1) field-created projects, (2) active Podio jobs, using the same rule the app already applies on the device
+   (isActiveProjectRec: status not Closed / Cancelled / On Hold, any job type, so AFM jobs typed HAZ stay), (3) safety net: any
+   project that already has a field event (server list, this device's list and queued project edits), even if Podio has since
+   closed it, so nothing in use disappears. Nothing is deleted anywhere; persist() already dropped closed, unreferenced Podio jobs
+   from the device copy, so this only stops downloading them. */
+function activeProjectsQuery() {
+  const f = "(payload->>source.is.null,payload->>source.neq.podio,payload->>status.not.in.(Closed,Cancelled,\"On Hold\"))";
+  return "&or=" + encodeURIComponent(f);
+}
+async function fetchProjectPages(url) {
   const all = [];
   for (let offset = 0; offset < 50000; offset += 1000) {
-    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&order=id.asc&limit=1000&offset=" + offset, { headers: sbHeaders() });
-    if (!res.ok) throw new Error("envss_projects " + res.status);
+    const res = await sbFetch(url + "&offset=" + offset, { headers: sbHeaders() });
+    if (!res.ok) { const e = new Error("envss_projects " + res.status); e.status = res.status; throw e; }
     const rows = await res.json();
     all.push(...rows);
     if (rows.length < 1000) break;
+  }
+  return all;
+}
+async function fetchProjectRows() {
+  const c = sbCfg();
+  const base = c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&order=id.asc&limit=1000";
+  let all;
+  try { all = await fetchProjectPages(base + activeProjectsQuery()); }
+  catch (e) {
+    if (e && e.status === 400) { all = await fetchProjectPages(base); return all; }   /* filter rejected by the server: old full download */
+    throw e;
+  }
+  /* safety net: projects that have a field event, from the server's event list plus this device's own */
+  const want = new Set();
+  const er = await sbFetch(c.supabaseUrl + "/rest/v1/envss_events?select=project_id&limit=5000", { headers: sbHeaders() });
+  if (!er.ok) throw new Error("envss_events " + er.status);
+  (await er.json()).forEach(r => { if (r && r.project_id) want.add(String(r.project_id)); });
+  (db.events || []).forEach(e => { if (e && e.projectId) want.add(String(e.projectId)); });
+  Object.keys(syncState.pending || {}).forEach(k => { if (k.indexOf("projects:") === 0) want.add(k.slice(9)); });
+  const have = new Set(all.map(r => r.id));
+  const missing = Array.from(want).filter(id => !have.has(id));
+  for (let i = 0; i < missing.length; i += 40) {
+    const ids = missing.slice(i, i + 40).map(id => '"' + String(id).replace(/"/g, "") + '"').join(",");
+    const res = await sbFetch(base + "&id=in." + encodeURIComponent("(" + ids + ")"), { headers: sbHeaders() });
+    if (!res.ok) throw new Error("envss_projects " + res.status);
+    all.push(...(await res.json()));
   }
   return all;
 }
@@ -1420,7 +1462,7 @@ function eventMatchesFilter(e, f) {
   if (f === "flag") { const x = eventFlags(e); return !!(x.rejected || x.fault); }
   return deriveEventStage(e) === f;
 }
-function isFitEvent(ev) { return !!ev && (ev.type === "fit" || /-FIT-\d+/i.test(String(ev.code || ""))); }
+function isFitEvent(ev) { return !!ev && (ev.type === "fit" || /-(FIT|RFT|HPFT)-\d+/i.test(String(ev.code || ""))); }
 /* v48.15 (John): service type codes on each events-list row, e.g. "0019389-002 · NSEOC". From the linked Podio event's Job Type
    (mirror copy on this device), else the codes saved when the event was made, else the reference. App defaults: Occ Noise -> NSEOC,
    Vent Survey -> VENT, Onsite RFT -> RFT (those apps copy the whole HYG job type list, so only their own codes are kept). */
@@ -1431,6 +1473,10 @@ function eventServiceCodes(e) {
   if (!c.length && Array.isArray(e.podioJobTypes)) c = e.podioJobTypes.slice();
   if (!c.length && Array.isArray(e.podioTypes)) c = e.podioTypes.slice();
   const pick = (re, dflt) => { const k = c.filter(x => re.test(x)); return k.length ? k : (e.podioItemId ? [dflt] : []); };
+  if (e.podioGroup && !e.podioEventKind && !isFitEvent(e) && window.envssAuto && envssAuto.groupKeyOf) {   /* v48.19: a split HYG event shows its own job type(s) */
+    const mine = c.filter(x => envssAuto.groupKeyOf(x) === e.podioGroup);
+    if (mine.length) return [...new Set(mine)];
+  }
   if (isFitEvent(e)) return pick(/^(RFT|HPFT)$/, "RFT");
   if (e.podioEventKind === "noise") return pick(/^(NSEOC|NSED|NSE)/, "NSEOC");
   if (e.podioEventKind === "vent") return pick(/^VENT/, "VENT");
@@ -1593,6 +1639,7 @@ function render() {
   else if (view.page === "project") root.innerHTML = projectHtml();
   else if (view.page === "event") root.innerHTML = eventHtml();
   else if (view.page === "train") root.innerHTML = trainHtml();
+  else if (view.page === "newEvent" && !ALLOW_MANUAL_EVENTS) { view.page = "project"; root.innerHTML = view.projectId && project(view.projectId) ? projectHtml() : dashHtml(); }
   else if (view.page === "newEvent") root.innerHTML = newEventHtml();
   else if (view.page === "newProject") root.innerHTML = newProjectHtml();
   else if (view.page === "editEvent") root.innerHTML = editEventHtml();
@@ -2582,7 +2629,7 @@ function openTrain(id) { view.page = "train"; view.trainId = id; render(); }
 function goDash() { view.page = "dash"; view.projectId = null; render(); }
 function openProject(id) { view.page = "project"; view.projectId = id; render(); }
 function openNewProject() { view.page = "newProject"; render(); }
-function openNewEvent(projectId) { view.page = "newEvent"; if (projectId) view.projectId = projectId; render(); }
+function openNewEvent(projectId) { if (!ALLOW_MANUAL_EVENTS) { if (projectId) view.projectId = projectId; if (view.page === "newEvent") view.page = "project"; render(); return; } view.page = "newEvent"; if (projectId) view.projectId = projectId; render(); }
 function openEditEvent(id) { view.page = "editEvent"; view.eventId = id; render(); }
 function markEventUpload(id) {
   const ev = eventById(id);
@@ -2795,6 +2842,7 @@ function createProject() {
   openProject(p.id);
 }
 function createEvent() {
+  if (!ALLOW_MANUAL_EVENTS) return;
   const projectId = view.projectId;
   const p = project(projectId);
   if (!p) { alert("Open a project first."); return; }
@@ -3228,7 +3276,7 @@ window.importFieldCsv = importFieldCsv;
 /* v48.14: Import field CSV lives in the ☰ menu at the top right of the project screen */
 function projectMenu(html) {
   var menu = '<details class="v4814-menu" id="projectMenu"><summary aria-label="More actions" title="More actions">☰</summary><div class="v4814-menu-list">'
-    + '<button type="button" class="v4814-menu-item" id="menuAddEvent" onclick="openNewEvent(view.projectId)">Add event not in Podio</button>'
+    + (ALLOW_MANUAL_EVENTS ? '<button type="button" class="v4814-menu-item" id="menuAddEvent" onclick="openNewEvent(view.projectId)">Add event not in Podio</button>' : "")
     + '<label class="v4814-menu-item">Import field CSV<input id="importCsv" type="file" accept=".csv,text/csv" style="display:none"></label></div></details>';
   return html.replace('<div class="wrap">', '<div class="wrap v4814-has-menu">' + menu);
 }
@@ -3434,7 +3482,7 @@ function deleteEvent(id) {
   const ts = trainsOf(id);
   if (!confirm("Delete event " + ev.code + " and its " + ts.length + " sample" + (ts.length === 1 ? "" : "s") + "? It is hidden everywhere; nothing is removed from the database.")) return;
   ts.forEach(t => v34Tomb({ id: t.id, trainId: t.id, eventId: id, pouch: t.pouch || t.sampleNo, kind: t.trainKind, detail: "event deleted" }));
-  v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: ev.projectId, code: ev.code, type: ev.type || "hygiene", podioItemId: ev.podioItemId ? String(ev.podioItemId) : "", podioAuto: !!ev.podioAuto, podioUnplanned: !!ev.podioUnplanned, sampleCount: ts.length, detail: "event deleted" });   /* v48.7: podioItemId so auto-create never brings it back; kind + sample count decide whether its code may be reused */
+  v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: ev.projectId, code: ev.code, type: ev.type || "hygiene", podioItemId: ev.podioItemId ? String(ev.podioItemId) : "", podioAuto: !!ev.podioAuto, podioUnplanned: !!ev.podioUnplanned, podioGroup: ev.podioGroup || "", sampleCount: ts.length, detail: "event deleted" });   /* v48.7: podioItemId so auto-create never brings it back; kind + sample count decide whether its code may be reused */
   applyTombstones();
   view.page = "project"; view.projectId = ev.projectId; view.eventId = null;
   commit(); render();
@@ -3448,7 +3496,7 @@ function deleteProject(id) {
   if (!confirm("Delete project " + p.number + " and its " + evs.length + " event" + (evs.length === 1 ? "" : "s") + "? It is hidden everywhere; nothing is removed from the database.")) return;
   evs.forEach(ev => {
     trainsOf(ev.id).forEach(t => v34Tomb({ id: t.id, trainId: t.id, eventId: ev.id, pouch: t.pouch || t.sampleNo, kind: t.trainKind, detail: "project deleted" }));
-    v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: id, code: ev.code, type: ev.type || "hygiene", podioItemId: ev.podioItemId ? String(ev.podioItemId) : "", detail: "project deleted" });
+    v34Tomb({ id: ev.id, tombstone: "event", deletedEventId: ev.id, eventId: ev.id, projectId: id, code: ev.code, type: ev.type || "hygiene", podioItemId: ev.podioItemId ? String(ev.podioItemId) : "", podioGroup: ev.podioGroup || "", detail: "project deleted" });
   });
   v34Tomb({ id: p.id, tombstone: "project", projectId: p.id, number: p.number, name: p.name || "", detail: "project deleted" });
   applyTombstones();
@@ -3969,6 +4017,7 @@ function toggleEventTypeFields() {
 }
 window.toggleEventTypeFields = toggleEventTypeFields;
 createEvent = function () {
+  if (!ALLOW_MANUAL_EVENTS) return;
   const projectId = view.projectId;
   const p = project(projectId);
   if (!p) { alert("Open a project first."); return; }
@@ -4977,6 +5026,7 @@ followUpComplete = function (t) {
   function picked(t) { return (t.audit || []).some(a => a && a.field === "person.sex" && a.to === "not_stated"); }
   function clearSilent(t) {
     const p = t && t.person; if (!p || isBlank(t) || p.sexSet || p.sex !== "not_stated") return false;
+    if ((db.deletions || []).some(d => d && d.trainId === t.id)) return false;   /* v48.19: never edit a deleted sample (it showed as "21 changes still uploading") */
     if (picked(t)) { p.sexSet = true; return true; }
     p.sex = ""; t.audit = t.audit || [];
     t.audit.push({ at: nowIso(), who: whoText(), action: "Changed Sex", field: "person.sex", from: "not_stated", to: "", detail: "Not stated was filled in automatically by an older version; cleared so it can be answered" });
@@ -9404,7 +9454,31 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       return /tentative|confirmed/i.test(start);
     }
 
-    function mapItem(item) {
+
+    function jobTypeTitle(x) {
+      if (x == null) return "";
+      if (typeof x === "string" || typeof x === "number") return cleanText(x);
+      if (Array.isArray(x)) return jobTypeTitle(x[0]);
+      if (typeof x === "object") {
+        if (x.title) return cleanText(x.title);
+        if (x.text) return cleanText(x.text);
+        if (typeof x.value === "string" || typeof x.value === "number") return cleanText(x.value);
+        if (x.value && typeof x.value === "object") return jobTypeTitle(x.value);
+      }
+      return relOf(x).title || "";
+    }
+    function jobTypesFrom(f) {
+      f = f || {};
+      const v = f["job-type-of-hyg-event"] != null ? f["job-type-of-hyg-event"]
+        : f["job-type"] != null ? f["job-type"]
+        : f["job-types"] != null ? f["job-types"]
+        : f.jobType;
+      const arr = v == null ? [] : (Array.isArray(v) ? v : [v]);
+      return arr.map(function (x) { return String(jobTypeTitle(x) || "").split(",")[0].trim(); })
+        .filter(function (x) { return /^[A-Z][A-Z0-9_ -]{0,20}$/.test(x); });
+    }
+
+        function mapItem(item) {
       const f = fieldBag(item);
       const project = f.project;
       const projectTitle = project && typeof project === "object" ? cleanText(project.title) : cleanText(project);
@@ -9423,9 +9497,10 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       const payload = {
         itemId: String((item && (item.item_id || item.itemId)) || ""),
         reference,
-        /* v48.15: service type codes from Podio "Job Type" (titles like "NSEOC, Detailed Occupational Noise Assessment (HYG)") */
-        jobTypes: (Array.isArray(f["job-type-of-hyg-event"]) ? f["job-type-of-hyg-event"] : f["job-type-of-hyg-event"] ? [f["job-type-of-hyg-event"]] : [])
-          .map(function (x) { return String(relOf(x).title || "").split(",")[0].trim(); }).filter(function (x) { return /^[A-Z][A-Z0-9_ -]{0,20}$/.test(x); }),
+        /* v48.15 / v48.19: service type codes from Podio "Job Type" (titles like "ACA, Airborne Contaminant Assessment (HYG)").
+           Accepts API arrays, decoded mirror objects, plain strings, and {text}/{value} shapes. */
+        jobTypes: jobTypesFrom(f),
+        title: cleanText(item && item.title || ""),
         fieldCode: /^\d{7}-\d{3}$/.test(reference) ? reference : "",
         jobNumber,
         projectItemId: project && typeof project === "object" && project.item_id ? String(project.item_id) : "",
@@ -9456,7 +9531,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       payload.planned = isPlanned(payload);
       return payload;
     }
-    return { mapItem, isPlanned };
+    return { mapItem, isPlanned, jobTypesFrom };
   })();
   const COOL_KEY = "envss-podio-cooldown-v46";
   let mirrorAt = 0;
@@ -9512,7 +9587,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const byJob = {}; let planned = 0, newest = "", lastEdit = "";
     const all = [];   /* v48.7: every live HYG item (planned or not) for auto-create and review flags */
     (items || []).forEach(it => {
-      const pl = PodioMap.mapItem({ item_id: it.item_id, fields: it.fields || {} });
+      const pl = PodioMap.mapItem({ item_id: it.item_id, title: it.title || "", fields: it.fields || {} });
       all.push({ itemId: pl.itemId, lastEdit: it.last_edit_on || "", payload: pl });
       if (it.synced_at && it.synced_at > newest) newest = it.synced_at;
       if (it.last_edit_on && it.last_edit_on > lastEdit) lastEdit = it.last_edit_on;
@@ -9621,7 +9696,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     if (!job) html += '<p class="help">This project has no 7-digit job number, so Podio events cannot be matched.</p>';
     else if (!rows.length) html += '<p class="help">No planned Podio events on this job yet. Use Refresh from Podio in the top bar to pull the latest.</p>';
     else html += rows.map(podioCard).join("");
-    html += '<p class="help" id="v4814Hint">Podio events appear in the events list by themselves. For work that is not in Podio, use ☰ (top right) › Add event not in Podio.</p>';   /* v48.14: one way in, from the menu */
+    html += '<p class="help" id="v4814Hint">Podio events appear in the events list by themselves.' + (ALLOW_MANUAL_EVENTS ? " For work that is not in Podio, use ☰ (top right) › Add event not in Podio." : "") + "</p>";   /* v48.14: one way in, from the menu */
     if (podioState.note) html += '<p class="help" id="podioNote">' + esc(podioState.note) + "</p>";
     if (podioState.err) html += '<p class="help" id="podioErr" style="color:var(--danger,#9B2C2C);font-weight:700">' + esc(podioState.err) + "</p>";
     html += "</div>";
@@ -12211,7 +12286,7 @@ function fixOpen(ts) {
     /* created by John 26 Nov 2026 3:29 pm AWST in 1.6 ENVSS Project Events (copies of the HYG app: same field ids) */
     { appId: "30888380", name: "Occ Noise Event", fieldType: "hygiene", kind: "noise", enabled: true },   /* occupational noise samples go in a hygiene event (noise.js) */
     { appId: "30888385", name: "Vent Survey Event", fieldType: "hygiene", kind: "vent", enabled: true },
-    { appId: "30888384", name: "Onsite RFT Event", fieldType: "fit", kind: "fit", enabled: true }         /* {job}-FIT-nnn, fit-test.js */
+    { appId: "30888384", name: "Onsite RFT Event", fieldType: "fit", kind: "fit", enabled: true }         /* {job}-RFT-nnn, fit-test.js */
   ];
   const appsCfg = () => (Array.isArray(window.ENVSS_PODIO_EVENT_APPS) ? window.ENVSS_PODIO_EVENT_APPS : PODIO_EVENT_APPS).map(a => Object.assign({}, a, { appId: String(a.appId || "") }));
   const appOf = r => { const id = String((r && (r.appId || (r.payload && r.payload.appId))) || HYG_APP); return appsCfg().find(a => a.appId === id) || null; };
@@ -12229,7 +12304,7 @@ function fixOpen(ts) {
   const last = { at: "", created: [], adopted: [], skipped: {}, waiting: false };
   let pulling = false;
 
-  /* v48.14: auto-create only ever makes and considers hygiene events; AFM (fibre) and fit-test events (type "fit", {job}-FIT-n) are never touched */
+  /* v48.14: auto-create only ever makes and considers hygiene events; AFM (fibre) and fit-test events (type "fit", {job}-RFT-n, legacy {job}-FIT-n still recognised) are never touched */
   const isHyg = e => !!e && !isFibreEvent(e) && !(typeof isFitEvent === "function" && isFitEvent(e));
   const idFor = itemId => "e-podio-" + String(itemId).replace(/[^0-9A-Za-z_-]/g, "");
   const jobOf = p => { const m = String(p && p.number || "").trim().match(/^(\d{7})(?!\d)/); return m ? m[1] : ""; };
@@ -12256,17 +12331,24 @@ function fixOpen(ts) {
     return t.length > 0 && t.every(x => x === "AFM");    /* AFM-only HYG items belong to the AFM app flow (v48.5) */
   }
   function tombs() {
-    const items = new Set(goneSet), evs = new Set(), prs = new Set(), codes = new Set();
+    /* items: Podio items whose every field event was deleted before groups existed (old tombstones carry no job-type group).
+       groups: "item|GROUP" pairs, one per deleted event of an item that has several (one field event per job-type group). */
+    const items = new Set(), groups = new Set(), evs = new Set(), prs = new Set(), codes = new Set();
+    goneSet.forEach(k => { if (String(k).indexOf("|") > 0) groups.add(String(k)); else items.add(String(k)); });
     (db.deletions || []).forEach(d => {
       if (!d) return;
       if (d.tombstone === "project" && d.projectId) prs.add(d.projectId);
       if (d.tombstone !== "event") return;
       if (d.deletedEventId) evs.add(d.deletedEventId);
       if (d.code) codes.add(d.code);
-      if (d.podioItemId) items.add(String(d.podioItemId));
-      const m = String(d.deletedEventId || "").match(/^e-podio-(.+)$/); if (m) items.add(m[1]);
+      const m = String(d.deletedEventId || "").match(/^e-podio-(.+)$/);
+      const mm = m && m[1].match(/^(\d+)-(.+)$/);                       /* extra-group id e-podio-<item>-<GROUP> */
+      if (d.podioItemId && d.podioGroup) groups.add(String(d.podioItemId) + "|" + d.podioGroup);
+      else if (mm) groups.add(mm[1] + "|" + mm[2]);
+      else if (d.podioItemId) items.add(String(d.podioItemId));
+      else if (m) items.add(m[1]);
     });
-    return { items, evs, prs, codes };
+    return { items, groups, evs, prs, codes };
   }
   /* events are merged before deletions inside one pull, so tombstone details (Podio item, hand-made, samples) are only complete
      from the second successful pull on; that second pull is started straight after the first. */
@@ -12284,6 +12366,11 @@ function fixOpen(ts) {
     if (!cfg.enabled) return "Podio app switched off for auto-create";
     if (cfg.appId === HYG_APP && isAfmOnly(pl.reference)) return "AFM only";
     if (cfg.appId === HYG_APP && isFitOnly(pl.reference)) return "fit testing only (RFT/HPFT): use Fit test, not a hygiene event";
+    if (cfg.appId === HYG_APP && Array.isArray(pl.jobTypes) && pl.jobTypes.length) {   /* the Job Type field wins over a stale Reference */
+      const jt = typesList(pl);
+      if (jt.length && jt.every(x => x === "RFT" || x === "HPFT")) return "fit testing only (RFT/HPFT): use Fit test, not a hygiene event";
+      if (jt.length && jt.every(x => x === "AFM")) return "AFM only";
+    }
     const t = today();
     if (pl.startDate) { if (BACK_DAYS != null && pl.startDate < addDays(t, -BACK_DAYS)) return "start date more than " + BACK_DAYS + " days ago"; }
     else if (NODATE_EDIT_DAYS != null) { const le = String(r.lastEdit || "").slice(0, 10); if (!le || le < addDays(t, -NODATE_EDIT_DAYS)) return "no start date and not edited in " + NODATE_EDIT_DAYS + " days"; }
@@ -12329,32 +12416,200 @@ function fixOpen(ts) {
     });
     return out;
   }
-  function codeFor(p, pl, tb) {
-    const reuse = reusableCodes(p);
-    const codes = new Set((db.events || []).map(e => e.code).concat([...tb.codes].filter(c => !reuse.has(c))));
-    const hint = codeHint(pl);
-    if (hint && !codes.has(hint) && hint.slice(0, 7) === String(jobOf(p) || p.number)) return hint;
-    const job = jobOf(p) || p.number;
-    let n = (db.events || []).filter(e => e.projectId === p.id && isHyg(e)).length + 1;
-    /* v48.14 (0019300): never hand out a code another Podio event names in its reference (…-001-…); that event gets it */
-    const named = c => tb.hinted && tb.hinted.has(c) && c !== hint;
-    while (codes.has(job + "-" + String(n).padStart(3, "0")) || named(job + "-" + String(n).padStart(3, "0"))) n++;
-    return job + "-" + String(n).padStart(3, "0");
+  /* v48.19 (John, 28 Nov 2026 1:57 pm AWST): field event codes are {job}-{type}-001, numbered per type on the job.
+     Examples: 0019358-ACA-001, 0019358-NSEOC-001, 0019358-VENT-001, 0019358-RFT-001 (not FIT). This avoids looking like a
+     project (0019XXX-00X). AFM events keep ENVSS-HYG-AFM-{job}-{seq}-{date}. Internal ids stay e-podio-<item>.
+     Primary type: dedicated app kind wins (Occ Noise -> NSEOC, Vent Survey -> VENT, Onsite RFT -> RFT). For a HYG event
+     with several Job Types, types that have their own event family (RFT, HPFT, AFM) are skipped when another type remains,
+     then the first remaining Job Type (as listed in Podio) is the primary. Combined categories such as NSEOC-ACA stay as
+     NSEOC-ACA. With no Job Type and no app kind the fallback is HYG. */
+  const OWN_FAMILY = { RFT: 1, HPFT: 1, AFM: 1, FIT: 1 };
+  function tokenOf(t) {
+    return String(t || "").trim().toUpperCase().replace(/\s+/g, "-").replace(/[^A-Z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
   }
-  function build(p, pl, id, how, tb, cfg) {
+  function typesList(pl) {
+    if (pl && Array.isArray(pl.jobTypes) && pl.jobTypes.length) return pl.jobTypes.map(tokenOf).filter(Boolean);
+    return typesOf(pl && pl.reference).map(tokenOf).filter(Boolean);
+  }
+  /* v48.19 (John, t737u): ONE field event per distinct job-type GROUP on a Podio HYG item. ACA and ACA-NSED are the same group
+     (ACA-NSED = airborne plus noise dosimetry dose badges, which the airborne event already handles). Every other code is its own
+     group, exactly as Podio has it, so new Job Types need no app update. RFT / HPFT / AFM go to their own app or event kind and
+     are not split out of a HYG item. Splitting needs the Job Type field itself (pl.jobTypes); the Reference text alone is often stale. */
+  const GROUP_ALIAS = { "ACA-NSED": "ACA" };
+  const groupKeyOf = tok => { const k = tokenOf(tok); return GROUP_ALIAS[k] || k; };
+  function groupsOf(pl, cfg) {
+    const split = !cfg || !cfg.appId || cfg.appId === HYG_APP;
+    const real = !!(pl && Array.isArray(pl.jobTypes) && pl.jobTypes.length);
+    const toks = typesList(pl);
+    const work = toks.filter(x => !OWN_FAMILY[x]);
+    const pool = work.length ? work : toks;
+    const make = list => { const key = groupKeyOf(list[0]); const token = list.includes("ACA-NSED") && key === "ACA" ? "ACA-NSED" : list[0]; return { key, token, types: list.slice() }; };
+    if (!pool.length) return [];
+    if (!split || !real || !work.length) return [make([pool[0]])];
+    const order = [], by = {};
+    work.forEach(x => { const k = groupKeyOf(x); if (!by[k]) { by[k] = []; order.push(k); } if (!by[k].includes(x)) by[k].push(x); });
+    return order.map(k => make(by[k]));
+  }
+  function codeToken(pl, cfg, ev) {
+    /* The token is the Podio Job Type code of this event's group, exactly as Podio has it (ACA-NSED, NSEOC, WBVIB, …).
+       App kind is only a fallback when the item has no Job Type at all: Onsite RFT -> RFT, Occ Noise -> NSEOC, Vent Survey -> VENT. */
+    const gs = groupsOf(pl, cfg);
+    if (gs.length) {
+      if (ev && ev.podioGroup) { const g = gs.find(x => x.key === ev.podioGroup); return g ? g.token : ""; }
+      return gs[0].token;
+    }
+    const kind = (cfg && cfg.kind) || (ev && ev.podioEventKind) || "";
+    if (kind === "fit" || (cfg && cfg.fieldType === "fit") || (ev && ev.type === "fit")) return "RFT";
+    if (kind === "vent") return "VENT";
+    if (kind === "noise") return "NSEOC";
+    return "HYG";
+  }
+  function typedCode(job, token, n) { return job + "-" + token + "-" + String(n).padStart(3, "0"); }
+  function seqOfTyped(code, job, token) {
+    const esc = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const aliases = token === "RFT" ? "(?:RFT|FIT|HPFT)" : esc;
+    const m = String(code || "").match(new RegExp("^" + String(job) + "-" + aliases + "-(\\d{3})$", "i"));
+    return m ? +m[1] : 0;
+  }
+  function takenCodes(tb, exceptId) {
+    const reuse = typeof reusableCodes === "function" && tb ? new Set() : new Set();
+    const out = new Set();
+    (db.events || []).forEach(e => { if (e && e.id !== exceptId && e.code) out.add(e.code); });
+    ((tb && tb.codes) ? [...tb.codes] : []).forEach(c => out.add(c));
+    (db.deletions || []).forEach(d => { if (d && d.tombstone === "event" && d.code) out.add(d.code); });
+    return out;
+  }
+  function nextTypedCode(job, token, tb, exceptId, reserved) {
+    const taken = takenCodes(tb || tombs(), exceptId);
+    (reserved || []).forEach(c => taken.add(c));
+    /* FIT-NNN and RFT-NNN share a sequence so a reserved legacy FIT code is not doubled as RFT-NNN */
+    let n = 1;
+    for (;;) {
+      const code = typedCode(job, token, n);
+      const fitAlias = token === "RFT" ? job + "-FIT-" + String(n).padStart(3, "0") : "";
+      if (!taken.has(code) && !(fitAlias && taken.has(fitAlias))) return code;
+      n++;
+      if (n > 999) return code;
+    }
+  }
+  function codeFor(p, pl, tb, cfg, ev, group) {
+    const job = jobOf(p) || String(p && p.number || "");
+    const token = group && group.token ? group.token : codeToken(pl, cfg, ev);
+    return nextTypedCode(job, token, tb, ev && ev.id);
+  }
+  function eventHasStartedWork(ev) {
+    if (!ev) return false;
+    if (ev.uploadReady) return true;
+    const ts = (typeof trainsOf === "function" ? trainsOf(ev.id) : (db.trains || []).filter(t => t && t.eventId === ev.id)) || [];
+    return ts.some(t => {
+      if (!t) return false;
+      if (t.startAt || t.endAt || /^(running|ended|fault|rejected|sample_stopped)$/.test(String(t.status || ""))) return true;
+      if (t.photos && t.photos.length) return true;
+      if (t.equipPhoto || t.screenPhoto) return true;
+      const n = t.noise;
+      if (n && (n.photo || n.spectrumPhoto || n.photoRef)) return true;
+      return false;
+    });
+  }
+  function canRenameCode(ev) {
+    if (!ev || (typeof isFibreEvent === "function" && isFibreEvent(ev))) return false;
+    return !eventHasStartedWork(ev);
+  }
+  /* Refresh Podio-sourced header fields on an existing linked event from the current mirror row.
+     Never overwrites tech-entered notes, samples, or a date the tech (or a "Keep as is") already set.
+     An empty date is filled. Job types, the Podio reference and the Podio title always follow the mirror.
+     Unstarted events may be renamed onto {job}-{type}-NNN; started events with samples keep their code. */
+  function refreshLinked(ev, r, reserved) {
+    if (!ev || !r) return false;
+    if (typeof isFibreEvent === "function" && isFibreEvent(ev)) return false;
+    const pl = r.payload || {}, cfg = appOf(r) || appOf({ appId: pl.appId }) || null;
+    const gs = groupsOf(pl, cfg);
+    if (!ev.podioGroup && gs.length) ev.podioGroup = gs[0].key;     /* a single-group caller (older event, test): the first group */
+    const changes = [];
+    const note = (field, from, to) => { changes.push({ field, from: from == null ? "" : String(from), to: to == null ? "" : String(to) }); };
+    const jt = Array.isArray(pl.jobTypes) ? pl.jobTypes.map(String) : [];
+    if (jt.length) {
+      if (JSON.stringify(ev.podioJobTypes || []) !== JSON.stringify(jt)) { note("podioJobTypes", (ev.podioJobTypes || []).join(", "), jt.join(", ")); ev.podioJobTypes = jt.slice(); }
+      if (JSON.stringify(ev.podioTypes || []) !== JSON.stringify(jt)) { note("podioTypes", (ev.podioTypes || []).join(", "), jt.join(", ")); ev.podioTypes = jt.slice(); }
+    }
+    if (pl.reference && pl.reference !== ev.podioReference) { note("podioReference", ev.podioReference || "", pl.reference); ev.podioReference = pl.reference; }
+    if (pl.title && pl.title !== ev.podioTitle) { note("podioTitle", ev.podioTitle || "", pl.title); ev.podioTitle = pl.title; }
+    /* date: fill a blank header; do not move a date already set (staff still get the review flag) */
+    if (!ev.date && pl.startDate) { note("date", "", pl.startDate); ev.date = pl.startDate; ev.podioSeen = Object.assign({}, ev.podioSeen || {}, { startDate: pl.startDate, at: nowIso() }); }
+    const proj = typeof project === "function" ? project(ev.projectId) : (db.projects || []).find(x => x.id === ev.projectId);
+    const job = jobOf(proj) || pl.jobNumber || (ev.podioSeen && ev.podioSeen.jobNumber) || "";
+    const token = job ? codeToken(pl, cfg, ev) : "";     /* "" when this event's group is no longer on the item: never recoded */
+    if (job && token && canRenameCode(ev)) {
+      const want = typedCode(job, token, seqOfTyped(ev.code, job, token) || 0);
+      let next = "";
+      if (seqOfTyped(ev.code, job, token) && ev.code === want) next = ev.code;
+      else if (seqOfTyped(ev.code, job, token) && ev.code !== want && !(takenCodes(tombs(), ev.id).has(want)) && !(reserved || []).includes(want)) next = want; /* FIT-001 -> RFT-001, same number */
+      else if (ev.code !== nextTypedCode(job, token, tombs(), ev.id, reserved)) next = nextTypedCode(job, token, tombs(), ev.id, reserved);
+      else next = ev.code;
+      if (next && next !== ev.code) { note("code", ev.code, next); ev.code = next; }
+    }
+    if (!changes.length) return false;
+    ev.audit = Array.isArray(ev.audit) ? ev.audit : [];
+    ev.audit.push({
+      at: nowIso(), who: "ENVSS Field (Podio refresh, " + whoText() + ")",
+      action: "Updated from Podio",
+      field: changes.map(c => c.field).join(", "),
+      from: changes.map(c => c.from).join(" | "),
+      to: changes.map(c => c.to).join(" | "),
+      detail: changes.map(c => c.field + ": " + (c.from || "(empty)") + " → " + c.to).join(" · ")
+        + (pl.itemId ? " · Podio " + pl.itemId : "")
+    });
+    return true;
+  }
+  /* Which job-type group does an existing event of this Podio item cover? Events made before groups existed carry no podioGroup:
+     they take the group their code names (0019358-ACA-001 -> ACA), else the first group the item has that nobody holds yet. */
+  function assignGroups(evsOf, gs) {
+    const stamp = (e, key) => { e.podioGroup = key; };
+    evsOf.filter(e => !e.podioGroup).forEach(e => {
+      const m = String(e.code || "").match(/^\d{7}-([A-Z0-9-]+?)-\d{3}$/i);
+      const k = m ? groupKeyOf(m[1] === "FIT" ? "RFT" : m[1]) : "";
+      if (k && gs.some(g => g.key === k) && !evsOf.some(o => o !== e && o.podioGroup === k)) return stamp(e, k);
+      const free = gs.find(g => !evsOf.some(o => o.podioGroup === g.key));
+      if (free && (!k || !gs.some(g => g.key === k))) return stamp(e, free.key);
+      if (k) return stamp(e, k);
+      if (gs[0]) stamp(e, gs[0].key);
+    });
+  }
+  function renameLegacyFitCodes() {
+    /* Unstarted planned fit events still coded {job}-FIT-NNN become {job}-RFT-NNN (same number when free). */
+    let n = 0, reserved = [];
+    (db.events || []).forEach(ev => {
+      if (!ev || ev.type !== "fit" && !/-(FIT|RFT|HPFT)-\d+/i.test(ev.code || "")) return;
+      if (!/-FIT-\d+/i.test(ev.code || "") || !canRenameCode(ev)) return;
+      const job = (ev.code.match(/^(\d{7})-/) || [])[1] || "";
+      if (!job) return;
+      const seq = seqOfTyped(ev.code, job, "RFT");
+      const want = typedCode(job, "RFT", seq);
+      const taken = takenCodes(tombs(), ev.id);
+      reserved.forEach(c => taken.add(c));
+      const next = !taken.has(want) ? want : nextTypedCode(job, "RFT", tombs(), ev.id, reserved);
+      if (next === ev.code) return;
+      ev.audit = Array.isArray(ev.audit) ? ev.audit : [];
+      ev.audit.push({ at: nowIso(), who: "ENVSS Field (Podio refresh, " + whoText() + ")", action: "Updated from Podio", field: "code", from: ev.code, to: next, detail: "Fit event code now uses RFT, not FIT" });
+      ev.code = next; reserved.push(next); n++;
+    });
+    return n;
+  }
+
+  function build(p, pl, id, how, tb, cfg, group) {
     const poc = pl.poc || {};
     cfg = cfg || appOf({ appId: pl.appId }) || PODIO_EVENT_APPS[0];
     const fit = cfg.fieldType === "fit" && window.envssFit && typeof envssFit.fitEventCode === "function";
     const ev = {
       id, projectId: p.id, type: fit ? "fit" : "hygiene", stage: "planned",
       date: pl.startDate || (how === "auto" ? "" : new Date().toISOString().slice(0, 10)),
-      code: fit ? envssFit.fitEventCode(p, envssFit.nextFitSeq(p.id)) : codeFor(p, pl, tb), multiDay: false, minesAct: false, notes: "", uploadReady: false, operators: [],
+      code: fit ? envssFit.fitEventCode(p, envssFit.nextFitSeq(p.id)) : codeFor(p, pl, tb, cfg, null, group), multiDay: false, minesAct: false, notes: "", uploadReady: false, operators: [],
       turnaround: pl.turnaround || "standard", taskDesc: pl.task || "", lab: pl.lab || "", siteContact: pl.siteContact || "",
       poc: { company: poc.company || "", first: poc.first || "", last: poc.last || "", role: poc.role || "", phone: poc.phone || "", email: poc.email || "" },
       equipmentDetails: pl.equipment || "", podioDriveLink: pl.driveLink || "",
-      podioItemId: String(pl.itemId), podioReference: pl.reference || "", podioLinked: true, podioUnplanned: false,
+      podioItemId: String(pl.itemId), podioReference: pl.reference || "", podioTitle: pl.title || "", podioLinked: true, podioUnplanned: false,
       podioAuto: how === "auto", podioSeen: seenOf(pl), podioTypes: typesOf(pl.reference), podioJobTypes: Array.isArray(pl.jobTypes) ? pl.jobTypes.slice() : [],
-      podioAppId: cfg.appId, podioEventKind: cfg.kind || "",
+      podioAppId: cfg.appId, podioEventKind: cfg.kind || "", podioGroup: (group && group.key) || (groupsOf(pl, cfg)[0] || {}).key || "",
       audit: [{ at: nowIso(), who: how === "auto" ? "ENVSS Field (auto, " + whoText() + ")" : whoText(),
         action: how === "auto" ? "Created automatically from Podio" : "Started from Podio (Start fieldwork)", field: "", from: "", to: "",
         detail: "Podio " + (cfg.appId === HYG_APP ? "HYG" : cfg.name) + " event " + pl.itemId + (pl.reference ? " · " + pl.reference : "") + (pl.startDate ? " · start " + pl.startDate : " · no start date in Podio") + (pl.startStatus ? " · " + pl.startStatus : "") }]
@@ -12369,7 +12624,8 @@ function fixOpen(ts) {
     if (!snap || !Array.isArray(snap.rows)) return 0;
     if (!ready()) { last.waiting = true; return 0; }
     last.waiting = false;
-    const tb = tombs(), skipped = {}, out = [];
+    const tb = tombs(), skipped = {}, out = []; let refreshed = 0; const reservedCodes = [];
+    refreshed += renameLegacyFitCodes();
     offers = {};
     tb.hinted = new Set(snap.rows.map(r => codeHint(r.payload || {})).filter(Boolean));
     const rows = snap.rows.slice().sort((a, b) => String((a.payload || {}).startDate || "9999").localeCompare(String((b.payload || {}).startDate || "9999")) || String(a.itemId).localeCompare(String(b.itemId)));
@@ -12378,24 +12634,45 @@ function fixOpen(ts) {
       const skip = why => { skipped[why] = (skipped[why] || 0) + 1; };
       if (!item) return skip("no item id");
       const why = eligible(r); if (why) return skip(why);
-      if ((db.events || []).some(e => String(e.podioItemId || "") === item)) return skip("field event already exists");
       const id = idFor(item);
-      if (tb.items.has(item) || tb.evs.has(id)) return skip("deleted here (tombstone)");
-      if ((db.events || []).some(e => e.id === id)) return skip("field event already exists");
-      const p = projectFor(pl.jobNumber, tb, pl); if (!p) return skip("job not on the project list yet");
       const cfg = appOf(r);
+      const gs = groupsOf(pl, cfg);
+      const evsOf = (db.events || []).filter(e => e && !(typeof isFibreEvent === "function" && isFibreEvent(e)) && (String(e.podioItemId || "") === item || e.id === id || e.id.indexOf(id + "-") === 0) && !tb.evs.has(e.id));
+      if (evsOf.length && !tb.items.has(item)) {
+        assignGroups(evsOf, gs);
+        /* an unstarted first event whose type left the item takes the first type nobody covers yet (the old single-event behaviour) */
+        const real = Array.isArray(pl.jobTypes) && pl.jobTypes.length;
+        evsOf.filter(e => real && !gs.some(g => g.key === e.podioGroup)).forEach(e => {
+          const free = gs.find(g => !evsOf.some(o => o.podioGroup === g.key));
+          if (free && e.id === id && canRenameCode(e)) { e.podioGroup = free.key; e.audit = Array.isArray(e.audit) ? e.audit : []; e.audit.push({ at: nowIso(), who: "ENVSS Field (Podio refresh, " + whoText() + ")", action: "Updated from Podio", field: "podioGroup", from: "", to: free.key, detail: "job type group now " + free.key }); refreshed++; }
+        });
+        evsOf.forEach(e => { if (refreshLinked(e, r, reservedCodes)) { refreshed++; } if (e.code) reservedCodes.push(e.code); });
+      }
+      if (!gs.length && evsOf.length) return skip("field event already exists");
+      const todo = gs.length ? gs.filter(g => !evsOf.some(e => e.podioGroup === g.key)) : [null];
+      if (!todo.length) return skip("field event already exists");
+      if (tb.items.has(item)) return skip("deleted here (tombstone)");
+      const p = projectFor(pl.jobNumber, tb, pl); if (!p) return skip("job not on the project list yet");
       /* v48.15 (John, t635u): "If created in Podio just add." No link offer / "create a separate event" prompt any more: every open
-         Podio event gets its own field event, even beside a hand-made one. One Podio item makes one field event: id e-podio-<item>
-         (upsert by id, the row already on the server wins), plus the podioItemId check above, after two pulls of events + tombstones. */
-      const ev = build(p, pl, id, "auto", tb, cfg);
-      db.events.push(ev);
-      out.push(ev);
+         Podio event gets its own field event, even beside a hand-made one. v48.19 (John, t737u): one field event per job-type group.
+         The first group keeps e-podio-<item>; other groups get e-podio-<item>-<GROUP>, so a re-run never duplicates (the id is the key,
+         the row already on the server wins), after two pulls of events + tombstones. */
+      todo.forEach(g => {
+        if (g && tb.groups.has(item + "|" + g.key)) return skip("deleted here (tombstone)");
+        const first = !g || g === gs[0];
+        const idTaken = (db.events || []).some(e => e.id === id) || tb.evs.has(id);
+        const eid = first && !idTaken ? id : id + "-" + String(g ? g.key : "").replace(/[^0-9A-Za-z_-]/g, "");
+        if (tb.evs.has(eid) || (db.events || []).some(e => e.id === eid)) return skip("deleted here (tombstone)");
+        const ev = build(p, pl, eid, "auto", tb, cfg, g);
+        db.events.push(ev);
+        out.push(ev);
+      });
     });
-    last.at = nowIso(); last.skipped = skipped; last.created = out.map(e => e.code + " (" + e.id + ")");
-    if (out.length) {
+    last.at = nowIso(); last.skipped = skipped; last.created = out.map(e => e.code + " (" + e.id + ")"); last.refreshed = refreshed;
+    if (out.length || refreshed) {
       commit();                                                      /* scanDirty marks them pending; flush sends them */
       out.forEach(ev => { made[ev.id] = snapOf("events", ev); });
-      writeJson(MADE_KEY, made);
+      if (out.length) writeJson(MADE_KEY, made);
       if (!userIsTyping()) render();
     } else if (JSON.stringify(offers) !== lastOffers) { try { if (!userIsTyping()) render(); } catch (e) {} }   /* v48.14: repaint only when the offers change */
     lastOffers = JSON.stringify(offers);
@@ -12437,6 +12714,11 @@ function fixOpen(ts) {
     if (pl.jobNumber && baseJob && pl.jobNumber !== baseJob) out.push({ kind: "job", text: "Moved to job " + pl.jobNumber + " in Podio (this event is on " + baseJob + ")." });
     if (/not required/i.test(pl.startStatus || "") && !(seen && /not required/i.test(seen.startStatus || ""))) out.push({ kind: "status", text: "Marked Not required in Podio." });
     if (isCancelled(pl.reportStatus) && !(seen && isCancelled(seen.reportStatus))) out.push({ kind: "status", text: "Marked Canceled in Podio." });
+    if (ev.podioGroup && evApp(ev) === HYG_APP && !isFitEv(ev) && Array.isArray(pl.jobTypes) && pl.jobTypes.length) {
+      const gs = groupsOf(pl, appOf(r));
+      if (gs.length && !gs.some(g => g.key === ev.podioGroup) && !(seen && seen.typeKept === ev.podioGroup))
+        out.push({ kind: "type", text: "Job type " + ev.podioGroup + " is no longer on the Podio item (now " + gs.map(g => g.token).join(", ") + ")." + (canRenameCode(ev) ? " This event has not started; an admin can delete it." : " It has started work, so it was not changed.") });
+    }
     return out;
   }
   function allFlagged() {
@@ -12457,6 +12739,7 @@ function fixOpen(ts) {
       ev.audit.push({ at: nowIso(), who: whoText(), action: "Podio change reviewed: kept as is", field: "", from: "", to: "", detail: text });
     }
     ev.podioSeen = pl ? seenOf(pl) : Object.assign({}, ev.podioSeen || {}, { gone: true, at: nowIso() });
+    if (f.some(x => x.kind === "type")) ev.podioSeen.typeKept = ev.podioGroup;
     save();
   }
 
@@ -12495,13 +12778,15 @@ function fixOpen(ts) {
   function card(pl) {
     if (!snap || !Array.isArray(snap.rows)) return null;
     const item = String(pl.itemId || "");
-    const ev = (db.events || []).find(e => String(e.podioItemId || "") === item);
-    if (ev) {
-      const f = flagsFor(ev);
-      /* v48.15 (John): no Open button here; the event is in the events list below */
-      return '<p class="help v4815-ev">' + (ev.podioAuto ? "Field event <b>" + esc(ev.code) + "</b> was created automatically" : "Fieldwork started: <b>" + esc(ev.code) + "</b>")
-        + (ev.date ? " · " + esc(ev.date) : "") + ". It is in the events list below.</p>"
-        + (f.length ? '<p class="podio-flag v487-flag">Needs review: ' + esc(f.map(x => x.text).join(" ")) + " Open " + esc(ev.code) + " in the events list to review.</p>" : "");
+    const evl = (db.events || []).filter(e => String(e.podioItemId || "") === item);
+    if (evl.length) {
+      /* v48.15 (John): no Open button here; the events are in the events list below. v48.19: one Podio item can have several (one per job-type group). */
+      return evl.map(ev => {
+        const f = flagsFor(ev);
+        return '<p class="help v4815-ev">' + (ev.podioAuto ? "Field event <b>" + esc(ev.code) + "</b> was created automatically" : "Fieldwork started: <b>" + esc(ev.code) + "</b>")
+          + (ev.date ? " · " + esc(ev.date) : "") + ". It is in the events list below.</p>"
+          + (f.length ? '<p class="podio-flag v487-flag">Needs review: ' + esc(f.map(x => x.text).join(" ")) + " Open " + esc(ev.code) + " in the events list to review.</p>" : "");
+      }).join("");
     }
     const tb = tombs();
     if (tb.items.has(item) || tb.evs.has(idFor(item))) {
@@ -12536,7 +12821,7 @@ function fixOpen(ts) {
     }
     if (ev.podioItemId && isHyg(ev) && !document.getElementById("v4814Scope")) {
       const ty = (ev.podioTypes && ev.podioTypes.length ? ev.podioTypes : typesOf(ev.podioReference));
-      if (ty.length) html += '<p class="help" id="v4814Scope">Podio scope: ' + ty.map(x => esc(x) + (TYPE_HELP[x] ? " — " + esc(TYPE_HELP[x]) : "")).join("; ") + ".</p>";
+      if (ty.length) html += '<p class="help" id="v4814Scope">' + (ev.podioGroup && ty.length > 1 ? "This event covers " + esc(ev.podioGroup) + ". " : "") + 'Podio scope: ' + ty.map(x => esc(x) + (TYPE_HELP[x] ? " — " + esc(TYPE_HELP[x]) : "")).join("; ") + ".</p>";
     }
     if (ev.podioAuto && !document.getElementById("v487Auto")) {
       const a = (ev.audit || []).find(x => x && x.action === "Created automatically from Podio");
@@ -12625,7 +12910,7 @@ function fixOpen(ts) {
       if (!res || !res.ok) return null;
       const items = await res.json(); if (!Array.isArray(items)) return null;
       const rows = items.filter(it => ids.includes(String(it.app_id))).map(it => {
-        const pl = envssPodio.map.mapItem({ item_id: it.item_id, fields: aliasFields(it.fields || {}) }); pl.appId = String(it.app_id);
+        const pl = envssPodio.map.mapItem({ item_id: it.item_id, title: it.title || "", fields: aliasFields(it.fields || {}) }); pl.appId = String(it.app_id);
         return { itemId: pl.itemId, appId: pl.appId, lastEdit: it.last_edit_on || "", payload: pl };
       });
       return { rows, apps: items.length < 2000 ? ids : [] };
@@ -12662,11 +12947,11 @@ function fixOpen(ts) {
       try {
         const tb = tombs(); let add = false;
         (rows || []).forEach(r => { const p = r && r.payload; const id = p && (p.id || r.id);
-          if (p && p.podioItemId && (tb.evs.has(id) || tb.prs.has(p.projectId)) && !goneSet.has(String(p.podioItemId))) { goneSet.add(String(p.podioItemId)); add = true; } });
+          if (p && p.podioItemId && (tb.evs.has(id) || tb.prs.has(p.projectId))) { const gk = p.podioGroup ? String(p.podioItemId) + "|" + p.podioGroup : String(p.podioItemId); if (!goneSet.has(gk)) { goneSet.add(gk); add = true; } } });
         if (add) writeJson(GONE_KEY, [...goneSet]);
         let addI = false;
         (rows || []).forEach(r => { const p = r && r.payload; const id = p && (p.id || r.id);
-          if (p && id && tb.evs.has(id)) { const v = { podioItemId: p.podioItemId ? String(p.podioItemId) : "", podioAuto: !!p.podioAuto, podioLinked: !!p.podioLinked, podioUnplanned: p.podioUnplanned === true, type: p.type || "hygiene", samples: !!(delInfo[id] && delInfo[id].samples) };
+          if (p && id && tb.evs.has(id)) { const v = { podioItemId: p.podioItemId ? String(p.podioItemId) : "", podioAuto: !!p.podioAuto, podioLinked: !!p.podioLinked, podioUnplanned: p.podioUnplanned === true, podioGroup: p.podioGroup || "", type: p.type || "hygiene", samples: !!(delInfo[id] && delInfo[id].samples) };
             if (JSON.stringify(delInfo[id]) !== JSON.stringify(v)) { delInfo[id] = v; addI = true; } } });
         if (addI) writeJson(DELINFO_KEY, delInfo);
       } catch (e) {}
@@ -12738,14 +13023,14 @@ function fixOpen(ts) {
   document.head.appendChild(st);
   window.envssAuto = { run, card, startManual, idFor, flagsFor, allFlagged, link, separate, review, eligible, isAfmOnly,
     isPlanned: p => PodioMapIsPlanned(p), typesOf,
-    jobTypesFor: ev => { const r = ev && ev.podioItemId ? rowFor(ev.podioItemId) : null; return r && r.payload && Array.isArray(r.payload.jobTypes) ? r.payload.jobTypes.slice() : []; }, isFitOnly, apps: appsCfg, appOf, offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
+    jobTypesFor: ev => { const r = ev && ev.podioItemId ? rowFor(ev.podioItemId) : null; return r && r.payload && Array.isArray(r.payload.jobTypes) && r.payload.jobTypes.length ? r.payload.jobTypes.slice() : []; }, isFitOnly, apps: appsCfg, appOf, offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, codeToken, tokenOf, codeFor, groupsOf, groupKeyOf, assignGroups, nextTypedCode, typedCode, refreshLinked, canRenameCode, eventHasStartedWork, typesList, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
 })();
 </script>
 
 
   <!-- local review mockups only; not for publish -->
   <script src="work/projlist/review.js"></script>
-  <script src="fit-test.js?v=48.17"></script>
+  <script src="fit-test.js?v=48.19"></script>
 <script>
 /* ===== v48.16: safe auto-update + minimum version (John t651u/t652u, 27 Nov 2026 AWST) =====
    1. Checks for a new version when the app opens, when it comes back to the front (visibilitychange / focus, at most once a
@@ -13119,6 +13404,752 @@ function fixOpen(ts) {
   claim();
   window.v4818Tabs = { state: () => state };
   window.v487Tabs = window.v4818Tabs;
+})();
+</script>
+
+
+<script>
+/* ===== v48.19: lock-down guards (open item 3; John's decisions 23 Nov and 27 Nov 2026 AWST). Supersedes draft PR #15. =====
+   1. START / STOP / Start all on a laptop or Chromebook (not a phone): a warning the user confirms first (Cancel or carry on).
+      It still flags the sample "needs office approval" (f). The v48.3 after-press reminder is not shown twice.
+   2. STOP more than STOP_LIMIT_H (14) hours after START: warning, confirm and continue (also on Edit / Enter time, 14–24 h).
+   3. Sample head (hygiene) or cowl (AFM) already running on another sample, any event: inline warning, START asks
+      "start anyway?". Warning only (John 27 Nov: needs more info before anything stronger).
+   4. Company / contractor: suggestions = companies used before on any sample (any event) + the project client. A new
+      company is accepted exactly as typed and joins the list next time. No separate "Other" step. Likely misspellings /
+      near-duplicates (case, spacing, small typos, a short form) get a "Did you mean …?" prompt; stored data is never rewritten.
+   5. Dose badge START with no start-of-day calibration (level + reading): warning + confirm until 30 Nov 2026; from
+      NOISE_CAL_BLOCK_FROM (1 Dec 2026, device date in Australia/Perth) START is blocked until it is recorded.
+      A calibration more than NOISE_DRIFT_DB (0.5) dB off, or a day drift over it, is a warning the user confirms.
+   6. A stopped sample is locked: empty boxes can still be filled; changing anything already entered needs a reason,
+      except during STOP_EDIT_GRACE_MIN (5) minutes after STOP (typo fixes). The reason goes in the audit trail.
+   7. Laptop / Chromebook START / STOP or typed times: sample flagged needsOfficeApproval. Staff see the flag (so they
+      correct the time on their phone); only admins get the Approve card.
+   8. A manual start time (START never pressed) entered more than LATE_MANUAL_START_MIN (15) minutes after the time it
+      records asks for a comment (warning, Save again to carry on) until 3 Dec 2026; from LATE_COMMENT_BLOCK_FROM
+      (4 Dec 2026) the comment is required.
+   9. Location missing: shown on the sample and event screens, and Mark event complete / Create COC list the samples with
+      links and ask to confirm (not a block). Field blanks, fibre, not used, rejected and fault samples are exempt.
+  12. Capitalisation of first / last name and company: all lower case, ALL CAPS or mixed-up caps suggests Proper Case on blur
+      (Mc, O', hyphens, van / de mid-name; company acronyms kept). Accept or keep as typed; stored data is never rewritten.
+  13. Sync counter: deleted samples are dropped as soon as deletions are merged, and the v41 "Not stated" repair skips them
+      (a clean device showed "21 changes still uploading" with nothing to send).
+  11. Deep link #event=<eventId>&sample=<trainId>: stashed in sessionStorage in <head> (the sign-in round trip loses the
+      hash) and opened once signed in and the sample has synced.
+  10. Rotameter is a pick-list everywhere (hygiene sample, AFM event, new / edit event): Podio list + rotameters already used
+      in the app. A value already on a record that is not in the list is kept and shown as "(not in the list)". AFM and
+      hygiene field blanks need no rotameter.
+   Dropped from PR #15: guard (a) end-flow lock (replaced by the v48.8 end-flow prefill + STOP deviation prompt).
+   Data: new sample keys only (needsOfficeApproval, officeApproval) and audit entries. No schema change, no Supabase change. */
+(function () {
+  if (typeof render !== "function") return;
+  const V = "48.19";
+  const STOP_LIMIT_H = 14;              /* hours START -> STOP before the warning */
+  const STOP_LIMIT_MODE = "warn";       /* John 23 Nov 2026: "warn" (confirm and continue). Also supports "block" / "off". */
+  const STOP_EDIT_GRACE_MIN = 5;        /* minutes after STOP when a stopped sample can still be changed without a reason */
+  const LATE_MANUAL_START_MIN = 15;     /* a typed start time this many minutes (or more) in the past needs a comment */
+  const NOISE_DRIFT_DB = 0.5;           /* calibration off / drift over this is a warning at noise START */
+  /* Switch dates (John 27 Nov 2026). Compared with the device date in Australia/Perth (AWST), as YYYY-MM-DD. */
+  const SWITCH_TZ = "Australia/Perth";
+  const NOISE_CAL_BLOCK_FROM = "2026-12-01";      /* before: dose badge START with no start-of-day calibration = warning + confirm; from: START blocked */
+  const NOISE_CAL_BLOCK_LABEL = "1 December 2026";
+  const LATE_COMMENT_BLOCK_FROM = "2026-12-04";   /* before: late manual start with no comment = warning + confirm; from: comment required */
+  const LATE_COMMENT_BLOCK_LABEL = "4 December 2026";
+  const COMPANY_TYPO_MAX = 2;                     /* edit distance for "Did you mean …?" on names of COMPANY_TYPO_LONG+ letters (same first letter); 1 for shorter */
+  const COMPANY_TYPO_LONG = 15;
+  const INSTALLED_AT = new Date().toISOString();
+  const MOBILE = window.v483 && typeof v483.MOBILE === "boolean" ? v483.MOBILE : (function () { const ua = navigator.userAgent || ""; return !/CrOS/i.test(ua) && /Android|iPhone|iPad|iPod|Mobile/i.test(ua); })();
+  const DONE = new Set(["rejected", "fault", "not_used", "uploaded"]);
+  const e9 = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c]);
+  const ms = iso => { const d = iso ? new Date(iso).getTime() : NaN; return isNaN(d) ? null : d; };
+  const n9 = v => { const s = String(v == null ? "" : v).trim().replace(",", "."); if (!/^-?\d+(\.\d+)?$/.test(s)) return null; const n = parseFloat(s); return Number.isFinite(n) ? n : null; };
+  const when = iso => { try { return new Date(iso).toLocaleString("en-AU", { timeZone: "Australia/Perth", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) + " AWST"; } catch (e) { return String(iso || ""); } };
+  const hhmm = iso => { try { return new Date(iso).toLocaleTimeString("en-AU", { timeZone: "Australia/Perth", hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; } };
+  function who() { try { return whoText(); } catch (e) { return ""; } }
+  function dev() { try { return deviceLabel(); } catch (e) { return "Browser"; } }
+  function note(t, action, detail, extra) { t.audit = t.audit || []; t.audit.push(Object.assign({ at: nowIso(), who: who(), action, detail: detail || "" }, extra || {})); t.updatedAt = nowIso(); }
+  function curT() { return view.page === "train" ? db.trains.find(x => x.id === view.trainId) : null; }
+  const tryB = f => { try { return !!f(); } catch (e) { return false; } };
+  const fib = t => tryB(() => isFibreTrain(t)), blank = t => tryB(() => isBlank(t)), noise = t => tryB(() => isNoise(t)), passive = t => tryB(() => typeof isPassive === "function" && isPassive(t));
+  function deleted(x) { return (db.deletions || []).some(d => d && d.trainId === x.id); }
+  function running(x) { return !!x && !!x.startAt && !x.endAt && !DONE.has(x.status) && !deleted(x); }
+  function ended(t) { return !!t && !blank(t) && t.status !== "not_used" && (!!t.endAt || (typeof isStoppedTrain === "function" && isStoppedTrain(t))); }
+  function evOf(x) { return (typeof eventById === "function" && eventById(x.eventId)) || {}; }
+  function dno(x) { try { return displayNo(x); } catch (e) { return "Sample " + (x.sampleNo || ""); } }
+  function gaps(t) { try { return startGaps(t) || []; } catch (e) { return []; } }
+  const nowMs = () => (typeof window.__g19Now === "number" ? window.__g19Now : Date.now());   /* __g19Now: test hook for the switch dates only */
+  function perthDay(m) { try { return new Intl.DateTimeFormat("en-CA", { timeZone: SWITCH_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(m)); } catch (e) { return new Date(m).toISOString().slice(0, 10); } }
+  function from(day) { return perthDay(nowMs()) >= day; }
+  const calBlocks = () => from(NOISE_CAL_BLOCK_FROM), lateBlocks = () => from(LATE_COMMENT_BLOCK_FROM);
+
+  /* ---------- modal ---------- */
+  function ask(id, title, body, yes, no, opts) {
+    opts = opts || {};
+    return new Promise(res => {
+      const old = document.querySelector('.v483-modal[data-g19="' + id + '"]'); if (old) old.remove();
+      const w = document.createElement("div"); w.className = "v483-modal g19-modal"; w.setAttribute("data-g19", id);
+      w.innerHTML = `<div class="v483-dialog" role="dialog" aria-modal="true"><h3 style="margin:0 0 6px" id="g19Title">${e9(title)}</h3>${body}
+        <p class="help v483-err" id="g19Err" role="alert"></p>
+        <div class="row" style="gap:10px;justify-content:flex-end;margin-top:12px">${no ? `<button type="button" class="btn ghost" id="g19No">${e9(no)}</button>` : ""}<button type="button" class="btn ${opts.yesClass || "orange"}" id="g19Yes">${e9(yes)}</button></div></div>`;
+      document.body.appendChild(w);
+      w.addEventListener("click", ev => ev.stopPropagation());
+      const done = v => { w.remove(); res(v); };
+      if (no) w.querySelector("#g19No").onclick = () => done(false);
+      w.querySelector("#g19Yes").onclick = () => { if (opts.check) { const r = opts.check(w); if (r && r.err) { w.querySelector("#g19Err").textContent = r.err; return; } done(r || true); return; } done(true); };
+    });
+  }
+  const bypass = new Set();
+  function reclick(btn, key) { bypass.add(key); try { btn.click(); } finally { setTimeout(() => bypass.delete(key), 0); } }
+
+  /* ================= 3. head / cowl already running ================= */
+  function headKey(t) {
+    if (!t || blank(t) || noise(t) || passive(t)) return "";
+    if (fib(t)) { try { return cowlDigits(t.cowlNo || t.mediaId) || ""; } catch (e) { return String(t.cowlNo || "").trim(); } }
+    return String(t.headId || "").trim().toUpperCase();
+  }
+  function headRunning(t, key) {
+    key = key == null ? headKey(t) : key; if (!key) return [];
+    const f = fib(t);
+    return (db.trains || []).filter(x => x && x.id !== t.id && running(x) && fib(x) === f && headKey(x) === key);
+  }
+  function headMsg(t, key, hits) {
+    return (fib(t) ? "Cowl " : "Sample head ") + key + " is already running on " + hits.map(x => dno(x) + " (" + (evOf(x).code || "") + ", started " + when(x.startAt) + ")").join(", ") + ". Each running sample needs its own " + (fib(t) ? "cowl" : "head") + ".";
+  }
+  function paintHead(t) {
+    const old = document.getElementById("g19HeadRun"); if (old) old.remove();
+    if (!t || ended(t)) return;
+    const inp = document.getElementById(fib(t) ? "cowlNo" : "head"); if (!inp) return;
+    let key = String(inp.value || "").trim().toUpperCase();
+    if (fib(t)) { try { key = cowlDigits(inp.value); } catch (e) {} }
+    const hits = headRunning(t, key); if (!hits.length) return;
+    (inp.closest(".combo") || inp).insertAdjacentHTML("afterend", `<div class="pump-warn clash-warn g19-warn" id="g19HeadRun">⚠ ${e9(headMsg(t, key, hits))} Check the ${fib(t) ? "cowl number" : "head ID"}.</div>`);
+  }
+  document.addEventListener("input", e => { if (view.page === "train" && e.target && (e.target.id === "head" || e.target.id === "cowlNo")) paintHead(curT()); });
+  document.addEventListener("change", e => { if (view.page === "train" && e.target && (e.target.id === "head" || e.target.id === "cowlNo")) setTimeout(() => paintHead(curT()), 30); });
+
+  /* ================= 5. noise calibration ================= */
+  function calState(t) { try { return window.ENVSS_NOISE && ENVSS_NOISE.calState ? ENVSS_NOISE.calState(t) : null; } catch (e) { return null; } }
+  function calOk(t) { const cs = calState(t); if (!cs) return true; const s = cs.c && cs.c.start; return !!(s && n9(s.ref) != null && n9(s.reading) != null); }
+  function calDayText(t) { return String(t.shiftDate || evOf(t).date || "today").slice(0, 10); }
+  function calDrift(t) {
+    const cs = calState(t); if (!cs) return [];
+    const out = [];
+    if (cs.startDev != null && Math.abs(cs.startDev) > NOISE_DRIFT_DB) out.push("Start-of-day calibration is off by " + cs.startDev + " dB (limit ±" + NOISE_DRIFT_DB + " dB)");
+    if (cs.drift != null && Math.abs(cs.drift) > NOISE_DRIFT_DB) out.push("Calibration drift over the day is " + (cs.drift > 0 ? "+" : "") + cs.drift + " dB (limit ±" + NOISE_DRIFT_DB + " dB)");
+    return out;
+  }
+  const _sg19 = startGaps;
+  startGaps = function (t) {
+    const r = _sg19.apply(this, arguments);
+    try { if (calBlocks() && t && noise(t) && !blank(t) && !t.startAt && t.status !== "not_used" && !calOk(t)) r.push("Start-of-day calibration (" + calDayText(t) + ")"); } catch (e) {}
+    return r;
+  };
+  window.startGaps = startGaps;
+  function paintCal(t) {
+    if (!t || !noise(t) || blank(t) || t.startAt) return;
+    const st = document.getElementById("btnStart"); if (!st) return;
+    const row = st.closest(".row, .startstop") || st;
+    if (!calOk(t) && !document.getElementById("g19CalGate")) {
+      row.insertAdjacentHTML("afterend", calBlocks()
+        ? `<p class="help g19-warn" id="g19CalGate" data-mode="block">START is locked until today's start-of-day field calibration (${e9(calDayText(t))}) is recorded: calibrator level and meter reading. <button type="button" class="linkish" id="g19CalGo">Go to Calibration</button></p>`
+        : `<p class="help g19-warn" id="g19CalGate" data-mode="warn">⚠ No start-of-day field calibration for ${e9(calDayText(t))}. From ${NOISE_CAL_BLOCK_LABEL}, a dose badge without a pre-start calibration won't be able to start. <button type="button" class="linkish" id="g19CalGo">Go to Calibration</button></p>`);
+      const go = document.getElementById("g19CalGo"); if (go) go.onclick = () => { const c = document.getElementById("nzCal"); if (c) { c.scrollIntoView({ behavior: "smooth", block: "center" }); const i = c.querySelector("input"); if (i) setTimeout(() => i.focus({ preventScroll: true }), 300); } };
+    } else if (calOk(t) && calDrift(t).length && !document.getElementById("g19CalDrift")) {
+      row.insertAdjacentHTML("afterend", `<p class="help g19-warn" id="g19CalDrift">⚠ ${e9(calDrift(t).join(". "))}. START will ask you to confirm.</p>`);
+    }
+  }
+
+  /* ================= 1 + 2 + 3 + 5: checks before START / STOP (window capture: runs before every older handler) ================= */
+  let lapConfirmedAt = 0;
+  function laptopBody(which) {
+    return `<p class="v483-nudge" id="g19LapText">You're on a ${e9(dev())}, not a phone at the pump. ${e9(which)} belongs on your phone, at the pump 📱</p>
+      <p class="help">You can still press ${e9(which)} here. The time is flagged for the office to approve.</p>`;
+  }
+  async function runChecks(list) { for (const c of list) { const ok = await c(); if (!ok) return false; } return true; }
+  window.addEventListener("click", async e => {
+    const b = e.target && e.target.closest && e.target.closest("#btnStart, #btnStop, #btnStartAll"); if (!b || b.disabled) return;
+    const t = curT(); if (!t || blank(t)) return;
+    const key = b.id + ":" + t.id; if (bypass.has(key) || Date.now() - (passed.get(key) || 0) < 60000) return;   /* already confirmed: later handlers (v48.8 flow question) re-click */
+    const stop = b.id === "btnStop", which = stop ? "STOP" : "START";
+    const checks = [];
+    if (stop) {
+      if (!t.startAt) return;
+      const hrs = STOP_LIMIT_MODE === "off" ? 0 : overLimit(t.startAt, new Date().toISOString());
+      if (hrs) checks.push(async () => {
+        if (STOP_LIMIT_MODE === "block") { await ask("long", "Run over " + STOP_LIMIT_H + " hours", longBody(t, hrs, t.startAt, true), "OK", ""); return false; }
+        const ok = await ask("long", "Run over " + STOP_LIMIT_H + " hours", longBody(t, hrs, t.startAt, true), "Stop anyway", "Cancel");
+        if (ok) note(t, "STOP more than " + STOP_LIMIT_H + " h after START — confirmed", hrs.toFixed(1) + " h · " + dev(), { g19long: +hrs.toFixed(2) });
+        return ok;
+      });
+    } else {
+      if (t.startAt || t.status === "not_used") return;
+      try { collectTrain(t); } catch (e2) {}
+      let list = [t];
+      if (b.id === "btnStartAll") { try { list = list.concat((window.v46 && v46.siblings ? v46.siblings(t) : []).filter(x => !x.startAt)); } catch (e2) {} }
+      list = list.filter(x => !gaps(x).length);   /* missing fields: the START handler already explains */
+      if (!list.length) return;
+      const clashes = list.map(x => ({ x, key: headKey(x), hits: headRunning(x) })).filter(c => c.hits.length);
+      if (clashes.length) checks.push(async () => {
+        const ok = await ask("head", (fib(t) ? "Cowl" : "Sample head") + " already running", clashes.map(c => `<p class="help g19-headq">${e9(dno(c.x))}: ${e9(headMsg(c.x, c.key, c.hits))}</p>`).join("") + `<p class="help">If the other sample has really finished, press STOP on it first. Otherwise check the ${fib(t) ? "cowl number" : "head ID"}.</p>`, "Start anyway", "Cancel");
+        if (ok) clashes.forEach(c => note(c.x, "START with " + (fib(c.x) ? "cowl" : "head") + " already running — confirmed", c.key + " on " + c.hits.map(h => dno(h) + " (" + (evOf(h).code || "") + ")").join(", ") + " · " + dev()));
+        return ok;
+      });
+      const nocal = calBlocks() ? [] : list.filter(x => noise(x) && !calOk(x));
+      if (nocal.length) checks.push(async () => {
+        const ok = await ask("nocal", "No pre-start calibration", `<p class="help" id="g19NoCalQ">${e9(nocal.map(dno).join(", "))}: no start-of-day field calibration recorded for ${e9(calDayText(nocal[0]))}.</p>
+          <p class="help"><strong>From ${NOISE_CAL_BLOCK_LABEL}, a dose badge without a pre-start calibration won't be able to start.</strong> Record the calibrator level and meter reading now if you can.</p>`, "Start anyway", "Record calibration");
+        if (ok) nocal.forEach(x => note(x, "START with no start-of-day calibration — confirmed", "warning until " + NOISE_CAL_BLOCK_LABEL + " · " + dev(), { g19nocal: true }));
+        else setTimeout(() => { const go = document.getElementById("g19CalGo"); if (go) go.click(); }, 50);
+        return ok;
+      });
+      const drifts = list.filter(x => noise(x)).map(x => ({ x, d: calDrift(x) })).filter(c => c.d.length);
+      if (drifts.length) checks.push(async () => {
+        const ok = await ask("drift", "Check the noise calibration", `<p class="help" id="g19DriftQ">${e9(drifts[0].d.join(". "))}.</p><p class="help">Re-check the calibrator on the meter. If the reading is right, carry on; it is noted in the audit trail.</p>`, "Start anyway", "Cancel");
+        if (ok) drifts.forEach(c => note(c.x, "START with calibration over ±" + NOISE_DRIFT_DB + " dB — confirmed", c.d.join("; ") + " · " + dev()));
+        return ok;
+      });
+    }
+    if (!MOBILE) checks.push(async () => {
+      const ok = await ask("laptop", "Not at the pump?", laptopBody(which), "Press " + which + " anyway", "Cancel");
+      if (ok) lapConfirmedAt = Date.now();
+      return ok;
+    });
+    if (!checks.length) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (document.querySelector(".g19-modal")) return;
+    const ok = await runChecks(checks);
+    if (checks.length && ok) { try { saveQuiet(); } catch (e3) {} }
+    if (ok) { passed.set(key, Date.now()); reclick(b, key); }
+  }, true);
+  const passed = new Map();
+  /* the v48.3 after-press reminder is not shown again right after the user confirmed the warning above */
+  new MutationObserver(() => {
+    const m = document.querySelector('.v483-modal[data-v483="laptop"]');
+    if (m && Date.now() - lapConfirmedAt < 30000) m.remove();
+  }).observe(document.body, { childList: true });
+
+  /* ================= 2. 14 h (shared text) + Edit / Enter time dialog; 8. late manual start comment ================= */
+  function overLimit(startIso, endIso) { const s = ms(startIso), e = ms(endIso); return s != null && e != null && (e - s) > STOP_LIMIT_H * 3600e3 ? (e - s) / 3600e3 : 0; }
+  function longBody(t, hrs, startIso, now) {
+    return `<p class="help" id="g19LongQ">${e9(t ? dno(t) : "This sample")} started ${e9(when(startIso))}. ${now ? "Stopping now makes" : "These times make"} a run of <strong>${hrs.toFixed(1)} h</strong>, over the ${STOP_LIMIT_H} h a normal shift runs. That usually means START or STOP was on the wrong day.</p>`
+      + (STOP_LIMIT_MODE === "block" ? `<p class="help">Use Edit time to fix the start time first.</p>` : `<p class="help">If the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.</p>`);
+  }
+  window.addEventListener("click", async e => {
+    const b = e.target && e.target.closest && e.target.closest('.v483-modal[data-v483="time"] #v483Save'); if (!b || bypass.has("tsave")) return;
+    const w = b.closest(".v483-modal"); const t = curT();
+    const val = k => { const d = w.querySelector("#v483d-" + k), tm = w.querySelector("#v483t-" + k); return d && tm && tm.value ? combineShiftTime(d.value, tm.value, false) : null; };
+    const sIn = val("start");
+    /* 8: a typed start time, START never pressed, entered LATE_MANUAL_START_MIN+ minutes after it */
+    const startHelp = w.querySelector("#v483d-start") ? (w.querySelector("#v483d-start").closest(".v483-trow").nextElementSibling || {}).textContent || "" : "";
+    const manualStart = !!sIn && /START was never pressed/.test(startHelp);
+    if (manualStart) {
+      const late = (Date.now() - ms(sIn)) / 60000;
+      const txt = ((w.querySelector("#v483rText") || {}).value || "").trim();
+      const sig = sIn + "|" + txt;
+      if (late >= LATE_MANUAL_START_MIN && txt.length < 5 && (lateBlocks() || w.dataset.g19lateWarned !== sig)) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        const h = w.querySelector("#v483rHint"); if (h) h.textContent = lateBlocks() ? "(required: start time entered late)" : "(asked: start time entered late)";
+        w.querySelector("#v483Err").textContent = "This start time is " + Math.round(late) + " min ago. Add a comment saying why START wasn't pressed at the pump (at least a few words)."
+          + (lateBlocks() ? "" : " From " + LATE_COMMENT_BLOCK_LABEL + " the comment will be required. Press Save again to carry on without one.");
+        w.dataset.g19lateWarned = sig; w.dataset.g19lateMode = lateBlocks() ? "block" : "warn";
+        const r = w.querySelector("#v483rText"); if (r) r.focus();
+        return;
+      }
+      if (late >= LATE_MANUAL_START_MIN && txt.length < 5 && t) note(t, "Late manual start saved without a comment — confirmed", Math.round(late) + " min late · warning until " + LATE_COMMENT_BLOCK_LABEL + " · " + dev(), { g19latenc: Math.round(late) });
+      if (late >= LATE_MANUAL_START_MIN && t) w.dataset.g19late = String(Math.round(late));
+    }
+    if (STOP_LIMIT_MODE === "off") return;
+    let s = sIn || (t && t.startAt), en = val("stop");
+    if (!s || !en) return;
+    const sd = w.querySelector("#v483d-start"), ed = w.querySelector("#v483d-stop");
+    if (ms(en) <= ms(s) && (!sd || (ed && sd.value === ed.value))) en = new Date(ms(en) + 86400e3).toISOString();
+    const hrs = overLimit(s, en); if (!hrs || hrs > 24) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    w.style.visibility = "hidden";
+    const block = STOP_LIMIT_MODE === "block";
+    const ok = await ask("long", "Run over " + STOP_LIMIT_H + " hours", longBody(t, hrs, s, false), block ? "OK" : "Save anyway", block ? "" : "Go back");
+    w.style.visibility = "";
+    if (block || !ok) return;
+    if (t) note(t, "Times more than " + STOP_LIMIT_H + " h apart — confirmed", hrs.toFixed(1) + " h · " + dev(), { g19long: +hrs.toFixed(2) });
+    bypass.add("tsave"); try { b.click(); } finally { bypass.delete("tsave"); }
+  }, true);
+
+  /* ================= 4. Company: used before + project client, typed value accepted ================= */
+  function canon(s) { return String(s || "").trim().replace(/\s+/g, " "); }
+  function companies(t) {
+    const seen = new Map(); const add = (s, w) => { s = canon(s); if (s.length < 2) return; const k = s.toLowerCase(); const c = seen.get(k); if (c) { c.n += w; c.v[s] = (c.v[s] || 0) + w + 0.5; } else seen.set(k, { n: w, v: { [s]: w + 0.5 } }); };
+    (db.trains || []).forEach(x => { if (x && !deleted(x)) add((x.person || {}).company, 1); });
+    ((db.catalogs && db.catalogs.companies) || []).forEach(c => add(c, 0));
+    (db.projects || []).forEach(p => add(p && p.client, 0));
+    const pr = (db.projects || []).find(p => p.id === evOf(t).projectId);
+    const client = canon(pr && pr.client);
+    const name = c => Object.keys(c.v).sort((a, b) => c.v[b] - c.v[a])[0];
+    const list = [...seen.values()].map(c => ({ name: name(c), n: c.n })).filter(c => c.name.toLowerCase() !== client.toLowerCase())
+      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+    return { client, list: list.map(c => c.name) };
+  }
+  function squash(s) { return canon(s).toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  function lev(a, b, cap) {   /* edit distance (a swap of two letters counts as 1), stops early past cap */
+    if (Math.abs(a.length - b.length) > cap) return cap + 1;
+    let pp = null, prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i]; let best = i;
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        if (pp && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) cur[j] = Math.min(cur[j], pp[j - 2] + 1);
+        best = Math.min(best, cur[j]);
+      }
+      if (best > cap) return cap + 1; pp = prev; prev = cur;
+    }
+    return prev[b.length];
+  }
+  /* why two company names look like the same company (no merge, only a prompt) */
+  function nearWhy(a, b) {
+    const ca = canon(a), cb = canon(b); if (!ca || !cb || ca === cb) return "";
+    if (ca.toLowerCase() === cb.toLowerCase()) return "case";
+    const sa = squash(a), sb = squash(b); if (!sa || !sb) return "";
+    if (sa === sb) return "spacing";
+    const L = Math.min(sa.length, sb.length), cap = L >= COMPANY_TYPO_LONG ? COMPANY_TYPO_MAX : 1, d = L >= 4 ? lev(sa, sb, cap) : 9;
+    if (d <= 1 || (d <= cap && sa[0] === sb[0])) return "spelling";   /* 2 edits only on long names with the same first letter */
+    const [s1, l1] = sa.length <= sb.length ? [sa, sb] : [sb, sa];
+    if (s1.length >= 3 && l1.startsWith(s1) && /^[a-z]/.test(s1)) return "short form";
+    return "";
+  }
+  function companyUses() {   /* every exact spelling (trimmed) and how often it is used */
+    const m = new Map(); const add = (s, w) => { s = canon(s); if (s.length < 2) return; m.set(s, (m.get(s) || 0) + w); };
+    (db.trains || []).forEach(x => { if (x && !deleted(x)) add((x.person || {}).company, 1); });
+    ((db.catalogs && db.catalogs.companies) || []).forEach(c => add(c, 0));
+    (db.projects || []).forEach(p => add(p && p.client, 0.5));
+    return m;
+  }
+  function clientSet() { return new Set((db.projects || []).map(p => canon(p && p.client).toLowerCase()).filter(Boolean)); }
+  function companyGroups() {   /* spellings that differ only in case / spaces are one group, shown as its most used spelling */
+    const g = new Map();
+    companyUses().forEach((n, name) => { const k = name.toLowerCase(); const c = g.get(k) || { n: 0, best: name, bestN: -1 }; c.n += n; if (n > c.bestN) { c.best = name; c.bestN = n; } g.set(k, c); });
+    return g;
+  }
+  function didYouMean(v) {
+    v = canon(v); if (v.length < 2) return [];
+    const groups = companyGroups(), k = v.toLowerCase(), own = groups.get(k), mine = (companyUses().get(v) || 0);
+    const out = [];
+    const pcl = (db.projects || []).map(p => canon(p && p.client)).find(c => c && c.toLowerCase() === k);
+    const pref = pcl || (own && own.best);
+    if (pref && pref !== v) out.push({ name: pref, why: nearWhy(v, pref) || "case", n: 2e6 });   /* same company, other spelling */   /* same company, other spelling */
+    const mineAll = own ? own.n : mine, clients = clientSet(), vClient = clients.has(k);
+    /* a project client's spelling (from Podio) wins over sample spellings, even a more common typo */
+    groups.forEach((c, gk) => { if (gk === k) return; const why = nearWhy(v, c.best); if (!why) return; const cc = clients.has(gk); if (cc || (!vClient && c.n >= mineAll)) out.push({ name: c.best, why, n: c.n + (cc ? 1e6 : 0) }); });
+    return out.sort((a, b) => b.n - a.n).slice(0, 3);
+  }
+  const keepCompany = new Set();   /* "Keep as typed" for this visit */
+  function paintDym(inp, commit) {
+    let box = document.getElementById("g19Dym");
+    const v = canon(inp.value), hits = keepCompany.has(v.toLowerCase()) ? [] : didYouMean(v);
+    if (!hits.length) { if (box) box.remove(); return; }
+    if (!box) { box = document.createElement("p"); box.className = "help g19-warn g19-dym"; box.id = "g19Dym"; (inp.closest(".combo") || inp).insertAdjacentElement("afterend", box); }
+    box.innerHTML = `Did you mean ${hits.map(h => `<button type="button" class="linkish" data-g19dym="${e9(h.name)}">${e9(h.name)}</button>`).join(" or ")}? <span class="muted">(${e9(hits[0].why)} looks like a company already used)</span> <button type="button" class="linkish" id="g19DymKeep">Keep “${e9(v)}”</button>`;
+    box.querySelectorAll("[data-g19dym]").forEach(b => b.onclick = () => { commit(b.dataset.g19dym); box.remove(); });
+    box.querySelector("#g19DymKeep").onclick = () => { keepCompany.add(v.toLowerCase()); box.remove(); };
+  }
+  /* g19-case-start: capitalisation check for person names and company names (John 27 Nov 2026). Suggest only, never rewrite. */
+  const CASE_SMALL = new Set(["and", "of", "the", "for", "in", "on", "at", "&"]);            /* company words kept lower case mid-name */
+  const CASE_CO_WORDS = { pty: "Pty", ltd: "Ltd", co: "Co", inc: "Inc", llc: "LLC", wa: "WA", nsw: "NSW", qld: "QLD", vic: "VIC", nt: "NT", sa: "SA", tas: "TAS", act: "ACT", aus: "Aus", au: "AU", bhp: "BHP", fmg: "FMG", envss: "ENVSS", ii: "II", iii: "III", xxiii: "XXIII" };
+  function capPart(w, kind) {   /* one word part (no spaces or hyphens) */
+    if (!w) return w;
+    const lo = w.toLowerCase();
+    if (kind === "company" && CASE_CO_WORDS[lo]) return CASE_CO_WORDS[lo];
+    const ap = lo.match(/^([a-z])['’]([a-z].*)$/);                                         /* O'Brien, D'Angelo */
+    if (ap) return ap[1].toUpperCase() + "'" + ap[2].charAt(0).toUpperCase() + ap[2].slice(1);
+    if (kind === "person" && /^mc[a-z]{2,}$/.test(lo)) return "Mc" + lo.charAt(2).toUpperCase() + lo.slice(3);   /* McDonald */
+    return lo.charAt(0).toUpperCase() + lo.slice(1);   /* Mac… is left as Macdonald / Mackenzie: too many plain words start with mac */
+  }
+  function properCase(s, kind) {
+    const v = String(s || "").trim().replace(/\s+/g, " "), allCaps = v === v.toUpperCase();
+    return v.split(" ").map((w, i) => {
+      if (kind === "person" && i > 0 && /^(van|von|de|da|di|du|del|der|den|la|le|bin|binti|al)$/i.test(w)) return w.toLowerCase();   /* Jan van der Berg */
+      if (kind === "company" && i > 0 && CASE_SMALL.has(w.toLowerCase())) return w.toLowerCase();
+      if (kind === "company" && !allCaps && /^[A-Z0-9&]{2,4}$/.test(w)) return w;   /* an acronym inside a normal name (BHP Contractors): keep */
+      return w.split("-").map(p => capPart(p, kind)).join("-");
+    }).join(" ");
+  }
+  /* why a value looks wrongly capitalised: "all lower case", "ALL CAPS", "mixed" (jOHN, SMith); "" = fine */
+  function caseIssue(s, kind) {
+    const v = String(s || "").trim(); if (!/[a-z]/i.test(v)) return "";
+    const letters = v.replace(/[^A-Za-z]/g, "");
+    if (letters.length < 2) return v === v.toLowerCase() ? "all lower case" : "";
+    let why = "";
+    if (v === v.toLowerCase()) why = "all lower case";
+    else if (v === v.toUpperCase()) {
+      if (kind === "company" && v.split(/\s+/).every(w => w.replace(/[^A-Za-z]/g, "").length <= 4)) return "";   /* BHP, MACS, JBS&G, WA PTY: acronyms */
+      why = "ALL CAPS";
+    } else if (kind === "person" && v.split(/[\s-]+/).some(w => /^[a-z]/.test(w) && w.length > 1 && !/^(van|von|de|da|di|du|del|der|la|le|bin|al)$/.test(w.toLowerCase()) || /^[A-Z]{2,}[a-z]/.test(w) && !/^(Mc|Mac|O['’])/.test(w))) why = "mixed";
+    else if (kind === "company" && v.split(/\s+/).some(w => /^[a-z]{4,}/.test(w) && !CASE_SMALL.has(w))) why = "mixed";
+    if (!why) return "";
+    const fix = properCase(v, kind);
+    return fix !== v ? why : "";
+  }
+  /* g19-case-end */
+  const keepCase = new Set();   /* field|value the tech chose to keep as typed (this visit) */
+  function paintCase(inp, kind, commit) {
+    const id = "g19Case-" + inp.id; let box = document.getElementById(id);
+    const v = canon(inp.value), why = caseIssue(v, kind), fix = why ? properCase(v, kind) : "";
+    const skip = !why || keepCase.has(inp.id + "|" + v) || (kind === "company" && didYouMean(v).length);   /* a known spelling ("Did you mean …?") wins */
+    if (skip) { if (box) box.remove(); return; }
+    if (!box) { box = document.createElement("p"); box.className = "help g19-warn g19-case"; box.id = id; (inp.closest(".combo") || inp).insertAdjacentElement("afterend", box); }
+    box.innerHTML = `Capital letters (${e9(why)}): use <button type="button" class="linkish" data-g19case="${e9(fix)}">${e9(fix)}</button>? <button type="button" class="linkish" data-g19keep="1">Keep “${e9(v)}”</button>`;
+    box.querySelector("[data-g19case]").onclick = () => { commit(fix); box.remove(); };
+    box.querySelector("[data-g19keep]").onclick = () => { keepCase.add(inp.id + "|" + v); box.remove(); };
+  }
+  function wireCase(id, kind, commitFn) {
+    const inp = document.getElementById(id); if (!inp || inp.dataset.g19case) return;
+    inp.dataset.g19case = "1";
+    const commit = commitFn || (v => { inp.value = v; inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); });
+    inp.addEventListener("blur", () => setTimeout(() => paintCase(inp, kind, commit), 200));
+    inp.addEventListener("change", () => paintCase(inp, kind, commit));
+    inp.addEventListener("input", () => { const b = document.getElementById("g19Case-" + inp.id); if (b) b.remove(); });
+  }
+  function rememberCompany(v) {
+    v = canon(v); if (v.length < 2) return;
+    db.catalogs = db.catalogs || {}; db.catalogs.companies = db.catalogs.companies || [];
+    if (!db.catalogs.companies.some(c => canon(c).toLowerCase() === v.toLowerCase())) db.catalogs.companies.push(v);
+  }
+  function wireCompany(t) {
+    const inp = document.getElementById("company"); if (!inp || inp.dataset.g19) return;
+    inp.dataset.g19 = "1"; inp.setAttribute("autocomplete", "off"); inp.placeholder = "Type or pick a company";
+    let wrap = inp.closest(".combo");
+    if (!wrap) { wrap = document.createElement("div"); wrap.className = "combo"; inp.parentNode.insertBefore(wrap, inp); wrap.appendChild(inp); }
+    const box = document.createElement("div"); box.className = "suggest"; box.id = "sug-company"; wrap.appendChild(box);
+    const commit = v => { inp.value = v; inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); };
+    const show = () => {
+      const q = canon(inp.value).toLowerCase(); const { client, list } = companies(t);
+      const all = (client ? [{ name: client, tag: "project client" }] : []).concat(list.map(n => ({ name: n })));
+      const hits = all.filter(c => !q || c.name.toLowerCase().includes(q)).slice(0, 12);
+      const dup = c => { const d = didYouMean(c.name)[0]; return d ? "check spelling: also “" + d.name + "”" : ""; };
+      box.innerHTML = hits.map(c => { const d = dup(c); return `<div data-v="${e9(c.name)}"><strong>${e9(c.name)}</strong>${c.tag ? ` <span class="muted">${e9(c.tag)}</span>` : ""}${d ? ` <span class="g19-warn g19-dupe">${e9(d)}</span>` : ""}</div>`; }).join("")
+        + (q && !all.some(c => c.name.toLowerCase() === q) ? `<div class="g19-new muted">New company: “${e9(canon(inp.value))}” is saved as typed</div>` : "");
+      box.classList.toggle("on", !!box.innerHTML);
+      box.querySelectorAll("div[data-v]").forEach(d => d.onmousedown = ev => { ev.preventDefault(); commit(d.dataset.v); box.classList.remove("on"); });
+    };
+    inp.addEventListener("input", show); inp.addEventListener("focus", show);
+    inp.addEventListener("blur", () => setTimeout(() => box.classList.remove("on"), 180));
+    inp.addEventListener("change", () => rememberCompany(inp.value));
+    let dt = 0; inp.addEventListener("input", () => { clearTimeout(dt); dt = setTimeout(() => paintDym(inp, commit), 400); });
+    inp.addEventListener("change", () => paintDym(inp, commit));
+    paintDym(inp, commit);   /* a stored near-duplicate is flagged too (never rewritten) */
+    wireCase("company", "company", commit);
+  }
+
+  /* ================= 7. laptop / Chromebook times need office approval ================= */
+  function lapEntries(t) { return (t.audit || []).filter(a => a && (a.lap === true || (a.te && a.te.mobile === false))); }
+  function pendingLap(t) { const since = String((t.officeApproval || {}).at || ""); return lapEntries(t).filter(a => String(a.at || "") > since); }
+  function needsApproval(t) { return !!t && !blank(t) && (t.needsOfficeApproval === true || pendingLap(t).length > 0); }
+  function admin() { return tryB(() => isAdmin()); }
+  function stampFlag(t) {   /* stored flag only for a press / typed time made in this session; opening an old sample writes nothing */
+    if (!t || t.needsOfficeApproval === true) return false;
+    if (!pendingLap(t).some(a => String(a.at || "") >= INSTALLED_AT)) return false;
+    t.needsOfficeApproval = true; t.updatedAt = nowIso(); return true;
+  }
+  function approve(t) {
+    const n = pendingLap(t).length;
+    t.needsOfficeApproval = false; t.officeApproval = { at: nowIso(), by: who(), device: dev(), count: n, v: V };
+    note(t, "Laptop / Chromebook times approved by office", n + " entr" + (n === 1 ? "y" : "ies") + " · " + dev());
+    save();
+  }
+  function lapLine(a) { return (a.action || "Time entered") + " · " + when(a.at) + (a.te && a.te.device ? " · " + a.te.device : ""); }
+  function h2Anchor() { const h = document.querySelector("#app h2"); return h ? (h.closest(".row") || h) : null; }
+  function paintStaffFlag(t) {
+    if (!t || !needsApproval(t) || admin() || document.getElementById("g19ApprStaff")) return;
+    const anchor = h2Anchor(); if (!anchor) return;
+    anchor.insertAdjacentHTML("afterend", `<div class="card g19-appr" id="g19ApprStaff"><strong>Flagged to the office</strong>
+      <p class="help" style="margin:4px 0">START / STOP or a time on this sample was entered on a laptop or Chromebook, not at the pump. If a time is wrong, ${MOBILE ? "use Edit time on this sample to correct it" : "open this sample on your phone and use Edit time to correct it"}. The office checks and approves it.</p>
+      <ul class="g19-applist">${pendingLap(t).map(a => `<li>${e9(lapLine(a))}</li>`).join("") || "<li>Flagged on this sample</li>"}</ul></div>`);
+  }
+  function paintApproval(t) {
+    paintStaffFlag(t);
+    if (!t || !needsApproval(t) || !admin() || document.getElementById("g19Approve")) return;
+    const anchor = h2Anchor(); if (!anchor) return;
+    const list = pendingLap(t);
+    anchor.insertAdjacentHTML("afterend", `<div class="card g19-appr" id="g19Approve"><strong>Needs office approval</strong>
+      <p class="help" style="margin:4px 0">START / STOP or times were entered on a laptop or Chromebook, not at the pump. Check them, then approve.</p>
+      <ul class="g19-applist">${list.map(a => `<li>${e9(lapLine(a))}</li>`).join("") || "<li>Flagged on this sample</li>"}</ul>
+      <button type="button" class="btn green" id="g19ApproveBtn">Approve times (office)</button></div>`);
+    document.getElementById("g19ApproveBtn").onclick = () => approve(t);
+  }
+  function paintRows() {
+    document.querySelectorAll('#app .train[onclick^="openTrain("]').forEach(row => {
+      if (row.dataset.g19chips) return; row.dataset.g19chips = "1";
+      const m = /openTrain\('([^']+)'\)/.exec(row.getAttribute("onclick") || ""); if (!m) return;
+      const t = db.trains.find(x => x.id === m[1]); if (!t) return;
+      const at = row.querySelector(".row-title") || row;
+      if (needsApproval(t)) at.insertAdjacentHTML("beforeend", ` <span class="te-chip g19-chip">${admin() ? "needs office approval" : "flagged to office"}</span>`);
+      if (needsLoc(t) && !DONE.has(t.status)) at.insertAdjacentHTML("beforeend", ` <span class="te-chip g19-chip g19-chip-loc">no location</span>`);
+    });
+    if (view.page === "event" && view.eventId && !document.getElementById("g19EvAppr")) {
+      const n = (typeof trainsOf === "function" ? trainsOf(view.eventId) : []).filter(needsApproval).length;
+      const a = h2Anchor();
+      if (n && a) a.insertAdjacentHTML("afterend", `<p class="help g19-warn" id="g19EvAppr">${n} sample${n === 1 ? " needs" : "s need"} office approval (laptop / Chromebook START, STOP or typed times).${admin() ? "" : " If a time is wrong, correct it on your phone with Edit time."}</p>`);
+    }
+    paintLocEvent();
+  }
+
+  /* ================= 9. Location: notify the sampler before complete / COC (John 27 Nov 2026: not a block) ================= */
+  function needsLoc(t) { return !!t && !blank(t) && !fib(t) && t.status !== "not_used" && !String(t.location || "").trim(); }
+  /* John 27 Nov 2026: Location is a notice to the sampler, not a required answer (no answerItems entry: it would block Mark complete / COC). */
+  function locGate(ev, scope) {
+    return (typeof trainsOf === "function" ? trainsOf(ev.id) : []).filter(t => needsLoc(t) && !["rejected", "fault", "not_used"].includes(t.status) && (scope === "coc" ? !noise(t) : true));
+  }
+  const locOk = new Map();   /* eventId -> when "carry on" was confirmed: Mark complete then "Create COC now?" asks once */
+  function showLocGate(ev, scope, list) {
+    if (Date.now() - (locOk.get(ev.id) || 0) < 120000) return Promise.resolve(true);
+    const what = scope === "coc" ? "Create the COC" : "Mark the event complete";
+    const pr = ask("locgate", "Location missing", `<p class="help">${list.length} sample${list.length === 1 ? " has" : "s have"} no location. Tap a sample to add it, or carry on and add it later.</p>
+      <ul class="v483-gate">${list.map(t => `<li><button type="button" class="linkish" data-g19open="${e9(t.id)}">${e9(dno(t))}</button><span class="muted"> · ${e9(typeof kindLabel === "function" ? kindLabel(t) : "")}${t.person && (t.person.first || t.person.last) ? " · " + e9([t.person.first, t.person.last].filter(Boolean).join(" ")) : ""}</span></li>`).join("")}</ul>`, what + " anyway", "Go back").then(ok => { if (ok) locOk.set(ev.id, Date.now()); return ok; });
+    setTimeout(() => document.querySelectorAll("[data-g19open]").forEach(b => b.onclick = () => { const m = b.closest(".g19-modal"); if (m) m.remove(); openTrain(b.dataset.g19open); setTimeout(() => { const l = document.getElementById("location"); if (l) { l.scrollIntoView({ block: "center" }); try { l.focus({ preventScroll: true }); } catch (e) {} } }, 300); }), 0);
+    return pr;   /* a "tap to add" link closes the warning: the promise is left unanswered and nothing is marked */
+  }
+  function paintLocSample(t) {
+    const l = document.getElementById("location");
+    if (!l || !t || document.getElementById("g19LocMiss")) return;
+    if (!needsLoc(t) || DONE.has(t.status) || String(l.value || "").trim()) return;
+    l.insertAdjacentHTML("afterend", `<p class="help g19-warn" id="g19LocMiss">⚠ Location missing. Add where this sample was taken (needed on the COC and the report).</p>`);
+    l.addEventListener("input", () => { const m = document.getElementById("g19LocMiss"); if (m) m.style.display = String(l.value || "").trim() ? "none" : ""; });
+  }
+  function paintLocEvent() {
+    if (view.page !== "event" || !view.eventId || document.getElementById("g19EvLoc")) return;
+    const ev = eventById(view.eventId); if (!ev) return;
+    const list = locGate(ev, "complete"); if (!list.length) return;
+    const a = h2Anchor(); if (!a) return;
+    a.insertAdjacentHTML("afterend", `<p class="help g19-warn" id="g19EvLoc">⚠ ${list.length} sample${list.length === 1 ? " has" : "s have"} no location: ${list.map(t => `<button type="button" class="linkish" data-g19loc="${e9(t.id)}">${e9(dno(t))}</button>`).join(", ")}</p>`);
+    document.querySelectorAll("[data-g19loc]").forEach(b => b.onclick = () => { openTrain(b.dataset.g19loc); setTimeout(() => { const l = document.getElementById("location"); if (l) { l.scrollIntoView({ block: "center" }); try { l.focus({ preventScroll: true }); } catch (e) {} } }, 300); });
+  }
+  const _coc19 = createCoc;
+  createCoc = async function () {
+    const ev = eventById(view.eventId);
+    if (ev && !tryB(() => isFibreEvent(ev))) { const l = locGate(ev, "coc"); if (l.length) { if (!(await showLocGate(ev, "coc", l))) return false; l.forEach(t => note(t, "COC created with no location — confirmed", dev(), { g19noloc: "coc" })); saveQuiet(); } }
+    return _coc19.apply(this, arguments);
+  };
+  window.createCoc = createCoc;
+  const _mark19 = markEventUpload;
+  markEventUpload = function (id) {
+    const ev = eventById(id);
+    const args = arguments, self = this;
+    if (ev) { const l = locGate(ev, "complete"); if (l.length) return showLocGate(ev, "complete", l).then(ok => { if (!ok) return; l.forEach(t => note(t, "Event marked complete with no location — confirmed", dev(), { g19noloc: "complete" })); return _mark19.apply(self, args); }); }
+    return _mark19.apply(this, arguments);
+  };
+  window.markEventUpload = markEventUpload;
+
+  /* ================= 10. rotameter pick-list everywhere ================= */
+  function rotaList(selfT) {
+    const seed = ((window.ENVSS_V44_EQUIP || {}).rotameters || []).map(r => ({ serial: r.serial, info: [r.make, r.model].filter(Boolean).join(" ") + (r.due ? " · cal due " + r.due.split("-").reverse().join("/") : ""), cal: r.cal, due: r.due }));
+    const seen = new Set(seed.map(r => r.serial.toLowerCase()));
+    const extra = [];
+    const add = v => { v = String(v || "").trim(); if (v && !seen.has(v.toLowerCase())) { seen.add(v.toLowerCase()); extra.push({ serial: v, info: "used before in the app" }); } };
+    ((db.catalogs && db.catalogs.rotameters) || []).forEach(r => add(r && (r.serial || r)));
+    (db.events || []).forEach(e => add(e && e.rotameter));
+    (db.trains || []).forEach(x => { if (x && x !== selfT && !blank(x)) add(x.rotameter); });   /* this sample's own value is not "used before" */
+    return seed.concat(extra.sort((a, b) => a.serial.localeCompare(b.serial)));
+  }
+  function rotaSelect(id, cur, onPick, selfT) {
+    const list = rotaList(selfT); cur = String(cur || "").trim();
+    const known = list.some(r => r.serial === cur);
+    const s = document.createElement("select"); s.id = id; s.className = "g19-rota";
+    s.innerHTML = `<option value="">Pick a rotameter…</option>` + (cur && !known ? `<option value="${e9(cur)}">${e9(cur)} (not in the list)</option>` : "")
+      + list.map(r => `<option value="${e9(r.serial)}">${e9(r.serial)}${r.info ? " — " + e9(r.info) : ""}</option>`).join("");
+    s.value = cur;
+    s.addEventListener("change", () => onPick(s.value));
+    return s;
+  }
+  function pickify(inputId, selId, onPick, selfT) {
+    const inp = document.getElementById(inputId); if (!inp || inp.dataset.g19rota || document.getElementById(selId)) return;
+    inp.dataset.g19rota = "1";
+    const s = rotaSelect(selId, inp.value, v => { inp.value = v; if (onPick) onPick(v, inp); else { inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); } }, selfT);
+    const host = inp.closest(".combo") || inp;
+    host.insertAdjacentElement("beforebegin", s);
+    host.style.display = "none";
+    const sug = document.getElementById("sug-" + inputId); if (sug) sug.classList.remove("on");
+  }
+  function paintRota(t) {
+    if (t && !blank(t)) pickify("rotameter", "g19RotaSel", (v, inp) => {
+      t.rotameter = v; t.updatedAt = nowIso(); try { collectTrain(t); } catch (e) {} saveQuiet();
+      inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true }));
+    }, t);
+    pickify("eventRota", "g19EvRotaSel", (v, inp) => { try { setEventRotameter(view.eventId, v); } catch (e) { inp.dispatchEvent(new Event("change", { bubbles: true })); } });
+    pickify("nrota", "g19NewRotaSel"); pickify("erota", "g19EditRotaSel");
+  }
+
+  /* ================= 6. stopped sample: reason before changing an answer (grace STOP_EDIT_GRACE_MIN) ================= */
+  const EDIT_REASONS = [["typo", "Correcting a typo / wrong entry"], ["late_info", "Details received after the shift"], ["office", "Office / lab correction"], ["other", "Other (type the reason)"]];
+  let visit = { id: null, free: null, unlocked: null };
+  function inGrace(t) { const e = ms(t.endAt); return e != null && Date.now() - e < STOP_EDIT_GRACE_MIN * 60e3; }
+  function graceEnds(t) { return new Date(ms(t.endAt) + STOP_EDIT_GRACE_MIN * 60e3).toISOString(); }
+  let graceTimer = null;
+  function keyOf(el) { return el.id || el.getAttribute("name") || [...el.attributes].filter(a => /^data-nz/.test(a.name)).map(a => a.name + "=" + a.value).join("|") || ""; }
+  function hasVal(el) { if (el.type === "checkbox" || el.type === "radio") return el.checked; const v = String(el.value || "").trim(); return !!v && v !== "N/A"; }
+  function guardable(el) {
+    if (!el || !el.closest("#app") || el.disabled) return false;
+    if (/^(file|button|submit|hidden|reset|image)$/.test(el.type || "")) return false;
+    if (el.classList.contains("v483-locked") && !el.classList.contains("g19-ro")) return false;   /* v48.3 time boxes: Edit time has its own reasons */
+    const id = el.id || "";
+    if (/search/i.test(id) || el.hasAttribute("data-link") || el.hasAttribute("data-alloc")) return false;
+    return !!keyOf(el);
+  }
+  const CHIP_SEL = "[data-yn],[data-rq],[data-rej]";
+  function chipKey(b) { return b.hasAttribute("data-yn") ? "yn:" + b.dataset.yn : b.hasAttribute("data-rq") ? "rq:" + b.dataset.rq : "rej"; }
+  function chipGroups() { const seen = new Map(); document.querySelectorAll(CHIP_SEL.split(",").map(s => "#app " + s).join(",")).forEach(b => { const k = chipKey(b); const g = seen.get(k) || { key: k, on: false }; if (b.classList.contains("on")) g.on = true; seen.set(k, g); }); return [...seen.values()]; }
+  function lockPass(t) {
+    if (!t || t.id !== visit.id) visit = { id: t ? t.id : null, free: null, unlocked: null };
+    clearTimeout(graceTimer);
+    if (!t || !ended(t)) return;
+    const els = [...document.querySelectorAll("#app input, #app select, #app textarea")].filter(guardable);
+    if (!visit.free) { visit.free = new Set(els.filter(el => !hasVal(el)).map(keyOf)); chipGroups().forEach(g => { if (!g.on) visit.free.add(g.key); }); }
+    if (visit.unlocked || inGrace(t)) {
+      if (!visit.unlocked && inGrace(t)) graceTimer = setTimeout(() => { if (curT() === t) { visit.free = null; render(); } }, Math.max(500, ms(graceEnds(t)) - Date.now() + 200));
+      paintEndedBanner(t); return;
+    }
+    els.forEach(el => {
+      const k = keyOf(el);
+      if (visit.free.has(k) || !hasVal(el)) { if (!hasVal(el)) visit.free.add(k); return; }
+      el.setAttribute("data-g19lock", "1"); el.classList.add("g19-ro");
+      el.dataset.g19old = el.type === "checkbox" || el.type === "radio" ? (el.checked ? "1" : "") : el.value;
+      if ((el.tagName === "INPUT" || el.tagName === "TEXTAREA") && !el.readOnly) el.readOnly = true;
+    });
+    paintEndedBanner(t);
+  }
+  function paintEndedBanner(t) {
+    if (document.getElementById("g19Ended")) return;
+    const anchor = h2Anchor(); if (!anchor) return;
+    const u = visit.unlocked;
+    const html = u ? `<div class="card g19-ended" id="g19Ended"><strong>Editing unlocked</strong><p class="help" style="margin:4px 0">Reason: ${e9(u.label)}${u.text ? " (" + e9(u.text) + ")" : ""}. Changes are kept in the audit trail. It locks again when you leave this sample.</p></div>`
+      : inGrace(t) ? `<div class="card g19-ended" id="g19Ended"><strong>Just stopped</strong><p class="help" style="margin:4px 0">You can fix typos without a reason until ${e9(hhmm(graceEnds(t)))} (${STOP_EDIT_GRACE_MIN} min after STOP). After that, changing an answer asks for a reason.</p></div>`
+      : `<div class="card g19-ended" id="g19Ended"><strong>Stopped sample: answers are locked</strong><p class="help" style="margin:4px 0">Empty boxes can still be filled in. To change something already entered, give a reason first.</p><button type="button" class="btn ghost" id="g19Unlock">Change an answer…</button></div>`;
+    anchor.insertAdjacentHTML("afterend", html);
+    const b = document.getElementById("g19Unlock"); if (b) b.onclick = () => askUnlock(t, null);
+  }
+  let asking = false;
+  async function askUnlock(t, el) {
+    if (asking) return; asking = true;
+    let label = "";
+    try { const box = el && el.closest("div"); const l = box && box.querySelector("label"); label = l ? l.textContent.replace(/Needs answer|✓|required/g, "").trim() : ""; } catch (e) {}
+    const r = await ask("edit", "Why change a stopped sample?", `<p class="help">${e9(dno(t))} was stopped${t.endAt ? " " + e9(when(t.endAt)) : ""}.${label ? " You tapped <strong>" + e9(label) + "</strong>." : ""} Give a reason to unlock it. The reason, your name and this device go in the audit trail.</p>
+      <div class="v483-reasons">${EDIT_REASONS.map(([c, l]) => `<label class="v483-reason"><input type="radio" name="g19r" value="${c}"> ${e9(l)}</label>`).join("")}</div>
+      <label for="g19rText" class="v483-lab">Details <span class="muted">(optional)</span></label><input id="g19rText" maxlength="240" placeholder="e.g. lab confirmed the cassette ID">`,
+      "Unlock to edit", "Cancel", { yesClass: "green", check: w => {
+        const c = w.querySelector('input[name="g19r"]:checked'); const txt = (w.querySelector("#g19rText").value || "").trim();
+        if (!c) return { err: "Pick a reason." }; if (c.value === "other" && txt.length < 3) return { err: "Type the reason." };
+        return { reason: c.value, label: (EDIT_REASONS.find(x => x[0] === c.value) || [])[1], text: txt };
+      } });
+    asking = false;
+    if (!r) return;
+    const t2 = db.trains.find(x => x.id === t.id); if (!t2) return;
+    visit.unlocked = { reason: r.reason, label: r.label, text: r.text, at: nowIso() };
+    note(t2, "Edit after STOP unlocked", r.label + (r.text ? " (" + r.text + ")" : "") + " · " + dev(), { g19edit: { reason: r.reason, reasonText: r.text, device: dev(), mobile: MOBILE } });
+    const k = el ? keyOf(el) : "";
+    saveQuiet(); render();
+    if (k) setTimeout(() => { const n = [...document.querySelectorAll("#app input, #app select, #app textarea")].find(x => keyOf(x) === k); if (n) { try { n.focus(); } catch (e) {} } }, 50);
+  }
+  function lockedTarget(e) { const el = e.target && e.target.closest && e.target.closest("[data-g19lock]"); return el && !visit.unlocked ? el : null; }
+  ["pointerdown", "mousedown"].forEach(type => document.addEventListener(type, e => {
+    const el = lockedTarget(e); if (!el) return;
+    if (el.tagName === "SELECT" || el.type === "checkbox" || el.type === "radio") e.preventDefault();
+  }, true));
+  document.addEventListener("click", e => {
+    const el = lockedTarget(e);
+    if (el) { if (el.type === "checkbox" || el.type === "radio") e.preventDefault(); const t = curT(); if (t) askUnlock(t, el); return; }
+    const b = e.target && e.target.closest && e.target.closest(CHIP_SEL); if (!b || !b.closest("#app") || visit.unlocked) return;
+    const t = curT(); if (!t || !ended(t) || t.id !== visit.id || !visit.free || inGrace(t)) return;
+    const k = chipKey(b); if (visit.free.has(k) || b.classList.contains("on")) return;
+    const g = chipGroups().find(x => x.key === k); if (!g || !g.on) return;
+    e.preventDefault(); e.stopImmediatePropagation(); askUnlock(t, null);
+  }, true);
+  document.addEventListener("keydown", e => {
+    const el = lockedTarget(e); if (!el || e.key === "Tab" || e.key === "Shift") return;
+    e.preventDefault(); const t = curT(); if (t) askUnlock(t, el);
+  }, true);
+  document.addEventListener("change", e => {   /* anything else that changes a locked box (segmented chips, scripts) is put back */
+    const el = lockedTarget(e); if (!el) return;
+    const old = el.dataset.g19old || "";
+    if (el.type === "checkbox" || el.type === "radio") el.checked = old === "1"; else el.value = old;
+    e.stopImmediatePropagation();
+    const t = curT(); setTimeout(() => { render(); if (t) askUnlock(t, null); }, 0);
+  }, true);
+
+  /* ================= sync counter: deleted samples are never "still uploading" =================
+     pullActivity merges trains, then deletions, but drops deleted samples only after the hires / fit-report pulls. In between,
+     the v41 "silent Not stated" repair edited 21 deleted live samples (2 Nov 2026) and marked them pending, so a clean
+     signed-out Chromebook showed "21 changes still uploading" with nothing to send until those slower pulls finished. Now, as
+     soon as deletions are merged, deleted samples leave the device copy and the queue (what pullActivity does a moment
+     later anyway), before the scheduled flush can run. */
+  const _mr19 = mergeRemote;
+  mergeRemote = function (coll) {
+    const r = _mr19.apply(this, arguments);
+    if (coll === "deletions") {
+      try {
+        const gone = new Set((db.deletions || []).map(d => d && d.trainId).filter(Boolean));
+        if (gone.size) {
+          const before = db.trains.length;
+          db.trains = db.trains.filter(t => !gone.has(t.id));
+          let dropped = 0; Object.keys(syncState.pending).forEach(k => { if (k.startsWith("trains:") && gone.has(k.slice(7))) { delete syncState.pending[k]; dropped++; } });
+          if (dropped || before !== db.trains.length) { try { paintSyncBar(); } catch (e) {} }
+        }
+      } catch (e) { console.warn("v48.19 deleted samples", e); }
+    }
+    return r;
+  };
+  window.mergeRemote = mergeRemote;
+
+  /* ================= deep link #event=<eventId>&sample=<trainId> (stashed in <head> before sign-in clears the hash) ================= */
+  const DEEPLINK_KEY = "envss-deeplink-v4819";
+  const DEEPLINK_WAIT_MS = 10 * 60e3;   /* give up if the event / sample has not synced to this device by then */
+  function stashLink(h) { try { const q = new URLSearchParams(String(h || "").replace(/^#/, "")); const ev = q.get("event"), sm = q.get("sample"); if (ev || sm) sessionStorage.setItem(DEEPLINK_KEY, JSON.stringify({ event: ev || "", sample: sm || "", at: Date.now() })); } catch (e) {} }
+  function tryLink() {
+    let d = null; try { d = JSON.parse(sessionStorage.getItem(DEEPLINK_KEY) || "null"); } catch (e) {}
+    if (!d) return false;
+    if (Date.now() - (d.at || 0) > DEEPLINK_WAIT_MS) { sessionStorage.removeItem(DEEPLINK_KEY); return false; }
+    if (tryB(() => needsSignIn())) return false;
+    const t = d.sample && (db.trains || []).find(x => x.id === d.sample && !deleted(x));
+    const ev = (t && evOf(t).id ? evOf(t) : null) || (d.event && eventById(d.event));
+    if (d.sample && !t) return false;   /* wait for sync */
+    if (!t && !ev) return false;
+    sessionStorage.removeItem(DEEPLINK_KEY);
+    if (t) { try { openTrain(t.id); } catch (e) {} } else { try { openEvent(ev.id); } catch (e) {} }
+    try { history.replaceState(history.state, "", location.pathname + location.search); } catch (e) {}
+    return true;
+  }
+  window.addEventListener("hashchange", () => { stashLink(location.hash); tryLink(); });
+  stashLink(location.hash);
+  const linkTimer = setInterval(() => { let d = null; try { d = sessionStorage.getItem(DEEPLINK_KEY); } catch (e) {} if (!d) return; tryLink(); }, 1000);
+
+  /* ================= paint on every render ================= */
+  const _render19 = render;
+  render = function () {
+    const r = _render19.apply(this, arguments);
+    try {
+      paintRota(curT());
+      if (view.page === "train") {
+        const t = curT();
+        if (t) { if (stampFlag(t)) saveQuiet(); paintHead(t); wireCompany(t); wireCase("first", "person"); wireCase("last", "person"); paintCal(t); paintApproval(t); paintLocSample(t); }
+        lockPass(t);
+      } else { visit = { id: null, free: null, unlocked: null }; paintRows(); }
+    } catch (e) { console.warn("v48.19 paint", e); }
+    return r;
+  };
+  window.render = render;
+  /* the laptop press / typed time lands in the audit trail after the click: flag it wherever it happened */
+  setInterval(() => {
+    if (MOBILE) return;
+    try { let n = 0; (db.trains || []).forEach(t => { if (stampFlag(t)) n++; }); if (n) saveQuiet(); if (view.page === "train") paintApproval(curT()); } catch (e) {}
+  }, 1500);
+
+  window.v4819 = { version: V, STOP_LIMIT_H, STOP_LIMIT_MODE, STOP_EDIT_GRACE_MIN, LATE_MANUAL_START_MIN, NOISE_DRIFT_DB, overLimit, headRunning, headKey,
+    companies, calOk, calDrift, needsApproval, pendingLap, approve, ended, inGrace, rotaList, needsLoc, visit: () => visit,
+    NOISE_CAL_BLOCK_FROM, LATE_COMMENT_BLOCK_FROM, SWITCH_TZ, COMPANY_TYPO_MAX, COMPANY_TYPO_LONG, perthDay, calBlocks, lateBlocks, nearWhy, didYouMean, properCase, caseIssue, tryLink, DEEPLINK_KEY };
+
+  const st = document.createElement("style");
+  st.textContent = ".g19-warn{color:#FFC46B;font-weight:700}.g19-appr{border:2px solid #C98A2E;margin:8px 0}.g19-applist{margin:4px 0 8px 18px;padding:0}"
+    + ".g19-chip{background:#6B4A1A;color:#FFE1B0}.g19-ended{border:2px dashed #6B7590;margin:8px 0}"
+    + ".g19-ro{opacity:.85;border-style:dashed!important;cursor:pointer}select.g19-rota{width:100%}.g19-new{padding:8px 10px;font-style:italic}"
+    + ".g19-dupe{font-size:.85em;margin-left:6px}.g19-dym{margin:4px 0}.g19-case{margin:4px 0}.g19-chip-loc{background:#5A2A2A;color:#FFD0D0}";
+  document.head.appendChild(st);
+  render();
 })();
 </script>
 

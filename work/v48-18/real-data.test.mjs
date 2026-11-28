@@ -78,7 +78,7 @@ async function run(vp) {
   await a.waitForFunction(id => typeof db !== "undefined" && db.events && db.events.some(e => e.id === id) && db.trains && db.trains.length, EVENT_ID, { timeout: 20000 });
   await sleep(800);
   const loaded = await a.evaluate(([eid, tid]) => ({ v: APP_VERSION, ev: !!(db.events || []).find(e => e.id === eid), n: (db.trains || []).filter(t => t.eventId === eid).length, t: !!(db.trains || []).find(x => x.id === tid) }), [EVENT_ID, TRAIN_ID]);
-  check(`${tag} loaded v48.18 copy of 0019185-002 (${loaded.n} samples)`, loaded.v === "48.18" && loaded.ev && loaded.t && loaded.n === live.trains.length, JSON.stringify(loaded));
+  check(`${tag} loaded v48.19 copy of 0019185-002 (${loaded.n} samples)`, loaded.v === "48.19" && loaded.ev && loaded.t && loaded.n === live.trains.length, JSON.stringify(loaded));
   await a.evaluate((tid) => { try { openTrain(tid); } catch (e) {} }, TRAIN_ID); await sleep(400);
   await a.screenshot({ path: path.join(OUT, `real-${vp}-1-sample.png`) });
 

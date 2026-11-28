@@ -4,6 +4,9 @@
    Fixture names are made up. */
 import fs from "fs"; import path from "path";
 import { serve, launch, VIEWPORTS, mockSupabase, sleep, SESSION } from "./harness.mjs";
+
+/* v48.19: START / STOP on a Chromebook first shows the "Not at the pump?" warning; confirm it so the older flow under test runs. */
+async function g19ok(page) { await new Promise(r => setTimeout(r, 250)); for (let i = 0; i < 3; i++) { const has = await page.evaluate(() => { const m = document.querySelector('.g19-modal[data-g19="laptop"]'); if (!m) return false; document.getElementById("g19Yes").click(); return true; }); if (!has) break; await new Promise(r => setTimeout(r, 300)); } }
 const OUT = process.env.OUT || "/workspace/flow-shots"; fs.mkdirSync(OUT, { recursive: true });
 const results = [];
 function check(name, ok, detail) { results.push({ name, ok: !!ok, detail: detail == null ? "" : String(detail) }); console.log((ok ? "PASS" : "FAIL") + "  " + name + (detail && !ok ? " — " + String(detail).slice(0, 600) : "")); }
@@ -92,7 +95,7 @@ const flows = (page, id) => page.evaluate(i => {
 async function run(vp) {
   const shot = (page, n, full = false) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const page = await boot(vp);
-  check(`[${vp}] app is v48.18 (suite still covers v48.8 end-flow behaviour)`, await page.evaluate(() => APP_VERSION === "48.18" && document.getElementById("appVersion").textContent === "v48.18" && document.title === "ENVSS Field v48.18" && !!window.v488));
+  check(`[${vp}] app is v48.19 (suite still covers v48.8 end-flow behaviour)`, await page.evaluate(() => APP_VERSION === "48.19" && document.getElementById("appVersion").textContent === "v48.19" && document.title === "ENVSS Field v48.19" && !!window.v488));
 
   /* 1. typing start flow pre-fills empty end flow */
   await open(page, "h1");
@@ -149,7 +152,7 @@ async function run(vp) {
   await open(page, "h2");
   check(`[${vp}] running sample 2 is still missing an end flow before STOP`, (await T(page, "h2")).endFlow === "" && (await T(page, "h2")).status === "running");
   await page.evaluate(() => document.getElementById("btnStop").scrollIntoView({ block: "center" }));
-  await page.click("#btnStop"); await sleep(350);
+  await page.click("#btnStop"); await g19ok(page); await sleep(350);
   let m = await modal(page);
   let t = await T(page, "h2");
   check(`[${vp}] STOP opens the deviation prompt and does not stop the sample yet`, m && m.q === "Was there a deviation from the initial flow rate?" && /2\.0 L\/min/.test(m.start) && m.no && t.status === "running" && !t.endAt, JSON.stringify({ m, s: t.status, end: t.endFlow, endAt: t.endAt }));
@@ -179,7 +182,7 @@ async function run(vp) {
 
   /* 9. entering a different end flow, with the existing tolerance warning */
   await open(page, "h3");
-  await page.click("#btnStop"); await sleep(350);
+  await page.click("#btnStop"); await g19ok(page); await sleep(350);
   m = await modal(page);
   check(`[${vp}] STOP on sample 3 shows the same prompt with start 2.0`, m && /2\.0 L\/min/.test(m.start) && (await T(page, "h3")).status === "running", JSON.stringify(m));
   await page.evaluate(() => { const i = document.getElementById("v488End"); i.value = "1.5"; i.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -196,7 +199,7 @@ async function run(vp) {
 
   /* 10. AFM STOP */
   await open(page, "f2");
-  await page.click("#btnStop"); await sleep(350);
+  await page.click("#btnStop"); await g19ok(page); await sleep(350);
   m = await modal(page);
   check(`[${vp}] AFM STOP shows the same deviation prompt`, m && m.q === "Was there a deviation from the initial flow rate?" && /2\.0 L\/min/.test(m.start) && (await T(page, "f2")).status === "running", JSON.stringify(m));
   await shot(page, "04-afm-stop-deviation-prompt");
@@ -207,7 +210,7 @@ async function run(vp) {
 
   /* 11. noise STOP is unchanged (no prompt) */
   await open(page, "n2");
-  await page.click("#btnStop"); await sleep(600);
+  await page.click("#btnStop"); await g19ok(page); await sleep(600);
   t = await T(page, "n2");
   check(`[${vp}] noise STOP does not show the flow prompt and still stops`, !(await modal(page)) && t.status === "ended" && !!t.endAt, JSON.stringify({ s: t.status, endFlow: t.endFlow, acts: (t.audit || []).map(a => a.action) }));
 

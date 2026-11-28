@@ -81,7 +81,7 @@ const events = [
 ];
 check("isFitEvent only matches fit events", F.isFitEvent(events[1]) && !F.isFitEvent(events[0]) && !F.isFitEvent(events[2]));
 check("next fit seq skips hygiene and AFM numbers", F.nextFitSeq("p1", events, []) === "002", F.nextFitSeq("p1", events, []));
-check("fit event code is {job}-FIT-{seq}", F.fitEventCode({ number: "0019185" }, "001") === "0019185-FIT-001");
+check("fit event code is {job}-RFT-{seq} (v48.19; legacy FIT codes still recognised)", F.fitEventCode({ number: "0019185" }, "001") === "0019185-RFT-001");
 check("deleted fit numbers are not reused", F.nextFitSeq("p1", events.filter(e => e.type !== "fit"), [{ tombstone: "event", projectId: "p1", type: "fit", code: "0019185-FIT-001" }]) === "002");
 
 const ambiguous = F.parseTsiDate("10/11/2026");

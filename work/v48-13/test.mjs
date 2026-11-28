@@ -64,6 +64,7 @@ async function boot(vp) {
   const store = { ocrStatus: 200, ocrBody: { text: VISION_TEXT } };
   page.store = store; page.mlog = mockSupabase(page, store, {});
   page.dialogs = []; page.on("dialog", async d => { page.dialogs.push(d.message()); await d.accept(); });
+  await page.evaluateOnNewDocument(() => { window.ENVSS_ALLOW_MANUAL_EVENTS = true; });   /* v48.19: manual events are off by default; this suite covers the manual-event form behind the flag */
   await page.goto(url + "/field.html", { waitUntil: "domcontentloaded" }); await page.evaluate(SESSION);
   const fx = fixture(); await page.evaluate(d => { localStorage.setItem("envss-field-next-v32", JSON.stringify(d)); }, fx);
   await page.reload({ waitUntil: "networkidle0" }); await sleep(800);
@@ -105,7 +106,7 @@ async function mockTesseract(page) {
 async function run(vp) {
   const shot = (page, n, full = false) => page.screenshot({ path: path.join(OUT, `${vp}-${n}.png`), fullPage: full });
   const page = await boot(vp);
-  check(`[${vp}] app is v48.18`, await page.evaluate(() => APP_VERSION === "48.18" && document.title === "ENVSS Field v48.18" && envssFit.version === "48.18"), await page.evaluate(() => [APP_VERSION, document.title, envssFit.version].join(" ")));
+  check(`[${vp}] app is v48.19`, await page.evaluate(() => APP_VERSION === "48.19" && document.title === "ENVSS Field v48.19" && envssFit.version === "48.19"), await page.evaluate(() => [APP_VERSION, document.title, envssFit.version].join(" ")));
 
   await page.evaluate(() => openEvent("eFit")); await sleep(400);
   const ui = await page.evaluate(() => ({ picker: !!document.getElementById("fitParent"), linked: /linked hygiene|hygiene event/i.test(document.getElementById("fitEvent").innerText), /* the v48.4 ‹ previous / next › event arrows are project navigation, not a link */
@@ -116,9 +117,9 @@ async function run(vp) {
 
   await page.evaluate(() => openNewEvent("p4813")); await sleep(300);
   const form = await page.evaluate(() => { const s = document.getElementById("ntype"); s.value = "fit"; toggleEventTypeFields(); const box = document.getElementById("fitEventFields"); return { opt: !!s.querySelector("option[value=fit]"), shown: box && box.style.display !== "none", text: box ? box.innerText : "" }; });
-  check(`[${vp}] new-event form offers Respirator fit testing with no hygiene wording`, form.opt && form.shown && /FIT-001/.test(form.text) && !/hygiene|link/i.test(form.text), JSON.stringify(form));
+  check(`[${vp}] new-event form offers Respirator fit testing with no hygiene wording`, form.opt && form.shown && /RFT-001/.test(form.text) && !/hygiene|link/i.test(form.text), JSON.stringify(form));
   const created = await page.evaluate(() => { const ev = createEvent(); return ev ? JSON.parse(JSON.stringify(ev)) : null; });
-  check(`[${vp}] new fit event is {job}-FIT-002 with no parentEventId`, created && created.code === "0019913-FIT-002" && created.type === "fit" && !("parentEventId" in created), JSON.stringify(created));
+  check(`[${vp}] new fit event is {job}-RFT-002 (v48.19; the seeded legacy FIT-001 counts as 001) with no parentEventId`, created && created.code === "0019913-RFT-002" && created.type === "fit" && !("parentEventId" in created), JSON.stringify(created));
   const hygUntouched = await page.evaluate(() => { const h = eventById("eH"); return h.type === "hygiene" && !("parentEventId" in h) && db.trains.length === 1; });
   check(`[${vp}] hygiene event untouched`, hygUntouched);
   check(`[${vp}] Drive subfolder name is Fit-Tests`, await page.evaluate(() => envssFit.driveSubfolder === "Fit-Tests"));
@@ -235,7 +236,7 @@ for (const vp of vps) await run(vp);
 for (const vp of vps) real[vp] = await runReal(vp);
 await browser.close(); server.close();
 const sw = fs.readFileSync(path.join(REPO, "sw-field.js"), "utf8");
-check("sw-field.js precaches fit-test.js?v=<version> (fit testing loads offline)", /"fit-test\.js\?v=" \+ VERSION/.test(sw) && /envss-field-v48-18/.test(sw));
+check("sw-field.js precaches fit-test.js?v=<version> (fit testing loads offline)", /"fit-test\.js\?v=" \+ VERSION/.test(sw) && /envss-field-v48-19/.test(sw));
 check("sw-field.js only deletes envss-field-* caches (envss-ocr-* survives app updates)", /k\.startsWith\("envss-field-"\)/.test(sw));
 const html = fs.readFileSync(path.join(REPO, "field.html"), "utf8");
 check("help/fit-test.html guide is in the branch (from PR #24)", fs.existsSync(path.join(REPO, "help/fit-test.html")) && fs.existsSync(path.join(REPO, "help/assets/fit-test/fit-test-how-to.mp4")));
