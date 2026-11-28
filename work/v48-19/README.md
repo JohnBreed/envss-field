@@ -32,6 +32,18 @@ Built on v48.18 (PR #30, on top of v48.17 / PR #29). One new layer at the end of
 
 Data: new sample keys only (`needsOfficeApproval`, `officeApproval`) and audit entries. No schema or Supabase change.
 
+## Noise measurements (28 Nov 2026, noise.js 48.19)
+Done in `noise.js`; `field.html` and `sw-field.js` are untouched. Tests: `ROOT=<worktree> OUT=<dir> node work/v48-19/noise.test.mjs [pixel7|chromebook]` (143 checks).
+
+1. **Add measurement.** On a noise event (`ev.type === "noise"` or `ev.podioEventKind === "noise"`) the Add sample screen is "Add measurement" and offers only: Noise · personal (dose badge) / Noise · area / task (sound level meter) / Noise · static dose badge. The old Noise · static is split at the first tap: the stored `trainKind` stays `noise_personal` or `noise_static`, and `noise.method` (`slm` / `dose`) is set at creation, with `noise.v20 = true` marking new-flow records. Old static records keep their method; one with no method yet still shows the chips and "needs answer". The Measurement type select lists the same three types (plus "Noise · static (method not chosen yet)" only for an old record with no method). Hygiene events are unchanged (all six types, "Add sample"). Wording on noise events, display only (a post-render pass): Add measurement, Noise Measurement N, the confirm text, the bottom bar "Measure", and the help text. Exports, audit entries and `displayNo` are untouched.
+2. **SLM: Area / Task** (`noise.scope`). Task shows "What the worker is doing" (`noise.task`, e.g. operating a drill) and the position hint is operator's ear (placeholder, and first in the drop-down). New SLM measurements are asked for Area/Task (and the task text); old records are not. The 85 dB(A) extent + distance prompt shows for area and task (non-blocking warning only).
+3. **New SLM fields** (Minah's 0019340 Measurements tab): SLM reading number, ENVSS reading number (auto: next after the highest on the event, editable), Additional comments (`noise.comments`).
+4. **Equipment used** (event page, noise events): `ev.noiseEquip = [{id, type: mic|slm|cal, model, serial}]`, entered once. Each measurement picks per type (`noise.equip.{mic,slm,cal}` = item id). The pick is mirrored to the existing fields (`dosimeterSerial` + `noise.slmModel`, `noise.micSerial` + `noise.micModel`, `fieldCalibrator`), so nothing downstream changes. Editing a serial on the event updates the measurements that picked it (audit entry on each). Dose badges pick the calibrator only. Old text values show as "(this measurement only)".
+5. **Drop-downs with type-your-own** for description / source, operating conditions, measurement position, task and equipment make / model. Built from values already on this event first, then earlier events. A typed value is kept exactly as typed.
+6. **Octave bands** now start at 31.5 and 63 Hz (key `"31.5"` is special-cased in `setPath`). The Spectrum Table photo prompt is unchanged (LCpeak ≥ 140 or LAeq > 110).
+
+Data: new keys inside `t.noise` and `ev.noiseEquip` only. Nothing is renamed or removed, and there is no schema or Supabase change.
+
 ## Tests
 `ROOT=<worktree> OUT=/workspace/guard-shots/v4819 node work/v48-19/test.mjs [pixel7|chromebook]`. Supabase is stubbed in memory and never live.
 

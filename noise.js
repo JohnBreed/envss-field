@@ -29,7 +29,7 @@
      Spectrum Table prompt (REQ-012/015/033). Existing stored values are left intact. */
 (function (g) {
   "use strict";
-  const NOISE_VERSION = "48.0";
+  const NOISE_VERSION = "48.19";
   const C = () => g.envssCore || {};
   const esc = s => (C().esc || g.esc)(s);
 
@@ -113,7 +113,7 @@
 
   /* ======================= v47 noise module ======================= */
   const NUM = /^-?\d{1,3}(?:[.,]\d{1,2})?$/;
-  const OCTAVES = ["125", "250", "500", "1000", "2000", "4000", "8000"];
+  const OCTAVES = ["31.5", "63", "125", "250", "500", "1000", "2000", "4000", "8000"];
   const DRIFT_LIMIT = 0.5;   // dB, field calibration drift / deviation check
   const ocrMem = new Map();   // per sample, this session only: { state, error }
   const ocrS = t => ocrMem.get(t.id) || {};
@@ -217,7 +217,7 @@
     if (pk != null && ce != null && pk < ce) f.push({ k: "peak", sev: "bad", text: "LCpeak (" + pk + ") is below LCeq (" + ce + "). Re-check the reading." });
     if (isSlm(t) && pk != null && pk >= 140) f.push({ k: "p140", sev: "warn", text: "LCpeak at or above 140 dB(C). Take a Spectrum Table photo." });
     if (isSlm(t) && la != null && la > 110) f.push({ k: "l110", sev: "warn", text: "LAeq above 110 dB(A). Take a Spectrum Table photo." });
-    if (C().isStatic(t) && la != null && la >= 85 && !(str(n.extent).trim() && str(n.extentDistance).trim())) f.push({ k: "a85", sev: "warn", text: "Area LAeq at or above 85 dB(A). Record the affected-area extent and distance." });
+    if (C().isStatic(t) && la != null && la >= 85 && !(str(n.extent).trim() && str(n.extentDistance).trim())) f.push({ k: "a85", sev: "warn", text: (nz(t).scope === "task" ? "Task LAeq at or above 85 dB(A). Record the extent and distance." : "Area LAeq at or above 85 dB(A). Record the affected-area extent and distance.") });
     const cs = calState(t);
     if ((t.startAt || la != null) && !cs.c.start) f.push({ k: "calS", sev: "bad", text: "No start-of-day calibration recorded for " + dayOf(t) + "." });
     if (dayDone(t) && !cs.c.end) f.push({ k: "calE", sev: "bad", text: "No end-of-day calibration recorded for " + dayOf(t) + "." });
@@ -370,15 +370,22 @@
     let h = `<div class="card nz-card" id="nzPanel">`;
     if (slm) h += `<h3 class="brand-type nz-h">Noise readings <span class="nz-ver">noise module v${NOISE_VERSION}</span></h3>`;
     else h += `<span class="nz-ver" hidden>noise module v${NOISE_VERSION}</span>`;
-    if (stat) h += `<label>Measured with${n.method ? "" : ' <span class="nz-req">needs answer</span>'}</label><div class="filters">${[["slm", "Sound level meter (area / task)"], ["dose", "Dose badge at a location"]].map(([v, l]) => `<button type="button" class="chip ${n.method === v ? "on" : ""}" data-nz-method="${v}">${l}</button>`).join("")}</div>`;
+    if (stat && !n.v20) h += `<label>Measured with${n.method ? "" : ' <span class="nz-req">needs answer</span>'}</label><div class="filters">${[["slm", "Sound level meter (area / task)"], ["dose", "Dose badge at a location"]].map(([v, l]) => `<button type="button" class="chip ${n.method === v ? "on" : ""}" data-nz-method="${v}">${l}</button>`).join("")}</div>`;
+    else if (stat) h += `<p class="help nz-with">Measured with: <b>${slm ? "Sound level meter (area / task)" : "Dose badge at a location"}</b>. To change it, change the Measurement type below.</p>`;
     else h += `<p class="help">Personal reading on a dose badge (serial above).</p>`;
     if (stat && !n.method) return h + "</div>";
-    if (slm) h += `<div class="nz-grid2"><div><label>SLM reading number</label>${inp("slmNo", n.slmNo, "e.g. 12 (Meas012)", 'inputmode="numeric"')}</div><div><label>ENVSS reading number</label>${inp("envssNo", n.envssNo || String(t.sampleNo || ""), "e.g. 1", 'inputmode="numeric"')}</div></div>
-      <label>Noise description / source</label>${inp("source", n.source, "e.g. Two extraction fans running")}
-      <label>Operating conditions / processes</label>${inp("conditions", n.conditions, "e.g. Fans only, no noisy work")}
-      <label>Measurement position</label>${inp("position", n.position, "e.g. operator's ear, 1.5 m, left of machine")}
-      <label>Duration (mm:ss)</label>${inp("duration", n.duration, "e.g. 1:00")}${n.durationSrc === "ocr" ? '<p class="help">Read from the photo.</p>' : ""}
-      <div class="nz-grid2"><div><label>Microphone serial</label>${inp("micSerial", n.micSerial, "e.g. 4189 SN")}</div><div><label>SLM make / model</label>${inp("slmModel", n.slmModel, "e.g. B&K 2250")}</div></div>`;
+    if (slm) {
+      const task = n.scope === "task";
+      h += `<label>Area or task?${n.v20 && !n.scope ? ' <span class="nz-req">needs answer</span>' : ""}</label><div class="filters">${[["area", "Area"], ["task", "Task"]].map(([v, l]) => `<button type="button" class="chip ${n.scope === v ? "on" : ""}" data-nz-kind="${v}">${l}</button>`).join("")}</div>`;
+      if (task) h += `<label>What the worker is doing${n.v20 && !str(n.task).trim() ? ' <span class="nz-req">needs answer</span>' : ""}</label>${sugField("task", n.task, "e.g. operating a drill", "task")}`;
+      h += `<div class="nz-grid2"><div><label>SLM reading number</label>${inp("slmNo", n.slmNo, "e.g. 12 (Meas012)", 'inputmode="numeric"')}</div><div><label>ENVSS reading number</label>${inp("envssNo", n.envssNo || (n.v20 ? "" : String(t.sampleNo || "")), "e.g. 1", 'inputmode="numeric"')}</div></div>
+      <label>Noise description / source</label>${sugField("source", n.source, "e.g. Two extraction fans running", "source")}
+      <label>Operating conditions / processes</label>${sugField("conditions", n.conditions, "e.g. Fans only, no noisy work", "conditions")}
+      <label>Measurement position</label>${sugField("position", n.position, task ? "operator's ear" : "e.g. 1.5 m, left of machine", "position")}${task ? `<p class="help">Task readings: measure at the operator's ear unless you note otherwise.</p>` : ""}
+      <label>Duration (mm:ss)</label>${inp("duration", n.duration, "e.g. 1:00")}${n.durationSrc === "ocr" ? '<p class="help">Read from the photo.</p>' : ""}`;
+      if (!n.v20) h += `<div class="nz-grid2"><div><label>Microphone serial</label>${inp("micSerial", n.micSerial, "e.g. 4189 SN")}</div><div><label>SLM make / model</label>${sugField("slmModel", n.slmModel, "e.g. B&K 2250", "eqmodel")}</div></div>`;
+    }
+    if (slm || isNoiseEvent(evOf(t))) h += eqMeasurementHtml(t, slm);
     /* v48: badge type and firmware stay in t.noise if already stored; they are not shown for a dose badge */
     h += `<label>How are the values entered?${n.entry ? "" : ' <span class="nz-req">needs answer</span>'}</label><div class="filters">${[["photo", "From a photo of the screen"], ["manual", "Type them in"]].map(([v, l]) => `<button type="button" class="chip ${n.entry === v ? "on" : ""}" data-nz-entry="${v}">${l}</button>`).join("")}</div>
       <p class="help">One or the other, never both. Switching clears the values from the other way (kept in the audit log).</p>`;
@@ -391,10 +398,11 @@
       if (n.photo && os.state !== "reading") h += `<button type="button" class="btn ghost" id="nzReadAgain">Read photo again</button>`;
     }
     if (n.entry) h += Object.keys(VAL).filter(k => slm || k !== "LCeq").map(k => valueRow(t, k)).join("");
-    if (n.entry && slm) h += `<details class="nz-oct" ${OCTAVES.some(o => str(n.octave[o]).trim()) ? "open" : ""}><summary>Octave bands (optional, dB)</summary><div class="nz-grid7">${OCTAVES.map(o => `<div><label>${o === "1000" ? "1k" : o === "2000" ? "2k" : o === "4000" ? "4k" : o === "8000" ? "8k" : o}</label>${inp("octave." + o, n.octave[o], "", 'inputmode="decimal"')}</div>`).join("")}</div></details>`;
+    if (n.entry && slm) h += `<details class="nz-oct" ${OCTAVES.some(o => str(n.octave[o]).trim()) ? "open" : ""}><summary>Octave bands (optional, dB)</summary><div class="nz-grid9">${OCTAVES.map(o => `<div><label>${o === "1000" ? "1 kHz" : o === "2000" ? "2 kHz" : o === "4000" ? "4 kHz" : o === "8000" ? "8 kHz" : o + " Hz"}</label>${inp("octave." + o, n.octave[o], "", 'inputmode="decimal"')}</div>`).join("")}</div></details>`;
     const la = num(val(t, "LAeq")), pk = num(val(t, "LCpeak"));
     if (slm && ((pk != null && pk >= 140) || (la != null && la > 110))) h += `<div class="nz-prompt" id="nzSpectrum"><strong>Spectrum Table photo needed</strong><p class="help">${pk != null && pk >= 140 ? "LCpeak ≥ 140 dB(C). " : ""}${la != null && la > 110 ? "LAeq > 110 dB(A). " : ""}Photograph the meter's Spectrum Table.</p>${photoBox(t, "spectrum", n.spectrumPhoto, "Take Spectrum Table photo")}</div>`;
-    if (stat && la != null && la >= 85) h += `<div class="nz-prompt" id="nzExtent"><strong>Affected area (LAeq ≥ 85 dB(A))</strong><div class="nz-grid2"><div><label>Extent of affected area</label>${inp("extent", n.extent, "e.g. entire bay / around the fan")}</div><div><label>Distance (m)</label>${inp("extentDistance", n.extentDistance, "e.g. 2", 'inputmode="decimal"')}</div></div></div>`;
+    if (stat && la != null && la >= 85) h += `<div class="nz-prompt" id="nzExtent"><strong>${n.scope === "task" ? "Task LAeq at or above 85 dB(A): extent and distance" : "Affected area (LAeq ≥ 85 dB(A))"}</strong><div class="nz-grid2"><div><label>Extent of affected area</label>${inp("extent", n.extent, "e.g. entire bay / around the fan")}</div><div><label>Distance (m)</label>${inp("extentDistance", n.extentDistance, "e.g. 2", 'inputmode="decimal"')}</div></div></div>`;
+    if (slm) h += `<label>Additional comments</label><textarea data-nz="comments" id="nz-comments" rows="2" placeholder="Anything else about this reading">${esc2(n.comments || "")}</textarea>`;
     if (n.entry && stat) {
       const lc = num(val(t, "LCeq"));
       h += `<details class="nz-hpd" ${n.hpdAtt.length ? "open" : ""}><summary>HPD attenuation (optional)</summary><p class="help">Attenuated result = LCeq − expected attenuation (0019340 HPD Attenuation tab).</p>
@@ -420,8 +428,9 @@
     if (active) { const e = document.querySelector(`[data-nz="${active}"],[data-nz-cal="${active}"]`); if (e) { e.focus(); try { e.setSelectionRange(caret, caret); } catch (x) {} } }
     try { C().photos && C().photos.hydrate && C().photos.hydrate(); } catch (e) {}
   }
-  function setPath(o, path, v) { const ps = path.split("."); let a = o; for (let i = 0; i < ps.length - 1; i++) { a[ps[i]] = a[ps[i]] || {}; a = a[ps[i]]; } a[ps[ps.length - 1]] = v; }
-  function getPath(o, path) { return path.split(".").reduce((a, p) => (a == null ? a : a[p]), o); }
+  function splitPath(path) { const m = /^octave\.(\d+(?:\.\d+)?)$/.exec(path); return m ? ["octave", m[1]] : path.split("."); }
+  function setPath(o, path, v) { const ps = splitPath(path); let a = o; for (let i = 0; i < ps.length - 1; i++) { a[ps[i]] = a[ps[i]] || {}; a = a[ps[i]]; } a[ps[ps.length - 1]] = v; }
+  function getPath(o, path) { return splitPath(path).reduce((a, p) => (a == null ? a : a[p]), o); }
   let typingTimer = null;
   function onInput(e) {
     const el = e.target; if (!el || !el.dataset) return;
@@ -471,11 +480,15 @@
     if (fresh && !(ta && document.activeElement === ta)) box.replaceWith(fresh);
   }
   async function onClick(e) {
-    const b = e.target.closest && e.target.closest("[data-nz-method],[data-nz-entry],[data-nz-fix],[data-nz-save],[data-nz-share],#nzReadAgain,#nzAddHpd");
+    const b = e.target.closest && e.target.closest("[data-nz-kind],[data-nz-method],[data-nz-entry],[data-nz-fix],[data-nz-save],[data-nz-share],#nzReadAgain,#nzAddHpd");
     if (!b) return;
     const t = curTrain(); if (!t || !C().isNoise(t)) return;
     const n = (b.dataset.nzSave || b.dataset.nzShare) ? nz(t) : nz(t, true);
-    if (b.dataset.nzMethod) { if (n.method !== b.dataset.nzMethod) { note(t, "Noise measured with", n.method ? (n.method === "slm" ? "SLM → dose badge" : "dose badge → SLM") : (b.dataset.nzMethod === "slm" ? "sound level meter" : "dose badge"), "noise.method", n.method, b.dataset.nzMethod); n.method = b.dataset.nzMethod; C().save(); } else paint(); }
+    if (b.dataset.nzKind) {
+      const to = b.dataset.nzKind; if (n.scope === to) return;
+      note(t, "Area or task", to === "task" ? "Task" : "Area", "noise.scope", n.scope || "", to);
+      n.scope = to; C().saveQuiet(); paint();
+    } else if (b.dataset.nzMethod) { if (n.method !== b.dataset.nzMethod) { note(t, "Noise measured with", n.method ? (n.method === "slm" ? "SLM → dose badge" : "dose badge → SLM") : (b.dataset.nzMethod === "slm" ? "sound level meter" : "dose badge"), "noise.method", n.method, b.dataset.nzMethod); n.method = b.dataset.nzMethod; C().save(); } else paint(); }
     else if (b.dataset.nzEntry) {
       const to = b.dataset.nzEntry; if (n.entry === to) return;
       const had = Object.keys(VAL).filter(k => (n.values[k] || {}).v);
@@ -510,9 +523,274 @@
     const out = []; if (!t || !C().isNoise(t) || C().isBlank(t) || t.rejectAsked === "yes") return out;
     const n = nz(t);
     if (C().isStatic(t)) out.push({ key: "nzMethod", label: "Noise: measured with (SLM or dose badge)", ok: !!n.method, sel: "#nzPanel" });
+    if (n.v20 && n.method === "slm") {
+      out.push({ key: "nzScope", label: "Noise: area or task", ok: !!n.scope, sel: "#nzPanel" });
+      if (n.scope === "task") out.push({ key: "nzTask", label: "Noise: what the worker is doing", ok: !!str(n.task).trim(), sel: "#nz-task" });
+    }
     out.push({ key: "nzEntry", label: "Noise: values from a photo or typed", ok: !!n.entry, sel: "#nzPanel" });
     out.push({ key: "nzLAeq", label: "LAeq dB(A)", ok: num(val(t, "LAeq")) != null, sel: "#nzLAeq" });
     return out;
+  }
+
+  /* ======================= v48.19 noise changes (Add measurement) ======================= */
+  /* On a noise event (Podio Occ Noise / type noise) the Add sample screen becomes Add measurement and offers only the three noise types.
+     Stored trainKind values do not change: noise_personal stays noise_personal, and noise_static carries t.noise.method
+     ("slm" | "dose"). Only the wording is different on noise events; hygiene events and airborne samples are untouched. */
+  const isNoiseEvent = ev => !!ev && (ev.podioEventKind === "noise" || ev.type === "noise");
+  const curEvent = () => { try { return C().eventById(C().view().eventId); } catch (e) { return null; } };
+  const NZ_TYPES = [
+    ["noise_personal", "Noise · personal (dose badge)", "Dose badge worn by a person. HPD. No cassette."],
+    ["noise_slm", "Noise · area / task (sound level meter)", "Sound level meter, at a place (area) or on a worker's task."],
+    ["noise_staticdose", "Noise · static dose badge", "Dose badge left at a location."]
+  ];
+  function optionOf(t) {
+    if (!t) return "";
+    if (t.trainKind === "noise_personal") return "noise_personal";
+    if (t.trainKind === "noise_static") { const m = nz(t).method; return m === "slm" ? "noise_slm" : m === "dose" ? "noise_staticdose" : "noise_static"; }
+    return t.trainKind || "";
+  }
+  function nzKindName(t) {
+    const o = optionOf(t); const x = NZ_TYPES.find(a => a[0] === o);
+    return x ? x[1] : o === "noise_static" ? "Noise · static" : "";
+  }
+  function addMeasurement(eventId, which) {
+    const c = C();
+    if (which === "personal") { g.addTrain(eventId, "noise_personal"); return; }
+    const before = new Set((c.db().trains || []).map(x => x.id));
+    g.addTrain(eventId, "noise_static");
+    const t = (c.db().trains || []).find(x => !before.has(x.id) && x.eventId === eventId);
+    if (!t) return;   // the person said no to the confirmation
+    const n = nz(t, true); n.method = which === "slm" ? "slm" : "dose"; n.v20 = true;
+    if (which === "slm") n.envssNo = String(nextEnvssNo(eventId, t));
+    note(t, "Measurement type", which === "slm" ? "Noise · area / task (sound level meter)" : "Noise · static dose badge", "noise.method", "", n.method);
+    c.saveQuiet(); c.render();
+  }
+  function nextEnvssNo(eventId, self) {
+    let max = 0, cnt = 0;
+    C().trainsOf(eventId).forEach(x => { if (x === self || !C().isNoise(x) || C().isBlank(x)) return; cnt++; const v = parseInt(str(nz(x).envssNo), 10); if (Number.isFinite(v) && v > max) max = v; });
+    return Math.max(max, cnt) + 1;
+  }
+  function pickHtml20() {
+    const ev = curEvent(), id = C().view().eventId;
+    return `<div class="wrap">
+    <button class="btn ghost" onclick="openEvent('${id}')">← ${ev ? esc2(ev.code) : "Event"}</button>
+    <h2 class="brand-type" style="color:var(--navy)">Add measurement</h2>
+    ${[["personal", NZ_TYPES[0]], ["slm", NZ_TYPES[1]], ["dose", NZ_TYPES[2]]].map(([w, a]) => `<div class="card" style="cursor:pointer" data-nz-add="${w}" onclick="ENVSS_NOISE.addMeasurement('${id}','${w}')">
+      <strong>${a[1]}</strong><div class="muted">${a[2]}</div>
+    </div>`).join("")}
+  </div>`;
+  }
+
+  /* ----- measurement wording: display only, on noise events ----- */
+  function meas(s) {
+    return s.replace(/\bNoise Sample\b/g, "Noise Measurement").replace(/\bSAMPLES\b/g, "MEASUREMENTS").replace(/\bSAMPLE\b/g, "MEASUREMENT")
+      .replace(/\bSamples\b/g, "Measurements").replace(/\bSample\b/g, "Measurement").replace(/\bsamples\b/g, "measurements").replace(/\bsample\b/g, "measurement");
+  }
+  function wordingScope() {
+    const v = C().view(); if (!v) return "";
+    if (v.page === "event" || v.page === "pickType") return isNoiseEvent(C().eventById(v.eventId)) ? "event" : "";
+    if (v.page === "train") { const t = curTrain(); return t && C().isNoise(t) && !C().isBlank(t) && isNoiseEvent(evOf(t)) ? "train" : ""; }
+    return "";
+  }
+  function wording() {
+    const scope = wordingScope(); if (!scope) return;
+    const app = document.getElementById("app"); if (!app) return;
+    const tw = document.createTreeWalker(app, NodeFilter.SHOW_TEXT);
+    const todo = []; let nd;
+    while ((nd = tw.nextNode())) {
+      if (!/sample|Noise trains can switch/i.test(nd.nodeValue)) continue;
+      const p = nd.parentElement; if (!p || /^(SCRIPT|STYLE|TEXTAREA|INPUT)$/.test(p.tagName)) continue;
+      const row = p.closest(".train[onclick]");
+      if (row) {
+        const m = /openTrain\('([^']+)'\)/.exec(row.getAttribute("onclick") || "");
+        const t = m && C().db().trains.find(x => x.id === m[1]);
+        if (!t || !C().isNoise(t) || C().isBlank(t)) continue;
+      }
+      todo.push(nd);
+    }
+    todo.forEach(x => { const s = x.nodeValue.replace("Noise trains can switch personal ↔ static only.", "Noise measurements can switch between personal, area / task and static dose badge.").replace("Sample train type", "Measurement type"); x.nodeValue = meas(s); });
+    /* the bottom bar and the + button */
+    const fab = document.querySelector(".fab");
+    if (fab && /Add sample/i.test(fab.textContent)) fab.innerHTML = "<b>+</b>Add measurement";
+    const ns = document.querySelector('nav.bnav [data-go="add"] span'); if (ns && /^sample$/i.test(ns.textContent.trim())) ns.textContent = "Measure";
+  }
+
+  /* ----- drop-downs built from values already used (this event first, then earlier events) ----- */
+  function usedValues(kind, t, typ) {
+    const evId = t && t.eventId, tally = new Map();
+    const add = (v, w) => { v = str(v).trim(); if (!v) return; const k = v.toLowerCase(); const o = tally.get(k) || { v, c: 0, w: 0 }; o.c++; o.w += w; tally.set(k, o); };
+    const trains = C().db().trains || [];
+    const evEq = ev => (Array.isArray(ev && ev.noiseEquip) ? ev.noiseEquip : []);
+    if (kind === "eqmodel") {
+      typ = typ || "";
+      (C().db().events || []).forEach(ev => evEq(ev).forEach(it => { if (!typ || it.type === typ) add(it.model, ev.id === evId ? 1000 : 0); }));
+      trains.forEach(x => { const o = x.noise; if (!o) return; if (typ === "slm") add(o.slmModel, 0); });
+    } else {
+      trains.forEach(x => { if (!C().isNoise(x) || C().isBlank(x) || !x.noise) return; add(x.noise[kind], x.eventId === evId ? 1000 : 0); });
+    }
+    const list = [...tally.values()].sort((a, b) => (b.w - a.w) || (b.c - a.c) || a.v.localeCompare(b.v)).map(o => o.v);
+    if (kind === "position" && t && nz(t).scope === "task") { const i = list.findIndex(v => /^operator'?s ear$/i.test(v)); if (i >= 0) list.splice(i, 1); list.unshift("Operator's ear"); }
+    return list;
+  }
+  function sugBox(el) { const c = el.closest(".combo"); return c && c.querySelector(".suggest"); }
+  function showSug(el) {
+    const box = sugBox(el); if (!box) return;
+    const t = curTrain();
+    const kind = el.dataset.nzSug;
+    let list;
+    if (kind === "eqmodel") { const f = el.closest("[data-nz-eqform],[data-nz-eqrow]"); const ty = f && ((f.querySelector("[data-nz-eqf=type]") || {}).value || f.dataset.nzEqtype); list = usedValues("eqmodel", t || { eventId: C().view().eventId }, ty || ""); }
+    else if (t) list = usedValues(kind, t); else list = [];
+    const q = el.value.trim().toLowerCase();
+    list = list.filter(v => !q || (v.toLowerCase().includes(q) && v.toLowerCase() !== q)).slice(0, 30);
+    if (!list.length) { box.classList.remove("on"); box.innerHTML = ""; return; }
+    box.innerHTML = list.map(v => `<div data-v="${esc2(v)}">${esc2(v)}</div>`).join(""); box.classList.add("on");
+  }
+  function hideSugs() { document.querySelectorAll(".combo .suggest.on").forEach(b => b.classList.remove("on")); }
+  function sugField(path, value, ph, kind, extra) {
+    return `<div class="combo nz-combo"><input data-nz="${path}" data-nz-sug="${kind}" id="nz-${path.replace(/\W/g, "_")}" value="${esc2(value)}" placeholder="${esc2(ph || "")}" autocomplete="off" ${extra || ""}><div class="suggest"></div></div>`;
+  }
+
+  /* ----- Equipment Used (once per event) ----- */
+  const EQ_TYPES = [["mic", "Microphone"], ["slm", "Type 1 Sound Level Meter"], ["cal", "Sound Calibrator"]];
+  const eqName = k => (EQ_TYPES.find(a => a[0] === k) || [])[1] || k;
+  const eqItems = ev => (Array.isArray(ev && ev.noiseEquip) ? ev.noiseEquip.filter(x => x && x.id) : []);
+  const eqText = it => [it.model, it.serial ? "SN " + it.serial : ""].filter(Boolean).join(" · ") || "(no details)";
+  const MIRROR = { mic: ["micSerial", "micModel"], slm: ["slmModel"], cal: [] };
+  function mirrorPick(t, type, it) {
+    const n = nz(t, true); n.equip = n.equip || {}; n.equip[type] = it ? it.id : "";
+    if (!it) return;
+    if (type === "mic") { n.micSerial = it.serial || ""; n.micModel = it.model || ""; }
+    else if (type === "slm") { t.dosimeterSerial = it.serial || ""; n.slmModel = it.model || ""; const e = document.getElementById("dosimeter"); if (e) e.value = t.dosimeterSerial; }
+    else if (type === "cal") { t.fieldCalibrator = it.serial || ""; const e = document.getElementById("fieldCal"); if (e) e.value = t.fieldCalibrator; }
+  }
+  function pickedItem(t, type) {
+    const ev = evOf(t), n = nz(t); const id = n.equip && n.equip[type];
+    return id ? eqItems(ev).find(x => x.id === id) || null : null;
+  }
+  function eqSelect(t, type) {
+    const ev = evOf(t), items = eqItems(ev).filter(x => x.type === type), cur = pickedItem(t, type);
+    const n = nz(t);
+    const legacy = type === "mic" ? n.micSerial : type === "slm" ? t.dosimeterSerial : t.fieldCalibrator;
+    let opts = `<option value="">${items.length ? "— choose —" : "— none entered for this event —"}</option>` + items.map(x => `<option value="${esc2(x.id)}" ${cur && cur.id === x.id ? "selected" : ""}>${esc2(eqText(x))}</option>`).join("");
+    if (!cur && str(legacy).trim()) opts += `<option value="__legacy" selected>${esc2(str(legacy))} (this measurement only)</option>`;
+    return `<div><label>${eqName(type)}</label><select data-nz-eqpick="${type}" id="nz-eq-${type}">${opts}</select></div>`;
+  }
+  /* what is typed in an Add equipment form is kept in memory, so a screen refresh in the middle of typing does not lose it */
+  const eqDraft = { e: {}, m: {} };
+  function eqFormHtml(ctx, defType) {
+    const d = eqDraft[ctx] || {}, ty = d.type || defType;
+    return `<div class="nz-eqform" data-nz-eqform="${ctx}">
+      <div class="nz-grid3"><div><label>Type</label><select data-nz-eqf="type">${EQ_TYPES.map(([k, l]) => `<option value="${k}" ${k === ty ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+      <div><label>Make / model</label><div class="combo nz-combo"><input data-nz-eqf="model" data-nz-sug="eqmodel" autocomplete="off" placeholder="e.g. B&amp;K 2250" value="${esc2(d.model || "")}"><div class="suggest"></div></div></div>
+      <div><label>Serial</label><input data-nz-eqf="serial" autocomplete="off" placeholder="e.g. 3005012" value="${esc2(d.serial || "")}"></div></div>
+      <button type="button" class="btn mid" data-nz-eqadd="${ctx}">Add equipment</button></div>`;
+  }
+  function eqKeepDraft(e) {
+    const el = e.target; if (!el || !el.dataset || !el.dataset.nzEqf) return;
+    const f = el.closest("[data-nz-eqform]"); if (!f) return;
+    (eqDraft[f.dataset.nzEqform] = eqDraft[f.dataset.nzEqform] || {})[el.dataset.nzEqf] = el.value;
+  }
+  function eqMeasurementHtml(t, slm) {
+    const types = slm ? ["slm", "mic", "cal"] : ["cal"];
+    return `<div class="nz-equip" id="nzEquipPick"><label class="nz-sub">Equipment used</label><div class="nz-grid3">${types.map(k => eqSelect(t, k)).join("")}</div>
+      <details class="nz-eqadd"><summary>Add equipment to this event</summary><p class="help">Entered once for the whole event, then picked here for each measurement.</p>${eqFormHtml("m", types[0])}</details></div>`;
+  }
+  let eqOpenState = false;
+  function eqCardHtml(ev, keepOpen) {
+    const items = eqItems(ev);
+    const rows = items.map(it => `<div class="nz-eqrow" data-nz-eqrow="${esc2(it.id)}" data-nz-eqtype="${it.type}"><strong>${eqName(it.type)}</strong>
+      <div class="nz-grid2"><div><label>Make / model</label><div class="combo nz-combo"><input data-nz-eqedit="${esc2(it.id)}.model" data-nz-sug="eqmodel" autocomplete="off" value="${esc2(it.model)}"><div class="suggest"></div></div></div>
+      <div><label>Serial</label><input data-nz-eqedit="${esc2(it.id)}.serial" autocomplete="off" value="${esc2(it.serial)}"></div></div>
+      <button type="button" class="btn ghost" data-nz-eqdel="${esc2(it.id)}">Remove</button></div>`).join("");
+    return `<div class="card nz-card" id="nzEquip"><h3 class="brand-type nz-h">Equipment used</h3>
+      <p class="help">Enter each item once for this event: microphone, Type 1 sound level meter and sound calibrator. Each measurement then picks from this list.</p>
+      ${rows || '<p class="help">No equipment entered yet.</p>'}
+      <details class="nz-eqadd" ${items.length && !keepOpen && !eqOpenState ? "" : "open"}><summary>Add equipment</summary>${eqFormHtml("e", "slm")}</details></div>`;
+  }
+  function paintEvent() {
+    const v = C().view(); if (!v || v.page !== "event") return;
+    const ev = C().eventById(v.eventId); if (!isNoiseEvent(ev)) return;
+    const old = document.getElementById("nzEquip");
+    const html = eqCardHtml(ev, !!(old && old.querySelector("details.nz-eqadd[open]")));
+    if (old) { old.outerHTML = html; return; }
+    const btn = document.getElementById("btnAddSampleTop"); const row = btn && (btn.closest(".row") || btn.parentElement);
+    if (row) row.insertAdjacentHTML("afterend", html);
+  }
+  function eqChange(e) {
+    const el = e.target; if (!el || !el.dataset) return false;
+    if (el.dataset.nzEqpick) {
+      const t = curTrain(); if (!t || !C().isNoise(t)) return true;
+      const type = el.dataset.nzEqpick, id = el.value;
+      if (id === "__legacy") return true;
+      const it = id ? eqItems(evOf(t)).find(x => x.id === id) : null;
+      const before = (nz(t).equip || {})[type] || "";
+      mirrorPick(t, type, it);
+      if (id !== before) note(t, "Equipment picked", eqName(type) + ": " + (it ? eqText(it) : "none"), "noise.equip." + type, before, id);
+      C().saveQuiet(); softPaint(); return true;
+    }
+    if (el.dataset.nzEqedit) {
+      const [id, key] = el.dataset.nzEqedit.split("."); const v = C().view();
+      const ev = C().eventById(v.eventId); const it = eqItems(ev).find(x => x.id === id); if (!it) return true;
+      const val2 = el.value.trim(); if (it[key] === val2) return true;
+      const old = it[key]; it[key] = val2;
+      (C().trainsOf(ev.id) || []).forEach(x => { if (!C().isNoise(x)) return; const n = nz(x); if (n.equip && n.equip[it.type] === id) { mirrorPick(x, it.type, it); note(x, "Equipment details changed on the event", eqName(it.type) + " " + key + ": " + old + " → " + val2, "noise.equip." + it.type + "." + key, old, val2); } });
+      C().saveQuiet(); return true;
+    }
+    return !!(el.dataset.nzEqf);
+  }
+  function eqClick(e) {
+    const b = e.target.closest && e.target.closest("[data-nz-eqadd],[data-nz-eqdel]"); if (!b) return false;
+    const v = C().view();
+    if (b.dataset.nzEqdel) {
+      const ev = C().eventById(v.eventId); if (!ev || !Array.isArray(ev.noiseEquip)) return true;
+      const it = ev.noiseEquip.find(x => x.id === b.dataset.nzEqdel); if (!it) return true;
+      if (!confirm("Remove " + eqName(it.type) + " " + eqText(it) + " from this event? Measurements that already used it keep what they recorded.")) return true;
+      ev.noiseEquip = ev.noiseEquip.filter(x => x.id !== it.id);
+      (C().trainsOf(ev.id) || []).forEach(x => { const n = x.noise; if (n && n.equip && n.equip[it.type] === it.id) { n.equip[it.type] = ""; note(x, "Equipment removed from the event", eqName(it.type) + " " + eqText(it) + " (this measurement keeps its recorded value)"); } });
+      C().saveQuiet(); paintEvent(); return true;
+    }
+    const f = b.closest("[data-nz-eqform]"); const ctx = f.dataset.nzEqform;
+    const q = k => (f.querySelector(`[data-nz-eqf=${k}]`) || {}).value || "";
+    const type = q("type"), model = q("model").trim(), serial = q("serial").trim();
+    if (!model && !serial) { alert("Enter the make / model or the serial."); return true; }
+    const t = ctx === "m" ? curTrain() : null;
+    const ev = ctx === "m" ? (t && evOf(t)) : C().eventById(v.eventId); if (!ev) return true;
+    ev.noiseEquip = Array.isArray(ev.noiseEquip) ? ev.noiseEquip : [];
+    let it = ev.noiseEquip.find(x => x.type === type && str(x.model).trim().toLowerCase() === model.toLowerCase() && str(x.serial).trim().toLowerCase() === serial.toLowerCase());
+    if (!it) { it = { id: "eq" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type, model, serial }; ev.noiseEquip.push(it); }
+    if (t) { mirrorPick(t, type, it); note(t, "Equipment picked", eqName(type) + ": " + eqText(it), "noise.equip." + type, "", it.id); }
+    eqDraft[ctx] = {};
+    C().saveQuiet(); if (t) paint(); else paintEvent();
+    return true;
+  }
+
+
+  function installV20() {
+    const c = C();
+    if (typeof g.pickTypeHtml === "function") { const _p = g.pickTypeHtml; g.pickTypeHtml = function () { return isNoiseEvent(curEvent()) ? pickHtml20() : _p.apply(this, arguments); }; }
+    if (typeof g.kindLabel === "function") { const _k = g.kindLabel; g.kindLabel = function (t) { try { if (t && (t.trainKind || "").startsWith("noise")) { const nm = nzKindName(t); if (nm) return nm; } } catch (e) {} return _k.apply(this, arguments); }; }
+    if (typeof g.trainKindOptions === "function") {
+      const _o = g.trainKindOptions;
+      g.trainKindOptions = function (t) {
+        if (!t || !(t.trainKind || "").startsWith("noise")) return _o.apply(this, arguments);
+        const cur = optionOf(t), list = NZ_TYPES.map(a => [a[0], a[1]]);
+        if (cur === "noise_static") list.push(["noise_static", "Noise · static (method not chosen yet)"]);
+        return list.map(([v, l]) => `<option value="${v}" ${v === cur ? "selected" : ""}>${l}</option>`).join("");
+      };
+    }
+    if (typeof g.applyTrainKind === "function") {
+      const _a = g.applyTrainKind;
+      g.applyTrainKind = function (t, kind) {
+        if (kind === "noise_slm" || kind === "noise_staticdose") {
+          const r = _a.call(this, t, "noise_static"); const n = nz(t, true), m = kind === "noise_slm" ? "slm" : "dose";
+          if (n.method !== m) { note(t, "Measurement type", NZ_TYPES.find(a => a[0] === kind)[1], "noise.method", n.method, m); n.method = m; }
+          return r;
+        }
+        return _a.apply(this, arguments);
+      };
+    }
+    const _cf = g.confirm.bind(g);
+    g.confirm = function (m) { try { if (typeof m === "string" && /add a new sample\?/i.test(m) && isNoiseEvent(curEvent())) m = m.replace(/sample/i, "measurement"); } catch (e) {} return _cf(m); };
   }
   function installLate() {
     if (g.__nz47) return; g.__nz47 = true;
@@ -531,25 +809,37 @@
         return r;
       };
     }
+    installV20();
     if (typeof g.render === "function") {
       const _r = g.render;
-      g.render = function () { const r = _r.apply(this, arguments); try { const t = curTrain(); if (t && C().isNoise(t) && !C().isBlank(t)) { refreshGps(); paint(); } } catch (e) { console.warn("noise.js paint", e); } return r; };
+      g.render = function () { const r = _r.apply(this, arguments); try { paintEvent(); wording(); } catch (e) { console.warn("noise.js v48.19 ui", e); } try { const t = curTrain(); if (t && C().isNoise(t) && !C().isBlank(t)) { refreshGps(); paint(); } } catch (e) { console.warn("noise.js paint", e); } return r; };
     }
     document.addEventListener("input", onInput, true);
-    document.addEventListener("change", e => { if (e.target && e.target.dataset && e.target.dataset.nzTake) onFile(e); else onInput(e); }, true);
-    document.addEventListener("click", onClick);
+    document.addEventListener("change", e => { if (e.target && e.target.dataset && e.target.dataset.nzTake) onFile(e); else if (!eqChange(e)) onInput(e); }, true);
+    document.addEventListener("click", e => { if (!eqClick(e)) onClick(e); });
+    document.addEventListener("focusin", e => { const el = e.target; if (el && el.dataset && el.dataset.nzSug) showSug(el); }, true);
+    document.addEventListener("input", e => { eqKeepDraft(e); const el = e.target; if (el && el.dataset && el.dataset.nzSug) showSug(el); }, true);
+    document.addEventListener("change", eqKeepDraft, true);
+    document.addEventListener("toggle", e => { if (e.target && e.target.matches && e.target.matches("#nzEquip details.nz-eqadd")) eqOpenState = e.target.open; }, true);
+    document.addEventListener("mousedown", e => {
+      const d = e.target.closest && e.target.closest(".nz-combo .suggest [data-v]");
+      if (d) { e.preventDefault(); const inpEl = d.closest(".combo").querySelector("input"); inpEl.value = d.dataset.v; hideSugs(); inpEl.dispatchEvent(new Event("input", { bubbles: true })); inpEl.dispatchEvent(new Event("change", { bubbles: true })); }
+      else if (!(e.target.closest && e.target.closest(".nz-combo"))) hideSugs();
+    }, true);
+    document.addEventListener("focusout", () => setTimeout(() => { const a = document.activeElement; if (!(a && a.closest && a.closest(".nz-combo"))) hideSugs(); }, 120), true);
     const st = document.createElement("style");
     st.textContent = ".nz-card{margin-top:12px}.nz-h{margin:0 0 6px;color:var(--navy)}.nz-ver{font-size:11px;font-weight:600;opacity:.7;margin-left:6px}"
       + ".nz-req{font-size:11px;font-weight:700;background:#3A2A0E;color:#FFC861;border-radius:999px;padding:1px 8px;margin-left:6px}"
       + ".nz-grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.nz-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 8px}"
-      + ".nz-grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0 6px}.nz-grid7 input{padding-left:6px;padding-right:4px}"
-      + "@media (max-width:599px){.nz-grid3{grid-template-columns:1fr 1fr}.nz-grid7{grid-template-columns:repeat(4,minmax(0,1fr))}}"
+      + ".nz-grid9{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:0 6px}.nz-grid9 input{padding-left:6px;padding-right:4px}.nz-grid9 label{font-size:12px;white-space:nowrap}"
+      + "@media (max-width:599px){.nz-grid3{grid-template-columns:1fr 1fr}.nz-grid9{grid-template-columns:repeat(3,minmax(0,1fr))}.nz-equip .nz-grid3{grid-template-columns:1fr}}"
       + ".nz-ro{flex:1}.nz-orig{color:#FFC861}.nz-prompt{margin-top:10px;padding:10px;border-radius:10px;border:2px solid #FFB020}"
       + ".nz-checks ul{margin:6px 0 6px 18px;padding:0}.nz-checks li{margin:4px 0;font-weight:700}.nz-bad,.nz-checks .nz-bad{color:#FF7A7A;font-weight:700}.nz-warn,.nz-checks .nz-warn{color:#FFC861;font-weight:700}"
       + ".nz-cal-row{margin-top:8px}.nz-photo img{max-width:100%!important}.nz-take{display:inline-block;margin-top:8px}"
       + ".nz-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:12px}"
       + ".nz-dialog{background:var(--surf2,#1c2233);color:var(--text,#fff);border-radius:14px;padding:14px;max-width:560px;width:100%}.nz-q{font-weight:700;margin:0 0 8px}"
       + ".nz-crop{position:relative}.nz-crop img{width:100%;display:block;border-radius:8px}.nz-guide{position:absolute;left:10%;right:10%;top:15%;bottom:15%;border:3px dashed #FFB020;border-radius:6px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}"
+      + ".nz-combo{position:relative}.nz-combo .suggest{max-height:220px;overflow:auto}.nz-sub{display:block;margin-top:10px;font-weight:700}.nz-eqrow{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12)}.nz-eqadd{margin-top:10px}.nz-eqadd summary{cursor:pointer;font-weight:700}.nz-equip select{width:100%}"
       + ".nz-oct,.nz-hpd{margin-top:10px}.nz-oct summary,.nz-hpd summary{cursor:pointer;font-weight:700}";
     document.head.appendChild(st);
     try { g.render(); } catch (e) {}
@@ -557,5 +847,6 @@
   if (document.readyState === "complete") setTimeout(installLate, 0); else g.addEventListener("load", installLate);
 
   g.ENVSS_NOISE = { version: NOISE_VERSION, loaded: true, rejects, startGaps, equipHtml, hpdFields, installTrainLayer,
-    flags, parseScreen, calState, duplicates, extraItems, device };
+    flags, parseScreen, calState, duplicates, extraItems, device,
+    addMeasurement, isNoiseEvent, nextEnvssNo, usedValues, optionOf };
 })(window);
