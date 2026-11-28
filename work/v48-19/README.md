@@ -44,6 +44,13 @@ Done in `noise.js`; `field.html` and `sw-field.js` are untouched. Tests: `ROOT=<
 
 Data: new keys inside `t.noise` and `ev.noiseEquip` only. Nothing is renamed or removed, and there is no schema or Supabase change.
 
+## Job types refresh and typed event codes (28 Nov 2026)
+Existing Podio-linked events now pick up the current Job Type (and the Podio reference / title) from the mirror on each auto-create run. Auto-create used to skip rows that already had a field event, so a Job Type change in Podio (live case: 0019358-001, e-podio-3394530475, Reference still "RFT, NSEOC-ACA, VENT", Job Type now ACA) stayed stale on the events list. Tech-entered notes, samples and a date that is already set are not overwritten. An empty date is filled from Podio; a set date is left alone (the existing review flag still offers "Use Podio date"). `podioSeen.startDate` is only advanced when that empty date is filled, so a moved date still flags for review.
+
+Event codes for new (and unstarted) Podio-linked events are `{job}-{type}-001`, numbered per Job Type code on the job, using the Podio Job Type code exactly (`ACA-NSED`, `NSEOC`, `RFT`, `WBVIB`, …). Spaces become hyphens (`ACA NSED` → `ACA-NSED`). There is no allow-list: a new Job Types item works with no app update. App kind is only a fallback when no Job Type is set (Onsite RFT → RFT, Occ Noise → NSEOC, Vent Survey → VENT, otherwise HYG). Fit events use `{job}-RFT-001`; unstarted legacy `{job}-FIT-001` is renamed to RFT with the same number. AFM stays `ENVSS-HYG-AFM-…`. Internal ids stay `e-podio-<item>`. Started events (a sample started, photos, or upload-ready) keep their code; types still refresh. Hand-made unlinked hygiene events keep `0019xxx-00x`.
+
+Tests: `ROOT=<worktree> OUT=/workspace/guard-shots/v4819 node work/v48-19/jobtypes.test.mjs [pixel7|chromebook]`. Screenshots: `jobtypes-0019358-list-{pixel7,chromebook}.png`.
+
 ## Tests
 `ROOT=<worktree> OUT=/workspace/guard-shots/v4819 node work/v48-19/test.mjs [pixel7|chromebook]`. Supabase is stubbed in memory and never live.
 

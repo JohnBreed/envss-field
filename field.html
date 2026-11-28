@@ -1457,7 +1457,7 @@ function eventMatchesFilter(e, f) {
   if (f === "flag") { const x = eventFlags(e); return !!(x.rejected || x.fault); }
   return deriveEventStage(e) === f;
 }
-function isFitEvent(ev) { return !!ev && (ev.type === "fit" || /-FIT-\d+/i.test(String(ev.code || ""))); }
+function isFitEvent(ev) { return !!ev && (ev.type === "fit" || /-(FIT|RFT|HPFT)-\d+/i.test(String(ev.code || ""))); }
 /* v48.15 (John): service type codes on each events-list row, e.g. "0019389-002 · NSEOC". From the linked Podio event's Job Type
    (mirror copy on this device), else the codes saved when the event was made, else the reference. App defaults: Occ Noise -> NSEOC,
    Vent Survey -> VENT, Onsite RFT -> RFT (those apps copy the whole HYG job type list, so only their own codes are kept). */
@@ -9442,7 +9442,31 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       return /tentative|confirmed/i.test(start);
     }
 
-    function mapItem(item) {
+
+    function jobTypeTitle(x) {
+      if (x == null) return "";
+      if (typeof x === "string" || typeof x === "number") return cleanText(x);
+      if (Array.isArray(x)) return jobTypeTitle(x[0]);
+      if (typeof x === "object") {
+        if (x.title) return cleanText(x.title);
+        if (x.text) return cleanText(x.text);
+        if (typeof x.value === "string" || typeof x.value === "number") return cleanText(x.value);
+        if (x.value && typeof x.value === "object") return jobTypeTitle(x.value);
+      }
+      return relOf(x).title || "";
+    }
+    function jobTypesFrom(f) {
+      f = f || {};
+      const v = f["job-type-of-hyg-event"] != null ? f["job-type-of-hyg-event"]
+        : f["job-type"] != null ? f["job-type"]
+        : f["job-types"] != null ? f["job-types"]
+        : f.jobType;
+      const arr = v == null ? [] : (Array.isArray(v) ? v : [v]);
+      return arr.map(function (x) { return String(jobTypeTitle(x) || "").split(",")[0].trim(); })
+        .filter(function (x) { return /^[A-Z][A-Z0-9_ -]{0,20}$/.test(x); });
+    }
+
+        function mapItem(item) {
       const f = fieldBag(item);
       const project = f.project;
       const projectTitle = project && typeof project === "object" ? cleanText(project.title) : cleanText(project);
@@ -9461,9 +9485,10 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       const payload = {
         itemId: String((item && (item.item_id || item.itemId)) || ""),
         reference,
-        /* v48.15: service type codes from Podio "Job Type" (titles like "NSEOC, Detailed Occupational Noise Assessment (HYG)") */
-        jobTypes: (Array.isArray(f["job-type-of-hyg-event"]) ? f["job-type-of-hyg-event"] : f["job-type-of-hyg-event"] ? [f["job-type-of-hyg-event"]] : [])
-          .map(function (x) { return String(relOf(x).title || "").split(",")[0].trim(); }).filter(function (x) { return /^[A-Z][A-Z0-9_ -]{0,20}$/.test(x); }),
+        /* v48.15 / v48.19: service type codes from Podio "Job Type" (titles like "ACA, Airborne Contaminant Assessment (HYG)").
+           Accepts API arrays, decoded mirror objects, plain strings, and {text}/{value} shapes. */
+        jobTypes: jobTypesFrom(f),
+        title: cleanText(item && item.title || ""),
         fieldCode: /^\d{7}-\d{3}$/.test(reference) ? reference : "",
         jobNumber,
         projectItemId: project && typeof project === "object" && project.item_id ? String(project.item_id) : "",
@@ -9494,7 +9519,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
       payload.planned = isPlanned(payload);
       return payload;
     }
-    return { mapItem, isPlanned };
+    return { mapItem, isPlanned, jobTypesFrom };
   })();
   const COOL_KEY = "envss-podio-cooldown-v46";
   let mirrorAt = 0;
@@ -9550,7 +9575,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const byJob = {}; let planned = 0, newest = "", lastEdit = "";
     const all = [];   /* v48.7: every live HYG item (planned or not) for auto-create and review flags */
     (items || []).forEach(it => {
-      const pl = PodioMap.mapItem({ item_id: it.item_id, fields: it.fields || {} });
+      const pl = PodioMap.mapItem({ item_id: it.item_id, title: it.title || "", fields: it.fields || {} });
       all.push({ itemId: pl.itemId, lastEdit: it.last_edit_on || "", payload: pl });
       if (it.synced_at && it.synced_at > newest) newest = it.synced_at;
       if (it.last_edit_on && it.last_edit_on > lastEdit) lastEdit = it.last_edit_on;
@@ -12249,7 +12274,7 @@ function fixOpen(ts) {
     /* created by John 26 Nov 2026 3:29 pm AWST in 1.6 ENVSS Project Events (copies of the HYG app: same field ids) */
     { appId: "30888380", name: "Occ Noise Event", fieldType: "hygiene", kind: "noise", enabled: true },   /* occupational noise samples go in a hygiene event (noise.js) */
     { appId: "30888385", name: "Vent Survey Event", fieldType: "hygiene", kind: "vent", enabled: true },
-    { appId: "30888384", name: "Onsite RFT Event", fieldType: "fit", kind: "fit", enabled: true }         /* {job}-FIT-nnn, fit-test.js */
+    { appId: "30888384", name: "Onsite RFT Event", fieldType: "fit", kind: "fit", enabled: true }         /* {job}-RFT-nnn, fit-test.js */
   ];
   const appsCfg = () => (Array.isArray(window.ENVSS_PODIO_EVENT_APPS) ? window.ENVSS_PODIO_EVENT_APPS : PODIO_EVENT_APPS).map(a => Object.assign({}, a, { appId: String(a.appId || "") }));
   const appOf = r => { const id = String((r && (r.appId || (r.payload && r.payload.appId))) || HYG_APP); return appsCfg().find(a => a.appId === id) || null; };
@@ -12267,7 +12292,7 @@ function fixOpen(ts) {
   const last = { at: "", created: [], adopted: [], skipped: {}, waiting: false };
   let pulling = false;
 
-  /* v48.14: auto-create only ever makes and considers hygiene events; AFM (fibre) and fit-test events (type "fit", {job}-FIT-n) are never touched */
+  /* v48.14: auto-create only ever makes and considers hygiene events; AFM (fibre) and fit-test events (type "fit", {job}-RFT-n, legacy {job}-FIT-n still recognised) are never touched */
   const isHyg = e => !!e && !isFibreEvent(e) && !(typeof isFitEvent === "function" && isFitEvent(e));
   const idFor = itemId => "e-podio-" + String(itemId).replace(/[^0-9A-Za-z_-]/g, "");
   const jobOf = p => { const m = String(p && p.number || "").trim().match(/^(\d{7})(?!\d)/); return m ? m[1] : ""; };
@@ -12367,18 +12392,150 @@ function fixOpen(ts) {
     });
     return out;
   }
-  function codeFor(p, pl, tb) {
-    const reuse = reusableCodes(p);
-    const codes = new Set((db.events || []).map(e => e.code).concat([...tb.codes].filter(c => !reuse.has(c))));
-    const hint = codeHint(pl);
-    if (hint && !codes.has(hint) && hint.slice(0, 7) === String(jobOf(p) || p.number)) return hint;
-    const job = jobOf(p) || p.number;
-    let n = (db.events || []).filter(e => e.projectId === p.id && isHyg(e)).length + 1;
-    /* v48.14 (0019300): never hand out a code another Podio event names in its reference (…-001-…); that event gets it */
-    const named = c => tb.hinted && tb.hinted.has(c) && c !== hint;
-    while (codes.has(job + "-" + String(n).padStart(3, "0")) || named(job + "-" + String(n).padStart(3, "0"))) n++;
-    return job + "-" + String(n).padStart(3, "0");
+  /* v48.19 (John, 28 Nov 2026 1:57 pm AWST): field event codes are {job}-{type}-001, numbered per type on the job.
+     Examples: 0019358-ACA-001, 0019358-NSEOC-001, 0019358-VENT-001, 0019358-RFT-001 (not FIT). This avoids looking like a
+     project (0019XXX-00X). AFM events keep ENVSS-HYG-AFM-{job}-{seq}-{date}. Internal ids stay e-podio-<item>.
+     Primary type: dedicated app kind wins (Occ Noise -> NSEOC, Vent Survey -> VENT, Onsite RFT -> RFT). For a HYG event
+     with several Job Types, types that have their own event family (RFT, HPFT, AFM) are skipped when another type remains,
+     then the first remaining Job Type (as listed in Podio) is the primary. Combined categories such as NSEOC-ACA stay as
+     NSEOC-ACA. With no Job Type and no app kind the fallback is HYG. */
+  const OWN_FAMILY = { RFT: 1, HPFT: 1, AFM: 1, FIT: 1 };
+  function tokenOf(t) {
+    return String(t || "").trim().toUpperCase().replace(/\s+/g, "-").replace(/[^A-Z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
   }
+  function typesList(pl) {
+    if (pl && Array.isArray(pl.jobTypes) && pl.jobTypes.length) return pl.jobTypes.map(tokenOf).filter(Boolean);
+    return typesOf(pl && pl.reference).map(tokenOf).filter(Boolean);
+  }
+  function codeToken(pl, cfg, ev) {
+    /* Use the Podio Job Type code exactly (ACA-NSED, NSEOC, RFT, …). New codes work with no app update.
+       App kind is only a fallback when the event has no Job Type: Onsite RFT -> RFT, Occ Noise -> NSEOC, Vent Survey -> VENT. */
+    const types = typesList(pl);
+    const work = types.filter(t => !OWN_FAMILY[t]);
+    const pool = work.length ? work : types;
+    if (pool[0]) return pool[0];
+    const kind = (cfg && cfg.kind) || (ev && ev.podioEventKind) || "";
+    if (kind === "fit" || (cfg && cfg.fieldType === "fit") || (ev && ev.type === "fit")) return "RFT";
+    if (kind === "vent") return "VENT";
+    if (kind === "noise") return "NSEOC";
+    return "HYG";
+  }
+  function typedCode(job, token, n) { return job + "-" + token + "-" + String(n).padStart(3, "0"); }
+  function seqOfTyped(code, job, token) {
+    const esc = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const aliases = token === "RFT" ? "(?:RFT|FIT|HPFT)" : esc;
+    const m = String(code || "").match(new RegExp("^" + String(job) + "-" + aliases + "-(\\d{3})$", "i"));
+    return m ? +m[1] : 0;
+  }
+  function takenCodes(tb, exceptId) {
+    const reuse = typeof reusableCodes === "function" && tb ? new Set() : new Set();
+    const out = new Set();
+    (db.events || []).forEach(e => { if (e && e.id !== exceptId && e.code) out.add(e.code); });
+    ((tb && tb.codes) ? [...tb.codes] : []).forEach(c => out.add(c));
+    (db.deletions || []).forEach(d => { if (d && d.tombstone === "event" && d.code) out.add(d.code); });
+    return out;
+  }
+  function nextTypedCode(job, token, tb, exceptId, reserved) {
+    const taken = takenCodes(tb || tombs(), exceptId);
+    (reserved || []).forEach(c => taken.add(c));
+    /* FIT-NNN and RFT-NNN share a sequence so a reserved legacy FIT code is not doubled as RFT-NNN */
+    let n = 1;
+    for (;;) {
+      const code = typedCode(job, token, n);
+      const fitAlias = token === "RFT" ? job + "-FIT-" + String(n).padStart(3, "0") : "";
+      if (!taken.has(code) && !(fitAlias && taken.has(fitAlias))) return code;
+      n++;
+      if (n > 999) return code;
+    }
+  }
+  function codeFor(p, pl, tb, cfg, ev) {
+    const job = jobOf(p) || String(p && p.number || "");
+    const token = codeToken(pl, cfg, ev);
+    return nextTypedCode(job, token, tb, ev && ev.id);
+  }
+  function eventHasStartedWork(ev) {
+    if (!ev) return false;
+    if (ev.uploadReady) return true;
+    const ts = (typeof trainsOf === "function" ? trainsOf(ev.id) : (db.trains || []).filter(t => t && t.eventId === ev.id)) || [];
+    return ts.some(t => {
+      if (!t) return false;
+      if (t.startAt || t.endAt || /^(running|ended|fault|rejected|sample_stopped)$/.test(String(t.status || ""))) return true;
+      if (t.photos && t.photos.length) return true;
+      if (t.equipPhoto || t.screenPhoto) return true;
+      const n = t.noise;
+      if (n && (n.photo || n.spectrumPhoto || n.photoRef)) return true;
+      return false;
+    });
+  }
+  function canRenameCode(ev) {
+    if (!ev || (typeof isFibreEvent === "function" && isFibreEvent(ev))) return false;
+    return !eventHasStartedWork(ev);
+  }
+  /* Refresh Podio-sourced header fields on an existing linked event from the current mirror row.
+     Never overwrites tech-entered notes, samples, or a date the tech (or a "Keep as is") already set.
+     An empty date is filled. Job types, the Podio reference and the Podio title always follow the mirror.
+     Unstarted events may be renamed onto {job}-{type}-NNN; started events with samples keep their code. */
+  function refreshLinked(ev, r, reserved) {
+    if (!ev || !r) return false;
+    if (typeof isFibreEvent === "function" && isFibreEvent(ev)) return false;
+    const pl = r.payload || {}, cfg = appOf(r) || appOf({ appId: pl.appId }) || null;
+    const changes = [];
+    const note = (field, from, to) => { changes.push({ field, from: from == null ? "" : String(from), to: to == null ? "" : String(to) }); };
+    const jt = Array.isArray(pl.jobTypes) ? pl.jobTypes.map(String) : [];
+    if (jt.length) {
+      if (JSON.stringify(ev.podioJobTypes || []) !== JSON.stringify(jt)) { note("podioJobTypes", (ev.podioJobTypes || []).join(", "), jt.join(", ")); ev.podioJobTypes = jt.slice(); }
+      if (JSON.stringify(ev.podioTypes || []) !== JSON.stringify(jt)) { note("podioTypes", (ev.podioTypes || []).join(", "), jt.join(", ")); ev.podioTypes = jt.slice(); }
+    }
+    if (pl.reference && pl.reference !== ev.podioReference) { note("podioReference", ev.podioReference || "", pl.reference); ev.podioReference = pl.reference; }
+    if (pl.title && pl.title !== ev.podioTitle) { note("podioTitle", ev.podioTitle || "", pl.title); ev.podioTitle = pl.title; }
+    /* date: fill a blank header; do not move a date already set (staff still get the review flag) */
+    if (!ev.date && pl.startDate) { note("date", "", pl.startDate); ev.date = pl.startDate; ev.podioSeen = Object.assign({}, ev.podioSeen || {}, { startDate: pl.startDate, at: nowIso() }); }
+    const proj = typeof project === "function" ? project(ev.projectId) : (db.projects || []).find(x => x.id === ev.projectId);
+    const job = jobOf(proj) || pl.jobNumber || (ev.podioSeen && ev.podioSeen.jobNumber) || "";
+    const token = job ? codeToken(pl, cfg, ev) : "";
+    if (job && token && canRenameCode(ev)) {
+      const want = typedCode(job, token, seqOfTyped(ev.code, job, token) || 0);
+      let next = "";
+      if (seqOfTyped(ev.code, job, token) && ev.code === want) next = ev.code;
+      else if (seqOfTyped(ev.code, job, token) && ev.code !== want && !(takenCodes(tombs(), ev.id).has(want)) && !(reserved || []).includes(want)) next = want; /* FIT-001 -> RFT-001, same number */
+      else if (ev.code !== nextTypedCode(job, token, tombs(), ev.id, reserved)) next = nextTypedCode(job, token, tombs(), ev.id, reserved);
+      else next = ev.code;
+      if (next && next !== ev.code) { note("code", ev.code, next); ev.code = next; }
+    }
+    if (!changes.length) return false;
+    ev.audit = Array.isArray(ev.audit) ? ev.audit : [];
+    ev.audit.push({
+      at: nowIso(), who: "ENVSS Field (Podio refresh, " + whoText() + ")",
+      action: "Updated from Podio",
+      field: changes.map(c => c.field).join(", "),
+      from: changes.map(c => c.from).join(" | "),
+      to: changes.map(c => c.to).join(" | "),
+      detail: changes.map(c => c.field + ": " + (c.from || "(empty)") + " → " + c.to).join(" · ")
+        + (pl.itemId ? " · Podio " + pl.itemId : "")
+    });
+    return true;
+  }
+  function renameLegacyFitCodes() {
+    /* Unstarted planned fit events still coded {job}-FIT-NNN become {job}-RFT-NNN (same number when free). */
+    let n = 0, reserved = [];
+    (db.events || []).forEach(ev => {
+      if (!ev || ev.type !== "fit" && !/-(FIT|RFT|HPFT)-\d+/i.test(ev.code || "")) return;
+      if (!/-FIT-\d+/i.test(ev.code || "") || !canRenameCode(ev)) return;
+      const job = (ev.code.match(/^(\d{7})-/) || [])[1] || "";
+      if (!job) return;
+      const seq = seqOfTyped(ev.code, job, "RFT");
+      const want = typedCode(job, "RFT", seq);
+      const taken = takenCodes(tombs(), ev.id);
+      reserved.forEach(c => taken.add(c));
+      const next = !taken.has(want) ? want : nextTypedCode(job, "RFT", tombs(), ev.id, reserved);
+      if (next === ev.code) return;
+      ev.audit = Array.isArray(ev.audit) ? ev.audit : [];
+      ev.audit.push({ at: nowIso(), who: "ENVSS Field (Podio refresh, " + whoText() + ")", action: "Updated from Podio", field: "code", from: ev.code, to: next, detail: "Fit event code now uses RFT, not FIT" });
+      ev.code = next; reserved.push(next); n++;
+    });
+    return n;
+  }
+
   function build(p, pl, id, how, tb, cfg) {
     const poc = pl.poc || {};
     cfg = cfg || appOf({ appId: pl.appId }) || PODIO_EVENT_APPS[0];
@@ -12386,11 +12543,11 @@ function fixOpen(ts) {
     const ev = {
       id, projectId: p.id, type: fit ? "fit" : "hygiene", stage: "planned",
       date: pl.startDate || (how === "auto" ? "" : new Date().toISOString().slice(0, 10)),
-      code: fit ? envssFit.fitEventCode(p, envssFit.nextFitSeq(p.id)) : codeFor(p, pl, tb), multiDay: false, minesAct: false, notes: "", uploadReady: false, operators: [],
+      code: fit ? envssFit.fitEventCode(p, envssFit.nextFitSeq(p.id)) : codeFor(p, pl, tb, cfg), multiDay: false, minesAct: false, notes: "", uploadReady: false, operators: [],
       turnaround: pl.turnaround || "standard", taskDesc: pl.task || "", lab: pl.lab || "", siteContact: pl.siteContact || "",
       poc: { company: poc.company || "", first: poc.first || "", last: poc.last || "", role: poc.role || "", phone: poc.phone || "", email: poc.email || "" },
       equipmentDetails: pl.equipment || "", podioDriveLink: pl.driveLink || "",
-      podioItemId: String(pl.itemId), podioReference: pl.reference || "", podioLinked: true, podioUnplanned: false,
+      podioItemId: String(pl.itemId), podioReference: pl.reference || "", podioTitle: pl.title || "", podioLinked: true, podioUnplanned: false,
       podioAuto: how === "auto", podioSeen: seenOf(pl), podioTypes: typesOf(pl.reference), podioJobTypes: Array.isArray(pl.jobTypes) ? pl.jobTypes.slice() : [],
       podioAppId: cfg.appId, podioEventKind: cfg.kind || "",
       audit: [{ at: nowIso(), who: how === "auto" ? "ENVSS Field (auto, " + whoText() + ")" : whoText(),
@@ -12407,7 +12564,8 @@ function fixOpen(ts) {
     if (!snap || !Array.isArray(snap.rows)) return 0;
     if (!ready()) { last.waiting = true; return 0; }
     last.waiting = false;
-    const tb = tombs(), skipped = {}, out = [];
+    const tb = tombs(), skipped = {}, out = []; let refreshed = 0; const reservedCodes = [];
+    refreshed += renameLegacyFitCodes();
     offers = {};
     tb.hinted = new Set(snap.rows.map(r => codeHint(r.payload || {})).filter(Boolean));
     const rows = snap.rows.slice().sort((a, b) => String((a.payload || {}).startDate || "9999").localeCompare(String((b.payload || {}).startDate || "9999")) || String(a.itemId).localeCompare(String(b.itemId)));
@@ -12416,8 +12574,13 @@ function fixOpen(ts) {
       const skip = why => { skipped[why] = (skipped[why] || 0) + 1; };
       if (!item) return skip("no item id");
       const why = eligible(r); if (why) return skip(why);
-      if ((db.events || []).some(e => String(e.podioItemId || "") === item)) return skip("field event already exists");
       const id = idFor(item);
+      const existing = (db.events || []).find(e => e && (String(e.podioItemId || "") === item || e.id === id));
+      if (existing && !(tb.evs.has(existing.id) || tb.items.has(item))) {
+        if (refreshLinked(existing, r, reservedCodes)) { refreshed++; if (existing.code) reservedCodes.push(existing.code); }
+        return skip("field event already exists");
+      }
+      if ((db.events || []).some(e => String(e.podioItemId || "") === item)) return skip("field event already exists");
       if (tb.items.has(item) || tb.evs.has(id)) return skip("deleted here (tombstone)");
       if ((db.events || []).some(e => e.id === id)) return skip("field event already exists");
       const p = projectFor(pl.jobNumber, tb, pl); if (!p) return skip("job not on the project list yet");
@@ -12429,11 +12592,11 @@ function fixOpen(ts) {
       db.events.push(ev);
       out.push(ev);
     });
-    last.at = nowIso(); last.skipped = skipped; last.created = out.map(e => e.code + " (" + e.id + ")");
-    if (out.length) {
+    last.at = nowIso(); last.skipped = skipped; last.created = out.map(e => e.code + " (" + e.id + ")"); last.refreshed = refreshed;
+    if (out.length || refreshed) {
       commit();                                                      /* scanDirty marks them pending; flush sends them */
       out.forEach(ev => { made[ev.id] = snapOf("events", ev); });
-      writeJson(MADE_KEY, made);
+      if (out.length) writeJson(MADE_KEY, made);
       if (!userIsTyping()) render();
     } else if (JSON.stringify(offers) !== lastOffers) { try { if (!userIsTyping()) render(); } catch (e) {} }   /* v48.14: repaint only when the offers change */
     lastOffers = JSON.stringify(offers);
@@ -12663,7 +12826,7 @@ function fixOpen(ts) {
       if (!res || !res.ok) return null;
       const items = await res.json(); if (!Array.isArray(items)) return null;
       const rows = items.filter(it => ids.includes(String(it.app_id))).map(it => {
-        const pl = envssPodio.map.mapItem({ item_id: it.item_id, fields: aliasFields(it.fields || {}) }); pl.appId = String(it.app_id);
+        const pl = envssPodio.map.mapItem({ item_id: it.item_id, title: it.title || "", fields: aliasFields(it.fields || {}) }); pl.appId = String(it.app_id);
         return { itemId: pl.itemId, appId: pl.appId, lastEdit: it.last_edit_on || "", payload: pl };
       });
       return { rows, apps: items.length < 2000 ? ids : [] };
@@ -12776,7 +12939,7 @@ function fixOpen(ts) {
   document.head.appendChild(st);
   window.envssAuto = { run, card, startManual, idFor, flagsFor, allFlagged, link, separate, review, eligible, isAfmOnly,
     isPlanned: p => PodioMapIsPlanned(p), typesOf,
-    jobTypesFor: ev => { const r = ev && ev.podioItemId ? rowFor(ev.podioItemId) : null; return r && r.payload && Array.isArray(r.payload.jobTypes) ? r.payload.jobTypes.slice() : []; }, isFitOnly, apps: appsCfg, appOf, offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
+    jobTypesFor: ev => { const r = ev && ev.podioItemId ? rowFor(ev.podioItemId) : null; return r && r.payload && Array.isArray(r.payload.jobTypes) && r.payload.jobTypes.length ? r.payload.jobTypes.slice() : []; }, isFitOnly, apps: appsCfg, appOf, offers: () => JSON.parse(JSON.stringify(offers)), reusableCodes: p => [...reusableCodes(p)], delInfo: () => JSON.parse(JSON.stringify(delInfo)), last: () => JSON.parse(JSON.stringify(last)), snap: () => snap, codeToken, tokenOf, codeFor, nextTypedCode, typedCode, refreshLinked, canRenameCode, eventHasStartedWork, typesList, cfg: { BACK_DAYS, NODATE_EDIT_DAYS, MATCH_DAYS } };
 })();
 </script>
 
