@@ -7,7 +7,7 @@
    PDF (signed or unsigned), Drive copy into {job}_Field-App/Fit-Tests, zip download. No Podio writes. */
 (function (root) {
   "use strict";
-  const VERSION = "48.19";   /* v48.19: version bump only (fit testing unchanged). v48.18: version bump only */
+  const VERSION = "48.19";   /* v48.19: event-screen button helpers, Enter manually help, list unsigned reports before complete. Earlier 48.19 was a version bump only (fit testing unchanged). v48.18: version bump only */
 
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
@@ -1489,6 +1489,11 @@
     if (email) return "Electronically signed by " + email + " " + when;
     return "Electronically signed by " + name + " " + when;
   }
+  function reportLabel(rep) {
+    const who = [rep && rep.lastName, rep && rep.firstName].filter(Boolean).join(", ") || "Details not filled in";
+    const mask = (rep && (rep.model || rep.respirator)) || "Respirator not set";
+    return who + " · " + mask;
+  }
   /* A report is complete once the person tested has signed. New reports also store signedAt + techSignOff
      (identity from the signed-in Google account). Older reports that already have a technician pad image
      still count as signed when both pad images are present. */
@@ -1505,6 +1510,17 @@
     if (allSigned && ev.uploadReady) return "upload_ready";
     if (allSigned) return "ev_complete";
     return "ev_needs";
+  }
+
+  function incompleteHtml(reps) {
+    const unsigned = (reps || []).filter(function (r) { return !isReportSigned(r); });
+    if (!(reps || []).length) {
+      return "<p class=\"fit-warn\" id=\"fitIncomplete\">Add and sign at least one fit-test report before you can mark this event complete.</p>";
+    }
+    if (!unsigned.length) return "";
+    return "<div class=\"fit-warn\" id=\"fitIncomplete\"><p>Not yet complete — sign these before you can mark the event complete:</p><ul>"
+      + unsigned.map(function (r) { return "<li>" + esc(reportLabel(r)) + (r.result ? " · " + esc(r.result) : "") + "</li>"; }).join("")
+      + "</ul></div>";
   }
 
   function blankReport(ev) {
@@ -1763,13 +1779,19 @@
       + "<h2 class=\"brand-type\" style=\"margin:4px 0;color:var(--navy)\">" + esc(ev.code) + "</h2>"
       + "<div class=\"muted\">" + esc((root.eventTypeLabel && root.eventTypeLabel(ev)) || "Respirator fit testing") + (ev.date ? " · " + esc(ev.date) : "") + "</div>"
       + "</div>" + (root.eventBadge ? root.eventBadge(ev) : "") + "</div>"
-      + "<div class=\"row\" style=\"margin:10px 0\">"
-      + "<button type=\"button\" class=\"btn mid\" id=\"fitAddReport\">Add individual report</button>"
+      + "<div class=\"fit-actions\" id=\"fitEventActions\">"
+      + "<div class=\"fit-action\"><button type=\"button\" class=\"btn mid\" id=\"fitAddReport\">Add individual report</button>"
+      + "<p class=\"help fit-action-help\">Photograph the PortaCount printout. The app reads the fields, then you check them and the person who was tested signs.</p></div>"
       + "<input id=\"fitNewPhoto\" type=\"file\" accept=\"image/*\" capture=\"environment\" hidden>"
-      + "<button type=\"button\" class=\"btn mid\" id=\"fitAddManual\">Enter manually</button>"
-      + "<button type=\"button\" class=\"btn green\" id=\"fitMarkComplete\">Mark event complete</button>"
-      + (reps.some(r => r.signedAt || r.pdfBlob || r.pdfName) ? "<button type=\"button\" class=\"btn mid\" id=\"fitZip\">Download all (zip)</button>" : "")
+      + "<div class=\"fit-action\"><button type=\"button\" class=\"btn mid\" id=\"fitAddManual\">Enter manually</button>"
+      + "<p class=\"help fit-action-help\">Type the report fields yourself if you cannot photograph the printout, or if the photo will not read. You can still attach a photo later with Retake photo. Then the person who was tested signs.</p></div>"
+      + "<div class=\"fit-action\"><button type=\"button\" class=\"btn green\" id=\"fitMarkComplete\">Mark event complete</button>"
+      + "<p class=\"help fit-action-help\">Once all fit tests are done and every report is signed. There is no laboratory chain of custody for fit testing.</p></div>"
+      + (reps.some(r => r.signedAt || r.pdfBlob || r.pdfName) ? "<div class=\"fit-action\"><button type=\"button\" class=\"btn mid\" id=\"fitZip\">Download all (zip)</button>"
+        + "<p class=\"help fit-action-help\">Save a zip of every signed report PDF from this event.</p></div>" : "")
       + "</div>"
+      + "<p class=\"help\" id=\"fitManualHelp\">Enter manually opens a blank form and does not read a photo. Use it when the PortaCount printer failed, the printout will not photograph clearly, or you would rather type than wait for a signal. You can attach a photo afterwards with Retake photo. A photograph is still the usual way, because the app can fill the fields from it.</p>"
+      + incompleteHtml(reps)
       + rows
       + "<p class=\"help\" id=\"fitHowTo\"><a href=\"help/fit-test.html\" target=\"_blank\" rel=\"noopener\">How to record a fit test (video and step-by-step guide)</a></p>"
       + "<p class=\"help\">ENVSS Field v" + (root.APP_VERSION || VERSION) + " · Status follows signed reports, not samples. There is no laboratory COC for fit testing.</p>"
@@ -2744,7 +2766,10 @@
       const reps = reportsOf(ev.id);
       if (!reps.length) { alert("Add and sign at least one fit-test report before marking this event complete."); return; }
       const unsigned = reps.filter(r => !isReportSigned(r));
-      if (unsigned.length) { alert("This event cannot be marked complete until every report is signed.\nUnsigned: " + unsigned.length + "."); return; }
+      if (unsigned.length) {
+        alert("This event cannot be marked complete until every report is signed.\nNot yet complete:\n• " + unsigned.map(reportLabel).join("\n• "));
+        return;
+      }
       ev.uploadReady = true;
       evLog(ev, "Marked event complete", "All fit-test reports signed");
       saveQuiet();
@@ -2932,6 +2957,13 @@
       + ".fit-sig{width:100%;height:180px;background:#fff;border:2px solid var(--edge,#3A4A7A);border-radius:12px;touch-action:none}"
       + ".fit-esign-name{font-family:Georgia,\"Times New Roman\",Times,serif;font-style:italic;font-size:28px;color:#111;margin:8px 0 4px;padding:10px 14px;background:#fff;border-radius:10px;line-height:1.25}"
       + ".fit-device{display:inline-block;margin:6px 0 0;padding:3px 10px;border-radius:999px;background:#FFF4E5;color:#8A4B08;font-weight:700;font-size:13px}"
+      + ".fit-actions{display:flex;flex-wrap:wrap;gap:12px 16px;margin:10px 0;align-items:flex-start}"
+      + ".fit-action{flex:1 1 180px;max-width:320px;min-width:160px}"
+      + ".fit-action .btn{width:100%}"
+      + ".fit-action-help{margin:6px 0 0}"
+      + "#fitManualHelp{margin-top:0}"
+      + "#fitIncomplete{margin:8px 0 12px}"
+      + "#fitIncomplete ul{margin:6px 0 0 1.2em}"
       + ".s-ok{background:#E5F4EE;color:#1F6B4A}.s-needs{background:#FFF4E5;color:#8A4B08}";
     document.head.appendChild(st);
   }
@@ -2950,6 +2982,8 @@
     api.zipAll = zipAll;
     api.finishPdf = finishPdf;
     api.blankReport = blankReport;
+    api.reportLabel = reportLabel;
+    api.isReportSigned = isReportSigned;
     api.runOcr = runOcr;
     api.deviceRead = deviceRead;
     api.deviceOcrReady = deviceOcrReady;
