@@ -307,6 +307,8 @@ async function run(vp) {
   check(L("hood serial edit flows to the other condition on the unit (was the same)"), (await T(page, g1)).vent.hoodSerial === "FC2-0042B", (await T(page, g1)).vent.hoodSerial);
   check(L("partly filled grid warns about blank points, does not block"), /37 of 40 points still blank/.test(await txt(page, "#vtChecks")) && (await T(page, g2)).status === "ended", await txt(page, "#vtChecks"));
   await gshot("condition-2");
+  const btnFit = await page.evaluate(() => { const b = document.querySelector("[data-vg-manual]"); if (!b) return { ok: false, reason: "missing" }; const r = b.getBoundingClientRect(); return { ok: b.scrollWidth <= b.clientWidth + 1 && r.height <= 52, w: b.scrollWidth, cw: b.clientWidth, h: r.height, t: b.innerText }; });
+  check(L("Manual grid button stays on one line (28 is not wrapped onto its own line)"), btnFit.ok && /4×7 = 28/.test(btnFit.t) && !/\n/.test(btnFit.t), JSON.stringify(btnFit));
   /* G6. manual grid: dimensions unknown → 4 × 7 = 28, reason recorded */
   await page.evaluate(() => ENVSS_VENT.addMeasurement("eV", "grid")); await sleep(300);
   t = await NEWEST(page); const g3 = t.id;
@@ -314,7 +316,8 @@ async function run(vp) {
   await tap(page, "[data-vg-manual]");
   t = await T(page, g3);
   ck = await txt(page, "#vtChecks");
-  check(L("manual grid: 4 × 7 = 28 points; reason field present but optional (not in Still needed)"), t.vent.grid.basis === "manual" && t.vent.grid.cols === 4 && t.vent.grid.rows === 7 && /4 × 7 = 28 points \(manual grid\)/.test(await txt(page, "#vgGeom")) && await has(page, "#vg-reason") && !/Reason for the manual grid/.test(ck) && /grid point velocity/.test(ck) && await page.evaluate(() => document.querySelectorAll("[data-vg-cell]").length === 28), ck);
+  const gtxt = await txt(page, "#vgGeom"), box = await txt(page, ".vg-manual");
+  check(L("manual grid: 4 × 7 = 28 points; 'Manual grid' only in the dashed box, not repeated on the points line"), t.vent.grid.basis === "manual" && t.vent.grid.cols === 4 && t.vent.grid.rows === 7 && /4 × 7 = 28 points/.test(gtxt) && !/manual grid/i.test(gtxt) && /^Manual grid/.test(box) && /not set out from the opening size/.test(box) && await has(page, "#vg-reason") && !/Reason for the manual grid/.test(ck) && /grid point velocity/.test(ck) && await page.evaluate(() => document.querySelectorAll("[data-vg-cell]").length === 28), JSON.stringify({ gtxt, box, ck }));
   const ml = await page.evaluate(() => [0, 6, 7, 13, 14, 21, 27].map(i => document.querySelector(`[data-vg-cell="${i}"] .vg-num`).innerText));
   check(L("manual 4 × 7 labels match the 0019340 sheet (Top left corner, Top left central, Top right central, Bottom right corner)"), /^1 Top left corner/.test(ml[0]) && /^7 Bottom left corner/.test(ml[1]) && /^8 Top left central/.test(ml[2]) && /^14 Bottom left central/.test(ml[3]) && /^15 Top right central/.test(ml[4]) && /^22 Top right corner/.test(ml[5]) && /^28 Bottom right corner/.test(ml[6]), JSON.stringify(ml));
   await fill(page, "#vg-v0", "0.42");

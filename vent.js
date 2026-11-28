@@ -115,7 +115,7 @@
   function geomText(q) {
     if (!gridN(q)) return "";
     const pts = q.cols + " × " + q.rows + " = " + gridN(q) + " points";
-    if (q.basis === "manual") return pts + " (manual grid)";
+    if (q.basis === "manual") return pts;
     return pts + " · horizontal spacing " + (q.cols > 1 ? q.gapX + " mm" : "single centre line") + " · vertical spacing " + (q.rows > 1 ? q.gapY + " mm" : "single centre line");
   }
   function stats(t) {
@@ -374,7 +374,7 @@
           <div class="vt-grid2"><div><label for="vg-cols">Columns (across)</label><input id="vg-cols" data-vg="cols" value="${esc(q.cols)}" inputmode="numeric" autocomplete="off"></div><div><label for="vg-rows">Rows (down)</label><input id="vg-rows" data-vg="rows" value="${esc(q.rows)}" inputmode="numeric" autocomplete="off"></div></div>
           <label for="vg-reason">Reason for the manual grid <span class="muted">(optional)</span></label><input id="vg-reason" data-vg="reason" value="${esc(q.reason)}" placeholder="e.g. opening size unknown, obstruction, site requirement" autocomplete="off">
           <button type="button" class="btn ghost" data-vg-standard="1">Use the standard grid from the opening size</button></div>`
-        : `<button type="button" class="btn ghost" data-vg-manual="1">Manual grid instead (default ${MANUAL_DEFAULT.cols} × ${MANUAL_DEFAULT.rows} = ${MANUAL_DEFAULT.cols * MANUAL_DEFAULT.rows})</button>`}
+        : `<button type="button" class="btn ghost vg-manbtn" data-vg-manual="1">Manual grid instead (${MANUAL_DEFAULT.cols}×${MANUAL_DEFAULT.rows} = ${MANUAL_DEFAULT.cols * MANUAL_DEFAULT.rows})</button>`}
       </div>
       <div class="card vt-card"><h3 class="vt-h">Face velocity grid (m/s)</h3>
         <p class="help">Velocity at each point, and optionally the distance from the face where it drops below 0.5 m/s (metres; any text is kept as typed).</p>
@@ -813,7 +813,7 @@
       + ".vg-scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}.vg-grid{display:grid;gap:6px;margin:6px 0 10px}.vg-colh{font-size:12px;font-weight:700;opacity:.75;text-align:center;text-transform:capitalize}"
       + ".vg-cell{border:2px solid rgba(255,255,255,.18);border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:4px;min-width:0}.vg-cell input{min-width:0;width:100%;box-sizing:border-box;font-size:16px;padding:6px}.vg-cell .vg-d{font-size:13px;padding:4px 6px}"
       + ".vg-num{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vg-num span{font-weight:400;opacity:.75;font-size:11px}.vg-low{border-color:#FF6B6B}.vg-mid{border-color:#FFB020}.vg-ok{border-color:#3BB273}"
-      + ".vg-geom{margin:6px 0}.vg-manual{margin-top:8px;padding:10px;border-radius:10px;border:1px dashed rgba(255,255,255,.35)}.vg-fans{display:flex;gap:8px;margin:4px 0 8px}.vg-fans .chip{min-width:44px;min-height:40px;font-weight:700}.vg-fans .chip.on{outline:2px solid #3BB273}"
+      + ".vg-geom{margin:6px 0}.vg-manual{margin-top:8px;padding:10px;border-radius:10px;border:1px dashed rgba(255,255,255,.35)}.vg-manbtn{white-space:nowrap}.vg-fans{display:flex;gap:8px;margin:4px 0 8px}.vg-fans .chip{min-width:44px;min-height:40px;font-weight:700}.vg-fans .chip.on{outline:2px solid #3BB273}"
       + ".vg-std{margin-top:10px;padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.2)}.vg-pass{border-color:#3BB273}.vg-fail{border-color:#FF6B6B}"
       + ".vg-labels{margin:6px 0}.vg-labels summary{cursor:pointer;font-weight:700}.vg-lablist{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}.vg-lab{display:flex;align-items:center;gap:6px}.vg-lab span{min-width:24px;text-align:right;font-weight:700}.vg-lab input{flex:1;min-width:0}"
       + ".vg-sum{border-collapse:collapse;width:100%;font-size:13px}.vg-sum th,.vg-sum td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.15);text-align:left;white-space:nowrap}.vg-sum tbody tr{cursor:pointer}.vg-tpass{color:#7BE0A4;font-weight:700}.vg-tfail{color:#FF8A8A;font-weight:700}";
