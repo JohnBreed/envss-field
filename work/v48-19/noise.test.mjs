@@ -266,6 +266,8 @@ async function run(vp) {
   t = await T(page, "lg1");
   check(L("legacy static SLM record keeps method, values and octave; still shows the method chips"), t.noise.method === "slm" && t.noise.values.LAeq.v === "88.4" && t.noise.octave["125"] === "70.1" && (await has(page, "[data-nz-method]")) && (await val(page, "#nzLAeq")) === "88.4", "");
   check(L("legacy SLM: labelled as area / task SLM; old mic / model fields still editable; ENVSS no as before"), /area \/ task/.test(await page.evaluate(() => document.querySelector("#trainKind option:checked").textContent)) && (await val(page, "#nz-micSerial")) === "M-OLD" && (await val(page, "#nz-envssNo")) === "3", "");
+  const navTxt = await page.evaluate(() => [...document.querySelectorAll(".v484-side, #v484Nav")].map(e => e.innerText).join(" | "));
+  check(L("previous / next arrows on a noise event say Measurement, not Sample"), /Noise Measurement/.test(navTxt) && !/Noise Sample/.test(navTxt), navTxt);
   await fill(page, "#nz-micSerial", "M-NEW");
   check(L("legacy SLM still editable and saved"), (await T(page, "lg1")).noise.micSerial === "M-NEW", "");
   check(L("legacy SLM: Area / Task offered but not forced (no new 'needs answer' on old records)"), !(await page.evaluate(() => answerItems(db.trains.find(x => x.id === "lg1")).some(x => x.key === "nzScope"))) && (await has(page, '[data-nz-kind="task"]')), "");

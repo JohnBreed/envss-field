@@ -609,6 +609,12 @@
       todo.push(nd);
     }
     todo.forEach(x => { const s = x.nodeValue.replace("Noise trains can switch personal ↔ static only.", "Noise measurements can switch between personal, area / task and static dose badge.").replace("Sample train type", "Measurement type"); x.nodeValue = meas(s); });
+    /* previous / next arrows (outside #app on wide screens, a bar on phones): only the "Noise Sample N" labels change */
+    document.querySelectorAll(".v484-side, #v484Nav").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT); let x;
+      while ((x = w.nextNode())) if (/Noise Sample/.test(x.nodeValue)) x.nodeValue = x.nodeValue.replace(/Noise Sample/g, "Noise Measurement");
+      box.querySelectorAll("[aria-label]").forEach(b => { b.setAttribute("aria-label", b.getAttribute("aria-label").replace(/sample$/, "measurement")); });
+    });
     /* the bottom bar and the + button */
     const fab = document.querySelector(".fab");
     if (fab && /Add sample/i.test(fab.textContent)) fab.innerHTML = "<b>+</b>Add measurement";
