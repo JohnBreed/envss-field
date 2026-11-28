@@ -73,6 +73,7 @@ async function boot(vp, st, opts) {
   await page.setViewport(VIEWPORTS[vp].viewport); await page.setUserAgent(VIEWPORTS[vp].ua);
   await page.setRequestInterception(true); page.mlog = mockSupabase(page, st, opts);
   page.dialogs = []; page.on("dialog", async d => { page.dialogs.push(d.message()); await d.accept(); });
+  await page.evaluateOnNewDocument(() => { window.ENVSS_ALLOW_MANUAL_EVENTS = true; });   /* v48.19: manual events are off by default; this suite covers the manual-event form behind the flag */
   await page.goto(base + "/field.html", { waitUntil: "domcontentloaded" }); await page.evaluate(SESSION);
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await page.reload({ waitUntil: "networkidle0" }); await sleep(1500);

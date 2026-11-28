@@ -182,9 +182,9 @@ async function run(vp) {
   const eNseoc = list.find(e => e.podioItemId === "4003");
   const eVent = list.find(e => e.podioItemId === "4004");
   check(L("new HYG ACA event is coded 0019360-ACA-001"), eAca && eAca.code === "0019360-ACA-001" && eAca.id === "e-podio-4001", eAca && eAca.code);
-  check(L("HYG event with several types (RFT, NSEOC-ACA, VENT) uses primary NSEOC-ACA (RFT skipped)"), eMulti && eMulti.code === "0019360-NSEOC-ACA-001" && eMulti.type === "hygiene", eMulti && eMulti.code);
+  check(L("HYG item with several types (RFT, NSEOC-ACA, VENT): first event is NSEOC-ACA-001 on e-podio-4002 (RFT stays with its own app); the VENT event is separate (see multi.test.mjs)"), eMulti && eMulti.id === "e-podio-4002" && eMulti.code === "0019360-NSEOC-ACA-001" && eMulti.type === "hygiene", eMulti && eMulti.code);
   check(L("Occ Noise app event is coded 0019360-NSEOC-001"), eNseoc && eNseoc.code === "0019360-NSEOC-001" && eNseoc.podioEventKind === "noise", eNseoc && eNseoc.code);
-  check(L("Vent Survey app event is coded 0019360-VENT-001"), eVent && eVent.code === "0019360-VENT-001" && eVent.podioEventKind === "vent", eVent && eVent.code);
+  check(L("Vent Survey app event is numbered per token after the HYG item's own VENT event: 0019360-VENT-002"), eVent && eVent.code === "0019360-VENT-002" && eVent.podioEventKind === "vent", eVent && eVent.code);
 
   /* parsing shapes + primary-type helper */
   const unit = await page.evaluate(() => {

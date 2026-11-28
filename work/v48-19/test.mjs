@@ -61,6 +61,7 @@ async function boot(vp, uaOverride) {
   await page.setRequestInterception(true); const store = {}; page.mlog = mockSupabase(page, store, {});
   page.on("request", r => { const u = r.url(); if (!u.startsWith(url) && !u.startsWith("data:") && !/cdn\.jsdelivr\.net|fonts\.(googleapis|gstatic)\.com|\.supabase\.co\//.test(u)) ext.push(vp + " " + r.method() + " " + u.split("?")[0]); });
   page.dialogs = []; page.on("dialog", async d => { page.dialogs.push(d.message()); await d.accept(); });
+  await page.evaluateOnNewDocument(() => { window.ENVSS_ALLOW_MANUAL_EVENTS = true; });   /* v48.19: the new-event form is behind ALLOW_MANUAL_EVENTS; this suite checks its rotameter pick-list */
   await page.goto(url + "/field.html", { waitUntil: "domcontentloaded" }); await page.evaluate(SESSION);
   const fx = fixture(); await page.evaluate(d => { localStorage.setItem("envss-field-next-v32", JSON.stringify(d)); }, fx);
   await page.reload({ waitUntil: "networkidle0" }); await sleep(800);

@@ -64,6 +64,7 @@ async function boot(vp) {
   const store = { ocrStatus: 200, ocrBody: { text: VISION_TEXT } };
   page.store = store; page.mlog = mockSupabase(page, store, {});
   page.dialogs = []; page.on("dialog", async d => { page.dialogs.push(d.message()); await d.accept(); });
+  await page.evaluateOnNewDocument(() => { window.ENVSS_ALLOW_MANUAL_EVENTS = true; });   /* v48.19: manual events are off by default; this suite covers the manual-event form behind the flag */
   await page.goto(url + "/field.html", { waitUntil: "domcontentloaded" }); await page.evaluate(SESSION);
   const fx = fixture(); await page.evaluate(d => { localStorage.setItem("envss-field-next-v32", JSON.stringify(d)); }, fx);
   await page.reload({ waitUntil: "networkidle0" }); await sleep(800);
@@ -116,9 +117,9 @@ async function run(vp) {
 
   await page.evaluate(() => openNewEvent("p4813")); await sleep(300);
   const form = await page.evaluate(() => { const s = document.getElementById("ntype"); s.value = "fit"; toggleEventTypeFields(); const box = document.getElementById("fitEventFields"); return { opt: !!s.querySelector("option[value=fit]"), shown: box && box.style.display !== "none", text: box ? box.innerText : "" }; });
-  check(`[${vp}] new-event form offers Respirator fit testing with no hygiene wording`, form.opt && form.shown && /FIT-001/.test(form.text) && !/hygiene|link/i.test(form.text), JSON.stringify(form));
+  check(`[${vp}] new-event form offers Respirator fit testing with no hygiene wording`, form.opt && form.shown && /RFT-001/.test(form.text) && !/hygiene|link/i.test(form.text), JSON.stringify(form));
   const created = await page.evaluate(() => { const ev = createEvent(); return ev ? JSON.parse(JSON.stringify(ev)) : null; });
-  check(`[${vp}] new fit event is {job}-FIT-002 with no parentEventId`, created && created.code === "0019913-FIT-002" && created.type === "fit" && !("parentEventId" in created), JSON.stringify(created));
+  check(`[${vp}] new fit event is {job}-RFT-002 (v48.19; the seeded legacy FIT-001 counts as 001) with no parentEventId`, created && created.code === "0019913-RFT-002" && created.type === "fit" && !("parentEventId" in created), JSON.stringify(created));
   const hygUntouched = await page.evaluate(() => { const h = eventById("eH"); return h.type === "hygiene" && !("parentEventId" in h) && db.trains.length === 1; });
   check(`[${vp}] hygiene event untouched`, hygUntouched);
   check(`[${vp}] Drive subfolder name is Fit-Tests`, await page.evaluate(() => envssFit.driveSubfolder === "Fit-Tests"));

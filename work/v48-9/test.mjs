@@ -135,7 +135,7 @@ async function run(vp) {
     const nextHyg = p.number + "-" + String(n).padStart(3, "0");
     return { nextFit, nextFitCode, nextHyg };
   });
-  check(`[${vp}] next fit is 0019489-FIT-002 and next hygiene stays 0019489-002`, nums.nextFit === "002" && nums.nextFitCode === "0019489-FIT-002" && nums.nextHyg === "0019489-002", JSON.stringify(nums));
+  check(`[${vp}] next fit is 0019489-RFT-002 (v48.19: RFT, not FIT) and next hygiene stays 0019489-002`, nums.nextFit === "002" && nums.nextFitCode === "0019489-RFT-002" && nums.nextHyg === "0019489-002", JSON.stringify(nums));
 
   await page.evaluate(() => openEvent("eFit"));
   await sleep(400);

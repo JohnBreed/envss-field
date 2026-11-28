@@ -90,6 +90,7 @@ const ext = [];
 async function boot(vp, store, keepStorage, pre, mopts) {
   const ctx = await (browser.createBrowserContext ? browser.createBrowserContext() : browser.createIncognitoBrowserContext());   /* own storage + IndexedDB = a separate device */
   const page = await ctx.newPage();
+  await page.evaluateOnNewDocument(() => { window.ENVSS_ALLOW_MANUAL_EVENTS = true; });   /* v48.19: manual events are off by default; this suite covers the manual-event entry points behind the flag (multi.test.mjs covers it off) */
   if (pre) await page.evaluateOnNewDocument(pre); page.errs = []; page.on("pageerror", e => page.errs.push(String(e)));
   page.on("console", m => { if (m.type() === "warning" && /v48\.7/.test(m.text())) page.errs.push(m.text()); });
   await page.setViewport(VIEWPORTS[vp].viewport); await page.setUserAgent(VIEWPORTS[vp].ua);

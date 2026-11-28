@@ -2704,6 +2704,7 @@
     root.createEvent = function () {
       const type = (document.getElementById("ntype") || {}).value || "hygiene";
       if (type !== "fit") return _ce ? _ce.apply(this, arguments) : null;
+      if (typeof root.envssManualEventsAllowed === "function" && !root.envssManualEventsAllowed()) return null;   /* v48.19: events come from Podio */
       const projectId = view.projectId;
       const p = root.project && root.project(projectId);
       if (!p) { alert("Open a project first."); return; }

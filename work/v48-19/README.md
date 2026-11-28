@@ -51,6 +51,20 @@ Event codes for new (and unstarted) Podio-linked events are `{job}-{type}-001`, 
 
 Tests: `ROOT=<worktree> OUT=/workspace/guard-shots/v4819 node work/v48-19/jobtypes.test.mjs [pixel7|chromebook]`. Screenshots: `jobtypes-0019358-list-{pixel7,chromebook}.png`.
 
+## One field event per job type, and no hand-made events (28 Nov 2026, John t737u / t739u)
+**Several job types on one Podio HYG item (option B).** Auto-create makes one field event per distinct job-type group on the item. `ACA` and `ACA-NSED` are one group (ACA-NSED is airborne plus noise dose badges, which the airborne event already handles); every other code is its own group exactly as Podio has it, so an unknown new code needs no app update. `RFT`, `HPFT` and `AFM` are not split out of a HYG item (they have their own app / event kind). Each event's code is `{job}-{TOKEN}-{nnn}` numbered per token on the job; the token is the Podio code, and when both ACA and ACA-NSED are on the item the airborne event uses `ACA-NSED`.
+- Ids: the first group keeps `e-podio-<item>`; other groups use `e-podio-<item>-<GROUP>` (group key, e.g. `-VENT`). The id is the key, so re-runs, Refresh from Podio and a fresh device never duplicate.
+- Each event stores `podioGroup`; it also keeps all the item's Job Types (`podioJobTypes`) for the scope text. The events list shows only that event's own types.
+- Splitting uses the Job Type field itself. With no Job Type in the mirror (Reference text only) the item stays one event, because the Reference is often stale.
+- Dedicated apps (Occ Noise, Vent Survey, Onsite RFT) are never split.
+- Existing events with no group take the group their code names, else the first free group. An unstarted first event whose type left the item follows the new type (renamed); extras and started events are never retargeted.
+- Started events are never split or recoded; unstarted ones follow the Job Type.
+- A type removed in Podio never deletes anything: the event stays and gets a review flag "Job type X is no longer on the Podio item" (unstarted: an admin can delete it; started: nothing changed). Keep as is clears it.
+- Tombstones carry `podioGroup`, so deleting one group's event does not block the others. Old tombstones without a group still suppress the whole item. Deleted codes stay reserved.
+- Dashboard Bot mirror: `podio_items` / `v_field_hyg_events` still hold one row per Podio item; the fan-out happens in the app, and nothing is written back to Podio.
+
+**Manual events are switched off.** `ALLOW_MANUAL_EVENTS = false` (top of `field.html`, next to `APP_VERSION`) hides ☰ > Add event not in Podio and the create form, and `createEvent()` / `openNewEvent()` do nothing (including the fit "New event" type and AFM by hand). Set it to `true` to restore them. Existing hand-made events (0019xxx-00x) open, edit, sync and export as before. Start fieldwork from a Podio item, Start AFM from Podio and Import field CSV are unchanged. Test: `work/v48-19/multi.test.mjs`.
+
 ## Tests
 `ROOT=<worktree> OUT=/workspace/guard-shots/v4819 node work/v48-19/test.mjs [pixel7|chromebook]`. Supabase is stubbed in memory and never live.
 
