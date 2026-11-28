@@ -7,6 +7,7 @@ const OUT = process.env.OUT || "/workspace/guard-shots/v4819"; fs.mkdirSync(OUT,
 const results = [];
 function check(name, ok, detail) { results.push({ name, ok: !!ok, detail: detail == null ? "" : String(detail) }); console.log((ok ? "PASS" : "FAIL") + "  " + name + (detail && !ok ? " — " + String(detail).slice(0, 900) : "")); }
 import { TODAY, TOMORROW, at, SECRET, person, H, fixture } from "./coc-fixture.mjs";
+const NOT_ON_COC = Object.entries(SECRET).filter(([k]) => k !== "tech").map(([, v]) => v);   /* the sampler's own name is allowed in the contact / relinquished-by boxes only */
 const { server, base: url } = await serve();
 const browser = await launch(["--host-resolver-rules=MAP *.supabase.co 127.0.0.1:9"]);
 const ext = [];
@@ -64,6 +65,21 @@ async function run(vp) {
   await page.evaluate(() => { const e = document.getElementById("csTat"); e.value = "2_day"; e.dispatchEvent(new Event("change")); }); await sleep(900); await waitChecks(page);
   const tatState = await page.evaluate(() => ({ ev: db.events.find(e => e.id === "eC").turnaround, model: cocSend.state().r.model.turnaround, xlsx: cocSend.state().g.out.turnaround }));
   check(L("turnaround picker: saved on the event, in the spreadsheet build and on the CoC (2 day)"), tatState.ev === "2_day" && tatState.model === "2_day" && tatState.xlsx === "2_day", JSON.stringify(tatState));
+  /* every turnaround option: a bold X centred over its own label (same centre x, directly above), in the drawn page that becomes the PDF and the preview */
+  const align = [];
+  for (const [v, label] of [["standard", "Standard"], ["same_day", "Same Day"], ["1_day", "1 day"], ["2_day", "2 day"], ["3_day", "3 day"]]) {
+    await page.evaluate(v => { const e = document.getElementById("csTat"); e.value = v; e.dispatchEvent(new Event("change")); }, v); await sleep(900); await waitChecks(page);
+    align.push(await page.evaluate(label => {
+      const ops = cocSend.state().r.layout.pages[0].ops.filter(o => o.k === "t");
+      const xs = ops.filter(o => o.s === "X" && o.z >= 10 * 0.6 && o.b), lab = ops.find(o => o.s === label);
+      const tick = xs.sort((a, b) => Math.abs(a.y - lab.y) - Math.abs(b.y - lab.y))[0];
+      return { label, ticks: xs.length, dx: Math.abs(tick.cx - lab.cx), dy: lab.y - tick.y, ta: tick.a, la: lab.a, same: ops.filter(o => o.s === "X" && o.y < lab.y + 1 && o.y > lab.y - 25).length };
+    }, label));
+  }
+  check(L("turnaround: for each option (Standard, Same Day, 1, 2, 3 day) exactly one bold X, centred over its label (same centre line), directly above it"), align.every(a => a.same === 1 && a.dx < 0.6 && a.dy > 0 && a.dy < 25), JSON.stringify(align));
+  const esd = await page.evaluate(() => { const ops = cocSend.state().r.layout.pages[0].ops.filter(o => o.k === "t"), lab = ops.find(o => o.s === "Esdat"), eq = ops.find(o => o.s === "Equis"), t = ops.filter(o => o.s === "X" && Math.abs(o.y - lab.y) < 1.5); return { n: t.length, dy: t[0] && Math.abs(t[0].y - lab.y), gap: t[0] && lab.x - (t[0].x), eqTick: ops.filter(o => o.s === "X" && Math.abs(o.y - eq.y) < 1.5).length }; });
+  check(L("Esdat: a bold X on the same line, immediately left of the 'Esdat' label; Equis not ticked"), esd.n === 1 && esd.dy < 1 && esd.gap > 0 && esd.gap < 20 && esd.eqTick === 1, JSON.stringify(esd));
+  await page.evaluate(() => { const e = document.getElementById("csTat"); e.value = "standard"; e.dispatchEvent(new Event("change")); }); await sleep(900); await waitChecks(page);
   const w = await warnIds(page);
   check(L("rejected sample with no volume is a warning, not a block"), w.includes("rejected_no_volume"), JSON.stringify(w));
   /* image */
@@ -154,8 +170,11 @@ async function generatedFiles(vp) {
   const g = await page.evaluate(() => { const r = cocSend.state().r, x = r.g.xl; const ops = [].concat(...r.layout.pages.map(p => p.ops)); const redish = c => c && c[0] > 150 && c[1] < 90 && c[2] < 90; return { xl: x, texts: r.layout.texts, pdf64: btoa(String.fromCharCode.apply(null, r.pdf)), pages: r.layout.pages.length, red: ops.filter(o => redish(o.c) || redish(o.f)).length, f13: x.ws.getCell("F13").text, k12: x.ws.getCell("K12").text, k12font: x.ws.getCell("K12").font, h9font: x.ws.getCell("H9").font, runs: (x.ws.getCell("F13").value.richText || []).map(q => ({ t: q.text, b: !!(q.font && q.font.bold), color: q.font && q.font.color && q.font.color.argb })), b11: x.ws.getCell("B11").text, d11: x.ws.getCell("D11").text, c11: x.ws.getCell("C11").text, title: x.ws.getCell("F1").text }; });
   const all = g.xl.strings.join("\n");
   check(L("spreadsheet: Esdat ticked, results lab@, invoice accounts@ only, phone is the office number"), g.xl.esdatTick && g.xl.resultsTo === "lab@envss.com.au" && g.xl.invoiceTo === "accounts@envss.com.au" && /^\(?08\)? 9355 4010$/.test(g.xl.phone), JSON.stringify([g.xl.esdatTick, g.xl.resultsTo, g.xl.invoiceTo, g.xl.phone]));
-  check(L("spreadsheet: no mobile number (the old form's 'Mob:' label stays, number blank), no sampler / worker / client / project name"), !/0419|628 710|04\d\d ?\d{3} ?\d{3}/.test(all) && !Object.values(SECRET).some(x => all.toLowerCase().includes(x.toLowerCase())), all.slice(0, 600));
-  check(L("spreadsheet: ESDAT ticked (Esdat box) and listed in Lab Comments in the normal (not bold, not red) font; no banner"), g.k12 === "x" && /^Lab Comments:\s*ESDAT$/.test(g.f13.replace(/\n/g, " ").trim()) && g.runs.length === 2 && g.runs[0].b === true && g.runs[1].b === false && g.runs[1].t.trim() === "ESDAT" && !(g.runs[1].color && /^FF?(FF|C|B|D)0000$/i.test(g.runs[1].color)) && !/RESULTS REQUIRED IN ESDAT|ESDAT FORMAT/.test(all), JSON.stringify([g.k12, g.f13, g.runs]));
+  check(L("spreadsheet: no mobile number (the old form's 'Mob:' label stays, number blank), no sampler / worker / client / project name"), !/0419|628 710|04\d\d ?\d{3} ?\d{3}/.test(all) && !NOT_ON_COC.some(x => all.toLowerCase().includes(x.toLowerCase())), all.slice(0, 600));
+  const nameAt = g.xl.stringAddr.filter((a, i) => g.xl.strings[i].indexOf(SECRET.tech) >= 0);
+  check(L("spreadsheet: the sampler's name from the app is Contact Person, Project Mgr, Sampler and Relinquished by (Print Name), initials as Signature, and is on no other cell"), JSON.stringify(g.xl.who) === JSON.stringify({ contact: SECRET.tech, projectMgr: SECRET.tech, sampler: SECRET.tech, printName: SECRET.tech, signature: "TT" }) && JSON.stringify(nameAt) === JSON.stringify(g.xl.namedCells.filter(a => a !== g.xl.namedCells[4])), JSON.stringify([g.xl.who, nameAt]));
+  check(L("spreadsheet: contact is lab@ and the office phone only (no tech mobile, no tech email)"), g.xl.resultsTo === "lab@envss.com.au" && /^\(?08\)? 9355 4010$/.test(g.xl.phone) && !all.includes(SECRET.techMail) && g.d11 === "", JSON.stringify([g.xl.resultsTo, g.xl.phone, g.d11]));
+  check(L("spreadsheet: ESDAT ticked (bold X in the Esdat box) and listed in Lab Comments in the normal (not bold, not red) font; no banner"), g.k12 === "X" && /^Lab Comments:\s*ESDAT$/.test(g.f13.replace(/\n/g, " ").trim()) && g.runs.length === 2 && g.runs[0].b === true && g.runs[1].b === false && g.runs[1].t.trim() === "ESDAT" && !(g.runs[1].color && /^FF?(FF|C|B|D)0000$/i.test(g.runs[1].color)) && !/RESULTS REQUIRED IN ESDAT|ESDAT FORMAT/.test(all), JSON.stringify([g.k12, g.f13, g.runs]));
   check(L("spreadsheet: old-format fields untouched (template phone cell, mobile left blank)"), /9355 4010/.test(g.b11) && g.d11 === "" && /^\s*Mob:\s*$/.test(g.c11), JSON.stringify([g.b11, g.c11, g.d11]));
   check(L("spreadsheet: only 2 emails appear (lab@, accounts@) and 2 phone numbers (office, Envirolab national)"), JSON.stringify([...new Set(all.match(/[\w.+-]+@[\w.-]+\.\w+/g) || [])].sort()) === JSON.stringify(["accounts@envss.com.au", "lab@envss.com.au"]), all.match(/[\w.+-]+@[\w.-]+\.\w+/g));
   fs.writeFileSync("/tmp/coc-test.pdf", Buffer.from(g.pdf64, "base64"));
@@ -163,7 +182,8 @@ async function generatedFiles(vp) {
   const pt = execSync("pdftotext -layout /tmp/coc-test.pdf -").toString();
   check(L("PDF text: old Form 302 headings, ESDAT listed, job number, office phone, accounts@ and lab@, no collection block (that is email only)"), /ESDAT/.test(pt) && !/RESULTS REQUIRED IN ESDAT|ESDAT FORMAT/.test(pt) && /CHAIN OF CUSTODY FORM - Client/.test(pt) && /Form 302_V007/.test(pt) && /Relinquished by/.test(pt) && /0019358/.test(pt) && /\(08\) 9355 4010/.test(pt) && /accounts@envss\.com\.au/.test(pt) && /lab@envss\.com\.au/.test(pt) && !/SAMPLE COLLECTION REQUESTED/.test(pt), pt.slice(0, 900));
   check(L("PDF page: no red anywhere (text, lines or fills); one A4 landscape page for 5 samples"), g.red === 0 && g.pages === 1, g.red);
-  check(L("PDF text: no tech / worker / client / project / mobile"), !Object.values(SECRET).some(x => pt.toLowerCase().includes(x.toLowerCase())) && !/04\d\d ?\d{3} ?\d{3}/.test(pt), pt.slice(0, 600));
+  check(L("PDF text: no tech email / worker / client / project / mobile"), !NOT_ON_COC.some(x => pt.toLowerCase().includes(x.toLowerCase())) && !/04\d\d ?\d{3} ?\d{3}/.test(pt), pt.slice(0, 600));
+  check(L("PDF text: sampler name on the form (Contact, Project Mgr, Sampler, Print Name) and nowhere else"), (pt.match(/Taylor Tester/g) || []).length === 4, (pt.match(/Taylor Tester/g) || []).length);
   check(L("PDF text: blank shows N/A for run time and volume; rejected sample noted"), /C-BLANK[^\n]*N\/A[^\n]*N\/A/.test(pt) && /voided needs clean and return/.test(pt), pt);
   await page.close();
 }
@@ -266,13 +286,13 @@ async function privacyScenario(vp) {
     window.buildCocV45c = async function () {
       const out = await orig.apply(this, arguments);
       const wb = new ExcelJS.Workbook(); await wb.xlsx.load(out.buf); const ws = wb.worksheets[0];
-      ws.getCell("B7").value = "Taylor Tester"; ws.getCell("C11").value = "Mob: 0419 628 710"; ws.getCell("B6").value = "tt@envss.com.au";
+      ws.getCell("F6").value = "Taylor Tester"; ws.getCell("C11").value = "Mob: 0419 628 710"; ws.getCell("B6").value = "tt@envss.com.au"; ws.getCell("B7").value = "Taylor Tester Testone";
       out.buf = await wb.xlsx.writeBuffer(); return out;
     };
   });
   await openScreen(page); await fillCollection(page);
   const pr = await page.evaluate(() => cocSend.state().r.blocks.filter(b => b.id === "privacy").map(b => b.value));
-  check(L("privacy lint blocks a tech name, a mobile number and a personal email on the generated spreadsheet (app side)"), pr.some(v => /tech name/.test(v)) && pr.some(v => /phone number/.test(v)) && pr.some(v => /email address/.test(v)), JSON.stringify(pr));
+  check(L("privacy lint blocks the sampler name outside its boxes, a worker name inside them, a mobile number and a personal email on the generated spreadsheet (app side)"), pr.some(v => /tech name/.test(v)) && pr.some(v => /worker name/.test(v)) && pr.some(v => /phone number/.test(v)) && pr.some(v => /email address/.test(v)), JSON.stringify(pr));
   check(L("privacy block is an app problem: Send blocked, tech can send an error report"), (await dis(page, "#csGo")) === true && /isn't something you can fix/.test(await txt(page, "#csChecks")));
   await page.close();
 }

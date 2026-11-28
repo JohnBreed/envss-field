@@ -85,7 +85,7 @@
   async function readBack(buf, out) {
     const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf);
     const ws = wb.getWorksheet("Client") || wb.worksheets[0];
-    const strings = []; ws.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: false }, cell => { if (cell.isMerged && cell.master !== cell) return; const t = cellText(cell.value).trim(); if (t) strings.push(t); }));
+    const strings = [], stringAddr = []; ws.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: false }, cell => { if (cell.isMerged && cell.master !== cell) return; const t = cellText(cell.value).trim(); if (t) { strings.push(t); stringAddr.push(cell.address); } }));
     const FIRST = 6, kA = out.analytes.length, cRun = FIRST + kA, cVol = cRun + 1, cCom = cRun + 2;
     let foot = 18; while (foot < 200 && !/^Please tick/i.test(cellText(ws.getCell(foot, 2).value))) foot++;
     const rows = [];
@@ -95,7 +95,9 @@
       rows.push({ id: cellText(ws.getCell(r, 2).value).trim(), date: cellText(ws.getCell(r, 4).value).trim(), type: cellText(ws.getCell(r, 5).value).trim(), analytes: an, run: val(cRun), vol: val(cVol), comment: cellText(ws.getCell(r, cCom).value).trim() });
     }
     const headers = []; for (let i = 0; i < kA; i++) headers.push(cellText(ws.getCell(17, FIRST + i).value).trim());
-    const res = { rows, strings, analyteHeaders: headers, esdatTick: /^x$/i.test(cellText(ws.getCell("K12").value).trim()), resultsTo: cellText(ws.getCell("B12").value).trim(), invoiceTo: cellText(ws.getCell("B14").value).trim(), phone: cellText(ws.getCell("B11").value).trim() };
+    const txtAt = a => cellText(ws.getCell(a).value).trim();
+    const who = { contact: txtAt("B5"), projectMgr: txtAt("B6"), sampler: txtAt("B7"), printName: txtAt("B" + (foot + 2)), signature: txtAt("B" + (foot + 4)) };
+    const res = { rows, strings, stringAddr, who, namedCells: ["B5", "B6", "B7", "B" + (foot + 2), "B" + (foot + 4)], analyteHeaders: headers, esdatTick: /^x$/i.test(cellText(ws.getCell("K12").value).trim()), resultsTo: cellText(ws.getCell("B12").value).trim(), invoiceTo: cellText(ws.getCell("B14").value).trim(), phone: cellText(ws.getCell("B11").value).trim() };
     Object.defineProperty(res, "wb", { value: wb }); Object.defineProperty(res, "ws", { value: ws });   /* not enumerable: the state is serialised in tests */
     return res;
   }
@@ -110,7 +112,7 @@
       window._v483CocScope = true;
       let out; try { out = await buildCocV45c(ev, { turnaround: tat || ev.turnaround || "standard" }); } finally { window._v483CocScope = false; }
       g.out = out; g.xlsx = new Blob([out.buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      g.xl = await readBack(out.buf, out);
+      g.xl = await readBack(out.buf, out); g.samplers = (out.samplers || []).slice();
       /* the CoC page = this spreadsheet drawn as a page (same layout as the old-format Form 302); PDF + on-screen image come from one drawing list */
       g.layout = C.layoutSheet(g.xl.wb, g.xl.ws);
       const bm = {};
@@ -131,7 +133,7 @@
     else g.raw.forEach(s => s.codes.forEach(c => { if (codesAll.indexOf(c) < 0) { codesAll.push(c); namesBy[c] = tryR(() => (contam(c) || {}).name, "") || c; } }));
     const xName = ev.code + "_Laboratory_COC.xlsx", pName = ev.code + "_Laboratory_COC.pdf", cName = ev.code + "_Laboratory_COC.csv";
     const model = {
-      job: g.job, eventCode: ev.code, turnaround: (g.out && g.out.turnaround) || ev.turnaround || "standard", contactLabel: k.contactLabel, officePhone: k.officePhone, officeAddress: k.officeAddress,
+      job: g.job, eventCode: ev.code, turnaround: (g.out && g.out.turnaround) || ev.turnaround || "standard", officePhone: k.officePhone, officeAddress: k.officeAddress,
       resultsTo: k.resultsTo, invoiceTo: k.invoiceTo, preparedAt: C.perthStamp(now), collection: Object.assign({}, collection), analyteCodes: codesAll, analyteNames: codesAll.map(c => namesBy[c]),
       resendOf: extra && extra.resendOf || "", attachmentNames: [xName, pName].concat(k.attachCsv ? [cName] : []),
       samples: g.raw.map(s => {
@@ -152,15 +154,18 @@
     (g.raw || []).forEach(s => { const sm = s._s; (sm.audit || []).forEach(a => { const n = tryR(() => operatorName(a.who), ""); if (n && /\s/.test(n)) forb.push({ kind: "tech name", v: n }); }); const pe = sm.person || {}; if (pe.first && pe.last) forb.push({ kind: "worker name", v: pe.first + " " + pe.last }); if (pe.last && String(pe.last).length >= 4) forb.push({ kind: "worker name", v: pe.last }); });
     ["name", "client", "site"].forEach(f => { const v = g.p && g.p[f]; if (v && String(v).trim().length >= 4) forb.push({ kind: "project " + f, v }); });
     const texts = [], where = [];
-    (g.xl ? g.xl.strings : []).forEach(t => { texts.push(t); where.push("spreadsheet"); });
-    r.layout.texts.forEach(t => { texts.push(t); where.push("CoC page"); });
-    [r.email.subject, r.email.text].forEach(t => { texts.push(t); where.push("email to the lab"); }); model.attachmentNames.forEach(t => { texts.push(t); where.push("file name"); });
+    const named = new Set(g.xl ? g.xl.namedCells : []), permitAt = [], nameBits = [];
+    (g.samplers || []).forEach(n => { nameBits.push(n); String(n).split(/\s+/).forEach(w => { if (w.length >= 2) nameBits.push(w); }); nameBits.push(String(n).split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join("")); });
+    nameBits.sort((a, b) => b.length - a.length);   /* longest first, so a full name is removed before its parts */
+    (g.xl ? g.xl.strings : []).forEach((t, i) => { texts.push(t); where.push("spreadsheet"); permitAt.push(named.has(g.xl.stringAddr[i]) ? nameBits : null); });
+    r.layout.texts.forEach((t, i) => { texts.push(t); where.push("CoC page"); permitAt.push(named.has((r.layout.textAddr || [])[i]) ? nameBits : null); });
+    [r.email.subject, r.email.text].forEach(t => { texts.push(t); where.push("email to the lab"); permitAt.push(null); }); model.attachmentNames.forEach(t => { texts.push(t); where.push("file name"); permitAt.push(null); });
     const hist = historyFor(ev.code), ss = C.sendState(hist, r.hash, now, k);
     r.hist = hist; r.state = ss;
     const rep = reportedFor(ev.id, r.hash);
     r.reported = rep;
     r.checks = C.runChecks({ cfg: k, now, job: g.job, raw: g.raw, model, expectedCount: g.expectedCount, xlsx: g.xl, pdf: g.layout ? { texts: r.layout.texts } : null, genError: g.genError || r.pdfError || "", libs: g.libs, unfinished: g.unfinished, notUsed: g.notUsed, collection,
-      eventDateDmy: cocDate(ev.date), dayDiff: d => (ymdToDate(d) - ymdToDate(cocDate(ev.date))) / 86400000, texts, textWhere: i => where[i], forbidden: forb,
+      eventDateDmy: cocDate(ev.date), dayDiff: d => (ymdToDate(d) - ymdToDate(cocDate(ev.date))) / 86400000, texts, textWhere: i => where[i], permit: i => permitAt[i], forbidden: forb, samplers: g.out ? g.samplers : null,
       sendCheck: rep && rep.status !== "failed" ? { previouslyFlagged: true, appVersion: rep.appVersion || appVer() } : null });
     r.blocks = r.checks.filter(c => c.level === "block"); r.warns = r.checks.filter(c => c.level === "warn");
     r.appBlocks = r.blocks.filter(c => c.fix === "app");

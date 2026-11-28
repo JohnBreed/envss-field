@@ -19,7 +19,6 @@
     officeAddress: "10 Bermondsey Street, West Leederville WA 6007",
     defaultCollectionLocation: "10 Bermondsey Street, West Leederville WA 6007",   /* ENVSS office; the tech may edit it (John, t768u) */
     companyName: "Environmental Site Services",
-    contactLabel: "ENVSS office",
     allowedPhones: ["1300424344"],            /* Envirolab's own national number is printed on Form 302 */
     attachCsv: false,                         /* the generated CSV is saved to Drive only unless this is true */
     commentMin: 20,                           /* "Something looks wrong" comment, minimum characters */
@@ -113,7 +112,10 @@
     const okPhone = new Set([phoneDigits(k.officePhone)].concat((k.allowedPhones || []).map(phoneDigits)));
     const forb = (o.forbidden || []).map(f => ({ kind: f.kind, v: String(f.v || "").trim().toLowerCase() })).filter(f => f.v.length >= 3);
     (texts || []).forEach((t, i) => {
-      const s = String(t == null ? "" : t), low = s.toLowerCase(), where = o.where ? o.where(i) : ("#" + i);
+      let s = String(t == null ? "" : t);
+      /* the sampler's name (and initials) may appear in the CoC fields that are meant to carry it, and nowhere else */
+      ((o.permit && o.permit(i)) || []).forEach(nm => { nm = String(nm || "").trim(); if (nm) s = s.replace(new RegExp("(?<![A-Za-z0-9@._-])" + nm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![A-Za-z0-9@_-])", "ig"), " "); });
+      const low = s.toLowerCase(), where = o.where ? o.where(i) : ("#" + i);
       (s.match(EMAIL_RE) || []).forEach(m => { if (!okMail.has(m.toLowerCase())) out.push({ kind: "email address", where }); });
       (s.match(PHONE_RE) || []).forEach(m => {
         const d = phoneDigits(m);
@@ -217,12 +219,17 @@
       if (!xl.esdatTick) add("block", "app", "esdat_missing", "ESDAT is not ticked as the results format on the spreadsheet.");
       if (String(xl.resultsTo || "").toLowerCase().trim() !== k.resultsTo.toLowerCase()) add("block", "app", "results_email", "Results email on the spreadsheet is \"" + xl.resultsTo + "\", not " + k.resultsTo + ".", { value: xl.resultsTo, expected: k.resultsTo });
       if (String(xl.invoiceTo || "").toLowerCase().trim() !== k.invoiceTo.toLowerCase()) add("block", "app", "invoice_email", "Invoice email on the spreadsheet is \"" + xl.invoiceTo + "\", not " + k.invoiceTo + ".", { value: xl.invoiceTo, expected: k.invoiceTo });
+      if (inp.samplers) {   /* the sampler(s) from the app are the contact, project manager, sampler and relinquished-by on the form */
+        const want = inp.samplers.join(", ");
+        if (!want) add("warn", "tech", "sampler_missing", "No sampler name for the CoC (nobody is recorded as pressing START or STOP on a named login). The contact, sampler and relinquished-by boxes will be blank.");
+        else ["contact", "projectMgr", "sampler", "printName"].forEach(f => { if ((xl.who || {})[f] !== want) add("block", "app", "sampler_" + f, "The sampler's name is not on the CoC where it should be (" + f + ").", { value: (xl.who || {})[f], expected: want }); });
+      }
       if (phoneDigits(xl.phone) !== phoneDigits(k.officePhone)) add("block", "app", "phone_wrong", "The phone number on the spreadsheet is not the ENVSS office number.", { value: xl.phone, expected: k.officePhone });
     }
     if (pdf && !pdf.texts.some(t => /ESDAT/i.test(t))) add("block", "app", "esdat_missing_pdf", "ESDAT is not stated on the CoC page.");
     if (pdf && model) model.samples.forEach(m => { if (m.id && !pdf.texts.some(t => String(t).indexOf(m.id) >= 0)) add("block", "app", "render_missing_sample", "Sample " + m.id + " is not on the rendered CoC page.", { value: m.id }); });
     if (inp.texts && inp.texts.length) {
-      const f = privacyLint(inp.texts, { forbidden: inp.forbidden, cfg: k, where: i => (inp.textWhere ? inp.textWhere(i) : "#" + i) });
+      const f = privacyLint(inp.texts, { forbidden: inp.forbidden, cfg: k, permit: inp.permit, where: i => (inp.textWhere ? inp.textWhere(i) : "#" + i) });
       const seen = {};
       f.forEach(x => { const key = x.kind + "|" + x.where; if (seen[key]) return; seen[key] = 1; add("block", "app", "privacy", "The generated CoC or email contains a " + x.kind + " (" + x.where + "). A CoC may carry the job number, sample details and the ENVSS office contact only.", { value: x.kind + " @ " + x.where }); });
     }
@@ -319,7 +326,7 @@
       cur.push(r); h += rowH[r];
     }
     if (cur.length) pages.push(cur);
-    const out = { pages: [], texts: [], rows: 0, images: [], page: PAGE, scale: s };
+    const out = { pages: [], texts: [], textAddr: [], rows: 0, images: [], page: PAGE, scale: s };
     const imgs = ws.getImages ? ws.getImages() : [];
     pages.forEach((rows, pi) => {
       const P = { w: PAGE.w, h: PAGE.h, ops: [] }; out.pages.push(P);
@@ -376,7 +383,7 @@
           let text = segs.map(q => q.t).join(""), width = segs.reduce((a, q) => a + tw(q.t, q.z, q.b), 0);
           let x;
           if (hz === "c") x = rc.x + rc.w / 2 - width * s / 2; else if (hz === "r") x = rc.x + rc.w - pad - width * s; else x = rc.x + pad;
-          segs.forEach(q => { const sw = tw(q.t, q.z, q.b) * s; if (q.t) { P.ops.push({ k: "t", x, y: ty + lineH * 0.82, s: q.t, z: q.z * s, b: q.b, i: q.i, a: "l", c: q.c }); out.texts.push(q.t); } x += sw; });
+          segs.forEach(q => { const sw = tw(q.t, q.z, q.b) * s; if (q.t) { P.ops.push({ k: "t", x, cx: x + sw / 2, y: ty + lineH * 0.82, s: q.t, z: q.z * s, b: q.b, i: q.i, a: "l", c: q.c }); out.texts.push(q.t); out.textAddr.push(cell.address); } x += sw; });
           ty += lineH;
         });
       });
@@ -396,9 +403,9 @@
       const ft = parseFooter(ws.headerFooter && ws.headerFooter.oddFooter);
       const fy = PAGE.h - (mg.footer || 0.25) * 72 - 2, fz = 8;
       const fill = t => String(t).replace(/&P/g, String(pi + 1)).replace(/&N/g, String(pages.length)).replace(/&[A-Z]|&\d+/g, "");
-      if (ft.L.trim() || ft.L) { const t = fill(ft.L); P.ops.push({ k: "t", x: left, y: fy, s: t, z: fz, b: false, i: false, a: "l", c: [0, 0, 0] }); out.texts.push(t); }
-      if (ft.C) { const t = fill(ft.C); P.ops.push({ k: "t", x: PAGE.w / 2, y: fy, s: t, z: fz, b: false, i: false, a: "c", c: [0, 0, 0] }); out.texts.push(t); }
-      if (ft.R) { const t = fill(ft.R); P.ops.push({ k: "t", x: PAGE.w - left, y: fy, s: t, z: fz, b: false, i: false, a: "r", c: [0, 0, 0] }); out.texts.push(t); }
+      if (ft.L.trim() || ft.L) { const t = fill(ft.L); P.ops.push({ k: "t", x: left, y: fy, s: t, z: fz, b: false, i: false, a: "l", c: [0, 0, 0] }); out.texts.push(t); out.textAddr.push(""); }
+      if (ft.C) { const t = fill(ft.C); P.ops.push({ k: "t", x: PAGE.w / 2, y: fy, s: t, z: fz, b: false, i: false, a: "c", c: [0, 0, 0] }); out.texts.push(t); out.textAddr.push(""); }
+      if (ft.R) { const t = fill(ft.R); P.ops.push({ k: "t", x: PAGE.w - left, y: fy, s: t, z: fz, b: false, i: false, a: "r", c: [0, 0, 0] }); out.texts.push(t); out.textAddr.push(""); }
     });
     out.rows = Math.max(0, r2 - 17);
     return out;
