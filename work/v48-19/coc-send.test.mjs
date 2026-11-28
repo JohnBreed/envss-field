@@ -6,31 +6,7 @@ import { serve, launch, VIEWPORTS, mockSupabase, sleep, SESSION } from "./harnes
 const OUT = process.env.OUT || "/workspace/guard-shots/v4819"; fs.mkdirSync(OUT, { recursive: true });
 const results = [];
 function check(name, ok, detail) { results.push({ name, ok: !!ok, detail: detail == null ? "" : String(detail) }); console.log((ok ? "PASS" : "FAIL") + "  " + name + (detail && !ok ? " — " + String(detail).slice(0, 900) : "")); }
-const PF = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Perth", year: "numeric", month: "2-digit", day: "2-digit" });
-const TODAY = PF.format(new Date()), TOMORROW = PF.format(new Date(Date.now() + 86400000 * 1.0));
-const at = (h, m) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString(); };
-const SECRET = { tech: "Taylor Tester", techMail: "taylor.tester@envss.com.au", worker: "Testone", client: "Acme Mining Pty", project: "Secret Hill Expansion", mobile: "0419628710" };
-const person = (first, last) => ({ first, last, sex: "male", sexSet: true, dob: "1985-03-04", occupation: "Fitter", company: SECRET.client, hours: "12", daysOn: "8", daysOff: "6" });
-const aud = [{ at: at(6, 0), action: "START pressed", who: SECRET.tech + " <" + SECRET.techMail + ">" }];
-const H = (id, n, extra) => Object.assign({ id, eventId: "eC", trainKind: "airborne_personal", mode: "personal", sampleNo: n, pouch: String(n), contaminantId: "INH", pumpSerial: "7700" + n, headId: "IESS-" + id, mediaId: "C-10" + n,
-  startFlow: "2.0", endFlow: "2.0", rotameter: "FR4A40BNBN-NL-02", shiftDate: TODAY, shiftKind: "day", status: "ended", startAt: at(6, 0), endAt: at(13, 0), comments: "", location: "Mill floor",
-  person: person("Sam", SECRET.worker), rpd: {}, hpd: {}, audit: aud.slice() }, extra || {});
-function fixture(over) {
-  over = over || {};
-  const trains = [
-    H("s1", 1), H("s2", 2, { contaminantId: "RES", analyses: [{ code: "RES", name: "Respirable dust" }, { code: "SIL", name: "Crystalline silica" }] }),
-    H("s3", 3, { trainKind: "airborne_static", mode: "static", location: "Bay 2", startFlow: "2.0", endFlow: "1.9" }),
-    H("s4", 4, { status: "rejected", rejectCode: "damaged_filter", rejectAsked: "yes", rejectReason: "Damaged filter", endAt: "", endFlow: "" }),
-    H("sb", 0, { trainKind: "blank", mode: "blank", mediaId: "C-BLANK", sampleNo: 0, pouch: "0", startAt: "", endAt: "", startFlow: "", endFlow: "", location: "", person: {}, audit: [] })
-  ].concat(over.extraTrains || []);
-  return {
-    catalogs: { contaminants: [{ id: "INH", name: "Inhalable dust", code: "INH", kind: "airborne", headHint: "IESS", flowTolPct: 10, defaultFlow: "2.0" }, { id: "RES", name: "Respirable dust", code: "RES", kind: "airborne", headHint: "IESS", flowTolPct: 5, defaultFlow: "2.5" }, { id: "SIL", name: "Crystalline silica", code: "SIL", kind: "airborne", flowTolPct: 5, defaultFlow: "2.5" }],
-      pumps: [], fleetPumps: [], heads: [], dosimeters: [], occupations: [], respirators: [], hpds: [] },
-    projects: [{ id: "p1", number: over.job || "0019358", name: SECRET.project, source: "field", site: "Pit 4", client: SECRET.client }],
-    events: [{ id: "eC", projectId: "p1", code: "0019358-001", type: "hygiene", date: TODAY, stage: "planned", audit: [] }],
-    trains, deletions: [], hires: [], _savedAt: new Date(Date.now() + 60000).toISOString()
-  };
-}
+import { TODAY, TOMORROW, at, SECRET, person, H, fixture } from "./coc-fixture.mjs";
 const { server, base: url } = await serve();
 const browser = await launch(["--host-resolver-rules=MAP *.supabase.co 127.0.0.1:9"]);
 const ext = [];
@@ -86,8 +62,8 @@ async function run(vp) {
   check(L("with day and time filled: no blocks (all sample checks pass)"), b.length === 0, JSON.stringify(b));
   check(L("all-clear banner shown"), /ALL CLEAR/.test(await txt(page, "#csChecks")), await txt(page, "#csChecks"));
   await page.evaluate(() => { const e = document.getElementById("csTat"); e.value = "2_day"; e.dispatchEvent(new Event("change")); }); await sleep(900); await waitChecks(page);
-  const tatState = await page.evaluate(() => ({ ev: db.events.find(e => e.id === "eC").turnaround, model: cocSend.state().r.model.turnaround, xlsx: cocSend.state().g.out.turnaround, txt: cocSend.state().r.layout.texts.join("|") }));
-  check(L("turnaround picker: saved on the event, in the spreadsheet build and on the CoC page (2 day)"), tatState.ev === "2_day" && tatState.model === "2_day" && tatState.xlsx === "2_day" && /2 day/.test(tatState.txt), JSON.stringify(tatState));
+  const tatState = await page.evaluate(() => ({ ev: db.events.find(e => e.id === "eC").turnaround, model: cocSend.state().r.model.turnaround, xlsx: cocSend.state().g.out.turnaround }));
+  check(L("turnaround picker: saved on the event, in the spreadsheet build and on the CoC (2 day)"), tatState.ev === "2_day" && tatState.model === "2_day" && tatState.xlsx === "2_day", JSON.stringify(tatState));
   const w = await warnIds(page);
   check(L("rejected sample with no volume is a warning, not a block"), w.includes("rejected_no_volume"), JSON.stringify(w));
   /* image */
@@ -118,7 +94,7 @@ async function run(vp) {
   check(L("row: CoC xlsx + PDF attached, files uploaded to field-exports under g/<job>/<event>/coc-send/"), (row.attachments || []).length === 2 && row.attachments.some(a => /\.xlsx$/.test(a.name)) && row.attachments.some(a => /\.pdf$/.test(a.name)) && page.mlog.filter(l => /^POST \/storage\/v1\/object\/field-exports\/g\/0019358\/0019358-001\/coc-send\//.test(l)).length >= 2, JSON.stringify(row.attachments) + " " + page.mlog.filter(l => /storage/.test(l)).join(" | "));
   check(L("row: 5 samples, content hash, app version, device recorded"), row.sample_count === 5 && /^[0-9a-f]{40,64}$/.test(row.content_hash || "") && !!row.app_version && !!row.device, JSON.stringify([row.sample_count, row.content_hash, row.app_version]));
   const body = (row.body_text || "") + "\n" + (row.subject || "") + "\n" + (row.body_html || "");
-  check(L("email states ESDAT, results to lab@, invoice to accounts@, collection day/time/where, office phone"), /RESULTS REQUIRED IN ESDAT FORMAT/.test(row.body_text) && /lab@envss\.com\.au/.test(row.body_text) && /accounts@envss\.com\.au/.test(row.body_text) && /Bermondsey/.test(row.body_text) && /9:00 am to 12:00 pm/.test(row.body_text) && /08 9355 4010/.test(row.body_text), row.body_text);
+  check(L("email states ESDAT, results to lab@, invoice to accounts@, collection day/time/where, office phone"), /Results required in ESDAT format\./.test(row.body_text) && !/RESULTS REQUIRED IN ESDAT/.test(row.body_text) && !/#b71f1f|color:\s*red/i.test(row.body_html || "") && /lab@envss\.com\.au/.test(row.body_text) && /accounts@envss\.com\.au/.test(row.body_text) && /Bermondsey/.test(row.body_text) && /9:00 am to 12:00 pm/.test(row.body_text) && /08 9355 4010/.test(row.body_text), row.body_text);
   const leaks = Object.values(SECRET).filter(s => body.toLowerCase().includes(s.toLowerCase()));
   check(L("email has no tech name/email, worker name, client, project name or mobile"), leaks.length === 0, JSON.stringify(leaks));
   const drive = tbl(page, "envss_drive_copies");
@@ -175,16 +151,18 @@ async function generatedFiles(vp) {
   const L = s => `${vp}: ${s}`;
   const page = await boot(vp, fixture());
   await openScreen(page); await fillCollection(page);
-  const g = await page.evaluate(() => { const r = cocSend.state().r, x = r.g.xl; return { xl: x, texts: r.layout.texts, pdf64: btoa(String.fromCharCode.apply(null, r.pdf)), pages: r.layout.pages.length }; });
+  const g = await page.evaluate(() => { const r = cocSend.state().r, x = r.g.xl; const ops = [].concat(...r.layout.pages.map(p => p.ops)); const redish = c => c && c[0] > 150 && c[1] < 90 && c[2] < 90; return { xl: x, texts: r.layout.texts, pdf64: btoa(String.fromCharCode.apply(null, r.pdf)), pages: r.layout.pages.length, red: ops.filter(o => redish(o.c) || redish(o.f)).length, f13: x.ws.getCell("F13").text, k12: x.ws.getCell("K12").text, k12font: x.ws.getCell("K12").font, h9font: x.ws.getCell("H9").font, runs: (x.ws.getCell("F13").value.richText || []).map(q => ({ t: q.text, b: !!(q.font && q.font.bold), color: q.font && q.font.color && q.font.color.argb })), b11: x.ws.getCell("B11").text, d11: x.ws.getCell("D11").text, c11: x.ws.getCell("C11").text, title: x.ws.getCell("F1").text }; });
   const all = g.xl.strings.join("\n");
-  check(L("spreadsheet: Esdat ticked, results lab@, invoice accounts@ only, phone is the office number"), g.xl.esdatTick && g.xl.resultsTo === "lab@envss.com.au" && g.xl.invoiceTo === "accounts@envss.com.au" && /^08 9355 4010$/.test(g.xl.phone), JSON.stringify([g.xl.esdatTick, g.xl.resultsTo, g.xl.invoiceTo, g.xl.phone]));
-  check(L("spreadsheet: no 'Mob' label, no mobile number, no sampler / worker / client / project name"), !/Mob:|0419|628 710/.test(all) && !Object.values(SECRET).some(x => all.toLowerCase().includes(x.toLowerCase())), all.slice(0, 600));
-  check(L("spreadsheet: says RESULTS REQUIRED IN ESDAT FORMAT"), /RESULTS REQUIRED IN ESDAT FORMAT/.test(all));
+  check(L("spreadsheet: Esdat ticked, results lab@, invoice accounts@ only, phone is the office number"), g.xl.esdatTick && g.xl.resultsTo === "lab@envss.com.au" && g.xl.invoiceTo === "accounts@envss.com.au" && /^\(?08\)? 9355 4010$/.test(g.xl.phone), JSON.stringify([g.xl.esdatTick, g.xl.resultsTo, g.xl.invoiceTo, g.xl.phone]));
+  check(L("spreadsheet: no mobile number (the old form's 'Mob:' label stays, number blank), no sampler / worker / client / project name"), !/0419|628 710|04\d\d ?\d{3} ?\d{3}/.test(all) && !Object.values(SECRET).some(x => all.toLowerCase().includes(x.toLowerCase())), all.slice(0, 600));
+  check(L("spreadsheet: ESDAT ticked (Esdat box) and listed in Lab Comments in the normal (not bold, not red) font; no banner"), g.k12 === "x" && /^Lab Comments:\s*ESDAT$/.test(g.f13.replace(/\n/g, " ").trim()) && g.runs.length === 2 && g.runs[0].b === true && g.runs[1].b === false && g.runs[1].t.trim() === "ESDAT" && !(g.runs[1].color && /^FF?(FF|C|B|D)0000$/i.test(g.runs[1].color)) && !/RESULTS REQUIRED IN ESDAT|ESDAT FORMAT/.test(all), JSON.stringify([g.k12, g.f13, g.runs]));
+  check(L("spreadsheet: old-format fields untouched (template phone cell, mobile left blank)"), /9355 4010/.test(g.b11) && g.d11 === "" && /^\s*Mob:\s*$/.test(g.c11), JSON.stringify([g.b11, g.c11, g.d11]));
   check(L("spreadsheet: only 2 emails appear (lab@, accounts@) and 2 phone numbers (office, Envirolab national)"), JSON.stringify([...new Set(all.match(/[\w.+-]+@[\w.-]+\.\w+/g) || [])].sort()) === JSON.stringify(["accounts@envss.com.au", "lab@envss.com.au"]), all.match(/[\w.+-]+@[\w.-]+\.\w+/g));
   fs.writeFileSync("/tmp/coc-test.pdf", Buffer.from(g.pdf64, "base64"));
   const { execSync } = await import("child_process");
   const pt = execSync("pdftotext -layout /tmp/coc-test.pdf -").toString();
-  check(L("PDF text: ESDAT required, job number, office phone 08 9355 4010, accounts@ and lab@, collection details"), /RESULTS REQUIRED IN ESDAT FORMAT/.test(pt) && /0019358/.test(pt) && /08 9355 4010/.test(pt) && /accounts@envss\.com\.au/.test(pt) && /lab@envss\.com\.au/.test(pt) && /SAMPLE COLLECTION REQUESTED/.test(pt) && /Bermondsey/.test(pt), pt.slice(0, 900));
+  check(L("PDF text: old Form 302 headings, ESDAT listed, job number, office phone, accounts@ and lab@, no collection block (that is email only)"), /ESDAT/.test(pt) && !/RESULTS REQUIRED IN ESDAT|ESDAT FORMAT/.test(pt) && /CHAIN OF CUSTODY FORM - Client/.test(pt) && /Form 302_V007/.test(pt) && /Relinquished by/.test(pt) && /0019358/.test(pt) && /\(08\) 9355 4010/.test(pt) && /accounts@envss\.com\.au/.test(pt) && /lab@envss\.com\.au/.test(pt) && !/SAMPLE COLLECTION REQUESTED/.test(pt), pt.slice(0, 900));
+  check(L("PDF page: no red anywhere (text, lines or fills); one A4 landscape page for 5 samples"), g.red === 0 && g.pages === 1, g.red);
   check(L("PDF text: no tech / worker / client / project / mobile"), !Object.values(SECRET).some(x => pt.toLowerCase().includes(x.toLowerCase())) && !/04\d\d ?\d{3} ?\d{3}/.test(pt), pt.slice(0, 600));
   check(L("PDF text: blank shows N/A for run time and volume; rejected sample noted"), /C-BLANK[^\n]*N\/A[^\n]*N\/A/.test(pt) && /voided needs clean and return/.test(pt), pt);
   await page.close();

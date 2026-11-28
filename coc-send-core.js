@@ -1,7 +1,7 @@
 /* ENVSS Field: CoC send, pure core (v48.19, stage 1 of the lab pipeline).
    No DOM, no app globals, no network. Works in the browser (window.ENVSS_COC) and in Node (module.exports) so it can be unit tested.
    What lives here: config, Perth date helpers, the model hash, pre-send checks (block / warn, tech-fixable / app-side), the privacy lint,
-   the one CoC page layout (drawn to the PDF and to the on-screen image from the same drawing list), the lab email, the error-report email, CSV. */
+   the generated Form 302 drawn as a page (one drawing list for the PDF and the on-screen image), the lab email, the error-report email, CSV. */
 (function (root) {
   "use strict";
   const VERSION = "48.19-coc1";
@@ -188,7 +188,7 @@
     if (xl && model) {
       const expect = inp.expectedCount;
       if (xl.rows.length !== expect) add("block", "app", "count_xlsx", "The generated spreadsheet has " + xl.rows.length + " sample rows; the event has " + expect + ".", { value: xl.rows.length, expected: expect });
-      if (model.samples.length !== expect) add("block", "app", "count_pdf", "The CoC page has " + model.samples.length + " sample rows; the event has " + expect + ".", { value: model.samples.length, expected: expect });
+      if (model.samples.length !== expect) add("block", "app", "count_pdf", "The CoC summary has " + model.samples.length + " sample rows; the event has " + expect + ".", { value: model.samples.length, expected: expect });
       raw.forEach((s, i) => {
         const x = xl.rows[i], m = model.samples[i], r = recompute(s), L = s.label;
         if (!x || !m) return;
@@ -200,8 +200,8 @@
           if (r.volR != null && r.vol > 0) {
             const gv = num(x.vol), pv = num(m.vol);
             if (gv == null || Math.abs(gv - r.volR) > k.volTolL + 1e-9) add("block", "app", "vol_mismatch", L + ": volume on the spreadsheet is " + (x.vol == null || x.vol === "" ? "blank" : x.vol) + " L; average flow x run time is " + r.volR + " L.", ev(x.vol, r.volR));
-            if (pv == null || Math.abs(pv - r.volR) > k.volTolL + 1e-9) add("block", "app", "vol_mismatch_pdf", L + ": volume on the CoC page is " + (m.vol == null ? "blank" : m.vol) + " L; average flow x run time is " + r.volR + " L.", ev(m.vol, r.volR));
-            if (gv != null && pv != null && Math.abs(gv - pv) > 1e-9) add("block", "app", "xlsx_pdf_vol", L + ": the spreadsheet and the CoC page show different volumes (" + gv + " and " + pv + ").", ev(gv, pv));
+            if (pv == null || Math.abs(pv - r.volR) > k.volTolL + 1e-9) add("block", "app", "vol_mismatch_pdf", L + ": volume in the CoC summary is " + (m.vol == null ? "blank" : m.vol) + " L; average flow x run time is " + r.volR + " L.", ev(m.vol, r.volR));
+            if (gv != null && pv != null && Math.abs(gv - pv) > 1e-9) add("block", "app", "xlsx_pdf_vol", L + ": the spreadsheet and the CoC summary show different volumes (" + gv + " and " + pv + ").", ev(gv, pv));
           }
           if (r.mins != null && r.mins > 0) {
             const gr = num(x.run);
@@ -211,7 +211,7 @@
         if (s.rejected && !/reject|void|fault/i.test(String(x.comment || "")) ) add("block", "app", "reject_note", L + " is rejected but the CoC comment does not say so.", ev(x.comment, "rejected note"));
         const want = s.codes.slice().sort().join(","), gotN = (x.analytes || []).length;
         if (gotN !== s.codes.length) add("block", "app", "analyte_mismatch", L + ": the CoC ticks " + gotN + " analyses; the sample has " + s.codes.length + ".", ev(gotN, s.codes.length));
-        if (String(x.type) !== String(m.type) || String(x.date) !== String(m.dateSampled)) add("block", "app", "xlsx_pdf_row", L + ": the spreadsheet and the CoC page disagree on date or type.", ev(x.type + " " + x.date, m.type + " " + m.dateSampled));
+        if (String(x.type) !== String(m.type) || String(x.date) !== String(m.dateSampled)) add("block", "app", "xlsx_pdf_row", L + ": the spreadsheet and the CoC summary disagree on date or type.", ev(x.type + " " + x.date, m.type + " " + m.dateSampled));
       });
       (xl.analyteHeaders || []).forEach(h => { if (/^[A-Z0-9]{2,4}$/.test(h)) add("block", "app", "analyte_name", "The analysis \"" + h + "\" has no readable name in the app catalogue.", { value: h }); });
       if (!xl.esdatTick) add("block", "app", "esdat_missing", "ESDAT is not ticked as the results format on the spreadsheet.");
@@ -219,7 +219,8 @@
       if (String(xl.invoiceTo || "").toLowerCase().trim() !== k.invoiceTo.toLowerCase()) add("block", "app", "invoice_email", "Invoice email on the spreadsheet is \"" + xl.invoiceTo + "\", not " + k.invoiceTo + ".", { value: xl.invoiceTo, expected: k.invoiceTo });
       if (phoneDigits(xl.phone) !== phoneDigits(k.officePhone)) add("block", "app", "phone_wrong", "The phone number on the spreadsheet is not the ENVSS office number.", { value: xl.phone, expected: k.officePhone });
     }
-    if (pdf && !pdf.texts.some(t => /ESDAT/.test(t))) add("block", "app", "esdat_missing_pdf", "ESDAT is not stated on the CoC page.");
+    if (pdf && !pdf.texts.some(t => /ESDAT/i.test(t))) add("block", "app", "esdat_missing_pdf", "ESDAT is not stated on the CoC page.");
+    if (pdf && model) model.samples.forEach(m => { if (m.id && !pdf.texts.some(t => String(t).indexOf(m.id) >= 0)) add("block", "app", "render_missing_sample", "Sample " + m.id + " is not on the rendered CoC page.", { value: m.id }); });
     if (inp.texts && inp.texts.length) {
       const f = privacyLint(inp.texts, { forbidden: inp.forbidden, cfg: k, where: i => (inp.textWhere ? inp.textWhere(i) : "#" + i) });
       const seen = {};
@@ -229,169 +230,225 @@
     return out;
   }
 
-  /* ---------- the CoC page: one drawing list, drawn to the PDF and to the on-screen image ---------- */
-  const PAGE = { w: 842, h: 595, m: 24 };
-  const NAVY = [0.106, 0.137, 0.25], GREY = [0.55, 0.58, 0.65], LIGHT = [0.93, 0.94, 0.96], RED = [0.72, 0.12, 0.12], BLACK = [0, 0, 0], WHITE = [1, 1, 1];
-  function tw(s, z, b) {
-    let w = 0; s = String(s);
-    for (let i = 0; i < s.length; i++) { const c = s[i]; w += /[A-Z]/.test(c) ? 0.68 : /[0-9]/.test(c) ? 0.556 : c === " " ? 0.278 : /[ilIjt.,:;'|!]/.test(c) ? 0.27 : /[mwMW@]/.test(c) ? 0.8 : 0.52; }
-    return w * z * (b ? 1.06 : 1);
-  }
+  /* ---------- the CoC page = the generated Form 302 spreadsheet, drawn as a page ----------
+     John (t779u): the CoC must look exactly like the existing (old-format) Form 302. So the page is not a new design: layoutSheet() reads the
+     generated worksheet (ExcelJS object: column widths, row heights, merges, fills, borders, fonts, alignment, logo image, footer text, print area,
+     repeat rows) and produces one drawing list in A4 landscape, fit to one page wide like the Excel print setup. The same list is drawn to the PDF
+     and to the on-screen image, so the tech checks what is attached. Nothing is added to the page by the app. */
+  const PAGE = { w: 842, h: 595 };
+  const HW = { /* Helvetica / Arial advance widths per 1000 em */
+    reg: " 278,!278,\"355,#556,$556,%889,&667,'191,(333,)333,*389,+584,,278,-333,.278,/278,0556,1556,2556,3556,4556,5556,6556,7556,8556,9556,:278,;278,<584,=584,>584,?556,@1015,A667,B667,C722,D722,E667,F611,G778,H722,I278,J500,K667,L556,M833,N722,O778,P667,Q778,R722,S667,T611,U722,V667,W944,X667,Y667,Z611,[278,\\278,]278,^469,_556,`333,a556,b556,c500,d556,e556,f278,g556,h556,i222,j222,k500,l222,m833,n556,o556,p556,q556,r333,s500,t278,u556,v500,w722,x500,y500,z500,{334,|260,}334,~584",
+    bold: " 278,!333,\"474,#556,$556,%889,&722,'238,(333,)333,*389,+584,,278,-333,.278,/278,0556,1556,2556,3556,4556,5556,6556,7556,8556,9556,:333,;333,<584,=584,>584,?611,@975,A722,B722,C722,D722,E667,F611,G778,H722,I278,J556,K722,L611,M833,N722,O778,P667,Q778,R722,S667,T611,U722,V667,W944,X667,Y667,Z611,[333,\\278,]333,^584,_556,`333,a556,b611,c556,d611,e556,f333,g611,h611,i278,j278,k556,l278,m889,n611,o611,p611,q611,r389,s556,t333,u611,v556,w778,x556,y556,z500,{389,|280,}389,~584" };
+  const HWM = {};
+  ["reg", "bold"].forEach(k => { HWM[k] = {}; const str = HW[k]; let i = 0; while (i < str.length) { const ch = str[i]; let j = i + 1; while (j < str.length && /\d/.test(str[j])) j++; HWM[k][ch] = +str.slice(i + 1, j); i = j; } });
+  function tw(s, z, b) { const m = HWM[b ? "bold" : "reg"]; let w = 0; s = String(s); for (let i = 0; i < s.length; i++) w += (m[s[i]] != null ? m[s[i]] : 556); return w * z / 1000; }
   function wrap(s, w, z, b) {
-    const words = String(s).split(/\s+/).filter(Boolean), lines = []; let cur = "";
-    words.forEach(wd => {
-      let t = cur ? cur + " " + wd : wd;
-      if (tw(t, z, b) <= w) { cur = t; return; }
-      if (cur) lines.push(cur);
-      while (tw(wd, z, b) > w && wd.length > 1) { let n = wd.length - 1; while (n > 1 && tw(wd.slice(0, n), z, b) > w) n--; lines.push(wd.slice(0, n)); wd = wd.slice(n); }
-      cur = wd;
-    });
-    if (cur) lines.push(cur);
-    return lines.length ? lines : [""];
-  }
-  const TAT_LABEL = { standard: "Standard", same_day: "Same Day", "1_day": "1 day", "2_day": "2 day", "3_day": "3 day" };
-  function layoutCoc(model, conf) {
-    const k = conf || cfg(), M = PAGE.m, W = PAGE.w - 2 * M, texts = [];
-    let pages = [], P = null;
-    const newPage = () => { P = { w: PAGE.w, h: PAGE.h, ops: [] }; pages.push(P); return P; };
-    const T = (x, y, s, z, o) => { o = o || {}; s = String(s); texts.push(s); P.ops.push({ k: "t", x, y, s, z, b: !!o.b, a: o.a || "l", c: o.c || BLACK }); };
-    const R = (x, y, w, h, o) => { o = o || {}; P.ops.push({ k: "r", x, y, w, h, f: o.f || null, s: o.s == null ? 0.6 : o.s, c: o.c || BLACK }); };
-    const Ln = (x1, y1, x2, y2, w, c) => P.ops.push({ k: "l", x1, y1, x2, y2, w: w || 0.6, c: c || BLACK });
-    const done = () => pages.length;
-
-    newPage();
-    R(M, M, W, 30, { f: NAVY, s: 0 });
-    T(M + 10, M + 20, "CHAIN OF CUSTODY FORM - Client", 14, { b: true, c: WHITE });
-    T(M + W - 10, M + 20, "ENVIROLAB GROUP  ·  Form 302", 11, { b: true, c: WHITE, a: "r" });
-    /* ESDAT banner */
-    let y = M + 38;
-    R(M, y, W, 30, { s: 2, c: RED });
-    R(M + 8, y + 6, 18, 18, { s: 1.5, c: RED }); Ln(M + 11, y + 9, M + 23, y + 21, 2.4, RED); Ln(M + 23, y + 9, M + 11, y + 21, 2.4, RED);
-    T(M + 36, y + 21, "RESULTS REQUIRED IN ESDAT FORMAT", 16, { b: true, c: RED });
-    T(M + W - 10, y + 13, "Email results to " + model.resultsTo, 9.5, { b: true, a: "r" });
-    T(M + W - 10, y + 25, "Email invoice to " + model.invoiceTo, 9.5, { a: "r" });
-    /* header facts */
-    y += 38;
-    const lw = 394, rx = M + lw + 12, rw = W - lw - 12;
-    const left = [["Company", k.companyName + " (ENVSS)"], ["Contact", model.contactLabel], ["Phone", model.officePhone], ["Address", model.officeAddress], ["Job number", model.job], ["Event", model.eventCode], ["Samples", String(model.samples.length) + (model.samples.some(s => s.blank) ? " (includes field blank)" : "")]];
-    const rowH = 16; R(M, y, lw, rowH * left.length, { s: 0.8 });
-    left.forEach((r, i) => { const yy = y + i * rowH; if (i) Ln(M, yy, M + lw, yy, 0.4, GREY); T(M + 6, yy + 11.5, r[0] + ":", 9, { b: true }); T(M + 80, yy + 11.5, r[1], 10, { b: r[0] === "Job number" }); });
-    /* right: turnaround + collection */
-    R(rx, y, rw, rowH * left.length, { s: 0.8 });
-    T(rx + 6, y + 11.5, "Date results required:", 9, { b: true });
-    const tats = [["standard", "Standard"], ["same_day", "Same Day"], ["1_day", "1 day"], ["2_day", "2 day"], ["3_day", "3 day"]];
-    let tx = rx + 118;
-    tats.forEach(([c, l]) => { R(tx, y + 3.5, 9, 9, { s: 0.8 }); if (c === model.turnaround) { Ln(tx + 1.5, y + 5, tx + 7.5, y + 11, 1.4); Ln(tx + 7.5, y + 5, tx + 1.5, y + 11, 1.4); } T(tx + 12, y + 11.5, l, 8.5); tx += 12 + tw(l, 8.5) + 10; });
-    Ln(rx, y + rowH, rx + rw, y + rowH, 0.4, GREY);
-    T(rx + 6, y + rowH + 11.5, "SAMPLE COLLECTION REQUESTED", 9, { b: true, c: RED });
-    Ln(rx, y + rowH * 2, rx + rw, y + rowH * 2, 0.4, GREY);
-    T(rx + 6, y + rowH * 2 + 11.5, "Day:", 9, { b: true }); T(rx + 50, y + rowH * 2 + 11.5, dayLabel(model.collection.date) + "  (" + dmy(model.collection.date) + ")", 10);
-    Ln(rx, y + rowH * 3, rx + rw, y + rowH * 3, 0.4, GREY);
-    T(rx + 6, y + rowH * 3 + 11.5, "Time:", 9, { b: true }); T(rx + 50, y + rowH * 3 + 11.5, timeLabel(model.collection), 10);
-    Ln(rx, y + rowH * 4, rx + rw, y + rowH * 4, 0.4, GREY);
-    T(rx + 6, y + rowH * 4 + 11.5, "Where:", 9, { b: true });
-    const locLines = wrap(model.collection.location, rw - 56, 9.5).slice(0, 3);
-    locLines.forEach((l, i) => T(rx + 50, y + rowH * 4 + 11.5 + i * 11, l, 9.5));
-    Ln(rx, y + rowH * 6, rx + rw, y + rowH * 6, 0.4, GREY);
-    T(rx + 6, y + rowH * 6 + 11.5, "Prepared:", 9, { b: true }); T(rx + 60, y + rowH * 6 + 11.5, model.preparedAt, 9);
-    y += rowH * left.length + 10;
-
-    /* table */
-    const names = model.analyteNames, kA = names.length;
-    const fixed = { n: 22, id: 96, depth: 32, date: 58, type: 50, run: 44, vol: 44 };
-    const fixedSum = Object.values(fixed).reduce((a, b) => a + b, 0);
-    const commentMin = 120, avail = W - fixedSum - commentMin;
-    const aw = kA ? Math.max(24, Math.min(72, avail / kA)) : 0;
-    const useCodes = aw < 46;
-    const cw = W - fixedSum - aw * kA;
-    const cols = []; let cx = M;
-    const col = (key, w, label) => { cols.push({ key, x: cx, w, label }); cx += w; };
-    col("n", fixed.n, "No."); col("id", fixed.id, "Client Sample ID"); col("depth", fixed.depth, "Depth"); col("date", fixed.date, "Date Sampled"); col("type", fixed.type, "Type");
-    names.forEach((n, i) => col("a" + i, aw, useCodes ? model.analyteCodes[i] : n));
-    col("run", fixed.run, "Run Time (min)"); col("vol", fixed.vol, "Volume (L)"); col("com", cw, "Comments");
-    const headH = (() => { let n = 2; cols.forEach(c => { n = Math.max(n, wrap(c.label, c.w - 4, 8, true).length); }); return n * 10 + 8; })();
-    const tableHead = yy => {
-      R(M, yy, W, headH, { f: LIGHT, s: 0.8 });
-      cols.forEach((c, i) => { if (i) Ln(c.x, yy, c.x, yy + headH, 0.5); wrap(c.label, c.w - 4, 8, true).forEach((l, j) => T(c.x + c.w / 2, yy + 11 + j * 10, l, 8, { b: true, a: "c" })); });
-      return yy + headH;
-    };
-    T(M, y + 9, "Sample information", 9, { b: true }); T(cols[5] ? cols[5].x : M + 300, y + 9, "Tests Required", 9, { b: true });
-    y = tableHead(y + 14);
-    const footH = 74, limit = PAGE.h - 30;
-    let rendered = 0;
-    model.samples.forEach(s => {
-      const cells = { n: String(s.no), id: s.id, depth: "N/A", date: s.dateSampled, type: s.type, run: s.run == null ? "" : String(s.run), vol: s.vol == null ? "" : (typeof s.vol === "number" ? s.vol.toFixed(1) : String(s.vol)), com: s.comment || "" };
-      const comLines = wrap(cells.com, cw - 6, 8.5);
-      const rh = Math.max(17, comLines.length * 10.5 + 6);
-      if (y + rh > limit) { newPage(); T(M, M + 10, "Chain of custody (continued)  ·  Job " + model.job + "  ·  " + model.eventCode, 10, { b: true }); y = tableHead(M + 18); }
-      R(M, y, W, rh, { s: 0.5 });
-      cols.forEach((c, i) => {
-        if (i) Ln(c.x, y, c.x, y + rh, 0.4);
-        const mid = c.x + c.w / 2, by = y + rh / 2 + 3.5;
-        if (c.key[0] === "a") { if (s.codes.indexOf(model.analyteCodes[+c.key.slice(1)]) >= 0) T(mid, by + 0.5, "X", 11, { b: true, a: "c" }); }
-        else if (c.key === "com") comLines.forEach((l, j) => T(c.x + 3, y + 11 + j * 10.5, l, 8.5));
-        else if (c.key === "id") T(c.x + 3, by, cells.id, 9, { b: true });
-        else T(mid, by, cells[c.key], 9, { a: "c" });
+    const out = [];
+    String(s).split("\n").forEach(par => {
+      const words = par.split(/ +/); let cur = "";
+      words.forEach(wd => {
+        const t = cur ? cur + " " + wd : wd;
+        if (tw(t, z, b) <= w || !cur && !wd) { cur = t; return; }
+        if (cur) out.push(cur);
+        cur = wd;
+        while (tw(cur, z, b) > w && cur.length > 1) { let n = cur.length - 1; while (n > 1 && tw(cur.slice(0, n), z, b) > w) n--; out.push(cur.slice(0, n)); cur = cur.slice(n); }
       });
-      y += rh; rendered++;
+      out.push(cur);
     });
-    if (useCodes) {
-      const leg = model.analyteCodes.map((c, i) => c + " = " + names[i]).join(";  ");
-      wrap("Key: " + leg, W, 8).forEach(l => { y += 10; if (y > limit) { newPage(); y = M + 10; } T(M, y, l, 8); });
-      y += 4;
+    return out;
+  }
+  const THEME = ["FFFFFF", "000000", "EEECE1", "1F497D", "4F81BD", "C0504D", "9BBB59", "8064A2", "4BACC6", "F79646"];
+  function rgbOf(c, dflt) {
+    if (!c) return dflt || null;
+    let hex = null;
+    if (c.argb) hex = String(c.argb).slice(-6);
+    else if (c.theme != null) hex = THEME[c.theme] || "000000";
+    else if (c.indexed != null) hex = "000000";
+    if (!hex) return dflt || null;
+    let r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+    if (c.tint) { const t = c.tint, f = v => Math.round(t < 0 ? v * (1 + t) : v + (255 - v) * t); r = f(r); g = f(g); b = f(b); }
+    return [r / 255, g / 255, b / 255];
+  }
+  const BW = { hair: 0.25, thin: 0.5, dotted: 0.5, dashed: 0.5, dashDot: 0.5, medium: 1.5, mediumDashed: 1.5, thick: 2.25, double: 1.5 };
+  function cellText(v, numFmt) {
+    if (v == null) return "";
+    if (typeof v === "number") { if (/^0\.0+$/.test(numFmt || "")) return v.toFixed(numFmt.length - 2); return String(Math.round(v * 1e9) / 1e9); }
+    if (v instanceof Date) return v.toISOString();
+    if (typeof v === "object") { if (v.richText) return v.richText.map(r => r.text).join(""); if (v.text != null) return String(v.text); if (v.result != null) return String(v.result); return ""; }
+    return String(v);
+  }
+  function runsOf(cell) {   /* [{t, b, i, z, c}] so rich text (bold label + normal text) keeps its own fonts */
+    const f0 = cell.font || {}, v = cell.value, base = { b: !!f0.bold, i: !!f0.italic, z: f0.size || 10, c: rgbOf(f0.color, [0, 0, 0]) };
+    if (v && typeof v === "object" && v.richText) return v.richText.map(r => { const f = r.font || {}; return { t: r.text, b: !!f.bold, i: !!f.italic, z: f.size || base.z, c: f.color ? rgbOf(f.color, base.c) : base.c }; });
+    return [{ t: cellText(v, cell.numFmt), b: base.b, i: base.i, z: base.z, c: base.c }];
+  }
+  function parseFooter(s) {
+    const out = { L: "", C: "", R: "" }; let cur = "C"; s = String(s || "");
+    const parts = s.split(/(&[LCR])/); parts.forEach(p => { if (/^&[LCR]$/.test(p)) cur = p[1]; else out[cur] += p; });
+    return out;
+  }
+  function layoutSheet(wb, ws, opts) {
+    opts = opts || {};
+    const ps = ws.pageSetup || {}, mg = ps.margins || { left: .4, right: .4, top: .5, bottom: .6, footer: .25 };
+    const area = String(ps.printArea || "A1:W" + ws.rowCount).match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+    const colNum = L => L.split("").reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0);
+    const c1 = colNum(area[1]), r1 = +area[2], c2 = colNum(area[3]), r2 = +area[4];
+    const dflt = (ws.properties && ws.properties.defaultColWidth) || 8.43, dRow = (ws.properties && ws.properties.defaultRowHeight) || 15;
+    const colW = [0], colX = [0];
+    for (let c = 1; c <= c2; c++) { const col = ws.getColumn(c); const w = col.width != null ? col.width : dflt; const pt = col.hidden ? 0 : Math.round(w * 7 + 5) * 0.75; colW[c] = pt; colX[c] = colX[c - 1] + pt; }
+    const rowH = [0]; for (let r = 1; r <= r2; r++) { const h = ws.getRow(r).height; rowH[r] = h != null ? h : dRow; }
+    const sheetW = colX[c2] - colX[c1 - 1];
+    const availW = PAGE.w - (mg.left + mg.right) * 72;
+    const s = ps.fitToPage ? Math.min(1, availW / sheetW) : (ps.scale || 100) / 100;
+    const left = mg.left * 72 + (ps.horizontalCentered ? (availW - sheetW * s) / 2 : 0), top = mg.top * 72;
+    const availH = (PAGE.h - mg.top * 72 - mg.bottom * 72) / s;
+    const titles = ps.printTitlesRow ? ps.printTitlesRow.split(":").map(Number) : null;
+    const merges = (ws.model.merges || []).map(m => { const q = m.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/); return { c1: colNum(q[1]), r1: +q[2], c2: colNum(q[3]), r2: +q[4], addr: m }; });
+    const masterOf = {}; merges.forEach(m => { for (let r = m.r1; r <= m.r2; r++) for (let c = m.c1; c <= m.c2; c++) masterOf[r + "," + c] = m; });
+    /* paginate (never inside a merged block) */
+    const pages = []; let cur = []; let h = 0; let started = 1;
+    const titleRows = titles ? Array.from({ length: titles[1] - titles[0] + 1 }, (_, i) => titles[0] + i) : [];
+    const thH = titleRows.reduce((a, r) => a + rowH[r], 0);
+    for (let r = r1; r <= r2; r++) {
+      if (h + rowH[r] > availH && cur.length) {
+        let k = cur.length; let rr = r;
+        while (k > 1 && masterOf[(rr) + "," + c1] && masterOf[rr + "," + c1].r1 < rr) { rr--; k--; }
+        const carry = cur.splice(k); pages.push(cur); cur = (titles && r > titles[1] ? titleRows.slice() : []).concat(carry);
+        h = cur.reduce((a, q) => a + rowH[q], 0);
+      }
+      cur.push(r); h += rowH[r];
     }
-    /* footer */
-    y += 8;
-    if (y + footH > limit + 8) { newPage(); T(M, M + 10, "Chain of custody (continued)  ·  Job " + model.job + "  ·  " + model.eventCode, 10, { b: true }); y = M + 22; }
-    const half = W / 2 - 6;
-    R(M, y, half, footH - 10, { s: 0.8 }); R(M + half + 12, y, half, footH - 10, { s: 0.8 });
-    T(M + 6, y + 12, "Relinquished by (Company): ENVSS", 9, { b: true });
-    T(M + 6, y + 28, "Print name:  ENVSS", 9); T(M + 6, y + 42, "Date & time sent:  " + model.preparedAt, 9); T(M + 6, y + 56, "Signature:  Sent electronically from the ENVSS Field app", 9);
-    T(M + half + 18, y + 12, "Received by (Company):", 9, { b: true });
-    T(M + half + 18, y + 28, "Print name:", 9); T(M + half + 18, y + 42, "Date & time:", 9); T(M + half + 18, y + 56, "Lab use only: job no. ______   temp ______   seal ______", 9, { c: GREY });
-    /* page footer */
-    const n = pages.length;
-    pages.forEach((pg, i) => { P = pg; T(M, PAGE.h - 12, "ENVSS Field  ·  Job " + model.job + "  ·  " + model.eventCode + "  ·  Results in ESDAT format", 8, { c: GREY }); T(PAGE.w - M, PAGE.h - 12, "Page " + (i + 1) + " of " + n, 8, { a: "r", c: GREY }); });
-    return { pages, texts, rows: rendered, page: PAGE };
+    if (cur.length) pages.push(cur);
+    const out = { pages: [], texts: [], rows: 0, images: [], page: PAGE, scale: s };
+    const imgs = ws.getImages ? ws.getImages() : [];
+    pages.forEach((rows, pi) => {
+      const P = { w: PAGE.w, h: PAGE.h, ops: [] }; out.pages.push(P);
+      const rowY = {}; let y = 0; rows.forEach(r => { rowY[r] = y; y += rowH[r]; });
+      const X = c => left + (colX[c - 1] - colX[c1 - 1]) * s, Y = r => top + rowY[r] * s;
+      const inPage = r => rowY[r] != null;
+      const rect = (ca, ra, cb, rb) => { const x0 = X(ca), y0 = Y(ra); const x1 = X(cb) + colW[cb] * s, y1 = Y(rb) + rowH[rb] * s; return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; };
+      const seenM = {};
+      /* fills first, then borders, then text, then pictures */
+      const cells = [];
+      rows.forEach(r => { for (let c = c1; c <= c2; c++) { const m = masterOf[r + "," + c]; if (m && (m.r1 !== r || m.c1 !== c)) { cells.push({ r, c, slave: true, m }); continue; } cells.push({ r, c, m }); } });
+      cells.forEach(k => {
+        if (k.slave) return;
+        const cell = ws.getCell(k.r, k.c), f = cell.fill;
+        if (f && f.type === "pattern" && f.pattern === "solid") { const col = rgbOf(f.fgColor, null); if (col && !(col[0] === 1 && col[1] === 1 && col[2] === 1)) { const rc = k.m ? rect(k.m.c1, Math.max(k.m.r1, rows[0]), k.m.c2, Math.min(k.m.r2, rows[rows.length - 1])) : rect(k.c, k.r, k.c, k.r); P.ops.push({ k: "r", x: rc.x, y: rc.y, w: rc.w, h: rc.h, f: col, s: 0, c: [0, 0, 0] }); } }
+      });
+      cells.forEach(k => {
+        const cell = ws.getCell(k.r, k.c), b = cell.border || {}, rc = rect(k.c, k.r, k.c, k.r);
+        const L = (x1, y1, x2, y2, e) => { if (e && e.style) P.ops.push({ k: "l", x1, y1, x2, y2, w: (BW[e.style] || 0.5) * Math.max(s, 0.6), c: rgbOf(e.color, [0, 0, 0]) }); };
+        const m = k.m;   /* inside a merged block only the outer edges are drawn (as Excel does) */
+        if (!m || k.r === m.r1) L(rc.x, rc.y, rc.x + rc.w, rc.y, b.top);
+        if (!m || k.r === m.r2) L(rc.x, rc.y + rc.h, rc.x + rc.w, rc.y + rc.h, b.bottom);
+        if (!m || k.c === m.c1) L(rc.x, rc.y, rc.x, rc.y + rc.h, b.left);
+        if (!m || k.c === m.c2) L(rc.x + rc.w, rc.y, rc.x + rc.w, rc.y + rc.h, b.right);
+      });
+      cells.forEach(k => {
+        if (k.slave) return;
+        const cell = ws.getCell(k.r, k.c), runs = runsOf(cell), txt = runs.map(q => q.t).join("");
+        if (!txt.trim()) return;
+        const al = cell.alignment || {};
+        const rc = k.m ? rect(k.m.c1, Math.max(k.m.r1, rows[0]), k.m.c2, Math.min(k.m.r2, rows[rows.length - 1])) : rect(k.c, k.r, k.c, k.r);
+        const pad = 2 * s, wUn = (rc.w - 2 * pad) / s;
+        const isNum = typeof cell.value === "number";
+        const hz = al.horizontal === "center" || al.horizontal === "centerContinuous" ? "c" : al.horizontal === "right" || (!al.horizontal && isNum) ? "r" : "l";
+        /* lines: wrap per run-less simplification: one font per cell for wrapping (the first run), rich text keeps per-run font when it has explicit breaks */
+        const lines = [];
+        runs.forEach(rn => {
+          const parts = String(rn.t).split("\n");
+          parts.forEach((p, pi2) => { if (pi2 > 0 || !lines.length) lines.push([]); lines[lines.length - 1].push({ t: p, b: rn.b, i: rn.i, z: rn.z, c: rn.c }); });
+        });
+        const flat = [];
+        lines.forEach(segs => {
+          const base = segs[0] || { b: false, z: 10 };
+          const text = segs.map(q => q.t).join("");
+          if (al.wrapText && segs.length === 1) wrap(text, wUn, base.z, base.b).forEach(t => flat.push([{ t, b: base.b, i: base.i, z: base.z, c: base.c }]));
+          else flat.push(segs);
+        });
+        const lh = z => z * 1.15;
+        const blockH = flat.reduce((a, segs) => a + lh(Math.max.apply(null, segs.map(q => q.z).concat([1]))), 0) * s;
+        const vt = al.vertical === "top" ? "t" : al.vertical === "middle" || al.vertical === "center" ? "m" : "b";
+        let ty = vt === "t" ? rc.y + pad : vt === "m" ? rc.y + (rc.h - blockH) / 2 : rc.y + rc.h - blockH - pad * 0.5;
+        flat.forEach(segs => {
+          const z = Math.max.apply(null, segs.map(q => q.z).concat([1])), lineH = lh(z) * s;
+          let text = segs.map(q => q.t).join(""), width = segs.reduce((a, q) => a + tw(q.t, q.z, q.b), 0);
+          let x;
+          if (hz === "c") x = rc.x + rc.w / 2 - width * s / 2; else if (hz === "r") x = rc.x + rc.w - pad - width * s; else x = rc.x + pad;
+          segs.forEach(q => { const sw = tw(q.t, q.z, q.b) * s; if (q.t) { P.ops.push({ k: "t", x, y: ty + lineH * 0.82, s: q.t, z: q.z * s, b: q.b, i: q.i, a: "l", c: q.c }); out.texts.push(q.t); } x += sw; });
+          ty += lineH;
+        });
+      });
+      /* logo(s) */
+      imgs.forEach(im => {
+        const r = im.range, tl = r.tl; if (!tl) return;
+        const rowI = Math.floor(tl.row) + 1, colI = Math.floor(tl.col) + 1;
+        if (!inPage(rowI)) return;
+        const fx = tl.col - Math.floor(tl.col), fy = tl.row - Math.floor(tl.row);
+        const x = X(colI) + fx * colW[colI] * s, y = Y(rowI) + fy * rowH[rowI] * s;
+        const w = (r.ext ? r.ext.width : 100) * 0.75 * s, hh = (r.ext ? r.ext.height : 40) * 0.75 * s;
+        const med = wb.getImage(im.imageId); if (!med) return;
+        P.ops.push({ k: "i", x, y, w, h: hh, key: "img" + im.imageId, ext: med.extension, bytes: med.buffer });
+        out.images.push("img" + im.imageId);
+      });
+      /* footer: Form number / issue date / page */
+      const ft = parseFooter(ws.headerFooter && ws.headerFooter.oddFooter);
+      const fy = PAGE.h - (mg.footer || 0.25) * 72 - 2, fz = 8;
+      const fill = t => String(t).replace(/&P/g, String(pi + 1)).replace(/&N/g, String(pages.length)).replace(/&[A-Z]|&\d+/g, "");
+      if (ft.L.trim() || ft.L) { const t = fill(ft.L); P.ops.push({ k: "t", x: left, y: fy, s: t, z: fz, b: false, i: false, a: "l", c: [0, 0, 0] }); out.texts.push(t); }
+      if (ft.C) { const t = fill(ft.C); P.ops.push({ k: "t", x: PAGE.w / 2, y: fy, s: t, z: fz, b: false, i: false, a: "c", c: [0, 0, 0] }); out.texts.push(t); }
+      if (ft.R) { const t = fill(ft.R); P.ops.push({ k: "t", x: PAGE.w - left, y: fy, s: t, z: fz, b: false, i: false, a: "r", c: [0, 0, 0] }); out.texts.push(t); }
+    });
+    out.rows = Math.max(0, r2 - 17);
+    return out;
   }
 
-  /* drawing the list. PDF: pdf-lib. Image: any 2D canvas context. The same ops, so the tech checks exactly what is attached. */
+  /* drawing the list. PDF: pdf-lib. Image: any 2D canvas context. */
   const WINANSI = /[^\x20-\x7E\u00A0-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026]/g;
   async function drawPdf(PDFLib, layout, meta) {
-    const doc = await PDFLib.PDFDocument.create();
-    const reg = await doc.embedFont(PDFLib.StandardFonts.Helvetica), bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+    const doc = await PDFLib.PDFDocument.create(), F = PDFLib.StandardFonts;
+    const fonts = { r: await doc.embedFont(F.Helvetica), b: await doc.embedFont(F.HelveticaBold), i: await doc.embedFont(F.HelveticaOblique), bi: await doc.embedFont(F.HelveticaBoldOblique) };
     const rgb = c => PDFLib.rgb(c[0], c[1], c[2]);
     meta = meta || {};
     if (meta.title) doc.setTitle(meta.title);
     doc.setProducer("ENVSS Field app"); doc.setCreator("ENVSS Field app");
     if (meta.date) { doc.setCreationDate(meta.date); doc.setModificationDate(meta.date); }
-    layout.pages.forEach(pg => {
+    const embedded = {};
+    for (const pg of layout.pages) {
       const page = doc.addPage([pg.w, pg.h]);
-      pg.ops.forEach(o => {
+      for (const o of pg.ops) {
         if (o.k === "t") {
-          const s = o.s.replace(WINANSI, "?"), f = o.b ? bold : reg; let x = o.x;
+          const s = o.s.replace(WINANSI, "?"), f = fonts[(o.b ? "b" : "") + (o.i ? "i" : "") || "r"] || fonts.r; let x = o.x;
           const w = f.widthOfTextAtSize(s, o.z); if (o.a === "c") x -= w / 2; else if (o.a === "r") x -= w;
           page.drawText(s, { x, y: pg.h - o.y, size: o.z, font: f, color: rgb(o.c) });
         } else if (o.k === "r") {
           page.drawRectangle({ x: o.x, y: pg.h - o.y - o.h, width: o.w, height: o.h, color: o.f ? rgb(o.f) : undefined, borderColor: o.s ? rgb(o.c) : undefined, borderWidth: o.s || 0 });
         } else if (o.k === "l") {
           page.drawLine({ start: { x: o.x1, y: pg.h - o.y1 }, end: { x: o.x2, y: pg.h - o.y2 }, thickness: o.w, color: rgb(o.c) });
+        } else if (o.k === "i") {
+          if (!embedded[o.key]) embedded[o.key] = /jp/i.test(o.ext) ? await doc.embedJpg(o.bytes) : await doc.embedPng(o.bytes);
+          page.drawImage(embedded[o.key], { x: o.x, y: pg.h - o.y - o.h, width: o.w, height: o.h });
         }
-      });
-    });
+      }
+    }
     return doc.save();
   }
-  function drawCanvas(ctx, pg, scale) {
+  /* images: {key: CanvasImageSource} preloaded by the caller (createImageBitmap) */
+  function drawCanvas(ctx, pg, scale, images) {
     scale = scale || 1;
     ctx.save(); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, pg.w * scale, pg.h * scale);
     const css = c => "rgb(" + Math.round(c[0] * 255) + "," + Math.round(c[1] * 255) + "," + Math.round(c[2] * 255) + ")";
     pg.ops.forEach(o => {
-      if (o.k === "t") { ctx.font = (o.b ? "bold " : "") + (o.z * scale) + 'px Helvetica, Arial, "Liberation Sans", sans-serif'; ctx.fillStyle = css(o.c); ctx.textAlign = o.a === "c" ? "center" : o.a === "r" ? "right" : "left"; ctx.textBaseline = "alphabetic"; ctx.fillText(o.s, o.x * scale, o.y * scale); }
+      if (o.k === "t") { ctx.font = (o.i ? "italic " : "") + (o.b ? "bold " : "") + (o.z * scale) + 'px Helvetica, Arial, "Liberation Sans", sans-serif'; ctx.fillStyle = css(o.c); ctx.textAlign = o.a === "c" ? "center" : o.a === "r" ? "right" : "left"; ctx.textBaseline = "alphabetic"; ctx.fillText(o.s, o.x * scale, o.y * scale); }
       else if (o.k === "r") { if (o.f) { ctx.fillStyle = css(o.f); ctx.fillRect(o.x * scale, o.y * scale, o.w * scale, o.h * scale); } if (o.s) { ctx.lineWidth = o.s * scale; ctx.strokeStyle = css(o.c); ctx.strokeRect(o.x * scale, o.y * scale, o.w * scale, o.h * scale); } }
       else if (o.k === "l") { ctx.lineWidth = o.w * scale; ctx.strokeStyle = css(o.c); ctx.beginPath(); ctx.moveTo(o.x1 * scale, o.y1 * scale); ctx.lineTo(o.x2 * scale, o.y2 * scale); ctx.stroke(); }
+      else if (o.k === "i" && images && images[o.key]) ctx.drawImage(images[o.key], o.x * scale, o.y * scale, o.w * scale, o.h * scale);
     });
     ctx.restore();
   }
+
+  const TAT_LABEL = { standard: "Standard", same_day: "Same Day", "1_day": "1 day", "2_day": "2 day", "3_day": "3 day" };
 
   /* ---------- emails ---------- */
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c]);
@@ -402,7 +459,7 @@
       "Hello,", "",
       model.resendOf ? "This is an AMENDED chain of custody. It replaces the one we sent earlier for this event. Please use this one." : "Please find our chain of custody (Form 302) attached.", "",
       "Job number: " + model.job, "Event: " + model.eventCode, "Samples: " + n, "Turnaround: " + (TAT_LABEL[model.turnaround] || "Standard"), "",
-      "RESULTS REQUIRED IN ESDAT FORMAT.", "Email results and reports to " + model.resultsTo + ". Invoices to " + model.invoiceTo + ".", "",
+      "Results required in ESDAT format.", "Email results and reports to " + model.resultsTo + ". Invoices to " + model.invoiceTo + ".", "",
       "Sample collection requested", "  Day:   " + dayLabel(model.collection.date) + " (" + dmy(model.collection.date) + ")", "  Time:  " + timeLabel(model.collection), "  Where: " + model.collection.location, "",
       "Attached: " + model.attachmentNames.join(", ") + ".", "",
       "Questions: ENVSS office, " + model.officePhone + ", or reply to " + k.replyTo + ".", "", "Thank you,", "ENVSS"
@@ -411,7 +468,7 @@
     const html = "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111\">"
       + "<p>Hello,</p><p>" + (model.resendOf ? "<b>This is an AMENDED chain of custody.</b> It replaces the one we sent earlier for this event. Please use this one." : "Please find our chain of custody (Form 302) attached.") + "</p>"
       + "<table style=\"border-collapse:collapse\"><tr><td><b>Job number</b></td><td style=\"padding-left:12px\">" + esc(model.job) + "</td></tr><tr><td><b>Event</b></td><td style=\"padding-left:12px\">" + esc(model.eventCode) + "</td></tr><tr><td><b>Samples</b></td><td style=\"padding-left:12px\">" + n + "</td></tr><tr><td><b>Turnaround</b></td><td style=\"padding-left:12px\">" + esc(TAT_LABEL[model.turnaround] || "Standard") + "</td></tr></table>"
-      + "<p style=\"font-size:16px;color:#B71F1F\"><b>RESULTS REQUIRED IN ESDAT FORMAT</b><br><span style=\"font-size:13px;color:#111\">Email results and reports to " + esc(model.resultsTo) + ". Invoices to " + esc(model.invoiceTo) + ".</span></p>"
+      + "<p><b>Results required in ESDAT format.</b><br>Email results and reports to " + esc(model.resultsTo) + ". Invoices to " + esc(model.invoiceTo) + ".</p>"
       + "<p><b>Sample collection requested</b><br>Day: " + esc(dayLabel(model.collection.date)) + " (" + esc(dmy(model.collection.date)) + ")<br>Time: " + esc(timeLabel(model.collection)) + "<br>Where: " + esc(model.collection.location) + "</p>"
       + "<p>Attached: " + esc(model.attachmentNames.join(", ")) + ".</p><p>Questions: ENVSS office, " + esc(model.officePhone) + ", or reply to " + esc(k.replyTo) + ".</p><p>Thank you,<br>ENVSS</p></div>";
     return { subject, text, html };
@@ -434,7 +491,7 @@
       "App version: " + a.appVersion + " (coc-send " + VERSION + ")", "Device / browser: " + (a.device || ""), "Screen: " + (a.screen || ""), "Online: " + a.online, "Time (AWST): " + perthStamp(a.when || new Date()), "Time (ISO): " + (a.when || new Date()).toISOString(), "", "ATTACHED: " + (a.attachmentNames || []).join(", ") + (a.attachmentNames && a.attachmentNames.length ? "" : "(none could be generated)"), "", "Nothing was sent to the lab. This message was sent by the technician's tap on 'Send error report'.");
     const text = L.join("\n");
     const subject = "[ENVSS Field] CoC error report " + a.eventCode + " - " + ((a.failed || []).map(c => c.id).slice(0, 3).join(", ") || "flagged by tech") + " (app v" + a.appVersion + ")";
-    const html = "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111\"><div style=\"border:2px solid #B71F1F;padding:10px;margin-bottom:12px\"><b style=\"color:#B71F1F\">TECH FLAG: SOMETHING LOOKS WRONG</b><br>Raised by " + esc(a.techUser || "unknown") + (a.flag && a.flag.manual ? " (by hand from the CoC preview)" : " (after the app's checks failed)") + "<br><br><b>Tech's comment</b><br>" + esc(cm).replace(/\n/g, "<br>") + "</div><pre style=\"white-space:pre-wrap;font-family:Consolas,monospace;font-size:12px\">" + esc(text.split("\n").slice(L.indexOf("JOB / EVENT")).join("\n")) + "</pre></div>";
+    const html = "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111\"><div style=\"border:2px solid #333;padding:10px;margin-bottom:12px\"><b>TECH FLAG: SOMETHING LOOKS WRONG</b><br>Raised by " + esc(a.techUser || "unknown") + (a.flag && a.flag.manual ? " (by hand from the CoC preview)" : " (after the app's checks failed)") + "<br><br><b>Tech's comment</b><br>" + esc(cm).replace(/\n/g, "<br>") + "</div><pre style=\"white-space:pre-wrap;font-family:Consolas,monospace;font-size:12px\">" + esc(text.split("\n").slice(L.indexOf("JOB / EVENT")).join("\n")) + "</pre></div>";
     return { subject, text, html };
   }
 
@@ -455,7 +512,7 @@
     return { last, same, any: sends.length > 0, throttle };
   }
 
-  const api = { VERSION, DEFAULTS, cfg, pad2, num, round1, perthParts, perthDay, perthStamp, dmy, weekdayOf, dayLabel, hm12, timeLabel, phoneDigits, recompute, validateCollection, canonical, contentHash, privacyLint, runChecks, layoutCoc, drawPdf, drawCanvas, buildEmail, buildAlert, csvOf, sendState, TAT_LABEL, wrap, tw, PAGE };
+  const api = { VERSION, DEFAULTS, cfg, pad2, num, round1, perthParts, perthDay, perthStamp, dmy, weekdayOf, dayLabel, hm12, timeLabel, phoneDigits, recompute, validateCollection, canonical, contentHash, privacyLint, runChecks, layoutSheet, drawPdf, drawCanvas, buildEmail, buildAlert, csvOf, sendState, TAT_LABEL, wrap, tw, PAGE };
   root.ENVSS_COC = api;
   if (!root.ENVSS_COC_SEND_CONFIG) root.ENVSS_COC_SEND_CONFIG = cfg();
   if (typeof module !== "undefined" && module.exports) module.exports = api;

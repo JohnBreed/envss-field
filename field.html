@@ -4231,14 +4231,14 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     const CS = window.ENVSS_COC_SEND_CONFIG || {};
     ws.getCell("F5").value = String(p.number || "");
     ["B5", "B6", "B7"].forEach(a => { ws.getCell(a).value = CS.contactLabel || "ENVSS office"; });
-    ws.getCell("B11").value = CS.officePhone || "08 9355 4010";
-    ws.getCell("C11").value = null;                    /* template "Mob:" label */
-    ws.getCell("D11").value = null;
-    ws.getCell("B12").value = CS.resultsTo || "lab@envss.com.au";
-    ws.getCell("B14").value = CS.invoiceTo || "accounts@envss.com.au";
-    ws.getCell("K12").value = "x"; ws.getCell("K12").alignment = { horizontal: "center", vertical: "middle" }; ws.getCell("K12").font = { name: "Arial", size: 11, bold: true };
-    ws.getCell("L12").value = "Esdat";
-    ws.getCell("F13").value = "Lab Comments:  RESULTS REQUIRED IN ESDAT FORMAT. Email results to " + (CS.resultsTo || "lab@envss.com.au") + ".";
+    ws.getCell("D11").value = null;                    /* mobile stays blank, as before (the template's own number is never printed) */
+    ws.getCell("B12").value = "lab@envss.com.au";
+    ws.getCell("B14").value = CS.invoiceTo || "accounts@envss.com.au";        /* template said "accounts@ & lab@" */
+    /* ESDAT: tick the Esdat box and say it in Lab Comments in the normal font. Nothing else on the form changes. */
+    { const k12 = ws.getCell("K12"), st = JSON.parse(JSON.stringify(k12.style || {}));   /* own copy: the template shares one style object across G12:P12 */
+      st.font = JSON.parse(JSON.stringify(ws.getCell("H9").font || {})); st.alignment = JSON.parse(JSON.stringify(ws.getCell("H9").alignment || { horizontal: "center", vertical: "middle" }));
+      k12.value = "x"; k12.style = st; }
+    ws.getCell("F13").value = { richText: [{ font: clone(ws.getCell("F13").font), text: "Lab Comments:" }, { font: { name: "Arial", size: 8, color: { theme: 1 } }, text: "\nESDAT" }] };
     /* lab turnaround: one "x" in the "Or choose" row (H9 Standard, J9 Same Day, L9 1 day, N9 2 day, P9 3 day) */
     const tat = opts.turnaround || ev.turnaround || "standard";
     Object.keys(COC_TAT_CELL).forEach(k => { ws.getCell(COC_TAT_CELL[k]).value = null; });
@@ -4333,7 +4333,7 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     ws.getCell(F0 + 2, 2).value = "ENVSS";                              /* Print Name (B78): the company, no personal name (v48.19) */
     ws.getCell(F0 + 3, 2).value = nowStamp(opts.now || new Date());     /* Date & Time (B79) = COC created */
     ws.getCell(F0 + 3, 2).numFmt = "@";
-    ws.getCell(F0 + 4, 2).value = "ENVSS Field app";                    /* Signature (B80): no initials (v48.19) */
+    ws.getCell(F0 + 4, 2).value = "ENVSS";                              /* Signature (B80): no initials (v48.19) */
     box(F0, 1, F0 + foot.length - 1, LASTCOL);
 
     /* column widths: each analyte name wraps inside its own column; the Tests Required band is never
