@@ -32,3 +32,16 @@ velocity list (m/s), automatic average/lowest/highest, optional "distance where 
 Measurements are ordinary train rows (`trainKind: "vent"`, data in `t.vent`) so they save offline and sync like samples.
 No COC (vent trains are left out of COCs on mixed events), no Podio writes, no Drive sheet fill: the event menu has
 "Export vent survey CSV" in the Drive template's column order. Tests: `work/v48-19/vent.test.mjs` (Pixel 7 + Chromebook).
+
+**Face velocity grid** (type `grid`, first on the Add measurement screen): one measurement per extraction unit + fan
+condition ("How many fans are running?" 1-4 chips or free text; "+ Another condition on this unit" copies the unit,
+hood make/model/serial and opening). The grid is set out from the opening width × height (mm) per
+AS/NZS 2243.8:2014 Appendix B, B4.2(c): first/last lines 100 mm in from the edges, equally spaced, not more than
+250 mm vertically / 500 mm horizontally, fewest lines (`n = ceil((size - 200) / max) + 1`; 2000×1800 → 5×8 = 40,
+600×500 → 2×3 = 6). A manual grid (default 4×7 = 28) needs a reason. Points are numbered down each column then across,
+labelled like the 0019340 sheet ("1 - Top left corner"); each has velocity, optional distance where velocity < 0.5 m/s
+and an optional label. n / average / lowest / highest and the cl. 3.1.2 indicator (average ≥ 0.5 m/s, no point
+< 0.3 m/s) are shown but never block. Data lives in `t.vent.grid` (`v` / `d` / `label` maps keyed "point N"), so the
+shared change audit writes one readable line per point. A size change that would drop a filled point is refused.
+The event page shows a velocity summary table; the CSV puts the 0019340 Sheet1 columns first (stats and comments on
+the first row of each block), then a Summary block, with app-only columns to the right.
