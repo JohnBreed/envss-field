@@ -436,6 +436,7 @@ body.has-fab { padding-bottom: 104px; }
   </div>
   <div id="app"></div>
   <script src="config.js?v=48.19"></script>
+  <script src="coc-send-core.js?v=48.19"></script>
 
   <script src="noise.js"></script>
   <script>
@@ -4236,14 +4237,28 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     const samplers = [];
     rows.forEach(t => (t.audit || []).forEach(a => { if (/^(START|STOP) pressed/.test(a.action || "")) { const n = operatorName(a.who); if (n && samplers.indexOf(n) === -1) samplers.push(n); } }));
     const who = samplers.join(", ");
+    /* v48.19 (John 28 Nov 2026 AWST, t770u/t769u/t782u): job number + sample details only. No project name, client, tech mobile or tech email.
+       The sampler's name (from the START/STOP audit, as before) is Contact Person, Project Mgr, Sampler and Relinquished by; the contact
+       details stay the lab@ address and the office phone. Results go to lab@, invoices to accounts@, ESDAT is ticked and listed. */
+    const CS = window.ENVSS_COC_SEND_CONFIG || {};
     ws.getCell("F5").value = String(p.number || "");
     ["B5", "B6", "B7"].forEach(a => { ws.getCell(a).value = who; });
-    ws.getCell("D11").value = null;
+    ws.getCell("D11").value = null;                    /* mobile stays blank, as before */
     ws.getCell("B12").value = "lab@envss.com.au";
+    ws.getCell("B14").value = CS.invoiceTo || "accounts@envss.com.au";        /* template said "accounts@ & lab@" */
+    /* ESDAT: tick the Esdat box and say it in Lab Comments in the normal font. Nothing else on the form changes. */
+    /* K12 (the box left of "Esdat") is ticked below with the other ticks */
+    ws.getCell("F13").value = { richText: [{ font: clone(ws.getCell("F13").font), text: "Lab Comments:" }, { font: { name: "Arial", size: 8, color: { theme: 1 } }, text: "\nESDAT" }] };
     /* lab turnaround: one "x" in the "Or choose" row (H9 Standard, J9 Same Day, L9 1 day, N9 2 day, P9 3 day) */
     const tat = opts.turnaround || ev.turnaround || "standard";
     Object.keys(COC_TAT_CELL).forEach(k => { ws.getCell(COC_TAT_CELL[k]).value = null; });
-    ws.getCell(COC_TAT_CELL[tat] || COC_TAT_CELL.standard).value = "x";
+    /* v48.19 (t783u): the tick is a clear bold X centred in its own box, and each label sits centred directly under its box (the old form had a small x
+       centred over a two-column cell with the label left-aligned beside it, so the x looked offset). Same X for the Esdat box and the analyte ticks. */
+    const ownStyle = (cell, fn) => { const st = JSON.parse(JSON.stringify(cell.style || {})); fn(st); cell.style = st; };
+    const tickCell = (cell, size) => { cell.value = "X"; ownStyle(cell, st => { st.font = { name: "Arial", size: size || 11, bold: true, color: { theme: 1 } }; st.alignment = { horizontal: "center", vertical: "middle" }; }); };
+    Object.keys(COC_TAT_CELL).forEach(k => { const lab = ws.getCell(COC_TAT_CELL[k].replace("9", "10")); ownStyle(lab, st => { st.alignment = Object.assign({}, st.alignment, { horizontal: "center", vertical: "middle" }); }); });
+    tickCell(ws.getCell(COC_TAT_CELL[tat] || COC_TAT_CELL.standard), 11);
+    tickCell(ws.getCell("K12"), 10);   /* Esdat box (own style copy: the template shares one style across G12:P12) */
     if (!ws.getCell("F4").isMerged) ws.mergeCells("F4:Q4");   /* "Client Project Name/Number/Site…" label was cut by a cell border */
 
     /* --- snapshot the footer (template rows 76-80; row 75 is the phantom yellow row, 81 is empty) --- */
@@ -4300,7 +4315,7 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
       ws.getCell(r, 3).value = "N/A";
       ws.getCell(r, 4).value = blank ? (cocDate(s.shiftDate) || cocDate(ev.date)) : (cocDate(s.startAt) || cocDate(s.shiftDate) || cocDate(ev.date));
       ws.getCell(r, 5).value = typeOfSample(s);
-      analytes.forEach((code, i) => { if (codes.indexOf(code) >= 0) ws.getCell(r, FIRST + i).value = "x"; });
+      analytes.forEach((code, i) => { if (codes.indexOf(code) >= 0) tickCell(ws.getCell(r, FIRST + i), 10); });
       if (blank) { ws.getCell(r, cRun).value = "N/A"; ws.getCell(r, cVol).value = "N/A"; }
       else {
         const mins = runtimeMinutes(s), vol = volumeLitres(s);
@@ -13104,6 +13119,7 @@ function fixOpen(ts) {
       const d = its.filter(it => it && it.status !== "stopped" && it.status !== "copied" && ((it.kind === "file" && !it.storageUploaded) || (!it.rowInserted && it.jobNumber))).length;
       if (d) r.push(d + " Drive file" + (d === 1 ? "" : "s") + " to upload");
     } catch (e) {}
+    try { const n = window.cocSend && cocSend.pending ? cocSend.pending() : 0; if (n) r.push(n + " CoC send" + (n === 1 ? "" : "s") + " to upload"); } catch (e) {}
     if (st.locInFlight > 0) r.push("START/STOP being saved");
     const cal = halfCalibration(); if (cal) r.push("calibration half entered (" + cal + ")");
     return r;
@@ -14152,6 +14168,8 @@ function fixOpen(ts) {
   render();
 })();
 </script>
+
+<script src="coc-send.js?v=48.19"></script>
 
 </body>
 </html>
