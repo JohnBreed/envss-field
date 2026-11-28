@@ -251,6 +251,7 @@ async function run(vp) {
   check(L("step 1 'Still needed': location, F/C number, type, new/existing, empty"), /Location/.test(ck) && /F\/C number/.test(ck) && /Type/.test(ck) && /New installation or existing/.test(ck) && /empty/.test(ck), ck);
   check(L("step 1 cites Figure A1, A4.1, A5"), /Figure A1, A4\.1, A5/.test(await txt(page, "#vaStep1")), "");
   await ashot("step1-new");
+  check(L("step 1 prompts read as questions"), await page.evaluate(() => ["vt-location", "vt-unit", "vt-hood", "vt-smokeSource"].every(id => /\?/.test((document.querySelector(`label[for="${id}"]`) || {}).innerText || ""))), "");
   await fill(page, "#vt-location", "Chemistry Lab 1.04");
   await fill(page, "#vt-unit", "FC-2");
   await fill(page, "#vt-hood", "Bench-type fume cupboard");
@@ -275,9 +276,30 @@ async function run(vp) {
   check(L("smoke test: A4.2(b)…(k) in order, cites Appendix A"), JSON.stringify(rows2) === JSON.stringify(["b", "c", "d", "e", "f", "h", "i", "j", "k"]) && /Appendix A/.test(await txt(page, "#vaStep2")), JSON.stringify(rows2));
   check(L("smoke step shows the airflow picture with its credit"), await page.evaluate(() => !!document.querySelector("#vaStep2 .va-fig img") && /Photo:/.test(document.querySelector("#vaStep2 .vt-credit").innerText)), "");
   check(L("smoke ratings are Good / Satisfactory / Dangerous (A5), never 'Deficient'"), await page.evaluate(() => { const t = document.getElementById("vaStep2").innerText, ti = [...document.querySelectorAll('[data-vt-rate^="b:"]')].map(b => b.title).join("|"); return /G\s*Good/.test(t) && /S\s*Satisfactory/.test(t) && /D\s*Dangerous/.test(t) && /^Good/.test(ti) && /\|Dangerous/.test(ti) && !/deficient/i.test(t + ti); }), "");
+  const qs = await page.evaluate(() => [...document.querySelectorAll("[data-va-row] .va-q")].map(e => e.innerText.trim()));
+  check(L("every smoke position reads as a question (9 questions ending in '?')"), qs.length === 9 && qs.every(q => /\?$/.test(q) && q.length > 40) && /^With the sash at its maximum working opening/.test(qs[0]), JSON.stringify(qs));
+  const lg = await txt(page, "#vaRow-b .va-legend");
+  check(L("under the buttons: G / S / D / N/A meanings (D = escapes, unit fails; N/A needs a reason)"), /Good: smoke goes straight to the exhaust, no reverse flow or eddies/.test(lg) && /Satisfactory: some eddies or reverse flow, but the smoke stays inside/.test(lg) && /Dangerous: smoke escapes the cupboard \(the unit fails\)/.test(lg) && /N\/A: this position doesn't apply to this unit \(give a reason\)/.test(lg), lg);
+  check(L("reminder: the worst rating sets the unit result"), /worst rating sets the unit's smoke result/.test(await txt(page, "#vaStep2")), "");
+  check(L("'Help me decide' is closed by default under each question"), await page.evaluate(() => { const d = [...document.querySelectorAll("details[data-va-help]")]; return d.length === 9 && d.every(x => !x.open); }), "");
+  await tap(page, '#vaRow-c details[data-va-help] summary');
+  const mtx = await page.evaluate(() => { const tb = document.querySelector("#vaRow-c .va-mx"); return [...tb.rows].map(r => [...r.cells].map(c => c.innerText.trim())); });
+  check(L("matrix: rows are observations, columns G / S / D / N/A, one cell per row"), JSON.stringify(mtx[0]) === JSON.stringify(["What did the smoke do?", "G", "S", "D", "N/A"]) && mtx[1][0] === "Smoke goes straight to the exhaust" && mtx[1][1] === "G" && mtx[2][2] === "S" && mtx[3][0] === "Smoke escapes past the sash or face" && mtx[3][3] === "D" && mtx[4][4] === "N/A" && mtx[2][1] === "", JSON.stringify(mtx));
+  await tap(page, '#vaRow-c [data-vt-rate="c:S:pick"]');
+  t = await T(page, g1);
+  check(L("tapping 'Eddies … stays inside' selects S, highlights that row, panel stays open"), t.vent.smoke["Cupboard airflow pattern"] === "S" && await page.evaluate(() => { const d = document.querySelector("#vaRow-c details[data-va-help]"); const on = [...d.querySelectorAll("tbody tr.on")]; return d.open && on.length === 1 && /stays inside/.test(on[0].innerText) && document.querySelector('#vaRow-c [data-vt-rate="c:S"]').classList.contains("on"); }), JSON.stringify(t.vent.smoke));
+  await tap(page, '#vaRow-c [data-vt-rate="c:S:pick"]');
+  check(L("tapping the selected matrix row again keeps S (matrix only selects)"), (await T(page, g1)).vent.smoke["Cupboard airflow pattern"] === "S", "");
+  await tap(page, '#vaRow-c [data-vt-rate="c:NA:pick"]');
+  check(L("matrix N/A → 'reason for N/A' needed"), /Cupboard airflow pattern: reason for N\/A/.test(await txt(page, "#vtChecks")), await txt(page, "#vtChecks"));
+  await tap(page, '#vaRow-c [data-vt-rate="c:S:pick"]');
+  await fill(page, "#va-c-c", "Small eddy near the sink, stayed inside");
+  await page.evaluate(() => document.getElementById("vaRow-c").scrollIntoView({ block: "start" })); await sleep(200);
+  await ashot("step2-smoke-helper");
+  await tap(page, '#vaRow-c details[data-va-help] summary');
   await tap(page, '[data-vt-rate="b:D"]');
   check(L("a D rating → smoke Non-compliant (A6)"), /Dangerous · Non-compliant/.test(await txt(page, "#vaSmokeRes")), await txt(page, "#vaSmokeRes"));
-  for (const k of ["b", "c", "d", "e", "f", "h", "i", "j"]) await tap(page, `[data-vt-rate="${k}:${k === "h" ? "S" : "G"}"]`);
+  for (const k of ["b", "d", "e", "f", "h", "i", "j"]) await tap(page, `[data-vt-rate="${k}:${k === "h" ? "S" : "G"}"]`);
   await tap(page, '[data-vt-rate="k:NA"]');
   ck = await txt(page, "#vtChecks");
   await fill(page, "#va-c-k", "Free-standing cupboard");
@@ -342,6 +364,7 @@ async function run(vp) {
   check(L("step 4 summary: smoke Satisfactory compliant, face velocity does not meet, overall Non-compliant"), await stepNo() === 4 && /Satisfactory · compliant/.test(sumTxt) && /does not meet/.test(sumTxt) && /Non-compliant/.test(sumTxt), sumTxt);
   const a1 = await txt(page, "#vaA1");
   check(L("Figure A1 record: location, F/C, instrument, correction, hired from Airmet, due date, calibration warning, letters A…"), /Chemistry Lab 1\.04/.test(a1) && /FC-2/.test(a1) && /T95450123/.test(a1) && /\+0\.02 m\/s at 0\.50 m\/s/.test(a1) && /Hired \(Airmet\)/.test(a1) && new RegExp("due " + YDAY).test(a1) && /Calibration was due/.test(a1) && /\bAN\b/.test(a1), a1.slice(0, 1500));
+  check(L("Figure A1 record shows the A4.2(l) observations from the per-position notes"), /Small eddy near the sink/.test(await txt(page, "#vaA1Obs")) && /Slight eddy at the sash/.test(await txt(page, "#vaA1Obs")), await txt(page, "#vaA1Obs"));
   await fill(page, "#vt-comments", "Sash at 500 mm working height. Bench clutter near the right side.");
   await ashot("step4-summary"); await ashot("step4-summary-full", true);
   /* G5. offline queue, reload, sync */
@@ -434,6 +457,7 @@ async function run(vp) {
   const si = gcsv.indexOf('"Summary"');
   check(L("CSV summary section + anemometer line"), si > gi && gcsv[si + 1].startsWith(SUM_HEAD) && gcsv.slice(si + 2).some(l => l.startsWith(`"FC-2","40","${avgF}","0.23","${mxF}"`)) && gcsv.slice(si).some(l => /^"Anemometer",".*Hired from Airmet.*","Calibration check","Check: /.test(l)), gcsv.slice(si, si + 8).join("\n"));
   check(L("CSV never says 'Deficient'; smoke result uses Satisfactory / Dangerous wording"), !gcsv.some(l => /deficient/i.test(l)) && gcsv.some(l => /^"Smoke test result \(A6, worst score\)","Satisfactory"/.test(l)), "");
+  check(L("CSV A4.2(l) observations include each position's note"), gcsv.some(l => /^"Smoke observations \(A4\.2\(l\)\)",".*Cupboard airflow pattern: Small eddy near the sink, stayed inside.*Containment with sash half open: Slight eddy at the sash, contained/.test(l)), gcsv.filter(l => /A4\.2\(l\)/.test(l)).join("\n"));
   const fa = gcsv.findIndex(l => l.startsWith('"AS/NZS 2243.8:2014 Figure A1 record"'));
   check(L("CSV Figure A1 record: smoke rows, calibration rows, Results A…AN"), fa > si && gcsv.slice(fa).some(l => /^"Face opening airflow pattern","G"/.test(l)) && gcsv.slice(fa).some(l => /^"Anemometer","Hired","Supplier","Airmet","Calibration certificate photo","No"/.test(l)) && gcsv.slice(fa).some(l => new RegExp(`^"Last calibration date","${LASTYR}","Calibration due date","${YDAY}"`).test(l)) && gcsv.slice(fa).some(l => /^"Results","A","B",.*"AN"$/.test(l)), gcsv.slice(fa, fa + 30).join("\n"));
 

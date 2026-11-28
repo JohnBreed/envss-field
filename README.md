@@ -37,8 +37,11 @@ No COC (vent trains are left out of COCs on mixed events), no Podio writes, no D
 AS/NZS 2243.8:2014 in four steps, each citing its clause: (1) Unit details: location, F/C number, type, make/model/serial,
 new or existing installation (A4.1.3 empty / A4.1.2 normal working conditions), empty or equipment inside (photo or plan,
 A5), smoke source (air current tubes, A3), fan condition. (2) Smoke test (Appendix A), done before face velocity (A4.1.1;
-a soft gate with a logged "record anyway"): A4.2(b)–(k) in order, each rated G Good / S Satisfactory / D Dangerous (A5)
-or N/A with a reason, comment and photos; result = worst score, compliant if all S or better (A6). (3) Face velocity
+a soft gate with a logged "record anyway"): A4.2(b)–(k) in order, each asked as a question (paraphrased, not the
+standard's text) and answered with one tap G Good / S Satisfactory / D Dangerous (A5) or N/A (always needs a reason),
+with the meanings under the buttons and an optional "Help me decide" matrix (rows = what the smoke did, cell = rating).
+Each position has an optional "What did you see?" note and photos; the notes feed the A4.2(l) observations in the
+Figure A1 record and CSV. Result = worst rating, compliant if all S or better (A6). Step 1 and 3 prompts are questions too. (3) Face velocity
 (Appendix B): opening width × height (mm) sets the B4.2(c) grid (first/last lines 100 mm in, not more than 250 mm
 vertically / 500 mm horizontally, fewest lines; 2000×1800 → 5×8 = 40, 600×500 → 2×3 = 6); a manual grid (default
 4×7 = 28) has an optional reason that never blocks. Points are lettered A, B, C… across each row from top left (Figure A1

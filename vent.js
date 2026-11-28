@@ -179,19 +179,24 @@
   }
   /* ---------- smoke test (AS/NZS 2243.8:2014 Appendix A) ---------- */
   const SMOKE = [
-    { k: "b", step: "A4.2(b)", name: "Face opening airflow pattern", how: "Sash at the maximum working aperture (A4.2(a)). Release smoke in line with the face opening around the whole perimeter of the entry. It should flow smoothly in and through; looping or eddying points to room turbulence or a containment problem." },
-    { k: "c", step: "A4.2(c)", name: "Cupboard airflow pattern", how: "Release smoke around any equipment, tanks or sinks inside. Watch for eddies carrying smoke to the front or out. If a removable base sits over a sump, check there is no reverse flow out of the sump and that the sump is exhausted." },
-    { k: "d", step: "A4.2(d)", name: "Containment along bottom of cupboard", how: "Release smoke progressively along the floor, starting at the front. Watch the sides of the base for eddies carrying smoke forward or out; if found, move the smoke source around to investigate." },
-    { k: "e", step: "A4.2(e)", name: "Containment along walls of cupboard", how: "Release smoke along the internal walls. Watch for eddies carrying smoke to the front or out." },
-    { k: "f", step: "A4.2(f)", name: "Containment with sash fully open", how: "Release smoke behind and close to the sash at several points across the opening. Watch for eddies forming in line with or in front of the sash or its handles, fed from inside." },
-    { k: "h", step: "A4.2(g)–(h)", name: "Containment with sash half open", how: "Lower the sash to halfway (g), then release smoke behind and close to the sash at several points across the opening (h)." },
-    { k: "i", step: "A4.2(i)", name: "Containment with sash at minimum opening", how: "Move the sash to its minimum opening and watch for eddies." },
-    { k: "j", step: "A4.2(j)", name: "Containment under abnormal conditions", how: "Spot-check nearby fume cupboards, doors and windows opening, air-conditioning, ventilation, traffic and other equipment. If any affect containment, repeat steps (d) to (k) under those conditions and record them. Record any equipment inside on a plan or photo." },
-    { k: "k", step: "A4.2(k)", name: "Leaks at joints and service penetrations (built-in cupboards)", how: "Only if the cupboard is built into the laboratory walls: release smoke along all joints and service penetrations, around the sash and the opening, looking for air jets leaking in from the wall cavity or ceiling space. Otherwise mark N/A.", na: true }
+    { k: "b", q: "With the sash at its maximum working opening, does smoke released around the whole face perimeter flow smoothly into the cupboard without escaping?", step: "A4.2(b)", name: "Face opening airflow pattern", how: "Sash at the maximum working aperture (A4.2(a)). Release smoke in line with the face opening around the whole perimeter of the entry. It should flow smoothly in and through; looping or eddying points to room turbulence or a containment problem." },
+    { k: "c", q: "Inside the cupboard, around any equipment, tanks, sinks or sump, does the smoke move to the exhaust without being carried forward or out?", step: "A4.2(c)", name: "Cupboard airflow pattern", how: "Release smoke around any equipment, tanks or sinks inside. Watch for eddies carrying smoke to the front or out. If a removable base sits over a sump, check there is no reverse flow out of the sump and that the sump is exhausted." },
+    { k: "d", q: "When smoke is released along the floor of the cupboard, front to back, does it stay inside without eddies carrying it forward or out?", step: "A4.2(d)", name: "Containment along bottom of cupboard", how: "Release smoke progressively along the floor, starting at the front. Watch the sides of the base for eddies carrying smoke forward or out; if found, move the smoke source around to investigate." },
+    { k: "e", q: "When smoke is released along the inside walls, does it stay inside without eddies carrying it forward or out?", step: "A4.2(e)", name: "Containment along walls of cupboard", how: "Release smoke along the internal walls. Watch for eddies carrying smoke to the front or out." },
+    { k: "f", q: "With the sash fully open, does smoke released just behind the sash at several points across the opening stay inside, with no eddies at the sash or handles?", step: "A4.2(f)", name: "Containment with sash fully open", how: "Release smoke behind and close to the sash at several points across the opening. Watch for eddies forming in line with or in front of the sash or its handles, fed from inside." },
+    { k: "h", q: "With the sash lowered to half open, does smoke released just behind the sash across the opening stay inside?", step: "A4.2(g)–(h)", name: "Containment with sash half open", how: "Lower the sash to halfway (g), then release smoke behind and close to the sash at several points across the opening (h)." },
+    { k: "i", q: "With the sash at its minimum opening, does the smoke stay inside without eddies?", step: "A4.2(i)", name: "Containment with sash at minimum opening", how: "Move the sash to its minimum opening and watch for eddies." },
+    { k: "j", q: "With nearby cupboards running, doors and windows opening, air-conditioning and people moving past, does the cupboard still hold the smoke?", step: "A4.2(j)", name: "Containment under abnormal conditions", how: "Spot-check nearby fume cupboards, doors and windows opening, air-conditioning, ventilation, traffic and other equipment. If any affect containment, repeat steps (d) to (k) under those conditions and record them. Record any equipment inside on a plan or photo." },
+    { k: "k", q: "If the cupboard is built into the wall, does smoke along joints, service penetrations and around the sash show no air jets leaking in from the wall cavity or ceiling space?", step: "A4.2(k)", name: "Leaks at joints and service penetrations (built-in cupboards)", how: "Only if the cupboard is built into the laboratory walls: release smoke along all joints and service penetrations, around the sash and the opening, looking for air jets leaking in from the wall cavity or ceiling space. Otherwise mark N/A.", na: true }
   ];
   const RATE = { G: "Good", S: "Satisfactory", D: "Dangerous", NA: "N/A" };
-  const RATE_HOW = { G: "smoke travels straight to exhaust without reverse flow or eddies", S: "reverse flow or eddies, but the smoke does not escape the cupboard", D: "reverse flow or eddies escape the cupboard" };
+  const RATE_HOW = { G: "smoke goes straight to the exhaust, no reverse flow or eddies", S: "some eddies or reverse flow, but the smoke stays inside the cupboard", D: "smoke escapes the cupboard (the unit fails)", NA: "this position doesn't apply to this unit (give a reason)" };
+  /* "Help me decide" (John, call 28 Nov 2026): A5 defines G / S / D by what the smoke does, so rows are observations and the cell picks the rating */
+  const OBS = [["G", "Smoke goes straight to the exhaust"], ["S", "Eddies or reverse flow, but the smoke stays inside"], ["D", "Smoke escapes past the sash or face"], ["NA", "This position isn't on this unit"]];
+  const helpOpen = new Set();
   const smokeCK = row => row.name + " comment";
+  /* A4.2(l) record: the general observations plus each position's note */
+  function smokeObs(t) { const x = t.vent || {}, sm = smokeOf(t); return [str(x.smokeComments).trim()].concat(sm.rows.filter(z => z.c).map(z => z.row.name + ": " + z.c)).filter(Boolean).join("; "); }
   function smokeOf(t) {
     const x = t.vent || {}, sm = x.smoke || {};
     const rows = SMOKE.map(row => ({ row, r: str(sm[row.name]).trim(), c: str(sm[smokeCK(row)]).trim(), photos: ((x.smokePhotos || {})[row.name] || []) }));
@@ -199,7 +204,7 @@
     const order = { G: 0, S: 1, D: 2 };
     const worst = rated.length ? rated.reduce((a, z) => (order[z.r] > order[a] ? z.r : a), "G") : "";
     const unrated = rows.filter(z => !z.r);
-    const naNoReason = rows.filter(z => z.r === "NA" && !z.row.na && !z.c);
+    const naNoReason = rows.filter(z => z.r === "NA" && !z.c);   /* John 28 Nov 2026: N/A always needs a reason */
     const done = !unrated.length && !naNoReason.length && rated.length > 0;
     return { rows, worst, unrated, naNoReason, done, compliant: done ? worst !== "D" : null, dangerous: worst === "D" };
   }
@@ -517,27 +522,27 @@
     const x = t.vent, units = usedUnits(t);
     const sib = (C().trainsOf(t.eventId) || []).filter(y => isVent(y) && y !== t && gridOf(y) && str(y.vent.unit).trim() && str(y.vent.unit).trim().toLowerCase() === str(x.unit).trim().toLowerCase());
     return `<div class="card vt-card" id="vaStep1"><h3 class="vt-h">1 · Unit details ${cite("Figure A1, A4.1, A5")}</h3>
-      ${field("location", "Location", x.location, "e.g. Chemistry Lab 2.14, Building C")}
-      <label for="vt-unit">F/C number / unit</label>
+      ${field("location", "Where is the unit? (building, room)", x.location, "e.g. Chemistry Lab 2.14, Building C")}
+      <label for="vt-unit">What is the fume cupboard number or ID?</label>
       <input id="vt-unit" data-vt="unit" value="${esc(x.unit)}" placeholder="e.g. FC-2" autocomplete="off" list="vtUnits">
       <datalist id="vtUnits">${units.map(u => `<option value="${esc(u.vent.unit)}"></option>`).join("")}</datalist>
       ${units.length ? `<p class="help">Units already on this event: ${units.map(u => `<button type="button" class="chip" data-vt-unit="${esc(u.id)}">${esc(u.vent.unit)}</button>`).join(" ")}</p>` : ""}
-      <label for="vt-hood">Type</label>
+      <label for="vt-hood">What type of fume cupboard is it?</label>
       <input id="vt-hood" data-vt="hood" value="${esc(x.hood)}" placeholder="e.g. Bench-type fume cupboard" autocomplete="off" list="vtHoods">
       <datalist id="vtHoods">${FC_TYPES.concat(HOODS).map(h => `<option value="${esc(h)}"></option>`).join("")}</datalist>
       <p class="help">Fume cupboard types: bench-type, walk-in, downdraught, variable air volume ${cite("cl. 2.1")}. The standard covers ducted fume cupboards only, not recirculating cabinets ${cite("cl. 1.1")}.</p>
       <div class="vt-grid3"><div>${field("hoodMake", "Make <span class=\"muted\">(optional)</span>", x.hoodMake, "e.g. Dynaflow")}</div><div>${field("hoodModel", "Model <span class=\"muted\">(optional)</span>", x.hoodModel, "Model")}</div><div>${field("hoodSerial", "Serial <span class=\"muted\">(optional)</span>", x.hoodSerial, "Serial number")}</div></div>
-      <label>New installation or existing?</label>
+      <label>Is this a new installation or an existing one?</label>
       <div class="va-choices">${choice("install", "new", "New (commissioning)", x.install)}${choice("install", "existing", "Existing", x.install)}</div>
       ${ruleHtml(x)}
-      <label>Fume cupboard empty?</label>
+      <label>Is the fume cupboard empty?</label>
       <div class="va-choices">${choice("empty", "yes", "Yes, empty", x.empty)}${choice("empty", "no", "No, equipment inside", x.empty)}</div>
       ${x.empty === "no" ? `<div class="va-sub"><p class="help">Attach a photo or plan showing the size, shape and position of everything inside during the tests ${cite("A5, A4.2(j)")}.</p>
         ${photoSetHtml(t, "equip", "Equipment photo / plan")}
         <label for="vt-equipNote">Or describe the plan <span class="muted">(size, shape, position)</span></label><textarea id="vt-equipNote" data-vt="equipNote" rows="2" placeholder="e.g. Rotary evaporator 400 × 300 mm, back left; water bath centre">${esc(x.equipNote)}</textarea></div>` : ""}
-      ${field("smokeSource", "Smoke source used", x.smokeSource, "Air current tubes")}
+      ${field("smokeSource", "What are you using to make smoke?", x.smokeSource, "Air current tubes")}
       <p class="help">Smoke shall be generated with air current tubes ${cite("A3")}.</p>
-      <label for="vt-condition">Operating condition <span class="muted">(optional)</span></label>
+      <label for="vt-condition">How many fans are running (operating condition)? <span class="muted">(optional)</span></label>
       <div class="vg-fans" aria-label="How many fans are running?">${FANS.map((f, i) => `<button type="button" class="chip ${str(x.condition) === f ? "on" : ""}" data-vt-fans="${i}">${i + 1} fan${i ? "s" : ""}</button>`).join("")}</div>
       <input id="vt-condition" data-vt="condition" value="${esc(x.condition)}" placeholder="e.g. Two extraction fans in operation" autocomplete="off">
       ${sib.length ? `<p class="help">Other conditions on this unit: ${sib.map(y => `<a href="#" onclick="openTrain('${esc(y.id)}');return false">${esc(dn(y))}${str(y.vent.condition).trim() ? " · " + esc(y.vent.condition) : ""}</a>`).join(", ")}</p>` : ""}
@@ -547,22 +552,31 @@
   }
   function step2Html(t) {
     const x = t.vent, sm = smokeOf(t);
-    const rateBtns = z => ["G", "S", "D"].concat(["NA"]).map(r => `<button type="button" class="chip va-rate va-r${r} ${z.r === r ? "on" : ""}" data-vt-rate="${z.row.k}:${r}" aria-pressed="${z.r === r}" title="${esc(RATE[r] + (RATE_HOW[r] ? ": " + RATE_HOW[r] : ""))}">${r === "NA" ? "N/A" : r}</button>`).join("");
+    const rateBtns = z => ["G", "S", "D", "NA"].map(r => `<button type="button" class="chip va-rate va-r${r} ${z.r === r ? "on" : ""}" data-vt-rate="${z.row.k}:${r}" aria-pressed="${z.r === r}" title="${esc(RATE[r] + ": " + RATE_HOW[r])}">${r === "NA" ? "N/A" : r}</button>`).join("");
+    const legend = `<div class="va-legend"><span><b>G</b> Good: ${RATE_HOW.G}</span><span><b>S</b> Satisfactory: ${RATE_HOW.S}</span><span><b>D</b> Dangerous: ${RATE_HOW.D}</span><span><b>N/A</b>: ${RATE_HOW.NA}</span></div>`;
+    const matrix = z => `<details class="va-help" data-va-help="${z.row.k}" ${helpOpen.has(t.id + ":" + z.row.k) ? "open" : ""}><summary>Help me decide</summary>
+        <table class="va-mx"><thead><tr><th>What did the smoke do?</th>${OBS.map(([r]) => `<th>${r === "NA" ? "N/A" : r}</th>`).join("")}</tr></thead><tbody>
+        ${OBS.map(([r, obs]) => `<tr class="${z.r === r ? "on" : ""}"><th scope="row">${esc(obs)}</th>${OBS.map(([c]) => c === r ? `<td><button type="button" class="va-mxb va-r${r} ${z.r === r ? "on" : ""}" data-vt-rate="${z.row.k}:${r}:pick" aria-pressed="${z.r === r}">${r === "NA" ? "N/A" : r}</button></td>` : `<td></td>`).join("")}</tr>`).join("")}
+        </tbody></table><p class="help">Pick the row that matches what you saw; it sets the rating above. N/A needs a reason in the note below.</p></details>`;
     return `<div class="card vt-card" id="vaStep2"><h3 class="vt-h">2 · Smoke test ${cite("Appendix A, cl. 3.1.1")}</h3>
       <div class="va-fig">${imgWithFallback(SMOKE_IMG, "visual", "va-figimg")}<div class="help">Smoke shows how air moves into and through the cupboard ${cite("A2")}. Use air current tubes ${cite("A3")}.<div class="vt-credit">${esc(SMOKE_IMG.credit)}. Example image, not from the standard.</div></div></div>
       <p class="va-rule">Do the smoke test and record it <b>before</b> the face velocity ${cite("A4.1.1")}. Containment is assessed by this test ${cite("cl. 3.1.1")}.</p>
       ${ruleHtml(x)}
-      <p class="help"><b>G</b> Good: ${RATE_HOW.G}. <b>S</b> Satisfactory: ${RATE_HOW.S}. <b>D</b> Dangerous: ${RATE_HOW.D} ${cite("A5")}.</p>
-      <ol class="va-proc"><li value="1"><b>(a)</b> Open the sash to the maximum working aperture ${cite("A4.2(a)")}.</li></ol>
+      <p class="va-rule va-worst">Answer each question with one tap: <b>G</b>, <b>S</b>, <b>D</b> or <b>N/A</b>. <b>The worst rating sets the unit's smoke result</b>: one D and the unit fails ${cite("A5, A6")}.</p>
+      <ol class="va-proc"><li value="1"><b>(a)</b> First, open the sash to the maximum working aperture ${cite("A4.2(a)")}.</li></ol>
       ${sm.rows.map(z => `<div class="va-row ${z.r ? "rated va-x" + z.r : ""}" id="vaRow-${z.row.k}" data-va-row="${z.row.k}">
-        <div class="va-rowh"><b>(${z.row.step.replace(/^A4\.2\(|\)$/g, "").replace(")–(", "–")}) ${esc(z.row.name)}</b> ${cite(z.row.step)}</div>
-        <p class="help">${esc(z.row.how)}</p>
-        <div class="va-rates" role="group" aria-label="${esc(z.row.name)} result">${rateBtns(z)}</div>
-        <input id="va-c-${z.row.k}" data-va-c="${z.row.k}" value="${esc(z.c)}" placeholder="${z.row.na ? "Comment (or why N/A)" : "Comment" + (z.r === "NA" ? " (required for N/A)" : "")}" autocomplete="off">
+        <div class="va-q" id="va-q-${z.row.k}">${esc(z.row.q)}</div>
+        <div class="va-rowh muted">(${z.row.step.replace(/^A4\.2\(|\)$/g, "").replace(")–(", "–")}) ${esc(z.row.name)} ${cite(z.row.step)}</div>
+        <p class="help">How: ${esc(z.row.how)}</p>
+        <div class="va-rates" role="group" aria-label="${esc(z.row.q)}">${rateBtns(z)}</div>
+        ${legend}
+        ${matrix(z)}
+        <label for="va-c-${z.row.k}" class="va-cl">What did you see? <span class="muted">${z.r === "NA" ? "(reason required for N/A)" : "(optional; goes in the A4.2(l) observations)"}</span></label>
+        <input id="va-c-${z.row.k}" data-va-c="${z.row.k}" value="${esc(z.c)}" placeholder="${z.r === "NA" ? "Why doesn't this position apply?" : "e.g. slight eddy at the left sash handle, contained"}" autocomplete="off">
         ${photoSetHtml(t, "smoke:" + z.row.name, "Photo")}
       </div>`).join("")}
-      <label for="vt-smokeComments">(l) Observations of satisfactory and unsatisfactory smoke distribution ${cite("A4.2(l)")}</label>
-      <textarea id="vt-smokeComments" data-vt="smokeComments" rows="2" placeholder="Brief observations">${esc(x.smokeComments)}</textarea>
+      <label for="vt-smokeComments">(l) Anything else you saw about where smoke spread well or badly? <span class="muted">(optional)</span> ${cite("A4.2(l)")}</label>
+      <textarea id="vt-smokeComments" data-vt="smokeComments" rows="2" placeholder="General observations; the notes under each question are added to this record">${esc(x.smokeComments)}</textarea>
       <div id="vaSmokeRes">${smokeResHtml(t)}</div>
     </div>`;
   }
@@ -583,8 +597,8 @@
       <div class="va-anem">${anemFieldsHtml(ev, "vaEq")}</div>
       <h4 class="va-h4">Opening and grid ${cite("B4.2(a)–(c), Figure B1")}</h4>
       <p class="help">(a) Open the sash to the maximum face opening, then measure it.</p>
-      <div class="vt-grid2"><div><label for="vg-w">Face opening width (mm)</label><input id="vg-w" data-vg="widthMm" value="${esc(q.widthMm)}" inputmode="numeric" placeholder="e.g. 1500" autocomplete="off"></div>
-      <div><label for="vg-h">Face opening height (mm)</label><input id="vg-h" data-vg="heightMm" value="${esc(q.heightMm)}" inputmode="numeric" placeholder="e.g. 500" autocomplete="off"></div></div>
+      <div class="vt-grid2"><div><label for="vg-w">How wide is the face opening? (mm)</label><input id="vg-w" data-vg="widthMm" value="${esc(q.widthMm)}" inputmode="numeric" placeholder="e.g. 1500" autocomplete="off"></div>
+      <div><label for="vg-h">How high is the face opening, sash at maximum? (mm)</label><input id="vg-h" data-vg="heightMm" value="${esc(q.heightMm)}" inputmode="numeric" placeholder="e.g. 500" autocomplete="off"></div></div>
       ${geomHtml(t)}
       <p class="help">Grid per ${STD.ref}: points ${STD.edge} mm in from the edges of the opening, then equally spaced, not more than ${STD.maxY} mm apart vertically nor more than ${STD.maxX} mm apart horizontally, using the fewest lines that meet this.</p>
       ${manual ? `<div class="vg-manual"><b>Manual grid</b> <span class="muted">(not set out from the opening size)</span>
@@ -615,6 +629,7 @@
       <div class="vg-scroll"><table class="vg-sum va-smoke"><thead><tr><th>Test position</th><th>Result</th><th>Comments</th></tr></thead><tbody>
         ${sm.rows.map(z => `<tr><td>${esc(z.row.name)}</td><td class="va-res va-x${esc(z.r)}">${z.r === "NA" ? "N/A" : esc(z.r)}</td><td>${esc(z.c)}${z.photos.length ? ` <span class="muted">(${z.photos.length} photo${z.photos.length === 1 ? "" : "s"})</span>` : ""}</td></tr>`).join("")}
       </tbody></table></div>
+      <table class="va-kv"><tbody><tr><th>Observations of smoke distribution ${cite("A4.2(l)")}</th><td id="vaA1Obs">${esc(smokeObs(t))}</td></tr></tbody></table>
       <p class="help">G Good · S Satisfactory · D Dangerous ${cite("A5")}. Result: <b>${sm.worst ? RATE[sm.worst] : "—"}</b>${sm.done ? " · " + (sm.compliant ? "Compliant" : "Non-compliant") : ""}.</p>
       <h5>Face velocity</h5>
       <table class="va-kv"><tbody>
@@ -770,8 +785,9 @@
       x[key] = val; note(t, key === "install" ? "Installation" : "Fume cupboard empty", (before || "blank") + " → " + val); sync(t); save(); C().render(); return true;
     }
     if (b.dataset.vtRate && x) {
-      const [k, r] = b.dataset.vtRate.split(":"), row = SMOKE.find(z => z.k === k); if (!row) return true;
+      const [k, r, how] = b.dataset.vtRate.split(":"), row = SMOKE.find(z => z.k === k); if (!row) return true;
       x.smoke = x.smoke || {}; const before = str(x.smoke[row.name]);
+      if (before === r && how === "pick") return true;   /* matrix taps only select */
       if (before === r) { delete x.smoke[row.name]; note(t, "Smoke " + row.step, row.name + ": " + before + " → blank"); }
       else { x.smoke[row.name] = r; note(t, "Smoke " + row.step, row.name + ": " + (before || "blank") + " → " + r); }
       if (smokeOf(t).done && !x.smokeDoneAt) x.smokeDoneAt = new Date().toISOString();
@@ -1142,7 +1158,7 @@
       rows.push(["Smoke source used", x.smokeSource]);
       rows.push(["Test position", "Result", "Comments", "Photos", "Clause"]);
       sm.rows.forEach(z => rows.push([z.row.name, z.r === "NA" ? "N/A" : z.r, z.c, z.photos.length || "", z.row.step]));
-      rows.push(["Smoke observations (A4.2(l))", x.smokeComments]);
+      rows.push(["Smoke observations (A4.2(l))", smokeObs(t)]);
       rows.push(["Smoke test result (A6, worst score)", sm.worst ? RATE[sm.worst] : "", sm.done ? (sm.compliant ? "Compliant" : "Non-compliant") : sm.dangerous ? "Non-compliant" : "Not finished"]);
       rows.push(["FACE VELOCITY"]);
       rows.push(["Face opening width (mm)", q.widthMm, "Height (mm)", q.heightMm, "No. of readings", s.n]);
@@ -1224,6 +1240,8 @@
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushDirty(); });
     g.addEventListener("pagehide", flushDirty);
     document.addEventListener("click", e => { onClick(e); });
+    /* remember which "Help me decide" panels are open so a re-render after a tap keeps them open */
+    document.addEventListener("toggle", e => { const d = e.target; if (!d || !d.dataset || !d.dataset.vaHelp) return; const t = curVent(); if (!t) return; const key = t.id + ":" + d.dataset.vaHelp; if (d.open) helpOpen.add(key); else helpOpen.delete(key); }, true);
     const st = document.createElement("style");
     st.textContent = ".vt-card{margin-top:12px}.vt-h{margin:0 0 6px;color:var(--navy)}.vt-grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.vt-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 10px}"
       + "@media (max-width:599px){.vt-grid3{grid-template-columns:1fr}.vt-grid2{grid-template-columns:1fr}}"
@@ -1252,7 +1270,7 @@
       + ".va-sum{display:grid;gap:8px;margin:6px 0}.va-sum>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.va-sum span:first-child{min-width:110px;font-weight:700}.va-pill{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:700}.va-pill.ok{background:#123A22;color:#7BE0A4}.va-pill.bad{background:#3A1212;color:#FF8A8A}"
       + ".va-a1{margin:12px 0;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)}.va-a1 h5{margin:12px 0 4px}.va-kv{border-collapse:collapse;width:100%;font-size:13px}.va-kv th{text-align:left;padding:4px 8px 4px 0;width:45%;vertical-align:top;opacity:.85}.va-kv td{padding:4px 0}"
       + ".va-res{font-weight:800}.va-res.va-xG{color:#7BE0A4}.va-res.va-xS{color:#FFC861}.va-res.va-xD{color:#FF8A8A}.va-res-t td,.va-res-t th{text-align:center}.va-smoke td{white-space:normal}"
-      + ".vt-type-img{display:flex;gap:12px;align-items:center}.vt-type-img .vt-thumb{flex:0 0 84px;width:84px;height:64px;border-radius:8px;object-fit:cover;background:#1B2440}.vt-type-img svg.vt-thumb{padding:8px;box-sizing:border-box}.vt-credit{font-size:10px;opacity:.65;margin-top:2px}.va-fig{display:flex;gap:10px;align-items:flex-start;margin:6px 0}.va-fig img,.va-fig .va-figimg{width:96px;height:72px;object-fit:cover;border-radius:8px;flex:0 0 96px}.vt-tw{display:contents}.va-cert{margin:10px 0;padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.2)}.va-cert-need{border-color:#FFB020;background:rgba(255,176,32,.08)}.va-calwarn{margin:6px 0}";
+      + ".vt-type-img{display:flex;gap:12px;align-items:center}.vt-type-img .vt-thumb{flex:0 0 84px;width:84px;height:64px;border-radius:8px;object-fit:cover;background:#1B2440}.vt-type-img svg.vt-thumb{padding:8px;box-sizing:border-box}.vt-credit{font-size:10px;opacity:.65;margin-top:2px}.va-fig{display:flex;gap:10px;align-items:flex-start;margin:6px 0}.va-fig img,.va-fig .va-figimg{width:96px;height:72px;object-fit:cover;border-radius:8px;flex:0 0 96px}.vt-tw{display:contents}.va-q{font-weight:700;font-size:15px;line-height:1.35;margin-bottom:2px}.va-rowh.muted{font-weight:400;font-size:12px}.va-legend{display:grid;gap:2px;margin:6px 0 4px;font-size:12px;opacity:.85}.va-legend b{display:inline-block;min-width:26px}.va-worst{border-left-color:#FFB020}.va-help{margin:6px 0}.va-help summary{cursor:pointer;color:#7FB2FF;font-weight:600;padding:6px 0;min-height:32px}.va-mx{width:100%;border-collapse:collapse;font-size:13px}.va-mx th,.va-mx td{border:1px solid rgba(255,255,255,.15);padding:4px 6px;text-align:center}.va-mx tbody th{text-align:left;font-weight:500}.va-mx tr.on{background:rgba(127,178,255,.18)}.va-mx tr.on th{font-weight:700}.va-mxb{min-width:44px;min-height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:transparent;color:inherit;font-weight:700}.va-mxb.on{background:#7FB2FF;color:#0b1530}.va-cl{margin-top:6px}.va-cert{margin:10px 0;padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.2)}.va-cert-need{border-color:#FFB020;background:rgba(255,176,32,.08)}.va-calwarn{margin:6px 0}";
     document.head.appendChild(st);
     try { g.render(); } catch (e) {}
   }
