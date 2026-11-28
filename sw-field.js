@@ -7,7 +7,7 @@ const CACHE = "envss-field-v48-19"; /* v48.19: lock-down guards. v48.18: same-de
 
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
-const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "noise.js", "fit-test.js", "fit-test.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css", "work/projlist/review.js"].map(p => BASE + p);
+const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "noise.js", "vent.js", "fit-test.js", "fit-test.js?v=" + VERSION, "logo.svg", "vOSog.png", "assets/vent/fume-cupboard.jpg", "assets/vent/spray-booth.jpg", "assets/vent/capture-hood.jpg", "assets/vent/downdraft-table.jpg", "assets/vent/biosafety-cabinet.jpg", "assets/vent/smoke-airflow.jpg", "coc-template.xlsx", "fonts-v38.css", "work/projlist/review.js"].map(p => BASE + p);
 const CDN_ASSETS = [
   "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
   "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js",
@@ -43,10 +43,12 @@ self.addEventListener("activate", event => {
   })());
 });
 const NOISE = BASE + "noise.js";
+const VENT = BASE + "vent.js";   /* v48.19 vent: refreshed on its own, like noise.js */
 function cacheKey(req) {
   const u = new URL(req.url);
   if (u.href.startsWith(PAGE)) return PAGE;          // field.html?anything -> one cached copy
   if (u.href.startsWith(NOISE)) return NOISE;        // noise.js?anything -> one cached copy
+  if (u.href.startsWith(VENT)) return VENT;          // vent.js?anything -> one cached copy
   return u.href;
 }
 async function networkFirst(req, key, timeoutMs) {
@@ -77,5 +79,6 @@ self.addEventListener("fetch", event => {
   /* v46: noise.js is refreshed on its own. Online it is always re-checked with the server (no-cache), so a new
      noise.js goes live without a new field.html or a new worker; offline the last good copy is used. */
   if (key === NOISE) { event.respondWith(networkFirst(new Request(NOISE, { cache: "no-cache" }), NOISE, 6000)); return; }
+  if (key === VENT) { event.respondWith(networkFirst(new Request(VENT, { cache: "no-cache" }), VENT, 6000)); return; }
   if (CACHEABLE.has(key)) event.respondWith(networkFirst(req, key, 0));
 });

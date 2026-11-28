@@ -1,0 +1,1453 @@
+{
+  "at": "2026-11-28T07:34:56.012Z",
+  "root": "",
+  "pass": 289,
+  "fail": 0,
+  "results": [
+    {
+      "name": "pixel7: vent.js loaded beside noise.js",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: project page: vent event row says Vent survey and 0 measurements",
+      "ok": true,
+      "detail": "☰\n← Projects\nProject events\n0019919\nv48.19 field test · Test site\nDelete project\nPlanned in Podio\n\nNo planned Podio events on this job yet. Use Refresh from Podio in the top bar to pull the latest.\n\nPodio events appear in the events list by themselves. For work that is not in Podio, use ☰ (top right) › Add event not in Podio.\n\n0 planned Podio events.\n\nYesterday 0\nToday 3\nTomorrow 0\nAll\nPrepped\nRunning\nNeeds fields\nSamples complete\nEvent complete\nRejected / fault\n0019919-001\nHygiene event · 2026-11-28 · 3 samples\nPREPPED\n0019919-002\nNoise event · 2026-11-28 · 1 sample\nPREPPED\n0019919-003\nVent s"
+    },
+    {
+      "name": "pixel7: project page: hygiene event row still says samples",
+      "ok": true,
+      "detail": "☰\n← Projects\nProject events\n0019919\nv48.19 field test · Test site\nDelete project\nPlanned in Podio\n\nNo planned Podio events on this job yet. Use Refresh from Podio in the top bar to pull the latest.\n\nPodio events appear in the events list by themselves. For work that is not in Podio, use ☰ (top right) › Add event not in Podio.\n\n0 planned Podio events.\n\nYesterday 0\nToday 3\nTomorrow 0\nAll\nPrepped\nRunning\nNeeds fields\nSamples complete\nEvent complete\nRejected / fault\n0019919-001\nHygiene event · 2026-11-28 · 3 samples\nPREPPED\n0019919-002\nNoise event · 2026-11-28 · 1 sample\nPREPPED\n0019919-003\nVent s"
+    },
+    {
+      "name": "pixel7: vent event: Add measurement, no 'sample' wording",
+      "ok": true,
+      "detail": "← Project events\n‹ 0019919-002\n3 of 3 events in this project\nNext ›\n0019919 · v48.19 field test · tap to edit event\n0019919-003\nVent survey\nPLANNED\nMark event complete\n☰\nAnemometer enter once for this event\nOwned or hired?\nOwned\nHired\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to add to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 not | {\"fab\":\"+Add measurement\",\"nav\":\"Measure\"}"
+    },
+    {
+      "name": "pixel7: vent event: bottom bar says Measure on a phone",
+      "ok": true,
+      "detail": "Measure"
+    },
+    {
+      "name": "pixel7: vent event: 'No measurements yet.'",
+      "ok": true,
+      "detail": "← Project events\n‹ 0019919-002\n3 of 3 events in this project\nNext ›\n0019919 · v48.19 field test · tap to edit event\n0019919-003\nVent survey\nPLANNED\nMark event complete\n☰\nAnemometer enter once for this event\nOwned or hired?\nOwned\nHired\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to "
+    },
+    {
+      "name": "pixel7: vent event: code stays {job}-NNN",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: vent event: anemometer card shown once",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: anemometer make / model / serial saved on the event",
+      "ok": true,
+      "detail": "{\"make\":\"TSI\",\"model\":\"9545 VelociCalc\",\"serial\":\"T95450123\"}"
+    },
+    {
+      "name": "pixel7: anemometer change audited on the event log",
+      "ok": true,
+      "detail": "[{\"at\":\"2026-11-28T07:32:21.260Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T954501\",\"to\":\"T9545012\",\"detail\":\"T954501 → T9545012\"},{\"at\":\"2026-11-28T07:32:21.262Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T9545012\",\"to\":\"T95450123\",\"detail\":\"T9545012 → T95450123\"},{\"at\":\"2026-11-28T07:32:21.264Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Anemometer serial\",\"field\":\"vent\",\"from\":\"\",\"to\":\"\",\"detail\":\"blank → T95450123\"}]"
+    },
+    {
+      "name": "pixel7: Add measurement screen: title",
+      "ok": true,
+      "detail": "Add measurement"
+    },
+    {
+      "name": "pixel7: Add measurement screen: the five vent types, Face velocity still offered",
+      "ok": true,
+      "detail": "[\"Vent · Fume cupboard audit\",\"Vent · Face velocity\",\"Vent · Capture velocity\",\"Vent · Other velocity reading\",\"Vent · Visual check only\"]"
+    },
+    {
+      "name": "pixel7: Add measurement screen: no airborne / noise / blank options",
+      "ok": true,
+      "detail": "← 0019919-003\nAdd measurement\nVent · Fume cupboard audit\nGuided AS/NZS 2243.8:2014 audit: unit details, smoke test (Appendix A) first, then the face velocity grid (Appendix B) and the Figure A1 record.\nPhoto: Hey Paul from Sacramento, CA, USA, CC BY 2.0\nVent · Face velocity\nAt the extraction face, hood opening or sash.\nPhoto: Chrysler Restorers SA, CC0 1.0\nVent · Capture velocity\nAt the source or work position, a set distance from the face.\nPhoto: Borderlands Roomba, CC BY-SA 4.0\nVent · Other velocity reading\ne.g. edge of a table, breathing zone, booth length, duct.\nPhoto: akarmy (Flickr), CC BY 2.0\nVent · Visual check only\nNo readings possible (e.g. fully enclosed). Describe what was seen.\nPhoto: Ca.garcia.s, CC BY-SA 4.0\n\nPhoto credits and licences: assets/vent/ATTRIBUTION.md. The pictures are examples only."
+    },
+    {
+      "name": "pixel7: new vent measurement: trainKind vent on the vent event, number 1",
+      "ok": true,
+      "detail": "{\"k\":\"vent\",\"n\":1,\"v\":{\"v\":1,\"type\":\"capture\",\"unit\":\"\",\"hood\":\"\",\"condition\":\"\",\"location\":\"\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[]}}"
+    },
+    {
+      "name": "pixel7: new vent measurement: no airborne defaults (rotameter / contaminant)",
+      "ok": true,
+      "detail": "{\"c\":\"\"}"
+    },
+    {
+      "name": "pixel7: measurement screen opens (Measurement 1, Capture velocity)",
+      "ok": true,
+      "detail": "Measurement 1"
+    },
+    {
+      "name": "pixel7: measurement screen: anemometer from the event is shown",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: measurement screen: 'Still needed' lists unit, location, reading",
+      "ok": true,
+      "detail": "Still needed: Extraction unit, Measurement location, At least one velocity reading"
+    },
+    {
+      "name": "pixel7: Enter on the last reading adds reading 4 and focuses it",
+      "ok": true,
+      "detail": "vt-r3"
+    },
+    {
+      "name": "pixel7: five readings saved in order",
+      "ok": true,
+      "detail": "[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\"]"
+    },
+    {
+      "name": "pixel7: average / lowest / highest worked out (1.32 / 1.01 / 1.54)",
+      "ok": true,
+      "detail": "Readings\n5\nAverage\n1.32\nLowest\n1.01\nHighest\n1.54\nm/s"
+    },
+    {
+      "name": "pixel7: stats helper agrees",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: complete: status ended, location mirrored, 'Measurement complete' shown",
+      "ok": true,
+      "detail": "{\"s\":\"ended\",\"l\":\"At the source, 15 cm from the outer edge\"}"
+    },
+    {
+      "name": "pixel7: below 0.5 m/s distance and comments saved",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"At the source, 15 cm from the outer edge\",\"distanceCm\":\"35\",\"readings\":[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\"],\"below05\":\"~60 cm\",\"comments\":\"Strong induced airflow at the work position\",\"photos\":[]}"
+    },
+    {
+      "name": "pixel7: edits audited once per field (shared change audit), not per keystroke",
+      "ok": true,
+      "detail": "[\"location:(empty) → At the source, 15 cm from the outer edge\",\"vent.location:(empty) → At the source, 15 cm from the outer edge\",\"vent.distanceCm:(empty) → 35\",\"status:prepped → ended\",\"vent.readings:[\\\"\\\",\\\"\\\",\\\"\\\"] → [\\\"1.31\\\",\\\"\\\",\\\"\\\"]\",\"vent.readings:[\\\"1.31\\\",\\\"\\\",\\\"\\\"] → [\\\"1.31\\\",\\\"1.33\\\",\\\"\\\"]\",\"vent.readings:[\\\"1.31\\\",\\\"1.33\\\",\\\"\\\"] → [\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\"]\",\"vent.readings:[\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\"] → [\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\",\\\"1.39\\\"]\",\"vent.readings:[\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\",\\\"1.39\\\"] → [\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\",\\\"1.39\\\",\\\"1.54\\\"]\",\"vent.below05:(empty) → ~60 cm\",\"comments:(empty) → Strong induced airflow at the work position\",\"vent.comments:(empty) → Strong induced airflow at the work position\"]"
+    },
+    {
+      "name": "pixel7: photo saved on the device as an envss-photo reference",
+      "ok": true,
+      "detail": "{\"p\":[\"envss-photo:8e919be2-3488-4457-94b3-a16485fd2373\"],\"r\":[\"8e919be2-3488-4457-94b3-a16485fd2373\"]}"
+    },
+    {
+      "name": "pixel7: photo thumbnail shown",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: out-of-range reading (88 m/s) warns, not a block",
+      "ok": true,
+      "detail": "⚠ Reading 6 (88 m/s) looks wrong. Check it"
+    },
+    {
+      "name": "pixel7: offline: the measurement and event are queued on the device",
+      "ok": true,
+      "detail": "[\"trains:t5v5ll6a\",\"events:eV\"]"
+    },
+    {
+      "name": "pixel7: offline: nothing reached the server yet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: after reload: all vent fields still on the device",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"At the source, 15 cm from the outer edge\",\"distanceCm\":\"35\",\"readings\":[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\",\"\"],\"below05\":\"~60 cm\",\"comments\":\"Strong induced airflow at the work position\",\"photos\":[\"envss-photo:8e919be2-3488-4457-94b3-a16485fd2373\"]}"
+    },
+    {
+      "name": "pixel7: online: envss_trains row carries the vent payload (event_id set)",
+      "ok": true,
+      "detail": "{\"id\":\"t5v5ll6a\",\"payload\":{\"id\":\"t5v5ll6a\",\"eventId\":\"eV\",\"pouch\":\"1\",\"sampleNo\":1,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},\"rpd\":{\"worn\":\"\",\"mod"
+    },
+    {
+      "name": "pixel7: online: envss_events row carries ventEquip",
+      "ok": true,
+      "detail": "{\"id\":\"eV\",\"payload\":{\"id\":\"eV\",\"projectId\":\"p1\",\"code\":\"0019919-003\",\"type\":\"hygiene\",\"podioEventKind\":\"vent\",\"podioAppId\":\"30888385\",\"date\":\"2026-11-28\",\"stage\":\"planned\",\"audit\":[{\"at\":\"2026-11-28T07:32:20.490Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Make\",\"fiel"
+    },
+    {
+      "name": "pixel7: online: queue empty for the vent rows",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: openTrain on a vent measurement opens the vent screen (deep links / rows)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: Another location: Measurement 2 copies unit, hood and condition",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[]}"
+    },
+    {
+      "name": "pixel7: Another location: units already on the event offered",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: event rows: 'Measurement 1 · Face velocity · unit' with avg (lowest–highest)",
+      "ok": true,
+      "detail": "← Project events\n‹ 0019919-002\n3 of 3 events in this project\nNext ›\n0019919 · v48.19 field test · tap to edit event\n0019919-003\nVent survey\nNEEDS FIELDS\nMark event complete\n☰\nAnemometer entered\nOwned or hired?\nOwned\nHired\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to add to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 notes 3). Calibrated within the past 12 months (B3).\n\n📄 Photo of calibration certificate please take one\n📷 Photo of calibration certificate\n⚠ Last calibration date missing\n⚠ Calibration due date missing\n⚠ Calibration correction factor missing (readings are reported uncorrected)\n⚠ Take a photo of the calibration certificate\n\nUsed for every measurement on this event. Typed in for now (a Podio pick list may come l"
+    },
+    {
+      "name": "pixel7: event rows: no 'Sample' wording, no pump / cassette dashes",
+      "ok": true,
+      "detail": "← Project events\n‹ 0019919-002\n3 of 3 events in this project\nNext ›\n0019919 · v48.19 field test · tap to edit event\n0019919-003\nVent survey\nNEEDS FIELDS\nMark event complete\n☰\nAnemometer entered\nOwned or hired?\nOwned\nHired\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to add to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 notes 3). Calibrated within the past 12 months (B3).\n\n📄 Photo of calibration certificate please take one\n📷 Photo of calibration certificate\n⚠ Last calibration date missing\n⚠ Calibration due date missing\n⚠ Calibration correction factor missing (readings are reported uncorrected)\n⚠ Take a photo of the calibration certificate\n\nUsed for every measurement on this event. Typed in for now (a Podio pick list may come l"
+    },
+    {
+      "name": "pixel7: event list (project page): 2 measurements",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: Mark complete blocked while Measurement 2 has no readings (lists what is missing)",
+      "ok": true,
+      "detail": "[\"This event cannot be marked complete until every measurement is complete.\\n\\nMeasurement 2: At least one velocity reading\"]"
+    },
+    {
+      "name": "pixel7: Mark complete: done when every measurement is complete, no COC offered",
+      "ok": true,
+      "detail": "[\"Event marked complete.\\n\\nVent surveys have no lab samples, so there is no COC. Use ☰ > Export vent survey CSV for the field sheet.\"]"
+    },
+    {
+      "name": "pixel7: Create COC on a vent event: refused with a plain message",
+      "ok": true,
+      "detail": "[\"Vent surveys have no lab samples, so there is no COC.\\n\\nUse ☰ > Export vent survey CSV for the field sheet.\"]"
+    },
+    {
+      "name": "pixel7: CSV: 0019340 Sheet1 headings first, app columns to the right",
+      "ok": true,
+      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\",\"Raw Reading (m/s)\",\"Calibration Correction (m/s)\",\"Point Min During Reading (m/s)\",\"Point Max During Reading (m/s)\",\"Previous Point No.\",\"Smoke Test Result (A6)\",\"Overall (Smoke + cl 3.1.2)\",\"Location\",\"Installation\",\"Fume Cupboard Empty\",\"Anemometer Owned/Hired\",\"Anemometer Supplier\",\"Last Calibration\",\"Calibration Due\",\"Calibration Check\""
+    },
+    {
+      "name": "pixel7: CSV: one row per reading, stats + comments on the first row (1.32 / 1.01 / 1.54), anemometer",
+      "ok": true,
+      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\",\"Raw Reading (m/s)\",\"Calibration Correction (m/s)\",\"Point Min During Reading (m/s)\",\"Point Max During Reading (m/s)\",\"Previous Point No.\",\"Smoke Test Result (A6)\",\"Overall (Smoke + cl 3.1.2)\",\"Location\",\"Installation\",\"Fume Cupboard Empty\",\"Anemometer Owned/Hired\",\"Anemometer Supplier\",\"Last Calibration\",\"Calibration Due\",\"Calibration Check\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"1.31\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Strong induced airflow at the work position\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"At the source, 15 cm from the outer edge\",\"35\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"1\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 1\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"Check: Last calibration date missing; Calibration due date missing; Calibration correction factor missing (readings are reported uncorrected); Take a photo of the calibration certificate\"\n\"\",\"2\",\"1.33\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"3\",\"1.01\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"4\",\"1.39\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"5\",\"1.54\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"2.10\",\"2.09\",\"2.02\",\"2.14\",\"\",\"\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"Directly in front of the extraction face\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 2\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"Check: Last calibration date missing; Calibration due date missing; Calibration correction factor missing (readings are reported uncorrected); Take a photo of the calibration certificate\""
+    },
+    {
+      "name": "pixel7: CSV: summary block after the measurements (Summary tab columns)",
+      "ok": true,
+      "detail": "[\"\\\"DMS downdraft table (dry lab)\\\",\\\"5\\\",\\\"1.32\\\",\\\"1.01\\\",\\\"1.54\\\",\\\"~60 cm\\\",\\\"Extraction on, boxes moved off the bench\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"Capture velocity\\\",\\\"\\\",\\\"\\\",\\\"\\\"\",\"\\\"DMS downdraft table (dry lab)\\\",\\\"3\\\",\\\"2.09\\\",\\\"2.02\\\",\\\"2.14\\\",\\\"\\\",\\\"Extraction on, boxes moved off the bench\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"Capture velocity\\\",\\\"\\\",\\\"\\\",\\\"\\\"\",\"\\\"Anemometer\\\",\\\"TSI 9545 VelociCalc · SN T95450123\\\",\\\"Calibration check\\\",\\\"Check: Last calibration date missing; Calibration due date missing; Calibration correction factor missing (readings are reported uncorrected); Take a photo of the calibration certificate\\\"\"]"
+    },
+    {
+      "name": "pixel7: visual check: needs a comment, not readings",
+      "ok": true,
+      "detail": "Still needed: Comments (what was seen)"
+    },
+    {
+      "name": "pixel7: visual check: complete with a comment",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: delete: shared confirm ('Delete Measurement 3?'), tombstone in envss_deletions, back on the event",
+      "ok": true,
+      "detail": "[\"Delete Measurement 3? This cannot be undone on this device.\"]"
+    },
+    {
+      "name": "pixel7: existing hygiene / noise rows not rewritten by vent.js",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: gridFor 2000×1800 → 5 columns × 8 rows = 40, spacing 450 / 229 mm",
+      "ok": true,
+      "detail": "{\"cols\":5,\"rows\":8,\"gapX\":450,\"gapY\":229,\"points\":40}"
+    },
+    {
+      "name": "pixel7: gridFor 600×500 → 2 × 3 = 6, spacing 400 / 150 mm",
+      "ok": true,
+      "detail": "{\"cols\":2,\"rows\":3,\"gapX\":400,\"gapY\":150,\"points\":6}"
+    },
+    {
+      "name": "pixel7: gridFor 1200×700 → 3 × 3 = 9, spacing exactly 500 / 250 mm (limits are 'not more than')",
+      "ok": true,
+      "detail": "{\"cols\":3,\"rows\":3,\"gapX\":500,\"gapY\":250,\"points\":9}"
+    },
+    {
+      "name": "pixel7: gridFor 1800×1000 → 5 × 5 = 25, spacing 400 / 200 mm",
+      "ok": true,
+      "detail": "{\"cols\":5,\"rows\":5,\"gapX\":400,\"gapY\":200,\"points\":25}"
+    },
+    {
+      "name": "pixel7: gridFor 1500×750 → 4 × 4 = 16, spacing 433 / 183 mm",
+      "ok": true,
+      "detail": "{\"cols\":4,\"rows\":4,\"gapX\":433,\"gapY\":183,\"points\":16}"
+    },
+    {
+      "name": "pixel7: gridFor small openings: 250×250 → 2 × 2 (50 mm), 150×150 → single centre point",
+      "ok": true,
+      "detail": "[{\"cols\":2,\"rows\":2,\"gapX\":50,\"gapY\":50,\"points\":4},{\"cols\":1,\"rows\":1,\"gapX\":0,\"gapY\":0,\"points\":1}]"
+    },
+    {
+      "name": "pixel7: gridFor: blank or non-numeric size → no grid",
+      "ok": true,
+      "detail": "[null,null]"
+    },
+    {
+      "name": "pixel7: gridFor sweep (≈2,500 sizes): spacing never over 500 / 250 mm and always the fewest lines",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: type picker: each card has a picture with a credit line",
+      "ok": true,
+      "detail": "[{\"k\":\"grid\",\"img\":true,\"credit\":\"Photo: Hey Paul from Sacramento, CA, USA, CC BY 2.0\"},{\"k\":\"face\",\"img\":true,\"credit\":\"Photo: Chrysler Restorers SA, CC0 1.0\"},{\"k\":\"capture\",\"img\":true,\"credit\":\"Photo: Borderlands Roomba, CC BY-SA 4.0\"},{\"k\":\"other\",\"img\":true,\"credit\":\"Photo: akarmy (Flickr), CC BY 2.0\"},{\"k\":\"visual\",\"img\":true,\"credit\":\"Photo: Ca.garcia.s, CC BY-SA 4.0\"}]"
+    },
+    {
+      "name": "pixel7: audit: new measurement is type grid (Fume cupboard audit), smoke source defaults to air current tubes, no grid yet",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"grid\",\"unit\":\"\",\"hood\":\"\",\"condition\":\"\",\"location\":\"\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[],\"grid\":{\"basis\":\"standard\",\"widthMm\":\"\",\"heightMm\":\"\",\"cols\":0,\"rows\":0,\"gapX\":0,\"gapY\":0,\"reason\":\"\",\"v\":{},\"d\":{},\"label\":{},\"lo\":{},\"hi\":{},\"scheme\":\"as2243.8-A1\"},\"smoke\":{},\"equipPhotos\":[],\"smokePhotos\":{},\"smokeSource\":\"Air current tubes\",\"testedBy\":\"V46 Test\"}"
+    },
+    {
+      "name": "pixel7: audit: four steps Unit / Smoke test / Face velocity / Summary, opens on step 1",
+      "ok": true,
+      "detail": "[\"1 Unit\",\"2 Smoke test\",\"3 Face velocity\",\"4 Summary\"]"
+    },
+    {
+      "name": "pixel7: step 1 'Still needed': location, F/C number, type, new/existing, empty",
+      "ok": true,
+      "detail": "Still needed: Location, F/C number / unit, Type, New installation or existing, Fume cupboard empty? (Yes / No)"
+    },
+    {
+      "name": "pixel7: step 1 cites Figure A1, A4.1, A5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: step 1 prompts read as questions",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: New installation → rule 'empty' cited A4.1.3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: Equipment inside → photo or plan required (A5)",
+      "ok": true,
+      "detail": "Still needed: Photo or plan of the equipment inside (A5)\n⚠ New installations are tested with the cupboard empty (A4.1.3 / B4.1.3)"
+    },
+    {
+      "name": "pixel7: step 1 saved: location, unit, type, make/model/serial, install, empty, plan, condition",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"grid\",\"unit\":\"FC-2\",\"hood\":\"Bench-type fume cupboard\",\"condition\":\"Two extraction fans in operation\",\"location\":\"Chemistry Lab 1.04\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[],\"grid\":{\"basis\":\"standard\",\"widthMm\":\"\",\"heightMm\":\"\",\"cols\":0,\"rows\":0,\"gapX\":0,\"gapY\":0,\"reason\":\"\",\"v\":{},\"d\":{},\"label\":{},\"lo\":{},\"hi\":{},\"scheme\":\"as2243.8-A1\"},\"smoke\":{},\"equipPhotos\":[],\"smokePhotos\":{},\"smokeSource\":\"Air current tubes\",\"testedBy\":\"V46 Test\",\"hoodMake\":\"Dynaflow\",\"hoodModel\":\"DF-1800\",\"hoodSerial\":\"FC2-0042\",\"install\":\"new\",\"empty\":\"no\",\"equipNote\":\"Rotary evaporator 400 × 300 mm, back left\"}"
+    },
+    {
+      "name": "pixel7: step 1 complete (✓ on the step)",
+      "ok": true,
+      "detail": "Still needed: Smoke A4.2(b) Face opening airflow pattern: G, S or D, Smoke A4.2(c) Cupboard airflow pattern: G, S or D, Smoke A4.2(d) Containment along bottom of cupboard: G, S or D, Smoke A4.2(e) Containment along walls of cupboard: G, S or D, Smoke A4.2(f) Containment with sash fully open: G, S or D, Smoke A4.2(g)–(h) Containment with sash half open: G, S or D, Smoke A4.2(i) Containment with sash at minimum opening: G, S or D, Smoke A4.2(j) Containment under abnormal conditions: G, S or D, Smoke A4.2(k) Leaks at joints and service penetrations (built-in cupboards): G, S or D"
+    },
+    {
+      "name": "pixel7: Face velocity before the smoke test → gate cites A4.1.1, override offered",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: smoke test: A4.2(b)…(k) in order, cites Appendix A",
+      "ok": true,
+      "detail": "[\"b\",\"c\",\"d\",\"e\",\"f\",\"h\",\"i\",\"j\",\"k\"]"
+    },
+    {
+      "name": "pixel7: smoke step shows the airflow picture with its credit",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: smoke ratings are Good / Satisfactory / Dangerous (A5), never 'Deficient'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: every smoke position reads as a question (9 questions ending in '?')",
+      "ok": true,
+      "detail": "[\"With the sash at its maximum working opening, does smoke released around the whole face perimeter flow smoothly into the cupboard without escaping?\",\"Inside the cupboard, around any equipment, tanks, sinks or sump, does the smoke move to the exhaust without being carried forward or out?\",\"When smoke is released along the floor of the cupboard, front to back, does it stay inside without eddies carrying it forward or out?\",\"When smoke is released along the inside walls, does it stay inside without eddies carrying it forward or out?\",\"With the sash fully open, does smoke released just behind the sash at several points across the opening stay inside, with no eddies at the sash or handles?\",\"With the sash lowered to half open, does smoke released just behind the sash across the opening stay inside?\",\"With the sash at its minimum opening, does the smoke stay inside without eddies?\",\"With nearby cupboards running, doors and windows opening, air-conditioning and people moving past, does the cupboard still hold the smoke?\",\"If the cupboard is built into the wall, does smoke along joints, service penetrations and around the sash show no air jets leaking in from the wall cavity or ceiling space?\"]"
+    },
+    {
+      "name": "pixel7: under the buttons: G / S / D / N/A meanings (D = escapes, unit fails; N/A needs a reason)",
+      "ok": true,
+      "detail": "G Good: smoke goes straight to the exhaust, no reverse flow or eddies\nS Satisfactory: some eddies or reverse flow, but the smoke stays inside the cupboard\nD Dangerous: smoke escapes the cupboard (the unit fails)\nN/A: this position doesn't apply to this unit (give a reason)"
+    },
+    {
+      "name": "pixel7: reminder: the worst rating sets the unit result",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: 'Help me decide' is closed by default under each question",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: matrix: rows are observations, columns G / S / D / N/A, one cell per row",
+      "ok": true,
+      "detail": "[[\"What did the smoke do?\",\"G\",\"S\",\"D\",\"N/A\"],[\"Smoke goes straight to the exhaust\",\"G\",\"\",\"\",\"\"],[\"Eddies or reverse flow, but the smoke stays inside\",\"\",\"S\",\"\",\"\"],[\"Smoke escapes past the sash or face\",\"\",\"\",\"D\",\"\"],[\"This position isn't on this unit\",\"\",\"\",\"\",\"N/A\"]]"
+    },
+    {
+      "name": "pixel7: tapping 'Eddies … stays inside' selects S, highlights that row, panel stays open",
+      "ok": true,
+      "detail": "{\"Cupboard airflow pattern\":\"S\"}"
+    },
+    {
+      "name": "pixel7: tapping the selected matrix row again keeps S (matrix only selects)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: matrix N/A → 'reason for N/A' needed",
+      "ok": true,
+      "detail": "Still needed: Smoke A4.2(b) Face opening airflow pattern: G, S or D, Smoke A4.2(d) Containment along bottom of cupboard: G, S or D, Smoke A4.2(e) Containment along walls of cupboard: G, S or D, Smoke A4.2(f) Containment with sash fully open: G, S or D, Smoke A4.2(g)–(h) Containment with sash half open: G, S or D, Smoke A4.2(i) Containment with sash at minimum opening: G, S or D, Smoke A4.2(j) Containment under abnormal conditions: G, S or D, Smoke A4.2(k) Leaks at joints and service penetrations (built-in cupboards): G, S or D, Smoke A4.2(c) Cupboard airflow pattern: reason for N/A"
+    },
+    {
+      "name": "pixel7: a D rating → smoke Non-compliant (A6)",
+      "ok": true,
+      "detail": "Smoke result: Dangerous · Non-compliant A6: worst score; any D is non-compliant"
+    },
+    {
+      "name": "pixel7: smoke: worst score Satisfactory → Compliant; ratings and comments saved",
+      "ok": true,
+      "detail": "{\"Cupboard airflow pattern\":\"S\",\"Cupboard airflow pattern comment\":\"Small eddy near the sink, stayed inside\",\"Face opening airflow pattern\":\"G\",\"Containment along bottom of cupboard\":\"G\",\"Containment along walls of cupboard\":\"G\",\"Containment with sash fully open\":\"G\",\"Containment with sash half open\":\"S\",\"Containment with sash at minimum opening\":\"G\",\"Containment under abnormal conditions\":\"G\",\"Leaks at joints and service penetrations (built-in cupboards)\":\"NA\",\"Leaks at joints and service penetrations (built-in cupboards) comment\":\"Free-standing cupboard\",\"Containment with sash half open comment\":\"Slight eddy at the sash, contained\"}"
+    },
+    {
+      "name": "pixel7: step 2 complete",
+      "ok": true,
+      "detail": "✓ Step 2 complete"
+    },
+    {
+      "name": "pixel7: Next → step 3 Face velocity, no gate once smoke is done",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: anemometer: warns for missing calibration dates, correction and certificate photo (no block)",
+      "ok": true,
+      "detail": "⚠ Last calibration date missing\n⚠ Calibration due date missing\n⚠ Calibration correction factor missing (readings are reported uncorrected)\n⚠ Take a photo of the calibration certificate"
+    },
+    {
+      "name": "pixel7: Hired → supplier defaults to Airmet",
+      "ok": true,
+      "detail": "{\"make\":\"TSI\",\"model\":\"9545 VelociCalc\",\"serial\":\"T95450123\",\"ownership\":\"hired\",\"supplier\":\"Airmet\"}"
+    },
+    {
+      "name": "pixel7: calibration due 2026-11-27, before the survey → warning; certificate photo still prompted",
+      "ok": true,
+      "detail": "⚠ Calibration was due 2026-11-27, before the survey date (2026-11-28)\n⚠ Take a photo of the calibration certificate"
+    },
+    {
+      "name": "pixel7: certificate photo box is highlighted and has the camera button",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: grid 2000×1800: 5 × 8 = 40 points, 450 / 229 mm shown and saved",
+      "ok": true,
+      "detail": "5 × 8 = 40 points · horizontal spacing 450 mm · vertical spacing 229 mm\nFirst and last lines 100 mm in from each edge of the 2000 × 1800 mm opening."
+    },
+    {
+      "name": "pixel7: grid help cites B4.2(c), 100 / 250 / 500 mm, fewest lines",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: 40 cells labelled A, B, C… across each row from top left (Figure A1 note 4)",
+      "ok": true,
+      "detail": "{\"n\":40,\"h\":[\"A\",\"B\",\"E\",\"F\",\"AN\"],\"first\":[0,8,16,24,32,1]}"
+    },
+    {
+      "name": "pixel7: Enter moves A → B (across the row)",
+      "ok": true,
+      "detail": "vg-v8"
+    },
+    {
+      "name": "pixel7: 40 raw readings saved under their point keys (A = point 1, B = point 9, AN = point 40)",
+      "ok": true,
+      "detail": "{\"point 1\":\"0.45\",\"point 9\":\"0.82\",\"point 17\":\"0.69\",\"point 25\":\"0.56\",\"point 33\":\"0.93\",\"point 2\":\"0.80\",\"point 10\":\"0.67\",\"point 18\":\"0.54\",\"point 26\":\"0.91\",\"point 34\":\"0.78\",\"point 3\":\"0.65\",\"point 11\":\"0.52\",\"point 19\":\"0.89\",\"point 27\":\"0.76\",\"point 35\":\"0.63\",\"point 4\":\"0.50\",\"point 12\":\"0.87"
+    },
+    {
+      "name": "pixel7: stats include the +0.02 correction (avg 0.72, 0.47, 0.96)",
+      "ok": true,
+      "detail": "Points\n40 / 40\nAverage\n0.72\nLowest\n0.47\nHighest\n0.96\nm/s"
+    },
+    {
+      "name": "pixel7: each cell shows the corrected reading (→)",
+      "ok": true,
+      "detail": "→ 0.47"
+    },
+    {
+      "name": "pixel7: cl 3.1.2 Meets",
+      "ok": true,
+      "detail": "✓ Meets AS/NZS 2243.8:2014 cl. 3.1.2 · average 0.72 m/s ≥ 0.5 · no point below 0.3 m/s\nIndicator only: it never blocks saving or completing."
+    },
+    {
+      "name": "pixel7: audit complete (status ended) despite calibration warnings (warnings never block)",
+      "ok": true,
+      "detail": "{\"s\":\"ended\",\"c\":\"⚠ Points A, E, H, I, L, M, P, Q, T, U, X, AB, AE, AF, AI, AJ, AM, AN more than 20% from the average: investigate (cl. 3.1.2 note 3)\\n⚠ Anemometer: Calibration was due 2026-11-27, before the survey date (2026-11-28)\\n⚠ Anemometer: Take a photo of the calibration certificate\"}"
+    },
+    {
+      "name": "pixel7: point E (key 5) 0.21 → 0.23 corrected → Does not meet, still complete",
+      "ok": true,
+      "detail": "✗ Does not meet AS/NZS 2243.8:2014 cl. 3.1.2 · average 0.71 m/s ≥ 0.5 · 1 point below 0.3 m/s (lowest 0.23)\nIndicator only: it never blocks saving or completing."
+    },
+    {
+      "name": "pixel7: distance and custom label saved per point",
+      "ok": true,
+      "detail": "{\"d\":{\"point 1 below 0.5\":\"~1\",\"point 8 below 0.5\":\"1.2\"},\"l\":{\"point 4 label\":\"Behind sash stop\"}}"
+    },
+    {
+      "name": "pixel7: audit is one readable line per change (no big JSON blobs)",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "pixel7: face velocity step fits the width",
+      "ok": true,
+      "detail": "{\"sw\":412,\"iw\":412}"
+    },
+    {
+      "name": "pixel7: shrinking 2000→600 mm (would drop points) refused, nothing lost",
+      "ok": true,
+      "detail": "[\"That would change the grid to 2 × 8 and drop the readings already entered at points C, H, M, R, W, AB, AG, AL, D, I, N, S, X, AC, AH, AM, E, J, O, T, Y, AD, AI, AN.\\n\\nNothing has been changed. Clear those points first if the grid really is smaller.\"]"
+    },
+    {
+      "name": "pixel7: step 4 summary: smoke Satisfactory compliant, face velocity does not meet, overall Non-compliant",
+      "ok": true,
+      "detail": "Smoke test\nSatisfactory · compliant\nFace velocity\ndoes not meet cl. 3.1.2 · avg 0.71 m/s, max 0.96, min 0.23\nOverall\nNon-compliant"
+    },
+    {
+      "name": "pixel7: Figure A1 record: location, F/C, instrument, correction, hired from Airmet, due date, calibration warning, letters A…",
+      "ok": true,
+      "detail": "Record Figure A1: reporting of velocity and smoke test results\nLocation\tChemistry Lab 1.04\nF/C number\tFC-2\nType\tBench-type fume cupboard\nInstallation\tNew (commissioning)\nSmoke test\nFume cupboard empty\tNo (plan / photo attached: 0 + description)\nSmoke source used\tAir current tubes\nTest position\tResult\tComments\nFace opening airflow pattern\tG\t\nCupboard airflow pattern\tS\tSmall eddy near the sink, stayed inside\nContainment along bottom of cupboard\tG\t\nContainment along walls of cupboard\tG\t\nContainment with sash fully open\tG\t\nContainment with sash half open\tS\tSlight eddy at the sash, contained\nContainment with sash at minimum opening\tG\t\nContainment under abnormal conditions\tG\t\nLeaks at joints and service penetrations (built-in cupboards)\tN/A\tFree-standing cupboard\nObservations of smoke distribution A4.2(l)\tCupboard airflow pattern: Small eddy near the sink, stayed inside; Containment with sash half open: Slight eddy at the sash, contained; Leaks at joints and service penetrations (built-in cupboards): Free-standing cupboard\n\nG Good · S Satisfactory · D Dangerous A5. Result: Satisfactory · Compliant.\n\nFace velocity\nFace opening\tWidth 2000 mm · Height 1800 mm\nNo. of readings\t40 of 40 (5 × 8)\nInstrument\tTSI 9545 VelociCalc\nSerial no.\tT95450123\nCalibration correction factor\t+0.02 m/s at 0.50 m/s\nOwned / hired\tHired (Airmet)\nLast calibration / due\t2026-05-12 / due 2026-11-27\nCalibration check\tCalibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibra"
+    },
+    {
+      "name": "pixel7: Figure A1 record shows the A4.2(l) observations from the per-position notes",
+      "ok": true,
+      "detail": "Cupboard airflow pattern: Small eddy near the sink, stayed inside; Containment with sash half open: Slight eddy at the sash, contained; Leaks at joints and service penetrations (built-in cupboards): Free-standing cupboard"
+    },
+    {
+      "name": "pixel7: audit offline: queued on the device, nothing on the server",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: after reload: readings, smoke, step 1 and calibration details still on the device",
+      "ok": true,
+      "detail": "{\"Cupboard airflow pattern\":\"S\",\"Cupboard airflow pattern comment\":\"Small eddy near the sink, stayed inside\",\"Face opening airflow pattern\":\"G\",\"Containment along bottom of cupboard\":\"G\",\"Containment along walls of cupboard\":\"G\",\"Containment with sash fully open\":\"G\",\"Containment with sash half open\":\"S\",\"Containment with sash at minimum opening\":\"G\",\"Containment under abnormal conditions\":\"G\",\"Leaks at joints and service penetrations (built-in cupboards)\":\"NA\",\"Leaks at joints and service penetrations (built-in cupboards) comment\":\"Free-standing cupboard\",\"Containment with sash half open comment\":\"Slight eddy at the sash, contained\"}"
+    },
+    {
+      "name": "pixel7: online: train row carries grid + smoke; event row carries the calibration details",
+      "ok": true,
+      "detail": "{\"id\":\"t2qf61fs\",\"payload\":{\"id\":\"t2qf61fs\",\"eventId\":\"eV\",\"pouch\":\"3\",\"sampleNo\":3,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\""
+    },
+    {
+      "name": "pixel7: + Another condition: copies location, unit, type, install, empty, hood details and opening; empty grid, no condition",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"grid\",\"unit\":\"FC-2\",\"hood\":\"Bench-type fume cupboard\",\"condition\":\"\",\"location\":\"Chemistry Lab 1.04\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[],\"grid\":{\"basis\":\"standard\",\"widthMm\":\"2000\",\"heightMm\":\"1800\",\"cols\":5,\"rows\":8,\"gapX\":450,\"gapY\":229,\"reason\":\"\",\"v\":{},\"d\":{},\"label\":{},\"lo\":{},\"hi\":{},\"scheme\":\"as2243.8-A1\"},\"smoke\":{},\"equipPhotos\":[],\"smokePhotos\":{},\"hoodMake\":\"Dynaflow\",\"hoodModel\":\"DF-1800\",\"hoodSerial\":\"FC2-0042\",\"install\":\"new\",\"empty\":\"no\",\"equipNote\":\"Rotary evaporator 400 × 300 mm, back left\",\"smokeSource\":\"Air current tubes\",\"testedBy\":\"V46 Test\"}"
+    },
+    {
+      "name": "pixel7: another condition opens on the smoke test (step 1 already filled, smoke is per condition)",
+      "ok": true,
+      "detail": "2"
+    },
+    {
+      "name": "pixel7: hood serial edit flows to the other condition on the unit",
+      "ok": true,
+      "detail": "FC2-0042B"
+    },
+    {
+      "name": "pixel7: Manual grid button stays on one line (28 not wrapped)",
+      "ok": true,
+      "detail": "{\"ok\":true,\"w\":289,\"cw\":289,\"h\":52,\"t\":\"Manual grid instead (4×7 = 28)\"}"
+    },
+    {
+      "name": "pixel7: override 'record anyway' logged; partly filled grid warns about blank points",
+      "ok": true,
+      "detail": "⚠ 37 of 40 points still blank\n⚠ Face velocity recorded before the smoke test was finished (A4.1.1 / B4.1.1: smoke test first)\n⚠ Anemometer: Calibration was due 2026-11-27, before the survey date (2026-11-28)\n⚠ Anemometer: Take a photo of the calibration certificate"
+    },
+    {
+      "name": "pixel7: manual grid: 4 × 7 = 28; 'Manual grid' once (dashed box only); reason optional",
+      "ok": true,
+      "detail": "{\"gtxt\":\"4 × 7 = 28 points\",\"box\":\"Manual grid (not set out from the opening size)\\nColumns (across)\\nRows (down)\\nReason for the manual grid (optional)\\n Use the standard grid from the opening size\"}"
+    },
+    {
+      "name": "pixel7: manual 4 × 7 letters across rows: A B … D, then E on row 2, AB bottom right",
+      "ok": true,
+      "detail": "[\"A\",\"B\",\"D\",\"E\",\"AB\"]"
+    },
+    {
+      "name": "pixel7: Mark complete never asks for the optional manual-grid reason",
+      "ok": true,
+      "detail": "[\"This event cannot be marked complete until every measurement is complete.\\n\\nMeasurement 4: Smoke A4.2(b) Face opening airflow pattern: G, S or D, Smoke A4.2(c) Cupboard airflow pattern: G, S or D, Smoke A4.2(d) Containment along bottom of cupboard: G, S or D, Smoke A4.2(e) Containment along walls of cupboard: G, S or D, Smoke A4.2(f) Containment with sash fully open: G, S or D, Smoke A4.2(g)–(h) Containment with sash half open: G, S or D, Smoke A4.2(i) Containment with sash at minimum opening: G, S or D, Smoke A4.2(j) Containment under abnormal conditions: G, S or D, Smoke A4.2(k) Leaks at joints and service penetrations (built-in cupboards): G, S or D\\nMeasurement 5: Location, Type, New installation or existing, Fume cupboard empty? (Yes / No), Smoke A4.2(b) Face opening airflow pattern: G, S or D, Smoke A4.2(c) Cupboard airflow pattern: G, S or D, Smoke A4.2(d) Containment along bottom of cupboard: G, S or D, Smoke A4.2(e) Containment along walls of cupboard: G, S or D, Smoke A4.2(f) Containment with sash fully open: G, S or D, Smoke A4.2(g)–(h) Containment with sash half open: G, S or D, Smoke A4.2(i) Containment with sash at minimum opening: G, S or D, Smoke A4.2(j) Containment under abnormal conditions: G, S or D, Smoke A4.2(k) Leaks at joints and service penetrations (built-in cupboards): G, S or D\"]"
+    },
+    {
+      "name": "pixel7: manual grid: dropping a column with a reading in it is refused",
+      "ok": true,
+      "detail": "[\"That would change the grid to 3 × 7 and drop the readings already entered at point AB.\\n\\nNothing has been changed. Clear those points first if the grid really is smaller.\"]"
+    },
+    {
+      "name": "pixel7: manual grid avg 0.49 corrected → Does not meet (indicator)",
+      "ok": true,
+      "detail": "✗ Does not meet AS/NZS 2243.8:2014 cl. 3.1.2 · average 0.49 m/s < 0.5 · no point below 0.3 m/s\nIndicator only: it never blocks saving or completing."
+    },
+    {
+      "name": "pixel7: 600×500: 2 × 3 = 6 points, 400 / 150 mm, A B / C D / E F across rows",
+      "ok": true,
+      "detail": "[\"A\",\"B\",\"C\",\"D\",\"E\",\"F\"] 2 × 3 = 6 points · horizontal spacing 400 mm · vertical spacing 150 mm\nFirst and last lines 100 mm in from each edge of the 600 × 500 mm opening."
+    },
+    {
+      "name": "pixel7: 600×500: Meets cl 3.1.2 (avg 0.62 incl. +0.02)",
+      "ok": true,
+      "detail": "✓ Meets AS/NZS 2243.8:2014 cl. 3.1.2 · average 0.62 m/s ≥ 0.5 · no point below 0.3 m/s\nIndicator only: it never blocks saving or completing. Points\n6 / 6\nAverage\n0.62\nLowest\n0.54\nHighest\n0.72\nm/s"
+    },
+    {
+      "name": "pixel7: growing 600→1200 mm re-sets to 3 × 3 and keeps every reading in its column / row",
+      "ok": true,
+      "detail": "{\"point 1\":\"0.55\",\"point 2\":\"0.61\",\"point 3\":\"0.58\",\"point 4\":\"0.66\",\"point 5\":\"0.70\",\"point 6\":\"0.52\"}"
+    },
+    {
+      "name": "pixel7: and back to 600 mm → 2 × 3 again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: event summary columns incl. Smoke and Overall",
+      "ok": true,
+      "detail": "[\"Unit\",\"Condition\",\"n\",\"Avg\",\"Min\",\"Max\",\"<0.5 m/s at\",\"Opening (mm)\",\"Grid · spacing (mm)\",\"2243.8\",\"Smoke\",\"Overall\"]"
+    },
+    {
+      "name": "pixel7: event summary FC-2 row: 40, corrected avg / min / max, 2000 × 1800, 5 × 8 · 450 × 229, Does not meet, Satisfactory, Non-compliant",
+      "ok": true,
+      "detail": "[\"FC-2\",\"Two extraction fans in operation\",\"40\",\"0.71\",\"0.23\",\"0.96\",\"~1 to 1.2 m\",\"2000 × 1800\",\"5 × 8 · 450 × 229\",\"Does not meet\",\"Satisfactory (compliant)\",\"Non-compliant\"]"
+    },
+    {
+      "name": "pixel7: event summary: manual and 600 × 500 rows",
+      "ok": true,
+      "detail": "[[\"Unit\",\"Condition\",\"n\",\"Avg\",\"Min\",\"Max\",\"<0.5 m/s at\",\"Opening (mm)\",\"Grid · spacing (mm)\",\"2243.8\",\"Smoke\",\"Overall\"],[\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"\",\"\",\"\",\"\",\"\"],[\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"\",\"\",\"\",\"\",\"\"],[\"FC-2\",\"Two extraction fans in operation\",\"40\",\"0.71\",\"0.23\",\"0.96\",\"~1 to 1.2 m\",\"2000 × 1800\",\"5 × 8 · 450 × 229\",\"Does not meet\",\"Satisfactory (compliant)\",\"Non-compliant\"],[\"FC-2\",\"Four extraction fans in operation, sash 300 mm\",\"3\",\"0.97\",\"0.90\",\"1.04\",\"\",\"2000 × 1800\",\"5 × 8 · 450 × 229\",\"Meets\",\"\",\"Incomplete\"],[\"Spray booth 1\",\"One extraction fan in operation\",\"3\",\"0.49\",\"0.40\",\"0.63\",\"\",\"\",\"4 × 7 · manual\",\"Does not meet\",\"\",\"Non-compliant\"],[\"Small benchtop hood\",\"One extraction fan in operation\",\"6\",\"0.62\",\"0.54\",\"0.72\",\"\",\"600 × 500\",\"2 × 3 · 400 × 150\",\"Meets\",\"\",\"Incomplete\"]]"
+    },
+    {
+      "name": "pixel7: event summary: anemometer line with hired / Airmet / due date and calibration warning",
+      "ok": true,
+      "detail": "Anemometer: TSI 9545 VelociCalc · SN T95450123 · Hired from Airmet · calibrated 2026-05-12 · due 2026-11-27 · correction +0.02 m/s at 0.50 m/s · Check: Calibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibration certificate"
+    },
+    {
+      "name": "pixel7: event anemometer block: owned/hired, supplier, last calibration, due date, correction, certificate photo",
+      "ok": true,
+      "detail": "Anemometer entered\nOwned or hired?\nOwned\nHired\nSupplier\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to add to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 notes 3). Calibrated within the past 12 months (B3).\n\n📄 Photo of calibration certificate please take one\n📷 Photo of calibration certificate\n⚠ Calibration was due 2026-11-27, before the survey date (2026-11-28)\n⚠ Take a photo of the calibration certificate\n\nUsed for every measurem"
+    },
+    {
+      "name": "pixel7: event page with summary fits the width",
+      "ok": true,
+      "detail": "{\"sw\":424,\"iw\":424}"
+    },
+    {
+      "name": "pixel7: CSV block first row: unit – condition, A, corrected velocity, avg / min / max, distance, comments",
+      "ok": true,
+      "detail": "\"FC-2 – Two extraction fans in operation\",\"A\",\"0.47\",\"0.71\",\"0.23\",\"0.96\",\"~1\",\"Sash at 500 mm working height. Bench clutter near the right side.\",\"FC-2\",\"Two extraction fans in operation\",\"Bench-type fume cupboard\",\"Dynaflow\",\"DF-1800\",\"FC2-0042B\",\"Fume cupboard audit\",\"Chemistry Lab 1.04\",\"\",\"\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"\",\"Does not meet\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 3\",\"0.45\",\"+0.02\",\"\",\"\",\"\",\"Satisfactory (compliant)\",\"Non-compliant\",\"Chemistry Lab 1.04\",\"New\",\"No\",\"Hired\",\"Airmet\",\"2026-05-12\",\"2026-11-27\",\"Check: Calibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibration certificate\""
+    },
+    {
+      "name": "pixel7: CSV app columns: opening, grid, spacing, cl 3.1.2, anemometer, raw + correction, smoke, overall, hired, Airmet, dates, check",
+      "ok": true,
+      "detail": "\"FC-2 – Two extraction fans in operation\",\"A\",\"0.47\",\"0.71\",\"0.23\",\"0.96\",\"~1\",\"Sash at 500 mm working height. Bench clutter near the right side.\",\"FC-2\",\"Two extraction fans in operation\",\"Bench-type fume cupboard\",\"Dynaflow\",\"DF-1800\",\"FC2-0042B\",\"Fume cupboard audit\",\"Chemistry Lab 1.04\",\"\",\"\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"\",\"Does not meet\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 3\",\"0.45\",\"+0.02\",\"\",\"\",\"\",\"Satisfactory (compliant)\",\"Non-compliant\",\"Chemistry Lab 1.04\",\"New\",\"No\",\"Hired\",\"Airmet\",\"2026-05-12\",\"2026-11-27\",\"Check: Calibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibration certificate\""
+    },
+    {
+      "name": "pixel7: CSV point rows go A, B, C… across rows; P carries the custom label; AJ the 1.2 m distance",
+      "ok": true,
+      "detail": "\"\",\"B\",\"0.84\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"0.82\",\"+0.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"P - Behind sash stop\",\"0.52\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"Behind sash stop\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"0.50\",\"+0.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"AJ\",\"0.92\",\"\",\"\",\"\",\"1.2\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"0.90\",\"+0.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\""
+    },
+    {
+      "name": "pixel7: CSV summary section + anemometer line",
+      "ok": true,
+      "detail": "\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\",\"Smoke Test Result (A6)\",\"Overall (Smoke + cl 3.1.2)\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\"\n\"FC-2\",\"40\",\"0.71\",\"0.23\",\"0.96\",\"~1 to 1.2 m\",\"Two extraction fans in operation\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Does not meet\",\"Satisfactory (compliant)\",\"Non-compliant\"\n\"FC-2\",\"3\",\"0.97\",\"0.90\",\"1.04\",\"\",\"Four extraction fans in operation, sash 300 mm\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\",\"\",\"Incomplete\"\n\"Spray booth 1\",\"3\",\"0.49\",\"0.40\",\"0.63\",\"\",\"One extraction fan in operation\",\"\",\"\",\"4 × 7\",\"\",\"\",\"Manual: Opening size not measurable (booth doors removed)\",\"Does not meet\",\"\",\"Non-compliant\"\n\"Small benchtop hood\",\"6\",\"0.62\",\"0.54\",\"0.72\",\"\",\"One extraction fan in operation\",\"600\",\"500\",\"2 × 3\",\"400\",\"150\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\",\"\",\"Incomplete\""
+    },
+    {
+      "name": "pixel7: CSV never says 'Deficient'; smoke result uses Satisfactory / Dangerous wording",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: CSV A4.2(l) observations include each position's note",
+      "ok": true,
+      "detail": "\"Smoke observations (A4.2(l))\",\"Cupboard airflow pattern: Small eddy near the sink, stayed inside; Containment with sash half open: Slight eddy at the sash, contained; Leaks at joints and service penetrations (built-in cupboards): Free-standing cupboard\"\n\"Smoke observations (A4.2(l))\",\"\"\n\"Smoke observations (A4.2(l))\",\"\"\n\"Smoke observations (A4.2(l))\",\"\""
+    },
+    {
+      "name": "pixel7: CSV Figure A1 record: smoke rows, calibration rows, Results A…AN",
+      "ok": true,
+      "detail": "\"AS/NZS 2243.8:2014 Figure A1 record\",\"Measurement 3 · Two extraction fans in operation\"\n\"Location\",\"Chemistry Lab 1.04\"\n\"F/C Number\",\"FC-2\"\n\"Type\",\"Bench-type fume cupboard\"\n\"Installation\",\"New (A4.1.3 / B4.1.3: tested empty)\"\n\"SMOKE TEST\"\n\"Fume cupboard empty\",\"No (plan or photo attached)\"\n\"Equipment plan\",\"Rotary evaporator 400 × 300 mm, back left\"\n\"Smoke source used\",\"Air current tubes\"\n\"Test position\",\"Result\",\"Comments\",\"Photos\",\"Clause\"\n\"Face opening airflow pattern\",\"G\",\"\",\"\",\"A4.2(b)\"\n\"Cupboard airflow pattern\",\"S\",\"Small eddy near the sink, stayed inside\",\"\",\"A4.2(c)\"\n\"Containment along bottom of cupboard\",\"G\",\"\",\"\",\"A4.2(d)\"\n\"Containment along walls of cupboard\",\"G\",\"\",\"\",\"A4.2(e)\"\n\"Containment with sash fully open\",\"G\",\"\",\"\",\"A4.2(f)\"\n\"Containment with sash half open\",\"S\",\"Slight eddy at the sash, contained\",\"\",\"A4.2(g)–(h)\"\n\"Containment with sash at minimum opening\",\"G\",\"\",\"\",\"A4.2(i)\"\n\"Containment under abnormal conditions\",\"G\",\"\",\"\",\"A4.2(j)\"\n\"Leaks at joints and service penetrations (built-in cupboards)\",\"N/A\",\"Free-standing cupboard\",\"\",\"A4.2(k)\"\n\"Smoke observations (A4.2(l))\",\"Cupboard airflow pattern: Small eddy near the sink, stayed inside; Containment with sash half open: Slight eddy at the sash, contained; Leaks at joints and service penetrations (built-in cupboards): Free-standing cupboard\"\n\"Smoke test result (A6, worst score)\",\"Satisfactory\",\"Compliant\"\n\"FACE VELOCITY\"\n\"Face opening width (mm)\",\"2000\",\"Height (mm)\",\"1800\",\"No. of readings\",\"40\"\n\"Grid (B4.2(c))\",\"5 × 8\",\"Horizontal spacing (mm)\",\"450\",\"Vertical spacing (mm)\",\"229\"\n\"Instrument\",\"TSI 9545 VelociCalc\",\"Serial no.\",\"T95450123\"\n\"Calibration correction factor\",\"+0.02 m/s at 0.50 m/s\"\n\"Anemometer\",\"Hired\",\"Supplier\",\"Airmet\",\"Calibration certificate photo\",\"No\"\n\"Last calibration date\",\"2026-05-12\",\"Calibration due date\",\"2026-11-27\",\"Calibration check\",\"Check: Calibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibration certificate\"\n\"Results\",\"A\",\"B\",\"C\",\"D\",\"E\",\"F\",\"G\",\"H\",\"I\",\"J\",\"K\",\"L\",\"M\",\"N\",\"O\",\"P\",\"Q\",\"R\",\"S\",\"T\",\"U\",\"V\",\"W\",\"X\",\"Y\",\"Z\",\"AA\",\"AB\",\"AC\",\"AD\",\"AE\",\"AF\",\"AG\",\"AH\",\"AI\",\"AJ\",\"AK\",\"AL\",\"AM\",\"AN\"\n\"Reading (m/s)\",\"0.47\",\"0.84\",\"0.71\",\"0.58\",\"0.95\",\"0.82\",\"0.69\",\"0.56\",\"0.93\",\"0.80\",\"0.67\",\"0.54\",\"0.91\",\"0.78\",\"0.65\",\"0.52\",\"0.89\",\"0.76\",\"0.63\",\"0.50\",\"0.23\",\"0.74\",\"0.61\",\"0.48\",\"0.85\",\"0.72\",\"0.59\",\"0.96\",\"0.83\",\"0.70\",\"0.57\",\"0.94\",\"0.81\",\"0.68\",\"0.55\",\"0.92\",\"0.79\",\"0.66\",\"0.53\",\"0.90\""
+    },
+    {
+      "name": "pixel7: hygiene event: still 'Sample' rows, no anemometer card, no vent export",
+      "ok": true,
+      "detail": "← Project events\n‹ Prev\n1 of 3 events in this project\n0019919-002 ›\n0019919 · v48.19 field test · tap to edit event\n0019919-001\nHygiene event\nPREPPED\n\n⚠ 2 samples have no location: Sample 1, Noise Sample 3\n\nMark event complete\n☰\n\nDaily logs: 0 of 2 attached, 2 not asked\n\nFiles for Drive\n\nExports and the COC are copied into the job folder as new files. Nothing already in the folder is changed.\n\nYesterday 0\nToday 3\nTomorrow 0\nAll 3\nPrepped 3\nRunning 0\nNeeds fields 0\nComplete 0\nRejected / fault 0\nS"
+    },
+    {
+      "name": "pixel7: hygiene event: Add sample screen unchanged (airborne + blank + noise, no vent)",
+      "ok": true,
+      "detail": "{\"h\":\"Add sample\",\"cards\":[\"Airborne · personal\",\"Airborne · static\",\"Airborne · passive badge\",\"Field blank\",\"Noise · personal\",\"Noise · static\"]}"
+    },
+    {
+      "name": "pixel7: airborne sample still opens the normal sample screen (pump field, flow)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: airborne sample status unchanged by vent.js",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: noise event: no anemometer card, no vent wording",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: noise event: noise Add screen is noise.js's, no vent types",
+      "ok": true,
+      "detail": "{\"h\":\"Add sample\",\"cards\":[\"Airborne · personal\",\"Airborne · static\",\"Airborne · passive badge\",\"Field blank\",\"Noise · personal\",\"Noise · static\"],\"v20\":false}"
+    },
+    {
+      "name": "pixel7: noise sample still opens the normal noise screen",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pixel7: measurement screen fits the width (no sideways scroll)",
+      "ok": true,
+      "detail": "{\"sw\":412,\"iw\":412}"
+    },
+    {
+      "name": "pixel7: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: vent.js loaded beside noise.js",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: project page: vent event row says Vent survey and 0 measurements",
+      "ok": true,
+      "detail": "☰\n← Projects\nProject events\n0019919\nv48.19 field test · Test site\nDelete project\nPlanned in Podio\n\nNo planned Podio events on this job yet. Use Refresh from Podio in the top bar to pull the latest.\n\nPodio events appear in the events list by themselves. For work that is not in Podio, use ☰ (top right) › Add event not in Podio.\n\n0 planned Podio events.\n\nYesterday 0\nToday 3\nTomorrow 0\nAll\nPrepped\nRunning\nNeeds fields\nSamples complete\nEvent complete\nRejected / fault\n0019919-001\nHygiene event · 2026-11-28 · 3 samples\nPREPPED\n0019919-002\nNoise event · 2026-11-28 · 1 sample\nPREPPED\n0019919-003\nVent s"
+    },
+    {
+      "name": "chromebook: project page: hygiene event row still says samples",
+      "ok": true,
+      "detail": "☰\n← Projects\nProject events\n0019919\nv48.19 field test · Test site\nDelete project\nPlanned in Podio\n\nNo planned Podio events on this job yet. Use Refresh from Podio in the top bar to pull the latest.\n\nPodio events appear in the events list by themselves. For work that is not in Podio, use ☰ (top right) › Add event not in Podio.\n\n0 planned Podio events.\n\nYesterday 0\nToday 3\nTomorrow 0\nAll\nPrepped\nRunning\nNeeds fields\nSamples complete\nEvent complete\nRejected / fault\n0019919-001\nHygiene event · 2026-11-28 · 3 samples\nPREPPED\n0019919-002\nNoise event · 2026-11-28 · 1 sample\nPREPPED\n0019919-003\nVent s"
+    },
+    {
+      "name": "chromebook: vent event: Add measurement, no 'sample' wording",
+      "ok": true,
+      "detail": "← Project events\n‹ 0019919-002\n3 of 3 events in this project\nNext ›\n0019919 · v48.19 field test · tap to edit event\n0019919-003\nVent survey\nPLANNED\nMark event complete\n☰\nAnemometer enter once for this event\nOwned or hired?\nOwned\nHired\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to add to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 not | {\"fab\":\"+Add measurement\",\"nav\":\"Measure\"}"
+    },
+    {
+      "name": "chromebook: vent event: bottom bar says Measure on a phone",
+      "ok": true,
+      "detail": "Measure"
+    },
+    {
+      "name": "chromebook: vent event: 'No measurements yet.'",
+      "ok": true,
+      "detail": "← Project events\n‹ 0019919-002\n3 of 3 events in this project\nNext ›\n0019919 · v48.19 field test · tap to edit event\n0019919-003\nVent survey\nPLANNED\nMark event complete\n☰\nAnemometer enter once for this event\nOwned or hired?\nOwned\nHired\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to "
+    },
+    {
+      "name": "chromebook: vent event: code stays {job}-NNN",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: vent event: anemometer card shown once",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: anemometer make / model / serial saved on the event",
+      "ok": true,
+      "detail": "{\"make\":\"TSI\",\"model\":\"9545 VelociCalc\",\"serial\":\"T95450123\"}"
+    },
+    {
+      "name": "chromebook: anemometer change audited on the event log",
+      "ok": true,
+      "detail": "[{\"at\":\"2026-11-28T07:33:44.373Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T954501\",\"to\":\"T9545012\",\"detail\":\"T954501 → T9545012\"},{\"at\":\"2026-11-28T07:33:44.374Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T9545012\",\"to\":\"T95450123\",\"detail\":\"T9545012 → T95450123\"},{\"at\":\"2026-11-28T07:33:44.376Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Anemometer serial\",\"field\":\"vent\",\"from\":\"\",\"to\":\"\",\"detail\":\"blank → T95450123\"}]"
+    },
+    {
+      "name": "chromebook: Add measurement screen: title",
+      "ok": true,
+      "detail": "Add measurement"
+    },
+    {
+      "name": "chromebook: Add measurement screen: the five vent types, Face velocity still offered",
+      "ok": true,
+      "detail": "[\"Vent · Fume cupboard audit\",\"Vent · Face velocity\",\"Vent · Capture velocity\",\"Vent · Other velocity reading\",\"Vent · Visual check only\"]"
+    },
+    {
+      "name": "chromebook: Add measurement screen: no airborne / noise / blank options",
+      "ok": true,
+      "detail": "← 0019919-003\nAdd measurement\nVent · Fume cupboard audit\nGuided AS/NZS 2243.8:2014 audit: unit details, smoke test (Appendix A) first, then the face velocity grid (Appendix B) and the Figure A1 record.\nPhoto: Hey Paul from Sacramento, CA, USA, CC BY 2.0\nVent · Face velocity\nAt the extraction face, hood opening or sash.\nPhoto: Chrysler Restorers SA, CC0 1.0\nVent · Capture velocity\nAt the source or work position, a set distance from the face.\nPhoto: Borderlands Roomba, CC BY-SA 4.0\nVent · Other velocity reading\ne.g. edge of a table, breathing zone, booth length, duct.\nPhoto: akarmy (Flickr), CC BY 2.0\nVent · Visual check only\nNo readings possible (e.g. fully enclosed). Describe what was seen.\nPhoto: Ca.garcia.s, CC BY-SA 4.0\n\nPhoto credits and licences: assets/vent/ATTRIBUTION.md. The pictures are examples only."
+    },
+    {
+      "name": "chromebook: new vent measurement: trainKind vent on the vent event, number 1",
+      "ok": true,
+      "detail": "{\"k\":\"vent\",\"n\":1,\"v\":{\"v\":1,\"type\":\"capture\",\"unit\":\"\",\"hood\":\"\",\"condition\":\"\",\"location\":\"\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[]}}"
+    },
+    {
+      "name": "chromebook: new vent measurement: no airborne defaults (rotameter / contaminant)",
+      "ok": true,
+      "detail": "{\"c\":\"\"}"
+    },
+    {
+      "name": "chromebook: measurement screen opens (Measurement 1, Capture velocity)",
+      "ok": true,
+      "detail": "Measurement 1"
+    },
+    {
+      "name": "chromebook: measurement screen: anemometer from the event is shown",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: measurement screen: 'Still needed' lists unit, location, reading",
+      "ok": true,
+      "detail": "Still needed: Extraction unit, Measurement location, At least one velocity reading"
+    },
+    {
+      "name": "chromebook: Enter on the last reading adds reading 4 and focuses it",
+      "ok": true,
+      "detail": "vt-r3"
+    },
+    {
+      "name": "chromebook: five readings saved in order",
+      "ok": true,
+      "detail": "[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\"]"
+    },
+    {
+      "name": "chromebook: average / lowest / highest worked out (1.32 / 1.01 / 1.54)",
+      "ok": true,
+      "detail": "Readings\n5\nAverage\n1.32\nLowest\n1.01\nHighest\n1.54\nm/s"
+    },
+    {
+      "name": "chromebook: stats helper agrees",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: complete: status ended, location mirrored, 'Measurement complete' shown",
+      "ok": true,
+      "detail": "{\"s\":\"ended\",\"l\":\"At the source, 15 cm from the outer edge\"}"
+    },
+    {
+      "name": "chromebook: below 0.5 m/s distance and comments saved",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"At the source, 15 cm from the outer edge\",\"distanceCm\":\"35\",\"readings\":[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\"],\"below05\":\"~60 cm\",\"comments\":\"Strong induced airflow at the work position\",\"photos\":[]}"
+    },
+    {
+      "name": "chromebook: edits audited once per field (shared change audit), not per keystroke",
+      "ok": true,
+      "detail": "[\"location:(empty) → At the source, 15 cm from the outer edge\",\"vent.location:(empty) → At the source, 15 cm from the outer edge\",\"vent.distanceCm:(empty) → 35\",\"status:prepped → ended\",\"vent.readings:[\\\"\\\",\\\"\\\",\\\"\\\"] → [\\\"1.31\\\",\\\"\\\",\\\"\\\"]\",\"vent.readings:[\\\"1.31\\\",\\\"\\\",\\\"\\\"] → [\\\"1.31\\\",\\\"1.33\\\",\\\"\\\"]\",\"vent.readings:[\\\"1.31\\\",\\\"1.33\\\",\\\"\\\"] → [\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\"]\",\"vent.readings:[\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\"] → [\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\",\\\"1.39\\\"]\",\"vent.readings:[\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\",\\\"1.39\\\"] → [\\\"1.31\\\",\\\"1.33\\\",\\\"1.01\\\",\\\"1.39\\\",\\\"1.54\\\"]\",\"vent.below05:(empty) → ~60 cm\",\"comments:(empty) → Strong induced airflow at the work position\",\"vent.comments:(empty) → Strong induced airflow at the work position\"]"
+    },
+    {
+      "name": "chromebook: photo saved on the device as an envss-photo reference",
+      "ok": true,
+      "detail": "{\"p\":[\"envss-photo:24c55830-d623-4c41-a24f-05c4798f45fe\"],\"r\":[\"24c55830-d623-4c41-a24f-05c4798f45fe\"]}"
+    },
+    {
+      "name": "chromebook: photo thumbnail shown",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: out-of-range reading (88 m/s) warns, not a block",
+      "ok": true,
+      "detail": "⚠ Reading 6 (88 m/s) looks wrong. Check it"
+    },
+    {
+      "name": "chromebook: offline: the measurement and event are queued on the device",
+      "ok": true,
+      "detail": "[\"trains:twwv809j\",\"events:eV\"]"
+    },
+    {
+      "name": "chromebook: offline: nothing reached the server yet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: after reload: all vent fields still on the device",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"At the source, 15 cm from the outer edge\",\"distanceCm\":\"35\",\"readings\":[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\",\"\"],\"below05\":\"~60 cm\",\"comments\":\"Strong induced airflow at the work position\",\"photos\":[\"envss-photo:24c55830-d623-4c41-a24f-05c4798f45fe\"]}"
+    },
+    {
+      "name": "chromebook: online: envss_trains row carries the vent payload (event_id set)",
+      "ok": true,
+      "detail": "{\"id\":\"twwv809j\",\"payload\":{\"id\":\"twwv809j\",\"eventId\":\"eV\",\"pouch\":\"1\",\"sampleNo\":1,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},\"rpd\":{\"worn\":\"\",\"mod"
+    },
+    {
+      "name": "chromebook: online: envss_events row carries ventEquip",
+      "ok": true,
+      "detail": "{\"id\":\"eV\",\"payload\":{\"id\":\"eV\",\"projectId\":\"p1\",\"code\":\"0019919-003\",\"type\":\"hygiene\",\"podioEventKind\":\"vent\",\"podioAppId\":\"30888385\",\"date\":\"2026-11-28\",\"stage\":\"planned\",\"audit\":[{\"at\":\"2026-11-28T07:33:43.605Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Make\",\"fiel"
+    },
+    {
+      "name": "chromebook: online: queue empty for the vent rows",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: openTrain on a vent measurement opens the vent screen (deep links / rows)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: Another location: Measurement 2 copies unit, hood and condition",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[]}"
+    },
+    {
+      "name": "chromebook: Another location: units already on the event offered",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: event rows: 'Measurement 1 · Face velocity · unit' with avg (lowest–highest)",
+      "ok": true,
+      "detail": "← Project events\n‹ 0019919-002\n3 of 3 events in this project\nNext ›\n0019919 · v48.19 field test · tap to edit event\n0019919-003\nVent survey\nNEEDS FIELDS\nMark event complete\n☰\nAnemometer entered\nOwned or hired?\nOwned\nHired\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to add to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 notes 3). Calibrated within the past 12 months (B3).\n\n📄 Photo of calibration certificate please take one\n📷 Photo of calibration certificate\n⚠ Last calibration date missing\n⚠ Calibration due date missing\n⚠ Calibration correction factor missing (readings are reported uncorrected)\n⚠ Take a photo of the calibration certificate\n\nUsed for every measurement on this event. Typed in for now (a Podio pick list may come l"
+    },
+    {
+      "name": "chromebook: event rows: no 'Sample' wording, no pump / cassette dashes",
+      "ok": true,
+      "detail": "← Project events\n‹ 0019919-002\n3 of 3 events in this project\nNext ›\n0019919 · v48.19 field test · tap to edit event\n0019919-003\nVent survey\nNEEDS FIELDS\nMark event complete\n☰\nAnemometer entered\nOwned or hired?\nOwned\nHired\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to add to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 notes 3). Calibrated within the past 12 months (B3).\n\n📄 Photo of calibration certificate please take one\n📷 Photo of calibration certificate\n⚠ Last calibration date missing\n⚠ Calibration due date missing\n⚠ Calibration correction factor missing (readings are reported uncorrected)\n⚠ Take a photo of the calibration certificate\n\nUsed for every measurement on this event. Typed in for now (a Podio pick list may come l"
+    },
+    {
+      "name": "chromebook: event list (project page): 2 measurements",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: Mark complete blocked while Measurement 2 has no readings (lists what is missing)",
+      "ok": true,
+      "detail": "[\"This event cannot be marked complete until every measurement is complete.\\n\\nMeasurement 2: At least one velocity reading\"]"
+    },
+    {
+      "name": "chromebook: Mark complete: done when every measurement is complete, no COC offered",
+      "ok": true,
+      "detail": "[\"Event marked complete.\\n\\nVent surveys have no lab samples, so there is no COC. Use ☰ > Export vent survey CSV for the field sheet.\"]"
+    },
+    {
+      "name": "chromebook: Create COC on a vent event: refused with a plain message",
+      "ok": true,
+      "detail": "[\"Vent surveys have no lab samples, so there is no COC.\\n\\nUse ☰ > Export vent survey CSV for the field sheet.\"]"
+    },
+    {
+      "name": "chromebook: CSV: 0019340 Sheet1 headings first, app columns to the right",
+      "ok": true,
+      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\",\"Raw Reading (m/s)\",\"Calibration Correction (m/s)\",\"Point Min During Reading (m/s)\",\"Point Max During Reading (m/s)\",\"Previous Point No.\",\"Smoke Test Result (A6)\",\"Overall (Smoke + cl 3.1.2)\",\"Location\",\"Installation\",\"Fume Cupboard Empty\",\"Anemometer Owned/Hired\",\"Anemometer Supplier\",\"Last Calibration\",\"Calibration Due\",\"Calibration Check\""
+    },
+    {
+      "name": "chromebook: CSV: one row per reading, stats + comments on the first row (1.32 / 1.01 / 1.54), anemometer",
+      "ok": true,
+      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\",\"Raw Reading (m/s)\",\"Calibration Correction (m/s)\",\"Point Min During Reading (m/s)\",\"Point Max During Reading (m/s)\",\"Previous Point No.\",\"Smoke Test Result (A6)\",\"Overall (Smoke + cl 3.1.2)\",\"Location\",\"Installation\",\"Fume Cupboard Empty\",\"Anemometer Owned/Hired\",\"Anemometer Supplier\",\"Last Calibration\",\"Calibration Due\",\"Calibration Check\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"1.31\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Strong induced airflow at the work position\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"At the source, 15 cm from the outer edge\",\"35\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"1\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 1\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"Check: Last calibration date missing; Calibration due date missing; Calibration correction factor missing (readings are reported uncorrected); Take a photo of the calibration certificate\"\n\"\",\"2\",\"1.33\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"3\",\"1.01\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"4\",\"1.39\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"5\",\"1.54\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"2.10\",\"2.09\",\"2.02\",\"2.14\",\"\",\"\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"Directly in front of the extraction face\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 2\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"Check: Last calibration date missing; Calibration due date missing; Calibration correction factor missing (readings are reported uncorrected); Take a photo of the calibration certificate\""
+    },
+    {
+      "name": "chromebook: CSV: summary block after the measurements (Summary tab columns)",
+      "ok": true,
+      "detail": "[\"\\\"DMS downdraft table (dry lab)\\\",\\\"5\\\",\\\"1.32\\\",\\\"1.01\\\",\\\"1.54\\\",\\\"~60 cm\\\",\\\"Extraction on, boxes moved off the bench\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"Capture velocity\\\",\\\"\\\",\\\"\\\",\\\"\\\"\",\"\\\"DMS downdraft table (dry lab)\\\",\\\"3\\\",\\\"2.09\\\",\\\"2.02\\\",\\\"2.14\\\",\\\"\\\",\\\"Extraction on, boxes moved off the bench\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"\\\",\\\"Capture velocity\\\",\\\"\\\",\\\"\\\",\\\"\\\"\",\"\\\"Anemometer\\\",\\\"TSI 9545 VelociCalc · SN T95450123\\\",\\\"Calibration check\\\",\\\"Check: Last calibration date missing; Calibration due date missing; Calibration correction factor missing (readings are reported uncorrected); Take a photo of the calibration certificate\\\"\"]"
+    },
+    {
+      "name": "chromebook: visual check: needs a comment, not readings",
+      "ok": true,
+      "detail": "Still needed: Comments (what was seen)"
+    },
+    {
+      "name": "chromebook: visual check: complete with a comment",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: delete: shared confirm ('Delete Measurement 3?'), tombstone in envss_deletions, back on the event",
+      "ok": true,
+      "detail": "[\"Delete Measurement 3? This cannot be undone on this device.\"]"
+    },
+    {
+      "name": "chromebook: existing hygiene / noise rows not rewritten by vent.js",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: gridFor 2000×1800 → 5 columns × 8 rows = 40, spacing 450 / 229 mm",
+      "ok": true,
+      "detail": "{\"cols\":5,\"rows\":8,\"gapX\":450,\"gapY\":229,\"points\":40}"
+    },
+    {
+      "name": "chromebook: gridFor 600×500 → 2 × 3 = 6, spacing 400 / 150 mm",
+      "ok": true,
+      "detail": "{\"cols\":2,\"rows\":3,\"gapX\":400,\"gapY\":150,\"points\":6}"
+    },
+    {
+      "name": "chromebook: gridFor 1200×700 → 3 × 3 = 9, spacing exactly 500 / 250 mm (limits are 'not more than')",
+      "ok": true,
+      "detail": "{\"cols\":3,\"rows\":3,\"gapX\":500,\"gapY\":250,\"points\":9}"
+    },
+    {
+      "name": "chromebook: gridFor 1800×1000 → 5 × 5 = 25, spacing 400 / 200 mm",
+      "ok": true,
+      "detail": "{\"cols\":5,\"rows\":5,\"gapX\":400,\"gapY\":200,\"points\":25}"
+    },
+    {
+      "name": "chromebook: gridFor 1500×750 → 4 × 4 = 16, spacing 433 / 183 mm",
+      "ok": true,
+      "detail": "{\"cols\":4,\"rows\":4,\"gapX\":433,\"gapY\":183,\"points\":16}"
+    },
+    {
+      "name": "chromebook: gridFor small openings: 250×250 → 2 × 2 (50 mm), 150×150 → single centre point",
+      "ok": true,
+      "detail": "[{\"cols\":2,\"rows\":2,\"gapX\":50,\"gapY\":50,\"points\":4},{\"cols\":1,\"rows\":1,\"gapX\":0,\"gapY\":0,\"points\":1}]"
+    },
+    {
+      "name": "chromebook: gridFor: blank or non-numeric size → no grid",
+      "ok": true,
+      "detail": "[null,null]"
+    },
+    {
+      "name": "chromebook: gridFor sweep (≈2,500 sizes): spacing never over 500 / 250 mm and always the fewest lines",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: type picker: each card has a picture with a credit line",
+      "ok": true,
+      "detail": "[{\"k\":\"grid\",\"img\":true,\"credit\":\"Photo: Hey Paul from Sacramento, CA, USA, CC BY 2.0\"},{\"k\":\"face\",\"img\":true,\"credit\":\"Photo: Chrysler Restorers SA, CC0 1.0\"},{\"k\":\"capture\",\"img\":true,\"credit\":\"Photo: Borderlands Roomba, CC BY-SA 4.0\"},{\"k\":\"other\",\"img\":true,\"credit\":\"Photo: akarmy (Flickr), CC BY 2.0\"},{\"k\":\"visual\",\"img\":true,\"credit\":\"Photo: Ca.garcia.s, CC BY-SA 4.0\"}]"
+    },
+    {
+      "name": "chromebook: audit: new measurement is type grid (Fume cupboard audit), smoke source defaults to air current tubes, no grid yet",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"grid\",\"unit\":\"\",\"hood\":\"\",\"condition\":\"\",\"location\":\"\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[],\"grid\":{\"basis\":\"standard\",\"widthMm\":\"\",\"heightMm\":\"\",\"cols\":0,\"rows\":0,\"gapX\":0,\"gapY\":0,\"reason\":\"\",\"v\":{},\"d\":{},\"label\":{},\"lo\":{},\"hi\":{},\"scheme\":\"as2243.8-A1\"},\"smoke\":{},\"equipPhotos\":[],\"smokePhotos\":{},\"smokeSource\":\"Air current tubes\",\"testedBy\":\"V46 Test\"}"
+    },
+    {
+      "name": "chromebook: audit: four steps Unit / Smoke test / Face velocity / Summary, opens on step 1",
+      "ok": true,
+      "detail": "[\"1 Unit\",\"2 Smoke test\",\"3 Face velocity\",\"4 Summary\"]"
+    },
+    {
+      "name": "chromebook: step 1 'Still needed': location, F/C number, type, new/existing, empty",
+      "ok": true,
+      "detail": "Still needed: Location, F/C number / unit, Type, New installation or existing, Fume cupboard empty? (Yes / No)"
+    },
+    {
+      "name": "chromebook: step 1 cites Figure A1, A4.1, A5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: step 1 prompts read as questions",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: New installation → rule 'empty' cited A4.1.3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: Equipment inside → photo or plan required (A5)",
+      "ok": true,
+      "detail": "Still needed: Photo or plan of the equipment inside (A5)\n⚠ New installations are tested with the cupboard empty (A4.1.3 / B4.1.3)"
+    },
+    {
+      "name": "chromebook: step 1 saved: location, unit, type, make/model/serial, install, empty, plan, condition",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"grid\",\"unit\":\"FC-2\",\"hood\":\"Bench-type fume cupboard\",\"condition\":\"Two extraction fans in operation\",\"location\":\"Chemistry Lab 1.04\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[],\"grid\":{\"basis\":\"standard\",\"widthMm\":\"\",\"heightMm\":\"\",\"cols\":0,\"rows\":0,\"gapX\":0,\"gapY\":0,\"reason\":\"\",\"v\":{},\"d\":{},\"label\":{},\"lo\":{},\"hi\":{},\"scheme\":\"as2243.8-A1\"},\"smoke\":{},\"equipPhotos\":[],\"smokePhotos\":{},\"smokeSource\":\"Air current tubes\",\"testedBy\":\"V46 Test\",\"hoodMake\":\"Dynaflow\",\"hoodModel\":\"DF-1800\",\"hoodSerial\":\"FC2-0042\",\"install\":\"new\",\"empty\":\"no\",\"equipNote\":\"Rotary evaporator 400 × 300 mm, back left\"}"
+    },
+    {
+      "name": "chromebook: step 1 complete (✓ on the step)",
+      "ok": true,
+      "detail": "Still needed: Smoke A4.2(b) Face opening airflow pattern: G, S or D, Smoke A4.2(c) Cupboard airflow pattern: G, S or D, Smoke A4.2(d) Containment along bottom of cupboard: G, S or D, Smoke A4.2(e) Containment along walls of cupboard: G, S or D, Smoke A4.2(f) Containment with sash fully open: G, S or D, Smoke A4.2(g)–(h) Containment with sash half open: G, S or D, Smoke A4.2(i) Containment with sash at minimum opening: G, S or D, Smoke A4.2(j) Containment under abnormal conditions: G, S or D, Smoke A4.2(k) Leaks at joints and service penetrations (built-in cupboards): G, S or D"
+    },
+    {
+      "name": "chromebook: Face velocity before the smoke test → gate cites A4.1.1, override offered",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: smoke test: A4.2(b)…(k) in order, cites Appendix A",
+      "ok": true,
+      "detail": "[\"b\",\"c\",\"d\",\"e\",\"f\",\"h\",\"i\",\"j\",\"k\"]"
+    },
+    {
+      "name": "chromebook: smoke step shows the airflow picture with its credit",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: smoke ratings are Good / Satisfactory / Dangerous (A5), never 'Deficient'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: every smoke position reads as a question (9 questions ending in '?')",
+      "ok": true,
+      "detail": "[\"With the sash at its maximum working opening, does smoke released around the whole face perimeter flow smoothly into the cupboard without escaping?\",\"Inside the cupboard, around any equipment, tanks, sinks or sump, does the smoke move to the exhaust without being carried forward or out?\",\"When smoke is released along the floor of the cupboard, front to back, does it stay inside without eddies carrying it forward or out?\",\"When smoke is released along the inside walls, does it stay inside without eddies carrying it forward or out?\",\"With the sash fully open, does smoke released just behind the sash at several points across the opening stay inside, with no eddies at the sash or handles?\",\"With the sash lowered to half open, does smoke released just behind the sash across the opening stay inside?\",\"With the sash at its minimum opening, does the smoke stay inside without eddies?\",\"With nearby cupboards running, doors and windows opening, air-conditioning and people moving past, does the cupboard still hold the smoke?\",\"If the cupboard is built into the wall, does smoke along joints, service penetrations and around the sash show no air jets leaking in from the wall cavity or ceiling space?\"]"
+    },
+    {
+      "name": "chromebook: under the buttons: G / S / D / N/A meanings (D = escapes, unit fails; N/A needs a reason)",
+      "ok": true,
+      "detail": "G Good: smoke goes straight to the exhaust, no reverse flow or eddies\nS Satisfactory: some eddies or reverse flow, but the smoke stays inside the cupboard\nD Dangerous: smoke escapes the cupboard (the unit fails)\nN/A: this position doesn't apply to this unit (give a reason)"
+    },
+    {
+      "name": "chromebook: reminder: the worst rating sets the unit result",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: 'Help me decide' is closed by default under each question",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: matrix: rows are observations, columns G / S / D / N/A, one cell per row",
+      "ok": true,
+      "detail": "[[\"What did the smoke do?\",\"G\",\"S\",\"D\",\"N/A\"],[\"Smoke goes straight to the exhaust\",\"G\",\"\",\"\",\"\"],[\"Eddies or reverse flow, but the smoke stays inside\",\"\",\"S\",\"\",\"\"],[\"Smoke escapes past the sash or face\",\"\",\"\",\"D\",\"\"],[\"This position isn't on this unit\",\"\",\"\",\"\",\"N/A\"]]"
+    },
+    {
+      "name": "chromebook: tapping 'Eddies … stays inside' selects S, highlights that row, panel stays open",
+      "ok": true,
+      "detail": "{\"Cupboard airflow pattern\":\"S\"}"
+    },
+    {
+      "name": "chromebook: tapping the selected matrix row again keeps S (matrix only selects)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: matrix N/A → 'reason for N/A' needed",
+      "ok": true,
+      "detail": "Still needed: Smoke A4.2(b) Face opening airflow pattern: G, S or D, Smoke A4.2(d) Containment along bottom of cupboard: G, S or D, Smoke A4.2(e) Containment along walls of cupboard: G, S or D, Smoke A4.2(f) Containment with sash fully open: G, S or D, Smoke A4.2(g)–(h) Containment with sash half open: G, S or D, Smoke A4.2(i) Containment with sash at minimum opening: G, S or D, Smoke A4.2(j) Containment under abnormal conditions: G, S or D, Smoke A4.2(k) Leaks at joints and service penetrations (built-in cupboards): G, S or D, Smoke A4.2(c) Cupboard airflow pattern: reason for N/A"
+    },
+    {
+      "name": "chromebook: a D rating → smoke Non-compliant (A6)",
+      "ok": true,
+      "detail": "Smoke result: Dangerous · Non-compliant A6: worst score; any D is non-compliant"
+    },
+    {
+      "name": "chromebook: smoke: worst score Satisfactory → Compliant; ratings and comments saved",
+      "ok": true,
+      "detail": "{\"Cupboard airflow pattern\":\"S\",\"Cupboard airflow pattern comment\":\"Small eddy near the sink, stayed inside\",\"Face opening airflow pattern\":\"G\",\"Containment along bottom of cupboard\":\"G\",\"Containment along walls of cupboard\":\"G\",\"Containment with sash fully open\":\"G\",\"Containment with sash half open\":\"S\",\"Containment with sash at minimum opening\":\"G\",\"Containment under abnormal conditions\":\"G\",\"Leaks at joints and service penetrations (built-in cupboards)\":\"NA\",\"Leaks at joints and service penetrations (built-in cupboards) comment\":\"Free-standing cupboard\",\"Containment with sash half open comment\":\"Slight eddy at the sash, contained\"}"
+    },
+    {
+      "name": "chromebook: step 2 complete",
+      "ok": true,
+      "detail": "✓ Step 2 complete"
+    },
+    {
+      "name": "chromebook: Next → step 3 Face velocity, no gate once smoke is done",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: anemometer: warns for missing calibration dates, correction and certificate photo (no block)",
+      "ok": true,
+      "detail": "⚠ Last calibration date missing\n⚠ Calibration due date missing\n⚠ Calibration correction factor missing (readings are reported uncorrected)\n⚠ Take a photo of the calibration certificate"
+    },
+    {
+      "name": "chromebook: Hired → supplier defaults to Airmet",
+      "ok": true,
+      "detail": "{\"make\":\"TSI\",\"model\":\"9545 VelociCalc\",\"serial\":\"T95450123\",\"ownership\":\"hired\",\"supplier\":\"Airmet\"}"
+    },
+    {
+      "name": "chromebook: calibration due 2026-11-27, before the survey → warning; certificate photo still prompted",
+      "ok": true,
+      "detail": "⚠ Calibration was due 2026-11-27, before the survey date (2026-11-28)\n⚠ Take a photo of the calibration certificate"
+    },
+    {
+      "name": "chromebook: certificate photo box is highlighted and has the camera button",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: grid 2000×1800: 5 × 8 = 40 points, 450 / 229 mm shown and saved",
+      "ok": true,
+      "detail": "5 × 8 = 40 points · horizontal spacing 450 mm · vertical spacing 229 mm\nFirst and last lines 100 mm in from each edge of the 2000 × 1800 mm opening."
+    },
+    {
+      "name": "chromebook: grid help cites B4.2(c), 100 / 250 / 500 mm, fewest lines",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: 40 cells labelled A, B, C… across each row from top left (Figure A1 note 4)",
+      "ok": true,
+      "detail": "{\"n\":40,\"h\":[\"A\",\"B\",\"E\",\"F\",\"AN\"],\"first\":[0,8,16,24,32,1]}"
+    },
+    {
+      "name": "chromebook: Enter moves A → B (across the row)",
+      "ok": true,
+      "detail": "vg-v8"
+    },
+    {
+      "name": "chromebook: 40 raw readings saved under their point keys (A = point 1, B = point 9, AN = point 40)",
+      "ok": true,
+      "detail": "{\"point 1\":\"0.45\",\"point 9\":\"0.82\",\"point 17\":\"0.69\",\"point 25\":\"0.56\",\"point 33\":\"0.93\",\"point 2\":\"0.80\",\"point 10\":\"0.67\",\"point 18\":\"0.54\",\"point 26\":\"0.91\",\"point 34\":\"0.78\",\"point 3\":\"0.65\",\"point 11\":\"0.52\",\"point 19\":\"0.89\",\"point 27\":\"0.76\",\"point 35\":\"0.63\",\"point 4\":\"0.50\",\"point 12\":\"0.87"
+    },
+    {
+      "name": "chromebook: stats include the +0.02 correction (avg 0.72, 0.47, 0.96)",
+      "ok": true,
+      "detail": "Points\n40 / 40\nAverage\n0.72\nLowest\n0.47\nHighest\n0.96\nm/s"
+    },
+    {
+      "name": "chromebook: each cell shows the corrected reading (→)",
+      "ok": true,
+      "detail": "→ 0.47"
+    },
+    {
+      "name": "chromebook: cl 3.1.2 Meets",
+      "ok": true,
+      "detail": "✓ Meets AS/NZS 2243.8:2014 cl. 3.1.2 · average 0.72 m/s ≥ 0.5 · no point below 0.3 m/s\nIndicator only: it never blocks saving or completing."
+    },
+    {
+      "name": "chromebook: audit complete (status ended) despite calibration warnings (warnings never block)",
+      "ok": true,
+      "detail": "{\"s\":\"ended\",\"c\":\"⚠ Points A, E, H, I, L, M, P, Q, T, U, X, AB, AE, AF, AI, AJ, AM, AN more than 20% from the average: investigate (cl. 3.1.2 note 3)\\n⚠ Anemometer: Calibration was due 2026-11-27, before the survey date (2026-11-28)\\n⚠ Anemometer: Take a photo of the calibration certificate\"}"
+    },
+    {
+      "name": "chromebook: point E (key 5) 0.21 → 0.23 corrected → Does not meet, still complete",
+      "ok": true,
+      "detail": "✗ Does not meet AS/NZS 2243.8:2014 cl. 3.1.2 · average 0.71 m/s ≥ 0.5 · 1 point below 0.3 m/s (lowest 0.23)\nIndicator only: it never blocks saving or completing."
+    },
+    {
+      "name": "chromebook: distance and custom label saved per point",
+      "ok": true,
+      "detail": "{\"d\":{\"point 1 below 0.5\":\"~1\",\"point 8 below 0.5\":\"1.2\"},\"l\":{\"point 4 label\":\"Behind sash stop\"}}"
+    },
+    {
+      "name": "chromebook: audit is one readable line per change (no big JSON blobs)",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "chromebook: face velocity step fits the width",
+      "ok": true,
+      "detail": "{\"sw\":1366,\"iw\":1366}"
+    },
+    {
+      "name": "chromebook: shrinking 2000→600 mm (would drop points) refused, nothing lost",
+      "ok": true,
+      "detail": "[\"That would change the grid to 2 × 8 and drop the readings already entered at points C, H, M, R, W, AB, AG, AL, D, I, N, S, X, AC, AH, AM, E, J, O, T, Y, AD, AI, AN.\\n\\nNothing has been changed. Clear those points first if the grid really is smaller.\"]"
+    },
+    {
+      "name": "chromebook: step 4 summary: smoke Satisfactory compliant, face velocity does not meet, overall Non-compliant",
+      "ok": true,
+      "detail": "Smoke test\nSatisfactory · compliant\nFace velocity\ndoes not meet cl. 3.1.2 · avg 0.71 m/s, max 0.96, min 0.23\nOverall\nNon-compliant"
+    },
+    {
+      "name": "chromebook: Figure A1 record: location, F/C, instrument, correction, hired from Airmet, due date, calibration warning, letters A…",
+      "ok": true,
+      "detail": "Record Figure A1: reporting of velocity and smoke test results\nLocation\tChemistry Lab 1.04\nF/C number\tFC-2\nType\tBench-type fume cupboard\nInstallation\tNew (commissioning)\nSmoke test\nFume cupboard empty\tNo (plan / photo attached: 0 + description)\nSmoke source used\tAir current tubes\nTest position\tResult\tComments\nFace opening airflow pattern\tG\t\nCupboard airflow pattern\tS\tSmall eddy near the sink, stayed inside\nContainment along bottom of cupboard\tG\t\nContainment along walls of cupboard\tG\t\nContainment with sash fully open\tG\t\nContainment with sash half open\tS\tSlight eddy at the sash, contained\nContainment with sash at minimum opening\tG\t\nContainment under abnormal conditions\tG\t\nLeaks at joints and service penetrations (built-in cupboards)\tN/A\tFree-standing cupboard\nObservations of smoke distribution A4.2(l)\tCupboard airflow pattern: Small eddy near the sink, stayed inside; Containment with sash half open: Slight eddy at the sash, contained; Leaks at joints and service penetrations (built-in cupboards): Free-standing cupboard\n\nG Good · S Satisfactory · D Dangerous A5. Result: Satisfactory · Compliant.\n\nFace velocity\nFace opening\tWidth 2000 mm · Height 1800 mm\nNo. of readings\t40 of 40 (5 × 8)\nInstrument\tTSI 9545 VelociCalc\nSerial no.\tT95450123\nCalibration correction factor\t+0.02 m/s at 0.50 m/s\nOwned / hired\tHired (Airmet)\nLast calibration / due\t2026-05-12 / due 2026-11-27\nCalibration check\tCalibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibra"
+    },
+    {
+      "name": "chromebook: Figure A1 record shows the A4.2(l) observations from the per-position notes",
+      "ok": true,
+      "detail": "Cupboard airflow pattern: Small eddy near the sink, stayed inside; Containment with sash half open: Slight eddy at the sash, contained; Leaks at joints and service penetrations (built-in cupboards): Free-standing cupboard"
+    },
+    {
+      "name": "chromebook: audit offline: queued on the device, nothing on the server",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: after reload: readings, smoke, step 1 and calibration details still on the device",
+      "ok": true,
+      "detail": "{\"Cupboard airflow pattern\":\"S\",\"Cupboard airflow pattern comment\":\"Small eddy near the sink, stayed inside\",\"Face opening airflow pattern\":\"G\",\"Containment along bottom of cupboard\":\"G\",\"Containment along walls of cupboard\":\"G\",\"Containment with sash fully open\":\"G\",\"Containment with sash half open\":\"S\",\"Containment with sash at minimum opening\":\"G\",\"Containment under abnormal conditions\":\"G\",\"Leaks at joints and service penetrations (built-in cupboards)\":\"NA\",\"Leaks at joints and service penetrations (built-in cupboards) comment\":\"Free-standing cupboard\",\"Containment with sash half open comment\":\"Slight eddy at the sash, contained\"}"
+    },
+    {
+      "name": "chromebook: online: train row carries grid + smoke; event row carries the calibration details",
+      "ok": true,
+      "detail": "{\"id\":\"t542ngt9\",\"payload\":{\"id\":\"t542ngt9\",\"eventId\":\"eV\",\"pouch\":\"3\",\"sampleNo\":3,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\""
+    },
+    {
+      "name": "chromebook: + Another condition: copies location, unit, type, install, empty, hood details and opening; empty grid, no condition",
+      "ok": true,
+      "detail": "{\"v\":1,\"type\":\"grid\",\"unit\":\"FC-2\",\"hood\":\"Bench-type fume cupboard\",\"condition\":\"\",\"location\":\"Chemistry Lab 1.04\",\"distanceCm\":\"\",\"readings\":[\"\",\"\",\"\"],\"below05\":\"\",\"comments\":\"\",\"photos\":[],\"grid\":{\"basis\":\"standard\",\"widthMm\":\"2000\",\"heightMm\":\"1800\",\"cols\":5,\"rows\":8,\"gapX\":450,\"gapY\":229,\"reason\":\"\",\"v\":{},\"d\":{},\"label\":{},\"lo\":{},\"hi\":{},\"scheme\":\"as2243.8-A1\"},\"smoke\":{},\"equipPhotos\":[],\"smokePhotos\":{},\"hoodMake\":\"Dynaflow\",\"hoodModel\":\"DF-1800\",\"hoodSerial\":\"FC2-0042\",\"install\":\"new\",\"empty\":\"no\",\"equipNote\":\"Rotary evaporator 400 × 300 mm, back left\",\"smokeSource\":\"Air current tubes\",\"testedBy\":\"V46 Test\"}"
+    },
+    {
+      "name": "chromebook: another condition opens on the smoke test (step 1 already filled, smoke is per condition)",
+      "ok": true,
+      "detail": "2"
+    },
+    {
+      "name": "chromebook: hood serial edit flows to the other condition on the unit",
+      "ok": true,
+      "detail": "FC2-0042B"
+    },
+    {
+      "name": "chromebook: Manual grid button stays on one line (28 not wrapped)",
+      "ok": true,
+      "detail": "{\"ok\":true,\"w\":289,\"cw\":289,\"h\":52,\"t\":\"Manual grid instead (4×7 = 28)\"}"
+    },
+    {
+      "name": "chromebook: override 'record anyway' logged; partly filled grid warns about blank points",
+      "ok": true,
+      "detail": "⚠ 37 of 40 points still blank\n⚠ Face velocity recorded before the smoke test was finished (A4.1.1 / B4.1.1: smoke test first)\n⚠ Anemometer: Calibration was due 2026-11-27, before the survey date (2026-11-28)\n⚠ Anemometer: Take a photo of the calibration certificate"
+    },
+    {
+      "name": "chromebook: manual grid: 4 × 7 = 28; 'Manual grid' once (dashed box only); reason optional",
+      "ok": true,
+      "detail": "{\"gtxt\":\"4 × 7 = 28 points\",\"box\":\"Manual grid (not set out from the opening size)\\nColumns (across)\\nRows (down)\\nReason for the manual grid (optional)\\n Use the standard grid from the opening size\"}"
+    },
+    {
+      "name": "chromebook: manual 4 × 7 letters across rows: A B … D, then E on row 2, AB bottom right",
+      "ok": true,
+      "detail": "[\"A\",\"B\",\"D\",\"E\",\"AB\"]"
+    },
+    {
+      "name": "chromebook: Mark complete never asks for the optional manual-grid reason",
+      "ok": true,
+      "detail": "[\"This event cannot be marked complete until every measurement is complete.\\n\\nMeasurement 4: Smoke A4.2(b) Face opening airflow pattern: G, S or D, Smoke A4.2(c) Cupboard airflow pattern: G, S or D, Smoke A4.2(d) Containment along bottom of cupboard: G, S or D, Smoke A4.2(e) Containment along walls of cupboard: G, S or D, Smoke A4.2(f) Containment with sash fully open: G, S or D, Smoke A4.2(g)–(h) Containment with sash half open: G, S or D, Smoke A4.2(i) Containment with sash at minimum opening: G, S or D, Smoke A4.2(j) Containment under abnormal conditions: G, S or D, Smoke A4.2(k) Leaks at joints and service penetrations (built-in cupboards): G, S or D\\nMeasurement 5: Location, Type, New installation or existing, Fume cupboard empty? (Yes / No), Smoke A4.2(b) Face opening airflow pattern: G, S or D, Smoke A4.2(c) Cupboard airflow pattern: G, S or D, Smoke A4.2(d) Containment along bottom of cupboard: G, S or D, Smoke A4.2(e) Containment along walls of cupboard: G, S or D, Smoke A4.2(f) Containment with sash fully open: G, S or D, Smoke A4.2(g)–(h) Containment with sash half open: G, S or D, Smoke A4.2(i) Containment with sash at minimum opening: G, S or D, Smoke A4.2(j) Containment under abnormal conditions: G, S or D, Smoke A4.2(k) Leaks at joints and service penetrations (built-in cupboards): G, S or D\"]"
+    },
+    {
+      "name": "chromebook: manual grid: dropping a column with a reading in it is refused",
+      "ok": true,
+      "detail": "[\"That would change the grid to 3 × 7 and drop the readings already entered at point AB.\\n\\nNothing has been changed. Clear those points first if the grid really is smaller.\"]"
+    },
+    {
+      "name": "chromebook: manual grid avg 0.49 corrected → Does not meet (indicator)",
+      "ok": true,
+      "detail": "✗ Does not meet AS/NZS 2243.8:2014 cl. 3.1.2 · average 0.49 m/s < 0.5 · no point below 0.3 m/s\nIndicator only: it never blocks saving or completing."
+    },
+    {
+      "name": "chromebook: 600×500: 2 × 3 = 6 points, 400 / 150 mm, A B / C D / E F across rows",
+      "ok": true,
+      "detail": "[\"A\",\"B\",\"C\",\"D\",\"E\",\"F\"] 2 × 3 = 6 points · horizontal spacing 400 mm · vertical spacing 150 mm\nFirst and last lines 100 mm in from each edge of the 600 × 500 mm opening."
+    },
+    {
+      "name": "chromebook: 600×500: Meets cl 3.1.2 (avg 0.62 incl. +0.02)",
+      "ok": true,
+      "detail": "✓ Meets AS/NZS 2243.8:2014 cl. 3.1.2 · average 0.62 m/s ≥ 0.5 · no point below 0.3 m/s\nIndicator only: it never blocks saving or completing. Points\n6 / 6\nAverage\n0.62\nLowest\n0.54\nHighest\n0.72\nm/s"
+    },
+    {
+      "name": "chromebook: growing 600→1200 mm re-sets to 3 × 3 and keeps every reading in its column / row",
+      "ok": true,
+      "detail": "{\"point 1\":\"0.55\",\"point 2\":\"0.61\",\"point 3\":\"0.58\",\"point 4\":\"0.66\",\"point 5\":\"0.70\",\"point 6\":\"0.52\"}"
+    },
+    {
+      "name": "chromebook: and back to 600 mm → 2 × 3 again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: event summary columns incl. Smoke and Overall",
+      "ok": true,
+      "detail": "[\"Unit\",\"Condition\",\"n\",\"Avg\",\"Min\",\"Max\",\"<0.5 m/s at\",\"Opening (mm)\",\"Grid · spacing (mm)\",\"2243.8\",\"Smoke\",\"Overall\"]"
+    },
+    {
+      "name": "chromebook: event summary FC-2 row: 40, corrected avg / min / max, 2000 × 1800, 5 × 8 · 450 × 229, Does not meet, Satisfactory, Non-compliant",
+      "ok": true,
+      "detail": "[\"FC-2\",\"Two extraction fans in operation\",\"40\",\"0.71\",\"0.23\",\"0.96\",\"~1 to 1.2 m\",\"2000 × 1800\",\"5 × 8 · 450 × 229\",\"Does not meet\",\"Satisfactory (compliant)\",\"Non-compliant\"]"
+    },
+    {
+      "name": "chromebook: event summary: manual and 600 × 500 rows",
+      "ok": true,
+      "detail": "[[\"Unit\",\"Condition\",\"n\",\"Avg\",\"Min\",\"Max\",\"<0.5 m/s at\",\"Opening (mm)\",\"Grid · spacing (mm)\",\"2243.8\",\"Smoke\",\"Overall\"],[\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"\",\"\",\"\",\"\",\"\"],[\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"\",\"\",\"\",\"\",\"\"],[\"FC-2\",\"Two extraction fans in operation\",\"40\",\"0.71\",\"0.23\",\"0.96\",\"~1 to 1.2 m\",\"2000 × 1800\",\"5 × 8 · 450 × 229\",\"Does not meet\",\"Satisfactory (compliant)\",\"Non-compliant\"],[\"FC-2\",\"Four extraction fans in operation, sash 300 mm\",\"3\",\"0.97\",\"0.90\",\"1.04\",\"\",\"2000 × 1800\",\"5 × 8 · 450 × 229\",\"Meets\",\"\",\"Incomplete\"],[\"Spray booth 1\",\"One extraction fan in operation\",\"3\",\"0.49\",\"0.40\",\"0.63\",\"\",\"\",\"4 × 7 · manual\",\"Does not meet\",\"\",\"Non-compliant\"],[\"Small benchtop hood\",\"One extraction fan in operation\",\"6\",\"0.62\",\"0.54\",\"0.72\",\"\",\"600 × 500\",\"2 × 3 · 400 × 150\",\"Meets\",\"\",\"Incomplete\"]]"
+    },
+    {
+      "name": "chromebook: event summary: anemometer line with hired / Airmet / due date and calibration warning",
+      "ok": true,
+      "detail": "Anemometer: TSI 9545 VelociCalc · SN T95450123 · Hired from Airmet · calibrated 2026-05-12 · due 2026-11-27 · correction +0.02 m/s at 0.50 m/s · Check: Calibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibration certificate"
+    },
+    {
+      "name": "chromebook: event anemometer block: owned/hired, supplier, last calibration, due date, correction, certificate photo",
+      "ok": true,
+      "detail": "Anemometer entered\nOwned or hired?\nOwned\nHired\nSupplier\nMake\nModel\nSerial\nLast calibration date\nCalibration due date\nCalibration correction (m/s)\nm/s at\nReference (m/s)\nm/s\n\nCorrection from the certificate: the amount to add to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 notes 3). Calibrated within the past 12 months (B3).\n\n📄 Photo of calibration certificate please take one\n📷 Photo of calibration certificate\n⚠ Calibration was due 2026-11-27, before the survey date (2026-11-28)\n⚠ Take a photo of the calibration certificate\n\nUsed for every measurem"
+    },
+    {
+      "name": "chromebook: event page with summary fits the width",
+      "ok": true,
+      "detail": "{\"sw\":1366,\"iw\":1366}"
+    },
+    {
+      "name": "chromebook: CSV block first row: unit – condition, A, corrected velocity, avg / min / max, distance, comments",
+      "ok": true,
+      "detail": "\"FC-2 – Two extraction fans in operation\",\"A\",\"0.47\",\"0.71\",\"0.23\",\"0.96\",\"~1\",\"Sash at 500 mm working height. Bench clutter near the right side.\",\"FC-2\",\"Two extraction fans in operation\",\"Bench-type fume cupboard\",\"Dynaflow\",\"DF-1800\",\"FC2-0042B\",\"Fume cupboard audit\",\"Chemistry Lab 1.04\",\"\",\"\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"\",\"Does not meet\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 3\",\"0.45\",\"+0.02\",\"\",\"\",\"\",\"Satisfactory (compliant)\",\"Non-compliant\",\"Chemistry Lab 1.04\",\"New\",\"No\",\"Hired\",\"Airmet\",\"2026-05-12\",\"2026-11-27\",\"Check: Calibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibration certificate\""
+    },
+    {
+      "name": "chromebook: CSV app columns: opening, grid, spacing, cl 3.1.2, anemometer, raw + correction, smoke, overall, hired, Airmet, dates, check",
+      "ok": true,
+      "detail": "\"FC-2 – Two extraction fans in operation\",\"A\",\"0.47\",\"0.71\",\"0.23\",\"0.96\",\"~1\",\"Sash at 500 mm working height. Bench clutter near the right side.\",\"FC-2\",\"Two extraction fans in operation\",\"Bench-type fume cupboard\",\"Dynaflow\",\"DF-1800\",\"FC2-0042B\",\"Fume cupboard audit\",\"Chemistry Lab 1.04\",\"\",\"\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"\",\"Does not meet\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 3\",\"0.45\",\"+0.02\",\"\",\"\",\"\",\"Satisfactory (compliant)\",\"Non-compliant\",\"Chemistry Lab 1.04\",\"New\",\"No\",\"Hired\",\"Airmet\",\"2026-05-12\",\"2026-11-27\",\"Check: Calibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibration certificate\""
+    },
+    {
+      "name": "chromebook: CSV point rows go A, B, C… across rows; P carries the custom label; AJ the 1.2 m distance",
+      "ok": true,
+      "detail": "\"\",\"B\",\"0.84\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"0.82\",\"+0.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"P - Behind sash stop\",\"0.52\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"Behind sash stop\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"0.50\",\"+0.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"AJ\",\"0.92\",\"\",\"\",\"\",\"1.2\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"0.90\",\"+0.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\""
+    },
+    {
+      "name": "chromebook: CSV summary section + anemometer line",
+      "ok": true,
+      "detail": "\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\",\"Smoke Test Result (A6)\",\"Overall (Smoke + cl 3.1.2)\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\"\n\"FC-2\",\"40\",\"0.71\",\"0.23\",\"0.96\",\"~1 to 1.2 m\",\"Two extraction fans in operation\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Does not meet\",\"Satisfactory (compliant)\",\"Non-compliant\"\n\"FC-2\",\"3\",\"0.97\",\"0.90\",\"1.04\",\"\",\"Four extraction fans in operation, sash 300 mm\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\",\"\",\"Incomplete\"\n\"Spray booth 1\",\"3\",\"0.49\",\"0.40\",\"0.63\",\"\",\"One extraction fan in operation\",\"\",\"\",\"4 × 7\",\"\",\"\",\"Manual: Opening size not measurable (booth doors removed)\",\"Does not meet\",\"\",\"Non-compliant\"\n\"Small benchtop hood\",\"6\",\"0.62\",\"0.54\",\"0.72\",\"\",\"One extraction fan in operation\",\"600\",\"500\",\"2 × 3\",\"400\",\"150\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\",\"\",\"Incomplete\""
+    },
+    {
+      "name": "chromebook: CSV never says 'Deficient'; smoke result uses Satisfactory / Dangerous wording",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: CSV A4.2(l) observations include each position's note",
+      "ok": true,
+      "detail": "\"Smoke observations (A4.2(l))\",\"Cupboard airflow pattern: Small eddy near the sink, stayed inside; Containment with sash half open: Slight eddy at the sash, contained; Leaks at joints and service penetrations (built-in cupboards): Free-standing cupboard\"\n\"Smoke observations (A4.2(l))\",\"\"\n\"Smoke observations (A4.2(l))\",\"\"\n\"Smoke observations (A4.2(l))\",\"\""
+    },
+    {
+      "name": "chromebook: CSV Figure A1 record: smoke rows, calibration rows, Results A…AN",
+      "ok": true,
+      "detail": "\"AS/NZS 2243.8:2014 Figure A1 record\",\"Measurement 3 · Two extraction fans in operation\"\n\"Location\",\"Chemistry Lab 1.04\"\n\"F/C Number\",\"FC-2\"\n\"Type\",\"Bench-type fume cupboard\"\n\"Installation\",\"New (A4.1.3 / B4.1.3: tested empty)\"\n\"SMOKE TEST\"\n\"Fume cupboard empty\",\"No (plan or photo attached)\"\n\"Equipment plan\",\"Rotary evaporator 400 × 300 mm, back left\"\n\"Smoke source used\",\"Air current tubes\"\n\"Test position\",\"Result\",\"Comments\",\"Photos\",\"Clause\"\n\"Face opening airflow pattern\",\"G\",\"\",\"\",\"A4.2(b)\"\n\"Cupboard airflow pattern\",\"S\",\"Small eddy near the sink, stayed inside\",\"\",\"A4.2(c)\"\n\"Containment along bottom of cupboard\",\"G\",\"\",\"\",\"A4.2(d)\"\n\"Containment along walls of cupboard\",\"G\",\"\",\"\",\"A4.2(e)\"\n\"Containment with sash fully open\",\"G\",\"\",\"\",\"A4.2(f)\"\n\"Containment with sash half open\",\"S\",\"Slight eddy at the sash, contained\",\"\",\"A4.2(g)–(h)\"\n\"Containment with sash at minimum opening\",\"G\",\"\",\"\",\"A4.2(i)\"\n\"Containment under abnormal conditions\",\"G\",\"\",\"\",\"A4.2(j)\"\n\"Leaks at joints and service penetrations (built-in cupboards)\",\"N/A\",\"Free-standing cupboard\",\"\",\"A4.2(k)\"\n\"Smoke observations (A4.2(l))\",\"Cupboard airflow pattern: Small eddy near the sink, stayed inside; Containment with sash half open: Slight eddy at the sash, contained; Leaks at joints and service penetrations (built-in cupboards): Free-standing cupboard\"\n\"Smoke test result (A6, worst score)\",\"Satisfactory\",\"Compliant\"\n\"FACE VELOCITY\"\n\"Face opening width (mm)\",\"2000\",\"Height (mm)\",\"1800\",\"No. of readings\",\"40\"\n\"Grid (B4.2(c))\",\"5 × 8\",\"Horizontal spacing (mm)\",\"450\",\"Vertical spacing (mm)\",\"229\"\n\"Instrument\",\"TSI 9545 VelociCalc\",\"Serial no.\",\"T95450123\"\n\"Calibration correction factor\",\"+0.02 m/s at 0.50 m/s\"\n\"Anemometer\",\"Hired\",\"Supplier\",\"Airmet\",\"Calibration certificate photo\",\"No\"\n\"Last calibration date\",\"2026-05-12\",\"Calibration due date\",\"2026-11-27\",\"Calibration check\",\"Check: Calibration was due 2026-11-27, before the survey date (2026-11-28); Take a photo of the calibration certificate\"\n\"Results\",\"A\",\"B\",\"C\",\"D\",\"E\",\"F\",\"G\",\"H\",\"I\",\"J\",\"K\",\"L\",\"M\",\"N\",\"O\",\"P\",\"Q\",\"R\",\"S\",\"T\",\"U\",\"V\",\"W\",\"X\",\"Y\",\"Z\",\"AA\",\"AB\",\"AC\",\"AD\",\"AE\",\"AF\",\"AG\",\"AH\",\"AI\",\"AJ\",\"AK\",\"AL\",\"AM\",\"AN\"\n\"Reading (m/s)\",\"0.47\",\"0.84\",\"0.71\",\"0.58\",\"0.95\",\"0.82\",\"0.69\",\"0.56\",\"0.93\",\"0.80\",\"0.67\",\"0.54\",\"0.91\",\"0.78\",\"0.65\",\"0.52\",\"0.89\",\"0.76\",\"0.63\",\"0.50\",\"0.23\",\"0.74\",\"0.61\",\"0.48\",\"0.85\",\"0.72\",\"0.59\",\"0.96\",\"0.83\",\"0.70\",\"0.57\",\"0.94\",\"0.81\",\"0.68\",\"0.55\",\"0.92\",\"0.79\",\"0.66\",\"0.53\",\"0.90\""
+    },
+    {
+      "name": "chromebook: hygiene event: still 'Sample' rows, no anemometer card, no vent export",
+      "ok": true,
+      "detail": "← Project events\n‹ Prev\n1 of 3 events in this project\n0019919-002 ›\n0019919 · v48.19 field test · tap to edit event\n0019919-001\nHygiene event\nPREPPED\n\n⚠ 2 samples have no location: Sample 1, Noise Sample 3\n\nMark event complete\n☰\n\nDaily logs: 0 of 2 attached, 2 not asked\n\nFiles for Drive\n\nExports and the COC are copied into the job folder as new files. Nothing already in the folder is changed.\n\nYesterday 0\nToday 3\nTomorrow 0\nAll 3\nPrepped 3\nRunning 0\nNeeds fields 0\nComplete 0\nRejected / fault 0\nS"
+    },
+    {
+      "name": "chromebook: hygiene event: Add sample screen unchanged (airborne + blank + noise, no vent)",
+      "ok": true,
+      "detail": "{\"h\":\"Add sample\",\"cards\":[\"Airborne · personal\",\"Airborne · static\",\"Airborne · passive badge\",\"Field blank\",\"Noise · personal\",\"Noise · static\"]}"
+    },
+    {
+      "name": "chromebook: airborne sample still opens the normal sample screen (pump field, flow)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: airborne sample status unchanged by vent.js",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: noise event: no anemometer card, no vent wording",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: noise event: noise Add screen is noise.js's, no vent types",
+      "ok": true,
+      "detail": "{\"h\":\"Add sample\",\"cards\":[\"Airborne · personal\",\"Airborne · static\",\"Airborne · passive badge\",\"Field blank\",\"Noise · personal\",\"Noise · static\"],\"v20\":false}"
+    },
+    {
+      "name": "chromebook: noise sample still opens the normal noise screen",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chromebook: measurement screen fits the width (no sideways scroll)",
+      "ok": true,
+      "detail": "{\"sw\":1366,\"iw\":1366}"
+    },
+    {
+      "name": "chromebook: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no requests to outside hosts",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}
