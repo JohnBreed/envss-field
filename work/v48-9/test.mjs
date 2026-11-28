@@ -149,6 +149,25 @@ async function run(vp) {
   }));
   check(`[${vp}] fit event shows Add individual report, not Add sample`, evUi.add && evUi.manual && !evUi.sample && evUi.title && evUi.code, JSON.stringify(evUi));
 
+  const helpUi = await page.evaluate(() => {
+    const text = document.body.innerText || "";
+    const addHelp = ((document.getElementById("fitAddReport") || {}).closest(".fit-action") || {}).innerText || "";
+    const manHelp = ((document.getElementById("fitAddManual") || {}).closest(".fit-action") || {}).innerText || "";
+    const markHelp = ((document.getElementById("fitMarkComplete") || {}).closest(".fit-action") || {}).innerText || "";
+    return {
+      add: /Photograph the PortaCount printout/.test(addHelp) && /person who was tested signs/.test(addHelp),
+      man: /Type the report fields yourself/.test(manHelp),
+      mark: /Once all fit tests are done/.test(markHelp) && /every report is signed/.test(markHelp),
+      page: /Enter manually opens a blank form/.test(text) && /does not read a photo/.test(text),
+      incomplete: ((document.getElementById("fitIncomplete") || {}).textContent || ""),
+      ids: !!(document.getElementById("fitManualHelp") && document.getElementById("fitIncomplete") && document.getElementById("fitEventActions"))
+    };
+  });
+  check(`[${vp}] event buttons have helper lines and Enter manually is explained on the page`, helpUi.add && helpUi.man && helpUi.mark && helpUi.page && helpUi.ids && /Add and sign at least one fit-test report/.test(helpUi.incomplete), JSON.stringify(helpUi));
+  const shotDir = "/workspace/guard-shots/v4819";
+  fs.mkdirSync(shotDir, { recursive: true });
+  await page.screenshot({ path: path.join(shotDir, `fit-${vp}-event.png`), fullPage: true });
+
   const coc = await page.evaluate(async () => { const r = await createCoc(); return { r, dialogs: true }; });
   check(`[${vp}] Create COC is blocked on a fit event`, page.dialogs.some(d => /do not have a laboratory COC/i.test(d)), page.dialogs.join(" | "));
 
@@ -161,6 +180,7 @@ async function run(vp) {
   }));
   check(`[${vp}] manual entry opens the confirm form with retake photo`, confirm.screen && confirm.retake && confirm.last && /manually/i.test(confirm.msg), JSON.stringify(confirm));
   await shot(page, "02-confirm-manual");
+  await page.screenshot({ path: path.join(shotDir, `fit-${vp}-manual-confirm.png`), fullPage: true });
 
   await page.evaluate(() => {
     document.getElementById("fitLast").value = "Breed";
@@ -171,6 +191,32 @@ async function run(vp) {
     document.getElementById("fitPassLevel").value = "100";
     document.getElementById("fitOverallFf").value = "200+";
   });
+  /* Persist the typed fields, return to the event, and check unsigned reports are listed and block complete. */
+  await page.evaluate(() => {
+    const r = (db.fitReports || [])[0];
+    if (r) {
+      r.lastName = "Breed"; r.firstName = "John"; r.model = "Aura 9322A+";
+      r.testDateDisplay = "25/11/2026"; r.result = "PASS"; r.passLevel = "100"; r.overallFf = "200+";
+    }
+    persist();
+    view.fitScreen = ""; view.fitReportId = "";
+    openEvent("eFit");
+  });
+  await sleep(400);
+  const incomplete = await page.evaluate(() => (document.getElementById("fitIncomplete") || {}).textContent || "");
+  check(`[${vp}] unsigned reports are listed on the event before complete is allowed`, /Not yet complete/.test(incomplete) && /Breed, John/.test(incomplete) && /Aura 9322A\+/.test(incomplete), incomplete);
+  await page.screenshot({ path: path.join(shotDir, `fit-${vp}-event-incomplete.png`), fullPage: true });
+  page.dialogs.length = 0;
+  await page.evaluate(() => { const b = document.getElementById("fitMarkComplete"); if (b) b.click(); });
+  await sleep(300);
+  const blocked = page.dialogs.join("\n");
+  const stillOpen = await page.evaluate(() => !eventById("eFit").uploadReady);
+  check(`[${vp}] mark complete is blocked and names the unsigned report`, stillOpen && /cannot be marked complete until every report is signed/i.test(blocked) && /Breed, John/.test(blocked) && /Aura 9322A\+/.test(blocked), blocked + " ready=" + !stillOpen);
+  await page.evaluate(() => {
+    const row = document.querySelector("[data-fit-open]");
+    if (row) row.click();
+  });
+  await sleep(400);
   await page.evaluate(() => { const b = document.getElementById("fitToSign"); if (b) b.scrollIntoView({ block: "center" }); });
   await sleep(200);
   await page.evaluate(() => { const b = document.getElementById("fitToSign"); if (b) b.click(); });
@@ -233,6 +279,9 @@ async function run(vp) {
   await sleep(300);
   const done = await page.evaluate(() => ({ ready: eventById("eFit").uploadReady, stage: deriveEventStage(eventById("eFit")) }));
   check(`[${vp}] mark complete follows signed reports`, done.ready && done.stage === "upload_ready", JSON.stringify(done));
+  const noIncomplete = await page.evaluate(() => !document.getElementById("fitIncomplete"));
+  check(`[${vp}] incomplete list is gone once every report is signed`, noIncomplete, await page.evaluate(() => (document.getElementById("fitIncomplete") || {}).textContent || ""));
+  await page.screenshot({ path: path.join(shotDir, `fit-${vp}-event-complete.png`), fullPage: true });
 
   /* zip */
   check(`[${vp}] Download all (zip) is offered after a signed report`, await page.evaluate(() => !!document.getElementById("fitZip")));
