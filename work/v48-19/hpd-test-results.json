@@ -1,0 +1,222 @@
+{
+ "at": "2026-11-28T10:54:47.656Z",
+ "total": 43,
+ "failed": 0,
+ "results": [
+  {
+   "name": "library has 55 products",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ids unique",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "every product: class matches the SLC80 band (Table E1)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "manufacturer-basis rows carry a source link",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows with no manufacturer value are flagged check",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "SuperFit uses the manufacturer 24 dB (reports say 23 or 24)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Yellow Neons: class follows the 23 dB band (4), not the report's 5",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "classOfSlc bands",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "classNeeded (Table A1, Lcrit 85)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: LAeq 90, SLC80 24 -> 66 dB, over-protection note (<=70)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: matches report 0019037 (90 - 29 = 61)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: LCeq wins over LAeq; >=110 asks for octave band",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: Class 3 < Class 3 needed? (96 needs 3: ok)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: LCpeak >= 140 needs Class 5 -> inadequate",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: Class 5 with peak is fine",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: no class/SLC80 -> unknown, no number",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: class only (no SLC80): class check, no dB number",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: effective 85 or more is inadequate",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "assess: exactly 70 is flagged over-protection (cl 6.2.2 'or less')",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "search 'superfit' finds 3M SuperFit first",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "search 'super fit' (two words)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "search 'peltor h505b'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "search is accent/case blind: 'WÜRTH x100'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "search empty -> []",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "suggest: SuperFit box text",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "suggest: Moldex SparkPlugs",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "suggest: Max Lite beats Max (numbers and phrase)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "suggest: OCR split 'Super Fit' still matches",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "suggest: unrelated text -> nothing",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "suggest: empty text -> nothing",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "itemValues: library",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "itemValues: box wins and class follows",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "boxMismatch text when box differs from the library",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "itemValues: Class on the box that does not fit the SLC80 -> SLC80 wins, warning names it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "boxMismatch works for free-text items too",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "boxMismatch empty when same",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "itemValues: free text item with nothing -> nulls",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "appliesTo: noise event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "appliesTo: ACA NSED codes",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "appliesTo: hygiene event with a noise sample",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "appliesTo: airborne only -> no",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "appliesTo: fibre / fit / vent -> no",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "summary states",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}
