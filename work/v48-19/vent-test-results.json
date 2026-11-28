@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-28T06:23:11.335Z",
+  "at": "2026-11-28T06:31:57.302Z",
   "root": "/workspace/envss-v4819-vent",
   "pass": 225,
   "fail": 0,
@@ -52,7 +52,7 @@
     {
       "name": "pixel7: anemometer change audited on the event log",
       "ok": true,
-      "detail": "[{\"at\":\"2026-11-28T06:21:17.763Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T954501\",\"to\":\"T9545012\",\"detail\":\"T954501 → T9545012\"},{\"at\":\"2026-11-28T06:21:17.765Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T9545012\",\"to\":\"T95450123\",\"detail\":\"T9545012 → T95450123\"},{\"at\":\"2026-11-28T06:21:17.766Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Anemometer serial\",\"field\":\"vent\",\"from\":\"\",\"to\":\"\",\"detail\":\"blank → T95450123\"}]"
+      "detail": "[{\"at\":\"2026-11-28T06:30:02.684Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T954501\",\"to\":\"T9545012\",\"detail\":\"T954501 → T9545012\"},{\"at\":\"2026-11-28T06:30:02.686Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T9545012\",\"to\":\"T95450123\",\"detail\":\"T9545012 → T95450123\"},{\"at\":\"2026-11-28T06:30:02.688Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Anemometer serial\",\"field\":\"vent\",\"from\":\"\",\"to\":\"\",\"detail\":\"blank → T95450123\"}]"
     },
     {
       "name": "pixel7: Add measurement screen: title",
@@ -60,14 +60,14 @@
       "detail": "Add measurement"
     },
     {
-      "name": "pixel7: Add measurement screen: only the four vent types",
+      "name": "pixel7: Add measurement screen: the five vent types, Face velocity still offered",
       "ok": true,
-      "detail": "[\"Vent · Face velocity grid\",\"Vent · Capture velocity\",\"Vent · Other velocity reading\",\"Vent · Visual check only\"]"
+      "detail": "[\"Vent · Face velocity grid\",\"Vent · Face velocity\",\"Vent · Capture velocity\",\"Vent · Other velocity reading\",\"Vent · Visual check only\"]"
     },
     {
       "name": "pixel7: Add measurement screen: no airborne / noise / blank options",
       "ok": true,
-      "detail": "← 0019919-003\nAdd measurement\nVent · Face velocity grid\nGrid of points across the extraction face, set out from the opening size (AS/NZS 2243.8 Appendix B). One per fan condition.\nVent · Capture velocity\nAt the source or work position, a set distance from the face.\nVent · Other velocity reading\ne.g. edge of a table, breathing zone, booth length, duct.\nVent · Visual check only\nNo readings possible (e.g. fully enclosed). Describe what was seen."
+      "detail": "← 0019919-003\nAdd measurement\nVent · Face velocity grid\nGrid of points across the extraction face, set out from the opening size (AS/NZS 2243.8 Appendix B). One per fan condition.\nVent · Face velocity\nAt the extraction face, hood opening or sash.\nVent · Capture velocity\nAt the source or work position, a set distance from the face.\nVent · Other velocity reading\ne.g. edge of a table, breathing zone, booth length, duct.\nVent · Visual check only\nNo readings possible (e.g. fully enclosed). Describe what was seen."
     },
     {
       "name": "pixel7: new vent measurement: trainKind vent on the vent event, number 1",
@@ -132,7 +132,7 @@
     {
       "name": "pixel7: photo saved on the device as an envss-photo reference",
       "ok": true,
-      "detail": "{\"p\":[\"envss-photo:10c355a3-9a01-447b-b0bf-3e6549c1df60\"],\"r\":[\"10c355a3-9a01-447b-b0bf-3e6549c1df60\"]}"
+      "detail": "{\"p\":[\"envss-photo:82564351-48b4-4705-82d3-634b875e7ebc\"],\"r\":[\"82564351-48b4-4705-82d3-634b875e7ebc\"]}"
     },
     {
       "name": "pixel7: photo thumbnail shown",
@@ -147,7 +147,7 @@
     {
       "name": "pixel7: offline: the measurement and event are queued on the device",
       "ok": true,
-      "detail": "[\"trains:tsxyrtzq\",\"events:eV\"]"
+      "detail": "[\"trains:tfi99i2c\",\"events:eV\"]"
     },
     {
       "name": "pixel7: offline: nothing reached the server yet",
@@ -157,17 +157,17 @@
     {
       "name": "pixel7: after reload: all vent fields still on the device",
       "ok": true,
-      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"At the source, 15 cm from the outer edge\",\"distanceCm\":\"35\",\"readings\":[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\",\"\"],\"below05\":\"~60 cm\",\"comments\":\"Strong induced airflow at the work position\",\"photos\":[\"envss-photo:10c355a3-9a01-447b-b0bf-3e6549c1df60\"]}"
+      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"At the source, 15 cm from the outer edge\",\"distanceCm\":\"35\",\"readings\":[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\",\"\"],\"below05\":\"~60 cm\",\"comments\":\"Strong induced airflow at the work position\",\"photos\":[\"envss-photo:82564351-48b4-4705-82d3-634b875e7ebc\"]}"
     },
     {
       "name": "pixel7: online: envss_trains row carries the vent payload (event_id set)",
       "ok": true,
-      "detail": "{\"id\":\"tsxyrtzq\",\"payload\":{\"id\":\"tsxyrtzq\",\"eventId\":\"eV\",\"pouch\":\"1\",\"sampleNo\":1,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},\"rpd\":{\"worn\":\"\",\"mod"
+      "detail": "{\"id\":\"tfi99i2c\",\"payload\":{\"id\":\"tfi99i2c\",\"eventId\":\"eV\",\"pouch\":\"1\",\"sampleNo\":1,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},\"rpd\":{\"worn\":\"\",\"mod"
     },
     {
       "name": "pixel7: online: envss_events row carries ventEquip",
       "ok": true,
-      "detail": "{\"id\":\"eV\",\"payload\":{\"id\":\"eV\",\"projectId\":\"p1\",\"code\":\"0019919-003\",\"type\":\"hygiene\",\"podioEventKind\":\"vent\",\"podioAppId\":\"30888385\",\"date\":\"2026-11-28\",\"stage\":\"planned\",\"audit\":[{\"at\":\"2026-11-28T06:21:17.007Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Make\",\"fiel"
+      "detail": "{\"id\":\"eV\",\"payload\":{\"id\":\"eV\",\"projectId\":\"p1\",\"code\":\"0019919-003\",\"type\":\"hygiene\",\"podioEventKind\":\"vent\",\"podioAppId\":\"30888385\",\"date\":\"2026-11-28\",\"stage\":\"planned\",\"audit\":[{\"at\":\"2026-11-28T06:30:01.927Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Make\",\"fiel"
     },
     {
       "name": "pixel7: online: queue empty for the vent rows",
@@ -222,17 +222,17 @@
     {
       "name": "pixel7: CSV: 0019340 Sheet1 headings first, app columns to the right",
       "ok": true,
-      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (cm)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\""
+      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\""
     },
     {
       "name": "pixel7: CSV: one row per reading, stats + comments on the first row (1.32 / 1.01 / 1.54), anemometer",
       "ok": true,
-      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (cm)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"1.31\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Strong induced airflow at the work position\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"At the source, 15 cm from the outer edge\",\"35\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"1\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 1\"\n\"\",\"2\",\"1.33\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"3\",\"1.01\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"4\",\"1.39\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"5\",\"1.54\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"2.10\",\"2.09\",\"2.02\",\"2.14\",\"\",\"\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"Directly in front of the extraction face\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 2\""
+      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"1.31\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Strong induced airflow at the work position\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"At the source, 15 cm from the outer edge\",\"35\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"1\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 1\"\n\"\",\"2\",\"1.33\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"3\",\"1.01\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"4\",\"1.39\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"5\",\"1.54\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"2.10\",\"2.09\",\"2.02\",\"2.14\",\"\",\"\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"Directly in front of the extraction face\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 2\""
     },
     {
       "name": "pixel7: CSV: summary block after the measurements (Summary tab columns)",
       "ok": true,
-      "detail": "\"\",\"3\",\"2.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\n\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (cm)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\""
+      "detail": "\"\",\"3\",\"2.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\n\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\""
     },
     {
       "name": "pixel7: visual check: needs a comment, not readings",
@@ -372,7 +372,7 @@
     {
       "name": "pixel7: grid: audit is one readable line per point (no big JSON blobs)",
       "ok": true,
-      "detail": "[{\"at\":\"2026-11-28T06:21:46.752Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Point 5\",\"field\":\"vent.grid.v.point 5\",\"from\":\"0.93\",\"to\":\"0.21\",\"detail\":\"0.93 → 0.21\"},{\"at\":\"2026-11-28T06:21:47.118Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed 5\",\"field\":\"vent.grid.d.point 1 below 0.5\",\"from\":\"\",\"to\":\"~1\",\"detail\":\"(empty) → ~1\"},{\"at\":\"2026-11-28T06:21:47.490Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed 5\",\"field\":\"vent.grid.d.point 8 below 0.5\",\"from\":\"\",\"to\":\"1.2 m\",\"detail\":\"(empty) → 1.2 m\"},{\"at\":\"2026-11-28T06:21:48.034Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Point 4 label\",\"field\":\"vent.grid.label.point 4 label\",\"from\":\"\",\"to\":\"Behind sash stop\",\"detail\":\"(empty) → Behind sash stop\"},{\"at\":\"2026-11-28T06:21:48.660Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"comments\",\"from\":\"\",\"to\":\"Sash at 500 mm working height. Bench clutter near the right side.\",\"detail\":\"(empty) → Sash at 500 mm working height. Bench clutter near the right side.\"},{\"at\":\"2026-11-28T06:21:48.660Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"vent.comments\",\"from\":\"\",\"to\":\"Sash at 500 mm working height. Bench clutter near the right side.\",\"detail\":\"(empty) → Sash at 500 mm working height. Bench clutter near the right side.\"}]"
+      "detail": "[{\"at\":\"2026-11-28T06:30:31.872Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Point 5\",\"field\":\"vent.grid.v.point 5\",\"from\":\"0.93\",\"to\":\"0.21\",\"detail\":\"0.93 → 0.21\"},{\"at\":\"2026-11-28T06:30:32.240Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed 5\",\"field\":\"vent.grid.d.point 1 below 0.5\",\"from\":\"\",\"to\":\"~1\",\"detail\":\"(empty) → ~1\"},{\"at\":\"2026-11-28T06:30:32.624Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed 5\",\"field\":\"vent.grid.d.point 8 below 0.5\",\"from\":\"\",\"to\":\"1.2 m\",\"detail\":\"(empty) → 1.2 m\"},{\"at\":\"2026-11-28T06:30:33.214Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Point 4 label\",\"field\":\"vent.grid.label.point 4 label\",\"from\":\"\",\"to\":\"Behind sash stop\",\"detail\":\"(empty) → Behind sash stop\"},{\"at\":\"2026-11-28T06:30:33.898Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"comments\",\"from\":\"\",\"to\":\"Sash at 500 mm working height. Bench clutter near the right side.\",\"detail\":\"(empty) → Sash at 500 mm working height. Bench clutter near the right side.\"},{\"at\":\"2026-11-28T06:30:33.898Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"vent.comments\",\"from\":\"\",\"to\":\"Sash at 500 mm working height. Bench clutter near the right side.\",\"detail\":\"(empty) → Sash at 500 mm working height. Bench clutter near the right side.\"}]"
     },
     {
       "name": "pixel7: grid screen fits the width (grid scrolls inside its card, not the page)",
@@ -397,7 +397,7 @@
     {
       "name": "pixel7: grid online: envss_trains row carries the grid",
       "ok": true,
-      "detail": "{\"id\":\"tl5joyui\",\"payload\":{\"id\":\"tl5joyui\",\"eventId\":\"eV\",\"pouch\":\"3\",\"sampleNo\":3,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\""
+      "detail": "{\"id\":\"tllpa4jv\",\"payload\":{\"id\":\"tllpa4jv\",\"eventId\":\"eV\",\"pouch\":\"3\",\"sampleNo\":3,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\""
     },
     {
       "name": "pixel7: + Another condition: same unit, hood, make/model/serial and opening; new empty grid, no condition",
@@ -420,9 +420,9 @@
       "detail": "⚠ 37 of 40 points still blank"
     },
     {
-      "name": "pixel7: manual grid: 4 × 7 = 28 points, reason asked for",
+      "name": "pixel7: manual grid: 4 × 7 = 28 points; reason field present but optional (not in Still needed)",
       "ok": true,
-      "detail": "Still needed: Reason for the manual grid, At least one grid point velocity"
+      "detail": "Still needed: At least one grid point velocity"
     },
     {
       "name": "pixel7: manual 4 × 7 labels match the 0019340 sheet (Top left corner, Top left central, Top right central, Bottom right corner)",
@@ -430,14 +430,14 @@
       "detail": "[\"1 Top left corner\",\"7 Bottom left corner\",\"8 Top left central\",\"14 Bottom left central\",\"15 Top right central\",\"22 Top right corner\",\"28 Bottom right corner\"]"
     },
     {
-      "name": "pixel7: Mark complete lists the missing manual-grid reason",
+      "name": "pixel7: Mark complete is not blocked by a blank optional manual-grid reason",
       "ok": true,
-      "detail": "[\"This event cannot be marked complete until every measurement is complete.\\n\\nMeasurement 5: Reason for the manual grid, At least one grid point velocity\"]"
+      "detail": "[\"Event marked complete.\\n\\nVent surveys have no lab samples, so there is no COC. Use ☰ > Export vent survey CSV for the field sheet.\"]"
     },
     {
       "name": "pixel7: manual grid: rows editable (4 × 5) with nothing entered; reason saved",
       "ok": true,
-      "detail": "{\"basis\":\"manual\",\"widthMm\":\"\",\"heightMm\":\"\",\"cols\":4,\"rows\":5,\"gapX\":0,\"gapY\":0,\"reason\":\"Opening size not measurable (booth doors removed)\",\"v\":{},\"d\":{},\"label\":{}}"
+      "detail": "{\"basis\":\"manual\",\"widthMm\":\"\",\"heightMm\":\"\",\"cols\":4,\"rows\":5,\"gapX\":0,\"gapY\":0,\"reason\":\"Opening size not measurable (booth doors removed)\",\"v\":{\"point 1\":\"0.42\"},\"d\":{},\"label\":{}}"
     },
     {
       "name": "pixel7: manual grid: dropping a column with a reading in it is refused",
@@ -512,7 +512,7 @@
     {
       "name": "pixel7: grid CSV: summary section with opening, grid and spacing",
       "ok": true,
-      "detail": "\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (cm)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"Fume cupboard FC-2 (Lab 1.04)\",\"40\",\"0.68\",\"0.21\",\"0.94\",\"~1 to 1.2 m\",\"Two extraction fans in operation\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Does not meet\"\n\"Fume cupboard FC-2 (Lab 1.04)\",\"3\",\"0.95\",\"0.88\",\"1.02\",\"\",\"Four extraction fans in operation, sash 300 mm\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\"\n\"Spray booth 1\",\"3\",\"0.47\",\"0.38\",\"0.61\",\"\",\"One extraction fan in operation\",\"\",\"\",\"4 × 7\",\"\",\"\",\"Manual: Opening size not measurable (booth doors removed)\",\"Does not meet\"\n\"Small benchtop hood\",\"6\",\"0.60\",\"0.52\",\"0.70\",\"\",\"One extraction fan in operation\",\"600\",\"500\",\"2 × 3\",\"400\",\"150\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\""
+      "detail": "\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"Fume cupboard FC-2 (Lab 1.04)\",\"40\",\"0.68\",\"0.21\",\"0.94\",\"~1 to 1.2 m\",\"Two extraction fans in operation\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Does not meet\"\n\"Fume cupboard FC-2 (Lab 1.04)\",\"3\",\"0.95\",\"0.88\",\"1.02\",\"\",\"Four extraction fans in operation, sash 300 mm\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\"\n\"Spray booth 1\",\"3\",\"0.47\",\"0.38\",\"0.61\",\"\",\"One extraction fan in operation\",\"\",\"\",\"4 × 7\",\"\",\"\",\"Manual: Opening size not measurable (booth doors removed)\",\"Does not meet\"\n\"Small benchtop hood\",\"6\",\"0.60\",\"0.52\",\"0.70\",\"\",\"One extraction fan in operation\",\"600\",\"500\",\"2 × 3\",\"400\",\"150\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\""
     },
     {
       "name": "pixel7: grid CSV: manual grid block has 28 rows",
@@ -612,7 +612,7 @@
     {
       "name": "chromebook: anemometer change audited on the event log",
       "ok": true,
-      "detail": "[{\"at\":\"2026-11-28T06:22:18.185Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T954501\",\"to\":\"T9545012\",\"detail\":\"T954501 → T9545012\"},{\"at\":\"2026-11-28T06:22:18.188Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T9545012\",\"to\":\"T95450123\",\"detail\":\"T9545012 → T95450123\"},{\"at\":\"2026-11-28T06:22:18.190Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Anemometer serial\",\"field\":\"vent\",\"from\":\"\",\"to\":\"\",\"detail\":\"blank → T95450123\"}]"
+      "detail": "[{\"at\":\"2026-11-28T06:31:03.950Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T954501\",\"to\":\"T9545012\",\"detail\":\"T954501 → T9545012\"},{\"at\":\"2026-11-28T06:31:03.952Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Serial\",\"field\":\"ventEquip.serial\",\"from\":\"T9545012\",\"to\":\"T95450123\",\"detail\":\"T9545012 → T95450123\"},{\"at\":\"2026-11-28T06:31:03.954Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Anemometer serial\",\"field\":\"vent\",\"from\":\"\",\"to\":\"\",\"detail\":\"blank → T95450123\"}]"
     },
     {
       "name": "chromebook: Add measurement screen: title",
@@ -620,14 +620,14 @@
       "detail": "Add measurement"
     },
     {
-      "name": "chromebook: Add measurement screen: only the four vent types",
+      "name": "chromebook: Add measurement screen: the five vent types, Face velocity still offered",
       "ok": true,
-      "detail": "[\"Vent · Face velocity grid\",\"Vent · Capture velocity\",\"Vent · Other velocity reading\",\"Vent · Visual check only\"]"
+      "detail": "[\"Vent · Face velocity grid\",\"Vent · Face velocity\",\"Vent · Capture velocity\",\"Vent · Other velocity reading\",\"Vent · Visual check only\"]"
     },
     {
       "name": "chromebook: Add measurement screen: no airborne / noise / blank options",
       "ok": true,
-      "detail": "← 0019919-003\nAdd measurement\nVent · Face velocity grid\nGrid of points across the extraction face, set out from the opening size (AS/NZS 2243.8 Appendix B). One per fan condition.\nVent · Capture velocity\nAt the source or work position, a set distance from the face.\nVent · Other velocity reading\ne.g. edge of a table, breathing zone, booth length, duct.\nVent · Visual check only\nNo readings possible (e.g. fully enclosed). Describe what was seen."
+      "detail": "← 0019919-003\nAdd measurement\nVent · Face velocity grid\nGrid of points across the extraction face, set out from the opening size (AS/NZS 2243.8 Appendix B). One per fan condition.\nVent · Face velocity\nAt the extraction face, hood opening or sash.\nVent · Capture velocity\nAt the source or work position, a set distance from the face.\nVent · Other velocity reading\ne.g. edge of a table, breathing zone, booth length, duct.\nVent · Visual check only\nNo readings possible (e.g. fully enclosed). Describe what was seen."
     },
     {
       "name": "chromebook: new vent measurement: trainKind vent on the vent event, number 1",
@@ -692,7 +692,7 @@
     {
       "name": "chromebook: photo saved on the device as an envss-photo reference",
       "ok": true,
-      "detail": "{\"p\":[\"envss-photo:8f134e3c-9d53-464a-8fcb-23ecfa188afb\"],\"r\":[\"8f134e3c-9d53-464a-8fcb-23ecfa188afb\"]}"
+      "detail": "{\"p\":[\"envss-photo:ec7c9803-9739-4f3e-8b7b-7b537caf2652\"],\"r\":[\"ec7c9803-9739-4f3e-8b7b-7b537caf2652\"]}"
     },
     {
       "name": "chromebook: photo thumbnail shown",
@@ -707,7 +707,7 @@
     {
       "name": "chromebook: offline: the measurement and event are queued on the device",
       "ok": true,
-      "detail": "[\"trains:tlpc0nsk\",\"events:eV\"]"
+      "detail": "[\"trains:tnpxho3z\",\"events:eV\"]"
     },
     {
       "name": "chromebook: offline: nothing reached the server yet",
@@ -717,17 +717,17 @@
     {
       "name": "chromebook: after reload: all vent fields still on the device",
       "ok": true,
-      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"At the source, 15 cm from the outer edge\",\"distanceCm\":\"35\",\"readings\":[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\",\"\"],\"below05\":\"~60 cm\",\"comments\":\"Strong induced airflow at the work position\",\"photos\":[\"envss-photo:8f134e3c-9d53-464a-8fcb-23ecfa188afb\"]}"
+      "detail": "{\"v\":1,\"type\":\"capture\",\"unit\":\"DMS downdraft table (dry lab)\",\"hood\":\"Downdraft table\",\"condition\":\"Extraction on, boxes moved off the bench\",\"location\":\"At the source, 15 cm from the outer edge\",\"distanceCm\":\"35\",\"readings\":[\"1.31\",\"1.33\",\"1.01\",\"1.39\",\"1.54\",\"\"],\"below05\":\"~60 cm\",\"comments\":\"Strong induced airflow at the work position\",\"photos\":[\"envss-photo:ec7c9803-9739-4f3e-8b7b-7b537caf2652\"]}"
     },
     {
       "name": "chromebook: online: envss_trains row carries the vent payload (event_id set)",
       "ok": true,
-      "detail": "{\"id\":\"tlpc0nsk\",\"payload\":{\"id\":\"tlpc0nsk\",\"eventId\":\"eV\",\"pouch\":\"1\",\"sampleNo\":1,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},\"rpd\":{\"worn\":\"\",\"mod"
+      "detail": "{\"id\":\"tnpxho3z\",\"payload\":{\"id\":\"tnpxho3z\",\"eventId\":\"eV\",\"pouch\":\"1\",\"sampleNo\":1,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\":\"\",\"dob\":\"\",\"occupation\":\"\",\"company\":\"\",\"hours\":\"\",\"daysOn\":\"\",\"daysOff\":\"\"},\"rpd\":{\"worn\":\"\",\"mod"
     },
     {
       "name": "chromebook: online: envss_events row carries ventEquip",
       "ok": true,
-      "detail": "{\"id\":\"eV\",\"payload\":{\"id\":\"eV\",\"projectId\":\"p1\",\"code\":\"0019919-003\",\"type\":\"hygiene\",\"podioEventKind\":\"vent\",\"podioAppId\":\"30888385\",\"date\":\"2026-11-28\",\"stage\":\"planned\",\"audit\":[{\"at\":\"2026-11-28T06:22:17.435Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Make\",\"fiel"
+      "detail": "{\"id\":\"eV\",\"payload\":{\"id\":\"eV\",\"projectId\":\"p1\",\"code\":\"0019919-003\",\"type\":\"hygiene\",\"podioEventKind\":\"vent\",\"podioAppId\":\"30888385\",\"date\":\"2026-11-28\",\"stage\":\"planned\",\"audit\":[{\"at\":\"2026-11-28T06:31:03.196Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Make\",\"fiel"
     },
     {
       "name": "chromebook: online: queue empty for the vent rows",
@@ -782,17 +782,17 @@
     {
       "name": "chromebook: CSV: 0019340 Sheet1 headings first, app columns to the right",
       "ok": true,
-      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (cm)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\""
+      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\""
     },
     {
       "name": "chromebook: CSV: one row per reading, stats + comments on the first row (1.32 / 1.01 / 1.54), anemometer",
       "ok": true,
-      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (cm)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"1.31\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Strong induced airflow at the work position\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"At the source, 15 cm from the outer edge\",\"35\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"1\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 1\"\n\"\",\"2\",\"1.33\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"3\",\"1.01\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"4\",\"1.39\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"5\",\"1.54\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"2.10\",\"2.09\",\"2.02\",\"2.14\",\"\",\"\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"Directly in front of the extraction face\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 2\""
+      "detail": "\"Extraction Unit/Equipment\",\"Measurement Number\",\"Measured Velocity (m/s)\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Comments\",\"Unit\",\"Operating Condition\",\"LEV/Hood Type\",\"Hood Make\",\"Hood Model\",\"Hood Serial\",\"Measurement Type\",\"Measurement Location\",\"Distance From Extraction Face (cm)\",\"Point Label\",\"Grid Basis\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Manual Grid Reason\",\"AS/NZS 2243.8 cl 3.1.2\",\"Photos\",\"Anemometer\",\"Field app measurement\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"1.31\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Strong induced airflow at the work position\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"At the source, 15 cm from the outer edge\",\"35\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"1\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 1\"\n\"\",\"2\",\"1.33\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"3\",\"1.01\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"4\",\"1.39\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"\",\"5\",\"1.54\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\"DMS downdraft table (dry lab) – Extraction on, boxes moved off the bench\",\"1\",\"2.10\",\"2.09\",\"2.02\",\"2.14\",\"\",\"\",\"DMS downdraft table (dry lab)\",\"Extraction on, boxes moved off the bench\",\"Downdraft table\",\"\",\"\",\"\",\"Capture velocity\",\"Directly in front of the extraction face\",\"\",\"\",\"Capture velocity\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"TSI 9545 VelociCalc SN T95450123\",\"Measurement 2\""
     },
     {
       "name": "chromebook: CSV: summary block after the measurements (Summary tab columns)",
       "ok": true,
-      "detail": "\"\",\"3\",\"2.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\n\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (cm)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\""
+      "detail": "\"\",\"3\",\"2.02\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"\n\n\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\""
     },
     {
       "name": "chromebook: visual check: needs a comment, not readings",
@@ -932,7 +932,7 @@
     {
       "name": "chromebook: grid: audit is one readable line per point (no big JSON blobs)",
       "ok": true,
-      "detail": "[{\"at\":\"2026-11-28T06:22:46.504Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Point 5\",\"field\":\"vent.grid.v.point 5\",\"from\":\"0.93\",\"to\":\"0.21\",\"detail\":\"0.93 → 0.21\"},{\"at\":\"2026-11-28T06:22:46.873Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed 5\",\"field\":\"vent.grid.d.point 1 below 0.5\",\"from\":\"\",\"to\":\"~1\",\"detail\":\"(empty) → ~1\"},{\"at\":\"2026-11-28T06:22:47.250Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed 5\",\"field\":\"vent.grid.d.point 8 below 0.5\",\"from\":\"\",\"to\":\"1.2 m\",\"detail\":\"(empty) → 1.2 m\"},{\"at\":\"2026-11-28T06:22:47.792Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Point 4 label\",\"field\":\"vent.grid.label.point 4 label\",\"from\":\"\",\"to\":\"Behind sash stop\",\"detail\":\"(empty) → Behind sash stop\"},{\"at\":\"2026-11-28T06:22:48.413Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"comments\",\"from\":\"\",\"to\":\"Sash at 500 mm working height. Bench clutter near the right side.\",\"detail\":\"(empty) → Sash at 500 mm working height. Bench clutter near the right side.\"},{\"at\":\"2026-11-28T06:22:48.413Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"vent.comments\",\"from\":\"\",\"to\":\"Sash at 500 mm working height. Bench clutter near the right side.\",\"detail\":\"(empty) → Sash at 500 mm working height. Bench clutter near the right side.\"}]"
+      "detail": "[{\"at\":\"2026-11-28T06:31:32.246Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Point 5\",\"field\":\"vent.grid.v.point 5\",\"from\":\"0.93\",\"to\":\"0.21\",\"detail\":\"0.93 → 0.21\"},{\"at\":\"2026-11-28T06:31:32.613Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed 5\",\"field\":\"vent.grid.d.point 1 below 0.5\",\"from\":\"\",\"to\":\"~1\",\"detail\":\"(empty) → ~1\"},{\"at\":\"2026-11-28T06:31:32.988Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed 5\",\"field\":\"vent.grid.d.point 8 below 0.5\",\"from\":\"\",\"to\":\"1.2 m\",\"detail\":\"(empty) → 1.2 m\"},{\"at\":\"2026-11-28T06:31:33.522Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Point 4 label\",\"field\":\"vent.grid.label.point 4 label\",\"from\":\"\",\"to\":\"Behind sash stop\",\"detail\":\"(empty) → Behind sash stop\"},{\"at\":\"2026-11-28T06:31:34.093Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"comments\",\"from\":\"\",\"to\":\"Sash at 500 mm working height. Bench clutter near the right side.\",\"detail\":\"(empty) → Sash at 500 mm working height. Bench clutter near the right side.\"},{\"at\":\"2026-11-28T06:31:34.093Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Comments\",\"field\":\"vent.comments\",\"from\":\"\",\"to\":\"Sash at 500 mm working height. Bench clutter near the right side.\",\"detail\":\"(empty) → Sash at 500 mm working height. Bench clutter near the right side.\"}]"
     },
     {
       "name": "chromebook: grid screen fits the width (grid scrolls inside its card, not the page)",
@@ -957,7 +957,7 @@
     {
       "name": "chromebook: grid online: envss_trains row carries the grid",
       "ok": true,
-      "detail": "{\"id\":\"tw8joqa2\",\"payload\":{\"id\":\"tw8joqa2\",\"eventId\":\"eV\",\"pouch\":\"3\",\"sampleNo\":3,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\""
+      "detail": "{\"id\":\"tdby07ke\",\"payload\":{\"id\":\"tdby07ke\",\"eventId\":\"eV\",\"pouch\":\"3\",\"sampleNo\":3,\"trainKind\":\"vent\",\"contaminantId\":\"\",\"pumpSerial\":\"\",\"dosimeterSerial\":\"\",\"headId\":\"\",\"mediaId\":\"\",\"startFlow\":\"\",\"endFlow\":\"\",\"desiredVolumeL\":\"\",\"minMinutes\":\"\",\"mode\":\"static\",\"person\":{\"first\":\"\",\"last\":\"\",\"sex\""
     },
     {
       "name": "chromebook: + Another condition: same unit, hood, make/model/serial and opening; new empty grid, no condition",
@@ -980,9 +980,9 @@
       "detail": "⚠ 37 of 40 points still blank"
     },
     {
-      "name": "chromebook: manual grid: 4 × 7 = 28 points, reason asked for",
+      "name": "chromebook: manual grid: 4 × 7 = 28 points; reason field present but optional (not in Still needed)",
       "ok": true,
-      "detail": "Still needed: Reason for the manual grid, At least one grid point velocity"
+      "detail": "Still needed: At least one grid point velocity"
     },
     {
       "name": "chromebook: manual 4 × 7 labels match the 0019340 sheet (Top left corner, Top left central, Top right central, Bottom right corner)",
@@ -990,14 +990,14 @@
       "detail": "[\"1 Top left corner\",\"7 Bottom left corner\",\"8 Top left central\",\"14 Bottom left central\",\"15 Top right central\",\"22 Top right corner\",\"28 Bottom right corner\"]"
     },
     {
-      "name": "chromebook: Mark complete lists the missing manual-grid reason",
+      "name": "chromebook: Mark complete is not blocked by a blank optional manual-grid reason",
       "ok": true,
-      "detail": "[\"This event cannot be marked complete until every measurement is complete.\\n\\nMeasurement 5: Reason for the manual grid, At least one grid point velocity\"]"
+      "detail": "[\"Event marked complete.\\n\\nVent surveys have no lab samples, so there is no COC. Use ☰ > Export vent survey CSV for the field sheet.\"]"
     },
     {
       "name": "chromebook: manual grid: rows editable (4 × 5) with nothing entered; reason saved",
       "ok": true,
-      "detail": "{\"basis\":\"manual\",\"widthMm\":\"\",\"heightMm\":\"\",\"cols\":4,\"rows\":5,\"gapX\":0,\"gapY\":0,\"reason\":\"Opening size not measurable (booth doors removed)\",\"v\":{},\"d\":{},\"label\":{}}"
+      "detail": "{\"basis\":\"manual\",\"widthMm\":\"\",\"heightMm\":\"\",\"cols\":4,\"rows\":5,\"gapX\":0,\"gapY\":0,\"reason\":\"Opening size not measurable (booth doors removed)\",\"v\":{\"point 1\":\"0.42\"},\"d\":{},\"label\":{}}"
     },
     {
       "name": "chromebook: manual grid: dropping a column with a reading in it is refused",
@@ -1072,7 +1072,7 @@
     {
       "name": "chromebook: grid CSV: summary section with opening, grid and spacing",
       "ok": true,
-      "detail": "\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (cm)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"Fume cupboard FC-2 (Lab 1.04)\",\"40\",\"0.68\",\"0.21\",\"0.94\",\"~1 to 1.2 m\",\"Two extraction fans in operation\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Does not meet\"\n\"Fume cupboard FC-2 (Lab 1.04)\",\"3\",\"0.95\",\"0.88\",\"1.02\",\"\",\"Four extraction fans in operation, sash 300 mm\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\"\n\"Spray booth 1\",\"3\",\"0.47\",\"0.38\",\"0.61\",\"\",\"One extraction fan in operation\",\"\",\"\",\"4 × 7\",\"\",\"\",\"Manual: Opening size not measurable (booth doors removed)\",\"Does not meet\"\n\"Small benchtop hood\",\"6\",\"0.60\",\"0.52\",\"0.70\",\"\",\"One extraction fan in operation\",\"600\",\"500\",\"2 × 3\",\"400\",\"150\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\""
+      "detail": "\"Summary\"\n\"Extraction Unit\",\"Number of Measurements\",\"Average Velocity (m/s)\",\"Lowest Recorded Velocity (m/s)\",\"Highest Recorded Velocity (m/s)\",\"Distance From Extraction Face at which velocity < 0.5 m/s (m)\",\"Operating Condition\",\"Opening Width (mm)\",\"Opening Height (mm)\",\"Grid (columns x rows)\",\"Horizontal Spacing (mm)\",\"Vertical Spacing (mm)\",\"Grid Basis\",\"AS/NZS 2243.8 cl 3.1.2\"\n\"DMS downdraft table (dry lab)\",\"5\",\"1.32\",\"1.01\",\"1.54\",\"~60 cm\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"DMS downdraft table (dry lab)\",\"3\",\"2.09\",\"2.02\",\"2.14\",\"\",\"Extraction on, boxes moved off the bench\",\"\",\"\",\"\",\"\",\"\",\"Capture velocity\",\"\"\n\"Fume cupboard FC-2 (Lab 1.04)\",\"40\",\"0.68\",\"0.21\",\"0.94\",\"~1 to 1.2 m\",\"Two extraction fans in operation\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Does not meet\"\n\"Fume cupboard FC-2 (Lab 1.04)\",\"3\",\"0.95\",\"0.88\",\"1.02\",\"\",\"Four extraction fans in operation, sash 300 mm\",\"2000\",\"1800\",\"5 × 8\",\"450\",\"229\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\"\n\"Spray booth 1\",\"3\",\"0.47\",\"0.38\",\"0.61\",\"\",\"One extraction fan in operation\",\"\",\"\",\"4 × 7\",\"\",\"\",\"Manual: Opening size not measurable (booth doors removed)\",\"Does not meet\"\n\"Small benchtop hood\",\"6\",\"0.60\",\"0.52\",\"0.70\",\"\",\"One extraction fan in operation\",\"600\",\"500\",\"2 × 3\",\"400\",\"150\",\"AS/NZS 2243.8:2014 Appendix B, B4.2(c)\",\"Meets\""
     },
     {
       "name": "chromebook: grid CSV: manual grid block has 28 rows",

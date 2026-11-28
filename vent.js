@@ -33,7 +33,7 @@
     ["visual", "Visual check only", "No readings possible (e.g. fully enclosed). Describe what was seen."]
   ];
   /* the Add measurement list: the grid replaces the single-location face reading (kept only so older records still open) */
-  const PICK = ["grid", "capture", "other", "visual"];
+  const PICK = ["grid", "face", "capture", "other", "visual"];
   const typeName = k => (TYPES.find(a => a[0] === k) || [])[1] || "Vent measurement";
   const HOODS = ["Booth", "Canopy hood", "Downdraft table", "Fume cupboard", "Slot / lip extraction", "Captor hood", "Enclosure", "On-tool extraction", "Extraction hood", "Local exhaust ventilation"];
 
@@ -133,7 +133,6 @@
     if (q) {
       if (!str(x.condition).trim()) m.push("How many fans are running (condition)");
       if (!gridN(q)) m.push("Opening width and height (or a manual grid)");
-      else if (q.basis === "manual" && !str(q.reason).trim()) m.push("Reason for the manual grid");
       if (!stats(t).n) m.push("At least one grid point velocity");
       return m;
     }
@@ -373,7 +372,7 @@
         <p class="help">Grid per ${STD.ref}: points ${STD.edge} mm in from the edges of the opening, then equally spaced, not more than ${STD.maxY} mm apart vertically nor more than ${STD.maxX} mm apart horizontally, using the fewest lines that meet this.</p>
         ${manual ? `<div class="vg-manual"><b>Manual grid</b> <span class="muted">(not set out from the opening size)</span>
           <div class="vt-grid2"><div><label for="vg-cols">Columns (across)</label><input id="vg-cols" data-vg="cols" value="${esc(q.cols)}" inputmode="numeric" autocomplete="off"></div><div><label for="vg-rows">Rows (down)</label><input id="vg-rows" data-vg="rows" value="${esc(q.rows)}" inputmode="numeric" autocomplete="off"></div></div>
-          <label for="vg-reason">Reason for the manual grid</label><input id="vg-reason" data-vg="reason" value="${esc(q.reason)}" placeholder="e.g. opening size unknown, obstruction, site requirement" autocomplete="off">
+          <label for="vg-reason">Reason for the manual grid <span class="muted">(optional)</span></label><input id="vg-reason" data-vg="reason" value="${esc(q.reason)}" placeholder="e.g. opening size unknown, obstruction, site requirement" autocomplete="off">
           <button type="button" class="btn ghost" data-vg-standard="1">Use the standard grid from the opening size</button></div>`
         : `<button type="button" class="btn ghost" data-vg-manual="1">Manual grid instead (default ${MANUAL_DEFAULT.cols} × ${MANUAL_DEFAULT.rows} = ${MANUAL_DEFAULT.cols * MANUAL_DEFAULT.rows})</button>`}
       </div>
@@ -713,9 +712,9 @@
   /* ---------- export (Drive field sheet columns) ---------- */
   /* CSV laid out like the 0019340 field sheet (Sheet1 columns, stats and comments on the first row of each block),
      then a summary block like its Summary tab; app-only columns sit to the right so the sheet columns paste straight in. */
-  const SHEET_COLS = ["Extraction Unit/Equipment", "Measurement Number", "Measured Velocity (m/s)", "Average Velocity (m/s)", "Lowest Recorded Velocity (m/s)", "Highest Recorded Velocity (m/s)", "Distance From Extraction Face at which velocity < 0.5 m/s (cm)", "Comments"];
+  const SHEET_COLS = ["Extraction Unit/Equipment", "Measurement Number", "Measured Velocity (m/s)", "Average Velocity (m/s)", "Lowest Recorded Velocity (m/s)", "Highest Recorded Velocity (m/s)", "Distance From Extraction Face at which velocity < 0.5 m/s (m)", "Comments"];
   const APP_COLS = ["Unit", "Operating Condition", "LEV/Hood Type", "Hood Make", "Hood Model", "Hood Serial", "Measurement Type", "Measurement Location", "Distance From Extraction Face (cm)", "Point Label", "Grid Basis", "Opening Width (mm)", "Opening Height (mm)", "Grid (columns x rows)", "Horizontal Spacing (mm)", "Vertical Spacing (mm)", "Manual Grid Reason", "AS/NZS 2243.8 cl 3.1.2", "Photos", "Anemometer", "Field app measurement"];
-  const SUM_COLS = ["Extraction Unit", "Number of Measurements", "Average Velocity (m/s)", "Lowest Recorded Velocity (m/s)", "Highest Recorded Velocity (m/s)", "Distance From Extraction Face at which velocity < 0.5 m/s (cm)", "Operating Condition", "Opening Width (mm)", "Opening Height (mm)", "Grid (columns x rows)", "Horizontal Spacing (mm)", "Vertical Spacing (mm)", "Grid Basis", "AS/NZS 2243.8 cl 3.1.2"];
+  const SUM_COLS = ["Extraction Unit", "Number of Measurements", "Average Velocity (m/s)", "Lowest Recorded Velocity (m/s)", "Highest Recorded Velocity (m/s)", "Distance From Extraction Face at which velocity < 0.5 m/s (m)", "Operating Condition", "Opening Width (mm)", "Opening Height (mm)", "Grid (columns x rows)", "Horizontal Spacing (mm)", "Vertical Spacing (mm)", "Grid Basis", "AS/NZS 2243.8 cl 3.1.2"];
   function csvRows(eventId) {
     const ev = C().eventById(eventId); if (!ev) return [];
     const qe = ev.ventEquip || {}; const anem = [qe.make, qe.model].filter(Boolean).join(" ") + (qe.serial ? " SN " + qe.serial : "");

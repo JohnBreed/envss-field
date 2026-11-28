@@ -59,8 +59,8 @@ const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector
 const has = (page, sel) => page.evaluate(s => !!document.querySelector(s), sel);
 const NEWEST = page => page.evaluate(() => JSON.parse(JSON.stringify(db.trains[db.trains.length - 1])));
 async function fill(page, sel, v) { await page.evaluate(s => { const e = document.querySelector(s); if (e) e.scrollIntoView({ block: "center", behavior: "instant" }); }, sel); await sleep(80); await page.click(sel); await page.keyboard.down("Control"); await page.keyboard.press("a"); await page.keyboard.up("Control"); await page.keyboard.press("Backspace"); if (v) await page.type(sel, v); await page.evaluate(() => document.activeElement && document.activeElement.blur()); await sleep(250); }
-const SHEET_HEAD = '"Extraction Unit/Equipment","Measurement Number","Measured Velocity (m/s)","Average Velocity (m/s)","Lowest Recorded Velocity (m/s)","Highest Recorded Velocity (m/s)","Distance From Extraction Face at which velocity < 0.5 m/s (cm)","Comments"';
-const SUM_HEAD = '"Extraction Unit","Number of Measurements","Average Velocity (m/s)","Lowest Recorded Velocity (m/s)","Highest Recorded Velocity (m/s)","Distance From Extraction Face at which velocity < 0.5 m/s (cm)"';
+const SHEET_HEAD = '"Extraction Unit/Equipment","Measurement Number","Measured Velocity (m/s)","Average Velocity (m/s)","Lowest Recorded Velocity (m/s)","Highest Recorded Velocity (m/s)","Distance From Extraction Face at which velocity < 0.5 m/s (m)","Comments"';
+const SUM_HEAD = '"Extraction Unit","Number of Measurements","Average Velocity (m/s)","Lowest Recorded Velocity (m/s)","Highest Recorded Velocity (m/s)","Distance From Extraction Face at which velocity < 0.5 m/s (m)"';
 const strip = o => JSON.parse(JSON.stringify(o, (k, v) => (k === "updatedAt" || k === "syncedAt" ? undefined : v)));
 
 async function run(vp) {
@@ -94,7 +94,7 @@ async function run(vp) {
   await page.evaluate(() => openPickType("eV")); await sleep(300);
   const pk = await page.evaluate(() => ({ h: document.querySelector("#app h2").innerText, cards: [...document.querySelectorAll("#app .card strong")].map(x => x.innerText), all: document.getElementById("app").innerText }));
   check(L("Add measurement screen: title"), pk.h === "Add measurement", pk.h);
-  check(L("Add measurement screen: only the four vent types"), JSON.stringify(pk.cards) === JSON.stringify(["Vent · Face velocity grid", "Vent · Capture velocity", "Vent · Other velocity reading", "Vent · Visual check only"]), JSON.stringify(pk.cards));
+  check(L("Add measurement screen: the five vent types, Face velocity still offered"), JSON.stringify(pk.cards) === JSON.stringify(["Vent · Face velocity grid", "Vent · Face velocity", "Vent · Capture velocity", "Vent · Other velocity reading", "Vent · Visual check only"]), JSON.stringify(pk.cards));
   check(L("Add measurement screen: no airborne / noise / blank options"), !/Airborne|Noise|Field blank|sample/i.test(pk.all), pk.all);
   await shot(page, "add-measurement");
 
@@ -314,12 +314,13 @@ async function run(vp) {
   await tap(page, "[data-vg-manual]");
   t = await T(page, g3);
   ck = await txt(page, "#vtChecks");
-  check(L("manual grid: 4 × 7 = 28 points, reason asked for"), t.vent.grid.basis === "manual" && t.vent.grid.cols === 4 && t.vent.grid.rows === 7 && /4 × 7 = 28 points \(manual grid\)/.test(await txt(page, "#vgGeom")) && /Reason for the manual grid/.test(ck) && await page.evaluate(() => document.querySelectorAll("[data-vg-cell]").length === 28), ck);
+  check(L("manual grid: 4 × 7 = 28 points; reason field present but optional (not in Still needed)"), t.vent.grid.basis === "manual" && t.vent.grid.cols === 4 && t.vent.grid.rows === 7 && /4 × 7 = 28 points \(manual grid\)/.test(await txt(page, "#vgGeom")) && await has(page, "#vg-reason") && !/Reason for the manual grid/.test(ck) && /grid point velocity/.test(ck) && await page.evaluate(() => document.querySelectorAll("[data-vg-cell]").length === 28), ck);
   const ml = await page.evaluate(() => [0, 6, 7, 13, 14, 21, 27].map(i => document.querySelector(`[data-vg-cell="${i}"] .vg-num`).innerText));
   check(L("manual 4 × 7 labels match the 0019340 sheet (Top left corner, Top left central, Top right central, Bottom right corner)"), /^1 Top left corner/.test(ml[0]) && /^7 Bottom left corner/.test(ml[1]) && /^8 Top left central/.test(ml[2]) && /^14 Bottom left central/.test(ml[3]) && /^15 Top right central/.test(ml[4]) && /^22 Top right corner/.test(ml[5]) && /^28 Bottom right corner/.test(ml[6]), JSON.stringify(ml));
+  await fill(page, "#vg-v0", "0.42");
   page.dialogs.length = 0;
   await page.evaluate(() => markEventUpload("eV")); await sleep(300);
-  check(L("Mark complete lists the missing manual-grid reason"), page.dialogs.some(d => /Reason for the manual grid/.test(d)), JSON.stringify(page.dialogs));
+  check(L("Mark complete is not blocked by a blank optional manual-grid reason"), !page.dialogs.some(d => /Reason for the manual grid/.test(d)) && (await EV(page, "eV")).uploadReady === true, JSON.stringify(page.dialogs));
   await page.evaluate(i => openTrain(i), g3); await sleep(300);
   await fill(page, "#vg-reason", "Opening size not measurable (booth doors removed)");
   await fill(page, "#vg-rows", "5");
