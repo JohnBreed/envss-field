@@ -5407,7 +5407,14 @@ followUpComplete = function (t) {
   }
   async function count() { try { pending = (await all()).filter(r => !r.uploaded && !r.removed).length; } catch (e) { pending = 0; } try { paintSyncBar(); } catch (e) {} return pending; }
   function markOnRecord(rec) {
-    const t = (db.trains || []).find(x => x.id === rec.trainId) || (db.fitReports || []).find(x => x.id === rec.trainId); if (!t) return;
+    const t = (db.trains || []).find(x => x.id === rec.trainId) || (db.fitReports || []).find(x => x.id === rec.trainId);
+    if (!t && rec.field === "hpd") {   /* v48.19: hearing protection box photos live on the event (ev.hpd.items[].photos) */
+      const ev = (db.events || []).find(x => x.id === rec.eventId); let hit2 = false;
+      ((ev && ev.hpd && ev.hpd.items) || []).forEach(it => (it.photos || []).forEach(p => { if (p && p.pid === rec.pid) { p.uploaded = true; hit2 = true; } }));
+      if (hit2) { ev.updatedAt = nowIso(); saveQuiet(); }
+      return;
+    }
+    if (!t) return;
     let hit = false;
     if (t.photoRefs && t.photoRefs[rec.pid]) { t.photoRefs[rec.pid].uploaded = true; hit = true; }
     ((t.dailyLog && t.dailyLog.photos) || []).forEach(p => { if (p && p.pid === rec.pid) { p.uploaded = true; hit = true; } });
@@ -9148,6 +9155,7 @@ window.HIRE_CATALOG = HIRE_CATALOG;
   }
 
   function photoTypeOf(field) {
+    if (field === "hpd") return "hpd";   /* v48.19 */
     if (field === "equipPhoto") return "equip";
     if (field === "dailyLog") return "log";
     return "filter";
@@ -9167,7 +9175,9 @@ window.HIRE_CATALOG = HIRE_CATALOG;
     const sampleNo = t ? sampleNoOf(t) : 0;
     const fileName = fit && ev
       ? (String(ev.code).replace(/[^\w.-]+/g, "_") + "_fit_photo_" + n + ".jpg")
-      : envssPhotoFileName_(ev ? ev.code : "event", noise, sampleNo, type, n);
+      : type === "hpd"
+        ? (String(ev ? ev.code : "event").replace(/[^\w.-]+/g, "_") + "_hpd_photo_" + n + ".jpg")   /* v48.19: event-level, no sample number */
+        : envssPhotoFileName_(ev ? ev.code : "event", noise, sampleNo, type, n);
     const item = {
       id: "drv_" + rec.pid, sourceKey, kind: "photo", baseName: fileName, fileName,
       photoType: type, photoN: n,
@@ -12784,6 +12794,8 @@ function fixOpen(ts) {
   <!-- local review mockups only; not for publish -->
   <script src="work/projlist/review.js"></script>
   <script src="fit-test.js?v=48.19"></script>
+  <script src="hpd-library.js?v=48.19"></script>
+  <script src="hpd.js?v=48.19"></script>
 <script>
 /* ===== v48.16: safe auto-update + minimum version (John t651u/t652u, 27 Nov 2026 AWST) =====
    1. Checks for a new version when the app opens, when it comes back to the front (visibilitychange / focus, at most once a

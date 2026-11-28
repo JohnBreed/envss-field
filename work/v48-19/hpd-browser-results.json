@@ -1,0 +1,392 @@
+{
+ "at": "2026-11-28T10:55:49.155Z",
+ "total": 77,
+ "failed": 0,
+ "results": [
+  {
+   "name": "pixel7: card on NSEOC event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: card on ACA-NSED event (job types ACA + NSED)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: card on NSED event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: no card on an airborne-only event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: no card on an AFM (fibre) event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: photo creates one HPD item",
+   "ok": true,
+   "detail": "{\"v\":1,\"status\":\"\",\"items\":[{\"id\":\"hmx0amym2c55tf\",\"photos\":[{\"pid\":\"42bc5e86-4d16-491d-9dfa-e425c6b3029b\",\"path\":\"p/p19/e/eN/t/hpd_eN/42bc5e86-4d16-491d-9dfa-e425c6b3029b.jpg\",\"bytes\":55941,\"bytesBefore\":59598,\"w\":900,\"h\":1200,\"takenAt\":\"2026-11-28T10:54:54.647Z\",\"uploaded\":true}],\"libId\":\"\",\"other\":false,\"name\":\"\",\"boxClass\":\"\",\"boxSlc80\":\"\",\"boxSrc\":\"\",\"appliesTo\":[],\"note\":\"\",\"addedAt\":\"2026-11-28T10:54:54.650Z\",\"addedBy\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"ocr\":{\"state\":\"ok\",\"at\":\"2026-11-28T10:54:54.690Z\",\"text\":\"3M E-A-Rsoft\\nSuperFit\\nDisposable Earplugs\\nClass 4  SLC80 24 dB\\nAS/NZS 1270\",\"suggest\":[{\"id\":\"HPD-006\",\"score\":16}],\"printed\":{\"slc\":24,\"cls\":4}}}],\"updatedAt\":\"2026-11-28T10:54:54.690Z\",\"by\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}"
+  },
+  {
+   "name": "pixel7: photo is in the shared photo store with the event path",
+   "ok": true,
+   "detail": "p/p19/e/eN/t/hpd_eN/42bc5e86-4d16-491d-9dfa-e425c6b3029b.jpg"
+  },
+  {
+   "name": "pixel7: Vision suggested 3M SuperFit and read Class 4 / 24 dB from the box",
+   "ok": true,
+   "detail": "{\"state\":\"ok\",\"at\":\"2026-11-28T10:54:54.690Z\",\"text\":\"3M E-A-Rsoft\\nSuperFit\\nDisposable Earplugs\\nClass 4  SLC80 24 dB\\nAS/NZS 1270\",\"suggest\":[{\"id\":\"HPD-006\",\"score\":16}],\"printed\":{\"slc\":24,\"cls\":4}}"
+  },
+  {
+   "name": "pixel7: suggestion button shown",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: accepting fills the library product",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: card shows Class 4, SLC80 24 dB, manufacturer value",
+   "ok": true,
+   "detail": "Hearing protection onsite\n1 product\n\nOptional. Photograph the box of each hearing protector the crew has onsite. This never stops the event being completed.\n\nHPD 1\nRemove\n1\n✕\n📷 Another photo of this box\n3M E-A-Rsoft SuperFit earplug\nClass 4\nSLC80 24 dB\nbox values\ncheck the box\n\nENVSS reports have used 23 and 24 dB for this product; manufacturer says 24 dB.\n\nChange product\nPrinted on the box (opti"
+  },
+  {
+   "name": "pixel7: box values prefilled from the photo and marked as read from the photo",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: another photo of the same box joins the item",
+   "ok": true,
+   "detail": "1/[object Object],[object Object]"
+  },
+  {
+   "name": "pixel7: a second photo of the same box did not replace the product",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: box value that differs from the library shows a warning",
+   "ok": true,
+   "detail": "Hearing protection onsite\n1 product\n\nOptional. Photograph the box of each hearing protector the crew has onsite. This never stops the event being completed.\n\nHPD 1\nRemove\n1\n✕\n2\n✕\n📷 Another photo of this box\n3M E-A-Rsoft SuperFit earplug\nClass 5\nSLC80 27 dB\nbox values\ncheck the box\n\nENVSS reports have used 23 and 24 dB for this product; manufacturer says 24 dB.\n\nChange product\nPrinted on the box (optional)\nClass\nSLC80 (dB)\n\nHeads up: Class 4 and 27 dB do not go together (27 dB is Class 5); the box says 27 dB but the library has 24 dB. The box values are used for the checks and the office will "
+  },
+  {
+   "name": "pixel7: Class on the box (4, read from the photo) that does not fit 27 dB is called out",
+   "ok": true,
+   "detail": "Hearing protection onsite\n1 product\n\nOptional. Photograph the box of each hearing protector the crew has onsite. This never stops the event being completed.\n\nHPD 1\nRemove\n1\n✕\n2\n✕\n📷 Another photo of this box\n3M E-A-Rsoft SuperFit earplug\nClass 5\nSLC80 27 dB\nbox values\ncheck the box\n\nENVSS reports have used 23 and 24 dB for this product; manufacturer says 24 dB.\n\nChange product\nPrinted on the box (optional)\nClass\nSLC80 (dB)\n\nHeads up: Class 4 and 27 dB do not go together (27 dB is Class 5); the box says 27 dB but the library has 24 dB. The box values are used for the checks and the office will confirm.\n\nLeave blank if you cannot read it. The office fills the gaps.\n\nWorn by (optional)\nNoel Tes"
+  },
+  {
+   "name": "pixel7: worn-by tick is saved against the sample id",
+   "ok": true,
+   "detail": "[\"n1\"]"
+  },
+  {
+   "name": "pixel7: exposure check lists only the ticked person and uses LCeq − SLC80",
+   "ok": true,
+   "detail": "Exposure check (indicative)\nNoel Testone · LAeq 92.4\nClass 5 meets the Class 2 needed for this LAeq (Table A1).\nLCpeak 141.2 dB(C) is 140 or more: Class 5 is needed (this is Class 5).\nIndicative protected level LCeq 99.1 − SLC80 27 = 72.1 dB(A): below 85.\n\nUses the LAeq as entered; the office applies the shift adjustment, wearing time and fit in the report. Method paraphrased from AS/NZS 1269.3:2005 (Table A1, cl 6.2.2, App B). Not a sign-off."
+  },
+  {
+   "name": "pixel7: LCpeak 141 with a Class 5 box value is fine; 'Class 5 needed' not raised",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: second box becomes a second item (unidentified)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: 'Not in the list' keeps the typed name and box class for the office",
+   "ok": true,
+   "detail": "{\"id\":\"hmx0an3ow04vef\",\"photos\":[{\"pid\":\"c1cee2a4-5f52-43b4-9722-c98800d4265b\",\"path\":\"p/p19/e/eN/t/hpd_eN/c1cee2a4-5f52-43b4-9722-c98800d4265b.jpg\",\"bytes\":31720,\"bytesBefore\":33582,\"w\":900,\"h\":1200,\"takenAt\":\"2026-11-28T10:55:01.230Z\",\"uploaded\":true}],\"libId\":\"\",\"other\":true,\"name\":\"Acme Quiet foam plugs\",\"boxClass\":\"3\",\"boxSlc80\":\"\",\"boxSrc\":\"\",\"appliesTo\":[],\"note\":\"\",\"addedAt\":\"2026-11-28T10:55:01.232Z\",\"addedBy\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"ocr\":{\"state\":\"ok\",\"at\":\"2026-11-28T10:55:01.264Z\",\"text\":\"3M E-A-Rsoft\\nSuperFit\\nDisposable Earplugs\\nClass 4  SLC80 24 dB\\nAS/NZS 1270\",\"suggest\":[{\"id\":\"HPD-006\",\"score\":16}],\"printed\":{\"slc\":24,\"cls\":4}}}"
+  },
+  {
+   "name": "pixel7: typing 'sparkpl' lists Moldex SparkPlugs with Class 5 · 29 dB",
+   "ok": true,
+   "detail": "Moldex SparkPlugs 6604\nearplug\nClass 5 · 29 dB"
+  },
+  {
+   "name": "pixel7: typed-only item picks a library product (no photo needed)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: HPD is not in any sample's follow-up list (answerItems)",
+   "ok": true,
+   "detail": "false"
+  },
+  {
+   "name": "pixel7: Mark event complete never mentions hearing protection",
+   "ok": true,
+   "detail": "[\"Can't mark the event complete yet\\n\\n3 samples are not finished. Sort each one out, then mark the event complete again.\\n\\nNoise Sample 1 · Noise · personal — Never started (still prepped)\\nOpen (press START)\\nEnter times\\nNot used / void\\nFault\\nNoise Sample 2 · Noise · personal — Never started ("
+  },
+  {
+   "name": "pixel7: photos queue for Drive as <event>_hpd_photo_<n>.jpg",
+   "ok": true,
+   "detail": "[{\"f\":\"0019919-001_hpd_photo_1.jpg\",\"s\":\"hpd:eN\",\"st\":\"queued\",\"job\":\"0019919\"},{\"f\":\"0019919-001_hpd_photo_2.jpg\",\"s\":\"hpd:eN\",\"st\":\"queued\",\"job\":\"0019919\"},{\"f\":\"0019919-001_hpd_photo_3.jpg\",\"s\":\"hpd:eN\",\"st\":\"queued\",\"job\":\"0019919\"}]"
+  },
+  {
+   "name": "pixel7: uploaded flag is set on the event's photo reference",
+   "ok": true,
+   "detail": "[true,true]"
+  },
+  {
+   "name": "pixel7: event row pushed to Supabase carries hpd inside the payload",
+   "ok": true,
+   "detail": "[\"id\",\"projectId\",\"code\",\"type\",\"podioEventKind\",\"podioJobTypes\",\"date\",\"stage\",\"audit\",\"hpd\"]"
+  },
+  {
+   "name": "pixel7: sample screen offers 'Pick from the onsite HPD list'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: picking fills model, style and class on the sample",
+   "ok": true,
+   "detail": "{\"worn\":\"yes\",\"model\":\"3M E-A-Rsoft SuperFit\",\"style\":\"earplug\",\"classRating\":\"Class 5 / SLC80 27\"}"
+  },
+  {
+   "name": "pixel7: None onsite is saved",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: None onsite can be undone",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: Vision unavailable: photo kept, state 'unavailable', no suggestion",
+   "ok": true,
+   "detail": "{\"state\":\"unavailable\",\"at\":\"2026-11-28T10:55:14.266Z\",\"code\":503}"
+  },
+  {
+   "name": "pixel7: picker still offered",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: offline: photo kept, reading skipped",
+   "ok": true,
+   "detail": "{\"state\":\"offline\",\"at\":\"2026-11-28T10:55:16.689Z\"}"
+  },
+  {
+   "name": "pixel7: remove drops the item",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: event audit has HPD entries",
+   "ok": true,
+   "detail": "46"
+  },
+  {
+   "name": "pixel7: no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: card on NSEOC event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: card on ACA-NSED event (job types ACA + NSED)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: card on NSED event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: no card on an airborne-only event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: no card on an AFM (fibre) event",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: photo creates one HPD item",
+   "ok": true,
+   "detail": "{\"v\":1,\"status\":\"\",\"items\":[{\"id\":\"hmx0anma83f8kx\",\"photos\":[{\"pid\":\"e2dfa0b6-0b78-4623-866e-f40795da61a4\",\"path\":\"p/p19/e/eN/t/hpd_eN/e2dfa0b6-0b78-4623-866e-f40795da61a4.jpg\",\"bytes\":56036,\"bytesBefore\":59698,\"w\":900,\"h\":1200,\"takenAt\":\"2026-11-28T10:55:25.326Z\",\"uploaded\":true}],\"libId\":\"\",\"other\":false,\"name\":\"\",\"boxClass\":\"\",\"boxSlc80\":\"\",\"boxSrc\":\"\",\"appliesTo\":[],\"note\":\"\",\"addedAt\":\"2026-11-28T10:55:25.328Z\",\"addedBy\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"ocr\":{\"state\":\"ok\",\"at\":\"2026-11-28T10:55:25.368Z\",\"text\":\"3M E-A-Rsoft\\nSuperFit\\nDisposable Earplugs\\nClass 4  SLC80 24 dB\\nAS/NZS 1270\",\"suggest\":[{\"id\":\"HPD-006\",\"score\":16}],\"printed\":{\"slc\":24,\"cls\":4}}}],\"updatedAt\":\"2026-11-28T10:55:25.368Z\",\"by\":\"V46 Test <field.test@envss.com.au> · Chromebook\"}"
+  },
+  {
+   "name": "chromebook: photo is in the shared photo store with the event path",
+   "ok": true,
+   "detail": "p/p19/e/eN/t/hpd_eN/e2dfa0b6-0b78-4623-866e-f40795da61a4.jpg"
+  },
+  {
+   "name": "chromebook: Vision suggested 3M SuperFit and read Class 4 / 24 dB from the box",
+   "ok": true,
+   "detail": "{\"state\":\"ok\",\"at\":\"2026-11-28T10:55:25.368Z\",\"text\":\"3M E-A-Rsoft\\nSuperFit\\nDisposable Earplugs\\nClass 4  SLC80 24 dB\\nAS/NZS 1270\",\"suggest\":[{\"id\":\"HPD-006\",\"score\":16}],\"printed\":{\"slc\":24,\"cls\":4}}"
+  },
+  {
+   "name": "chromebook: suggestion button shown",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: accepting fills the library product",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: card shows Class 4, SLC80 24 dB, manufacturer value",
+   "ok": true,
+   "detail": "Hearing protection onsite\n1 product\n\nOptional. Photograph the box of each hearing protector the crew has onsite. This never stops the event being completed.\n\nHPD 1\nRemove\n1\n✕\n📷 Another photo of this box\n3M E-A-Rsoft SuperFit earplug\nClass 4\nSLC80 24 dB\nbox values\ncheck the box\n\nENVSS reports have used 23 and 24 dB for this product; manufacturer says 24 dB.\n\nChange product\nPrinted on the box (opti"
+  },
+  {
+   "name": "chromebook: box values prefilled from the photo and marked as read from the photo",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: another photo of the same box joins the item",
+   "ok": true,
+   "detail": "1/[object Object],[object Object]"
+  },
+  {
+   "name": "chromebook: a second photo of the same box did not replace the product",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: box value that differs from the library shows a warning",
+   "ok": true,
+   "detail": "Hearing protection onsite\n1 product\n\nOptional. Photograph the box of each hearing protector the crew has onsite. This never stops the event being completed.\n\nHPD 1\nRemove\n1\n✕\n2\n✕\n📷 Another photo of this box\n3M E-A-Rsoft SuperFit earplug\nClass 5\nSLC80 27 dB\nbox values\ncheck the box\n\nENVSS reports have used 23 and 24 dB for this product; manufacturer says 24 dB.\n\nChange product\nPrinted on the box (optional)\nClass\nSLC80 (dB)\n\nHeads up: Class 4 and 27 dB do not go together (27 dB is Class 5); the box says 27 dB but the library has 24 dB. The box values are used for the checks and the office will "
+  },
+  {
+   "name": "chromebook: Class on the box (4, read from the photo) that does not fit 27 dB is called out",
+   "ok": true,
+   "detail": "Hearing protection onsite\n1 product\n\nOptional. Photograph the box of each hearing protector the crew has onsite. This never stops the event being completed.\n\nHPD 1\nRemove\n1\n✕\n2\n✕\n📷 Another photo of this box\n3M E-A-Rsoft SuperFit earplug\nClass 5\nSLC80 27 dB\nbox values\ncheck the box\n\nENVSS reports have used 23 and 24 dB for this product; manufacturer says 24 dB.\n\nChange product\nPrinted on the box (optional)\nClass\nSLC80 (dB)\n\nHeads up: Class 4 and 27 dB do not go together (27 dB is Class 5); the box says 27 dB but the library has 24 dB. The box values are used for the checks and the office will confirm.\n\nLeave blank if you cannot read it. The office fills the gaps.\n\nWorn by (optional)\nNoel Tes"
+  },
+  {
+   "name": "chromebook: worn-by tick is saved against the sample id",
+   "ok": true,
+   "detail": "[\"n1\"]"
+  },
+  {
+   "name": "chromebook: exposure check lists only the ticked person and uses LCeq − SLC80",
+   "ok": true,
+   "detail": "Exposure check (indicative)\nNoel Testone · LAeq 92.4\nClass 5 meets the Class 2 needed for this LAeq (Table A1).\nLCpeak 141.2 dB(C) is 140 or more: Class 5 is needed (this is Class 5).\nIndicative protected level LCeq 99.1 − SLC80 27 = 72.1 dB(A): below 85.\n\nUses the LAeq as entered; the office applies the shift adjustment, wearing time and fit in the report. Method paraphrased from AS/NZS 1269.3:2005 (Table A1, cl 6.2.2, App B). Not a sign-off."
+  },
+  {
+   "name": "chromebook: LCpeak 141 with a Class 5 box value is fine; 'Class 5 needed' not raised",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: second box becomes a second item (unidentified)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: 'Not in the list' keeps the typed name and box class for the office",
+   "ok": true,
+   "detail": "{\"id\":\"hmx0anr2u2sw87\",\"photos\":[{\"pid\":\"6d5371b4-62d9-47e2-a8c1-2a0f87e985d7\",\"path\":\"p/p19/e/eN/t/hpd_eN/6d5371b4-62d9-47e2-a8c1-2a0f87e985d7.jpg\",\"bytes\":31898,\"bytesBefore\":33792,\"w\":900,\"h\":1200,\"takenAt\":\"2026-11-28T10:55:31.539Z\",\"uploaded\":true}],\"libId\":\"\",\"other\":true,\"name\":\"Acme Quiet foam plugs\",\"boxClass\":\"3\",\"boxSlc80\":\"\",\"boxSrc\":\"\",\"appliesTo\":[],\"note\":\"\",\"addedAt\":\"2026-11-28T10:55:31.542Z\",\"addedBy\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"ocr\":{\"state\":\"ok\",\"at\":\"2026-11-28T10:55:31.572Z\",\"text\":\"3M E-A-Rsoft\\nSuperFit\\nDisposable Earplugs\\nClass 4  SLC80 24 dB\\nAS/NZS 1270\",\"suggest\":[{\"id\":\"HPD-006\",\"score\":16}],\"printed\":{\"slc\":24,\"cls\":4}}}"
+  },
+  {
+   "name": "chromebook: typing 'sparkpl' lists Moldex SparkPlugs with Class 5 · 29 dB",
+   "ok": true,
+   "detail": "Moldex SparkPlugs 6604\nearplug\nClass 5 · 29 dB"
+  },
+  {
+   "name": "chromebook: typed-only item picks a library product (no photo needed)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: HPD is not in any sample's follow-up list (answerItems)",
+   "ok": true,
+   "detail": "false"
+  },
+  {
+   "name": "chromebook: Mark event complete never mentions hearing protection",
+   "ok": true,
+   "detail": "[\"Can't mark the event complete yet\\n\\n3 samples are not finished. Sort each one out, then mark the event complete again.\\n\\nNoise Sample 1 · Noise · personal — Never started (still prepped)\\nOpen (press START)\\nEnter times\\nNot used / void\\nFault\\nNoise Sample 2 · Noise · personal — Never started ("
+  },
+  {
+   "name": "chromebook: photos queue for Drive as <event>_hpd_photo_<n>.jpg",
+   "ok": true,
+   "detail": "[{\"f\":\"0019919-001_hpd_photo_1.jpg\",\"s\":\"hpd:eN\",\"st\":\"queued\",\"job\":\"0019919\"},{\"f\":\"0019919-001_hpd_photo_2.jpg\",\"s\":\"hpd:eN\",\"st\":\"queued\",\"job\":\"0019919\"},{\"f\":\"0019919-001_hpd_photo_3.jpg\",\"s\":\"hpd:eN\",\"st\":\"queued\",\"job\":\"0019919\"}]"
+  },
+  {
+   "name": "chromebook: uploaded flag is set on the event's photo reference",
+   "ok": true,
+   "detail": "[true,true]"
+  },
+  {
+   "name": "chromebook: event row pushed to Supabase carries hpd inside the payload",
+   "ok": true,
+   "detail": "[\"id\",\"projectId\",\"code\",\"type\",\"podioEventKind\",\"podioJobTypes\",\"date\",\"stage\",\"audit\",\"hpd\"]"
+  },
+  {
+   "name": "chromebook: sample screen offers 'Pick from the onsite HPD list'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: picking fills model, style and class on the sample",
+   "ok": true,
+   "detail": "{\"worn\":\"yes\",\"model\":\"3M E-A-Rsoft SuperFit\",\"style\":\"earplug\",\"classRating\":\"Class 5 / SLC80 27\"}"
+  },
+  {
+   "name": "chromebook: None onsite is saved",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: None onsite can be undone",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: Vision unavailable: photo kept, state 'unavailable', no suggestion",
+   "ok": true,
+   "detail": "{\"state\":\"unavailable\",\"at\":\"2026-11-28T10:55:44.301Z\",\"code\":503}"
+  },
+  {
+   "name": "chromebook: picker still offered",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: offline: photo kept, reading skipped",
+   "ok": true,
+   "detail": "{\"state\":\"offline\",\"at\":\"2026-11-28T10:55:46.672Z\"}"
+  },
+  {
+   "name": "chromebook: remove drops the item",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: event audit has HPD entries",
+   "ok": true,
+   "detail": "46"
+  },
+  {
+   "name": "chromebook: no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no requests left the box (only the local server, CDN fonts, mocked Supabase)",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}
