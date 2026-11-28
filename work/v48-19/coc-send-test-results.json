@@ -1,0 +1,771 @@
+{
+ "passed": 153,
+ "failed": 0,
+ "results": [
+  {
+   "name": "pixel7: event page shows the 'Chain of custody to the lab' card with a Review and send button",
+   "ok": true,
+   "detail": "Chain of custody to the lab\nNot sent yet.\n\nChecks the samples, shows the CoC page for you to check, then sends it to the lab when you tap Send.\n\nReview and send CoC"
+  },
+  {
+   "name": "pixel7: review screen is a dialog (blocks auto-update while open)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: walkthrough helper text: four steps, nothing sent until Send",
+   "ok": true,
+   "detail": "Send CoC to the lab\nClose\nHow this works\nRead the checks below. Anything red has to be fixed before you can send.\nTell the lab when and where to collect the samples.\nLook at the CoC page. Zoom in and check every line against your samples.\nTick I have checked the CoC, then tap Send. Nothing is sent until you tap Send.\n\nThe CoC is made from your samples. You can't type on it. If it is wrong, fix the sample in the app, or use Something looks wrong at the bottom to tell John.\n\nFrom\nlab@envss.com.au\n"
+  },
+  {
+   "name": "pixel7: recipient shown: From lab@, To ohlwa@mpl.com.au, results in ESDAT to lab@, invoice to accounts@",
+   "ok": true,
+   "detail": "Send CoC to the lab\nClose\nHow this works\nRead the checks below. Anything red has to be fixed before you can send.\nTell the lab when and where to collect the samples.\nLook at the CoC page. Zoom in and check every line against your samples.\nTick I have checked the CoC, then tap Send. Nothing is sent until you tap Send.\n\nThe CoC is made from your samples. You can't type on it. If it is wrong, fix the sample in the app, or use Something looks wrong at the bottom to tell John.\n\nFrom\nlab@envss.com.au\nTo\nohlwa@mpl.com.au (Envirolab / MPL Perth)\nResults\nESDAT format, to lab@envss.com.au\nInvoice\naccounts@envss.com.au\nEvent\n0019358-001\nSTEP 1 · CHECKS\nCan't send yet: 2 problems to fix\nFIXChoose the co"
+  },
+  {
+   "name": "pixel7: collection location defaults to the ENVSS office, not the event address",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: before collection details: blocked on day and time",
+   "ok": true,
+   "detail": "[\"collection_date\",\"collection_time\"]"
+  },
+  {
+   "name": "pixel7: Send and the 'I have checked' tick are disabled while blocked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: tech can edit the collection location",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: 'Use the ENVSS office' puts the office address back",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: with day and time filled: no blocks (all sample checks pass)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "pixel7: all-clear banner shown",
+   "ok": true,
+   "detail": "ALL CLEARVolumes match average flow × run time, blanks are N/A, every sample has an ID, times and analysis, and the sample count matches the event.\nPlease look at 2 things (these don't stop the send)\nCHECKSample 4 is rejected and has no volume. The lab is told it is rejected. Open sample\nCHECKCollection is on a Sunday. Check the lab can collect then."
+  },
+  {
+   "name": "pixel7: turnaround picker: saved on the event, in the spreadsheet build and on the CoC page (2 day)",
+   "ok": true,
+   "detail": "{\"ev\":\"2_day\",\"model\":\"2_day\",\"xlsx\":\"2_day\",\"txt\":\"CHAIN OF CUSTODY FORM - Client|ENVIROLAB GROUP  ·  Form 302|RESULTS REQUIRED IN ESDAT FORMAT|Email results to lab@envss.com.au|Email invoice to accounts@envss.com.au|Company:|Environmental Site Services (ENVSS)|Contact:|ENVSS office|Phone:|08 9355 4010|Address:|10 Bermondsey Street, West Leederville WA 6007|Job number:|0019358|Event:|0019358-001|Samples:|5|Date results required:|Standard|Same Day|1 day|2 day|3 day|SAMPLE COLLECTION REQUESTED|Day:|Sun 29 Nov 2026  (29/11/2026)|Time:|9:00 am to 12:00 pm|Where:|10 Bermondsey Street, West Leederville WA 6007|Prepared:|28/11/2026 16:08 AWST|Sample information|Tests Required|No.|Client Sample ID|Depth|Date Sampled|Type|Inhalable dust|Respirable dust|Crystalline silica|Run Time|(min)|Volume|(L)|Comments|0|C-BLANK|N/A|28/11/2026|Blank|X|N/A|N/A|Field blank|1|C-101|N/A|28/11/2026|Personal|X|420|840.0||2|C-102|N/A|28/11/2026|Personal|X|X|420|840.0||3|C-103|N/A|28/11/2026|Static|X|420|819.0||4|C-104|N/A|28/11/2026|Personal|X|||voided needs clean and return|Relinquished by (Company): ENVSS|Print name:  ENVSS|Date & time sent:  28/11/2026 16:08 AWST|Signature:  Sent electronically from the ENVSS Field app|Received by (Company):|Print name:|Date & time:|Lab use only: job no. ______   temp ______   seal ______|ENVSS Field  ·  Job 0019358  ·  0019358-001  ·  Results in ESDAT format|Page 1 of 1\"}"
+  },
+  {
+   "name": "pixel7: rejected sample with no volume is a warning, not a block",
+   "ok": true,
+   "detail": "[\"rejected_no_volume\",\"collection_weekend\"]"
+  },
+  {
+   "name": "pixel7: CoC page rendered on screen as an image (full page, A4 landscape)",
+   "ok": true,
+   "detail": "[{\"w\":1684,\"h\":1190,\"cw\":360}]"
+  },
+  {
+   "name": "pixel7: zoom in makes the image larger and scrollable",
+   "ok": true,
+   "detail": "360 -> 608"
+  },
+  {
+   "name": "pixel7: tick is enabled once checks pass, Send still disabled until ticked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: ticking 'I have checked the CoC' enables Send",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: Send queues exactly one send row (mock; nothing emailed)",
+   "ok": true,
+   "detail": "rows=1"
+  },
+  {
+   "name": "pixel7: row: kind send, from lab@, to ohlwa@mpl.com.au, queued, job + event, who + when",
+   "ok": true,
+   "detail": "{\"id\":\"cs_797afb1e-904d-4c71-8d52-ec93fe1f22d3\",\"kind\":\"send\",\"status\":\"queued\",\"resend_of\":null,\"job_number\":\"0019358\",\"event_code\":\"0019358-001\",\"event_id\":\"eC\",\"project_id\":\"p1\",\"from_addr\":\"lab@envss.com.au\",\"to_addr\":\"ohlwa@mpl.com.au\",\"cc_addr\":null,\"reply_to\":\"lab@envss.com.au\",\"subject\":\"ENVSS chain of custody 0019358-001 (5 samples)\",\"body_text\":\"Hello,\\n\\nPlease find our chain of custody"
+  },
+  {
+   "name": "pixel7: row: collection day/time/location stored (office address default)",
+   "ok": true,
+   "detail": "{\"date\":\"2026-11-29\",\"from\":\"09:00\",\"to\":\"12:00\",\"location\":\"10 Bermondsey Street, West Leederville WA 6007\"}"
+  },
+  {
+   "name": "pixel7: row: CoC xlsx + PDF attached, files uploaded to field-exports under g/<job>/<event>/coc-send/",
+   "ok": true,
+   "detail": "[{\"name\":\"0019358-001_Laboratory_COC.xlsx\",\"mime\":\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\",\"bucket\":\"field-exports\",\"path\":\"g/0019358/0019358-001/coc-send/cs_797afb1e-904d-4c71-8d52-ec93fe1f22d3/0019358-001_Laboratory_COC.xlsx\",\"bytes\":17289},{\"name\":\"0019358-001_Laboratory_COC.pdf\",\"mime\":\"application/pdf\",\"bucket\":\"field-exports\",\"path\":\"g/0019358/0019358-001/coc-send/cs_797afb1e-904d-4c71-8d52-ec93fe1f22d3/0019358-001_Laboratory_COC.pdf\",\"bytes\":5077}] OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/coc-send/cs_797afb1e-904d-4c71-8d52-ec93fe1f22d3/0019358-001_Laboratory_COC.xlsx | POST /storage/v1/object/field-exports/g/0019358/0019358-001/coc-send/cs_797afb1e-904d-4c71-8d52-ec93fe1f22d3/0019358-001_Laboratory_COC.xlsx | OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/coc-send/cs_797afb1e-904d-4c71-8d52-ec93fe1f22d3/0019358-001_Laboratory_COC.pdf | POST /storage/v1/object/field-exports/g/0019358/0019358-001/coc-send/cs_797afb1e-904d-4c71-8d52-ec93fe1f22d3/0019358-001_Laboratory_COC.pdf | OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/drv_c7e43d5f-edf7-4f29-b19e-3ecc350863fa/0019358-001_Laboratory_COC.xlsx | POST /storage/v1/object/field-exports/g/0019358/0019358-001/drv_c7e43d5f-edf7-4f29-b19e-3ecc350863fa/0019358-001_Laboratory_COC.xlsx | OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/drv_9c5b9a3c-ef0b-4c32-ae3d-d890bfdec49c/0019358-001_Laboratory_COC.pdf | POST /storage/v1/object/field-exports/g/0019358/0019358-001/drv_9c5b9a3c-ef0b-4c32-ae3d-d890bfdec49c/0019358-001_Laboratory_COC.pdf | OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/drv_80485a9d-b5d1-4e2f-829e-4e33a7674396/0019358-001_Laboratory_COC.csv | POST /storage/v1/object/field-exports/g/0019358/0019358-001/drv_80485a9d-b5d1-4e2f-829e-4e33a7674396/0019358-001_Laboratory_COC.csv"
+  },
+  {
+   "name": "pixel7: row: 5 samples, content hash, app version, device recorded",
+   "ok": true,
+   "detail": "[5,\"ffad65f35d3dc99f67856a6c049124b5fd618c9da91f51e10ed28e3f8f97995c\",\"48.19\"]"
+  },
+  {
+   "name": "pixel7: email states ESDAT, results to lab@, invoice to accounts@, collection day/time/where, office phone",
+   "ok": true,
+   "detail": "Hello,\n\nPlease find our chain of custody (Form 302) attached.\n\nJob number: 0019358\nEvent: 0019358-001\nSamples: 5\nTurnaround: 2 day\n\nRESULTS REQUIRED IN ESDAT FORMAT.\nEmail results and reports to lab@envss.com.au. Invoices to accounts@envss.com.au.\n\nSample collection requested\n  Day:   Sun 29 Nov 2026 (29/11/2026)\n  Time:  9:00 am to 12:00 pm\n  Where: 10 Bermondsey Street, West Leederville WA 6007\n\nAttached: 0019358-001_Laboratory_COC.xlsx, 0019358-001_Laboratory_COC.pdf.\n\nQuestions: ENVSS office, 08 9355 4010, or reply to lab@envss.com.au.\n\nThank you,\nENVSS"
+  },
+  {
+   "name": "pixel7: email has no tech name/email, worker name, client, project name or mobile",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "pixel7: CoC xlsx, PDF and CSV copies queued for Drive {job}_Field-App (existing Drive queue)",
+   "ok": true,
+   "detail": "[\"0019358-001_Laboratory_COC.xlsx\",\"0019358-001_Laboratory_COC.pdf\",\"0019358-001_Laboratory_COC.csv\"]"
+  },
+  {
+   "name": "pixel7: event audit trail records the queued send",
+   "ok": true,
+   "detail": "[\"Changed Turnaround\",\"COC queued to lab\"]"
+  },
+  {
+   "name": "pixel7: event card shows 'Sent … to ohlwa@mpl.com.au' and the collection",
+   "ok": true,
+   "detail": "Chain of custody to the lab\nSent 28/11/2026 16:08 AWST to ohlwa@mpl.com.au.\nCollection: Sun 29 Nov 2026, 9:00 am to 12:00 pm.\n\nChecks the samples, shows the CoC page for you to check, then sends it to the lab when you tap Send.\n\nReview and send CoC"
+  },
+  {
+   "name": "pixel7: duplicate guard: same CoC again says 'already sent' and Send stays disabled",
+   "ok": true,
+   "detail": "This CoC was already sent on 28/11/2026 16:08 AWST by field.test@envss.com.au. This one is identical, so it won't be sent again by accident.\nThe lab didn't get it: send it again…"
+  },
+  {
+   "name": "pixel7: resend path asks for a reason; Send stays disabled without it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: resend within 10 minutes of the last send is throttled",
+   "ok": true,
+   "detail": "I have checked the CoC\nSend amended CoC\n\nA CoC for this event was sent less than 10 minutes ago. Wait, then try again."
+  },
+  {
+   "name": "pixel7: changed samples after a send: offered as AMENDED, reason required",
+   "ok": true,
+   "detail": "A CoC for this event was sent on 28/11/2026 15:08 AWST by field.test@envss.com.au. This one is different (sample details). It will go as AMENDED and the lab is told it replaces the earlier one.\nWhy are you sending it again? (required, goes in the log)"
+  },
+  {
+   "name": "pixel7: amended CoC can be sent after reason + tick",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: amended row points back at the original and the subject says AMENDED, reason stored",
+   "ok": true,
+   "detail": "[\"cs_797afb1e-904d-4c71-8d52-ec93fe1f22d3\",\"ENVSS chain of custody 0019358-001 (5 samples) AMENDED\",\"Sample 1 ran 30 minutes longer\"]"
+  },
+  {
+   "name": "pixel7: no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: spreadsheet: Esdat ticked, results lab@, invoice accounts@ only, phone is the office number",
+   "ok": true,
+   "detail": "[true,\"lab@envss.com.au\",\"accounts@envss.com.au\",\"08 9355 4010\"]"
+  },
+  {
+   "name": "pixel7: spreadsheet: no 'Mob' label, no mobile number, no sampler / worker / client / project name",
+   "ok": true,
+   "detail": "CHAIN OF CUSTODY FORM - Client\nENVIROLAB GROUP\nNational phone number 1300 424 344\n[Copyright and Confidential]\nCompany:\nEnvironmental Site Services\nClient Project Name/Number/Site etc (ie report title):\nContact Person:\nENVSS office\n0019358\nProject Mgr:\nENVSS office\nPO No. (if applicable):\nSampler:\nENVSS office\nEnvirolab Quote No. :\nOnline price list\nAddress:\n10 Bermondsey St, West Leederville WA 6007\nDate results required:\nOr choose:\nx\nStandard\nSame Day\n1 day\n2 day\n3 day\nPhone:\n08 9355 4010\nNote: Inform lab in advance if urgent turnaround is required - surcharges apply\nEmail Results to:\nlab@en"
+  },
+  {
+   "name": "pixel7: spreadsheet: says RESULTS REQUIRED IN ESDAT FORMAT",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: spreadsheet: only 2 emails appear (lab@, accounts@) and 2 phone numbers (office, Envirolab national)",
+   "ok": true,
+   "detail": "lab@envss.com.au,lab@envss.com.au,accounts@envss.com.au"
+  },
+  {
+   "name": "pixel7: PDF text: ESDAT required, job number, office phone 08 9355 4010, accounts@ and lab@, collection details",
+   "ok": true,
+   "detail": "  CHAIN OF CUSTODY FORM - Client                                                                                                                              ENVIROLAB GROUP · Form 302\n\n                                                                                                                                                                Email results to lab@envss.com.au\n          RESULTS REQUIRED IN ESDAT FORMAT                                                                                                                    Email invoice to accounts@envss.com.au\n\n Company:           Environmental Site Services (ENVSS)                                                 Date results required:           Standard      Same Day        1 day    2 day    3 day\n Contact:           ENVSS office                                                                        SAMPLE COLLECTION REQUESTED"
+  },
+  {
+   "name": "pixel7: PDF text: no tech / worker / client / project / mobile",
+   "ok": true,
+   "detail": "  CHAIN OF CUSTODY FORM - Client                                                                                                                              ENVIROLAB GROUP · Form 302\n\n                                                                                                                                                                Email results to lab@envss.com.au\n          RESULTS REQUIRED IN ESDAT FORMAT                                                                                                                    Email invoice to accounts@envss.com.au\n\n Company:           En"
+  },
+  {
+   "name": "pixel7: PDF text: blank shows N/A for run time and volume; rejected sample noted",
+   "ok": true,
+   "detail": "  CHAIN OF CUSTODY FORM - Client                                                                                                                              ENVIROLAB GROUP · Form 302\n\n                                                                                                                                                                Email results to lab@envss.com.au\n          RESULTS REQUIRED IN ESDAT FORMAT                                                                                                                    Email invoice to accounts@envss.com.au\n\n Company:           Environmental Site Services (ENVSS)                                                 Date results required:           Standard      Same Day        1 day    2 day    3 day\n Contact:           ENVSS office                                                                        SAMPLE COLLECTION REQUESTED\n Phone:             08 9355 4010                                                                        Day:         Sun 29 Nov 2026 (29/11/2026)\n Address:           10 Bermondsey Street, West Leederville WA 6007                                      Time:        9:00 am to 12:00 pm\n Job number:        0019358                                                                             Where:       10 Bermondsey Street, West Leederville WA 6007\n Event:             0019358-001\n Samples:           5                                                                                   Prepared:      28/11/2026 16:08 AWST\n\nSample information                                              Tests Required\n No.      Client Sample ID    Depth Date Sampled       Type         Inhalable dust   Respirable dust   Crystalline silica   Run Time   Volume                           Comments\n                                                                                                                             (min)       (L)\n\n  0    C-BLANK                 N/A    28/11/2026      Blank               X                                                   N/A       N/A     Field blank\n\n  1    C-101                   N/A    28/11/2026     Personal             X                                                   420      840.0\n  2    C-102                   N/A    28/11/2026     Personal                              X                   X              420      840.0\n  3    C-103                   N/A    28/11/2026      Static              X                                                   420      819.0\n  4    C-104                   N/A    28/11/2026     Personal             X                                                                     voided needs clean and return\n\n\n Relinquished by (Company): ENVSS                                                                      Received by (Company):\n Print name: ENVSS                                                                                     Print name:\n Date & time sent: 28/11/2026 16:08 AWST                                                               Date & time:\n Signature: Sent electronically from the ENVSS Field app                                               Lab use only: job no. ______ temp ______ seal ______\n\n\n\n\nENVSS Field · Job 0019358 · 0019358-001 · Results in ESDAT format                                                                                                                            Page 1 of 1\n\f"
+  },
+  {
+   "name": "pixel7: data problems block: missing stop time, duplicate ID, no analysis, no flow, no ID, stop before start",
+   "ok": true,
+   "detail": "[\"time_missing\",\"no_analysis\",\"reject_reason\",\"flow_missing\",\"id_missing\",\"time_order\",\"id_dup\"]"
+  },
+  {
+   "name": "pixel7: rejected sample with no reason is blocked (reason check or not-finished gate)",
+   "ok": true,
+   "detail": "[\"time_missing\",\"no_analysis\",\"reject_reason\",\"flow_missing\",\"id_missing\",\"time_order\",\"id_dup\"]"
+  },
+  {
+   "name": "pixel7: these are tech-fixable: no 'app problem' banner and no APP PROBLEM tags",
+   "ok": true,
+   "detail": "Can't send yet: 7 problems to fix\nFIXSample 6 is missing its stop time. Open sample\nFIXSample 7 has no analysis requested. Open sample\nFIXSample 8 is rejected but has no reason recorded. Open sample\nFIXSample 9 has no flow recorded, so the volume cannot be worked out. Open sample\nFIXSample 10 has no"
+  },
+  {
+   "name": "pixel7: each sample problem has an Open sample button",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: Send and tick disabled with problems",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: after fixing the samples in the app the checks clear on reopen",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "pixel7: collection checks: past day, end before start, location too short",
+   "ok": true,
+   "detail": "[\"collection_date_past\",\"collection_window\",\"collection_location_short\"]"
+  },
+  {
+   "name": "pixel7: collection checks: empty location blocked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: volume that does not match average flow x run time is a BLOCK (app side) on the spreadsheet and the page",
+   "ok": true,
+   "detail": "[{\"id\":\"vol_mismatch\",\"fix\":\"app\",\"text\":\"Sample 1: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.\"},{\"id\":\"vol_mismatch_pdf\",\"fix\":\"app\",\"text\":\"Sample 1: volume on the CoC page is 8400 L; average flow x run time is 840 L.\"},{\"id\":\"vol_mismatch\",\"fix\":\"app\",\"text\":\"Sample 2: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.\"}]"
+  },
+  {
+   "name": "pixel7: tech is told it isn't theirs to fix and Send is blocked",
+   "ok": true,
+   "detail": "Can't send yet: 6 problems to fix\nAPP PROBLEMSample 1: volume on the spreadsheet is 8400 L; average flow x run time is 840 L. Open sample\nAPP PROBLEMSample 1: volume on the CoC page is 8400 L; average flow x run time is 840 L. Open sample\nAPP PROBLEMSample 2: volume on the spreadsheet is 8400 L; average flow x run time is 840 L. Open sample\nAPP PROBLEMSample 2: volume on the CoC page is 8400 L; av"
+  },
+  {
+   "name": "pixel7: flag box prompts for detail; report button is hidden until the box is ticked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: tick 'Something looks wrong' reveals the comment box; report disabled with no comment",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: comment under 20 characters keeps the report disabled and shows the count",
+   "ok": true,
+   "detail": "9 / 20 characters"
+  },
+  {
+   "name": "pixel7: comment of 20+ characters enables 'Send error report to John'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: error report queued once: to john@envss.com.au from lab@, no send row to the lab",
+   "ok": true,
+   "detail": "[[\"john@envss.com.au\",\"lab@envss.com.au\"]]"
+  },
+  {
+   "name": "pixel7: tech's flag + comment are at the TOP of the email and stored in tech_flag",
+   "ok": true,
+   "detail": "TECH FLAG: SOMETHING LOOKS WRONG\nRaised by: field.test@envss.com.au (after the app's own checks failed)\nTech's comment:\nSample 1 volume says 8400 L but it ran 420 min at 2.0 L/min, should be 840 L.\n\n============================================================\n\nJOB / EVENT\nJob number: 0019358\nEvent: 0019358-001  (id eC)\nProject id: p1\nTurnaround: Standard\nSamples on CoC: 5  (event expects 5)\n\nFAILI"
+  },
+  {
+   "name": "pixel7: error email has job, event, every sample, failing checks with values, app version, device, tech user, time",
+   "ok": true,
+   "detail": "TECH FLAG: SOMETHING LOOKS WRONG\nRaised by: field.test@envss.com.au (after the app's own checks failed)\nTech's comment:\nSample 1 volume says 8400 L but it ran 420 min at 2.0 L/min, should be 840 L.\n\n============================================================\n\nJOB / EVENT\nJob number: 0019358\nEvent: 0019358-001  (id eC)\nProject id: p1\nTurnaround: Standard\nSamples on CoC: 5  (event expects 5)\n\nFAILING CHECKS (6)\n- [BLOCK / APP SIDE] vol_mismatch: Sample 1: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.   value=8400   expected=840\n- [BLOCK / APP SIDE] vol_mismatch_pdf: Sample 1: volume on the CoC page is 8400 L; average flow x run time is 840 L.   value=8400   expected=840\n- [BLOCK / APP SIDE] vol_mismatch: Sample 2: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.   value=8400   expected=840\n- [BLOCK / APP SIDE] vol_mismatch_pdf: Sample 2: volume on the CoC page is 8400 L; average flow x run time is 840 L.   value=8400   expected=840\n- [BLOCK / APP SIDE] vol_mismatch: Sample 3: volume on the spreadsheet is 8190 L; average flow x run time is 819 L.   value=8190   expected=819\n- [BLOCK / APP SIDE] vol_mismatch_pdf: Sample 3: volume on the CoC page is 8190 L; average flow x run time is 819 L.   value=8190   expected=819\n\nWARNINGS (2)\n- rejected_no_volume: Sample 4 is rejected and has no volume. The lab is told it is rejected.\n- collection_weekend: Collection is on a Sunday. Check the lab can collect then.\n\nSAMPLES\n- Sample 0 | id C-BLA"
+  },
+  {
+   "name": "pixel7: error email subject names the event and the failing check",
+   "ok": true,
+   "detail": "[ENVSS Field] CoC error report 0019358-001 - vol_mismatch, vol_mismatch_pdf, vol_mismatch (app v48.19)"
+  },
+  {
+   "name": "pixel7: error email attaches the CoC PDF, the page image(s) and the spreadsheet",
+   "ok": true,
+   "detail": "[\"0019358-001_Laboratory_COC.xlsx\",\"0019358-001_Laboratory_COC.pdf\",\"0019358-001_CoC_page1.png\"]"
+  },
+  {
+   "name": "pixel7: alert row stores failed checks as JSON for the log",
+   "ok": true,
+   "detail": "{\"failed\":[{\"id\":\"vol_mismatch\",\"fix\":\"app\",\"text\":\"Sample 1: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.\",\"value\":8400,\"expected\":840},{\"id\":\"vol_mismatch_pdf\",\"fix\":\"app\",\"text\":\"Sample 1: volume on the CoC page is 8400 L; average flow x run time is 840 L.\",\"value\":8400,"
+  },
+  {
+   "name": "pixel7: screen then says the error report was queued/sent and Send to the lab stays blocked",
+   "ok": true,
+   "detail": "Error report queued\n\nYour report went to john@envss.com.au (28/11/2026 16:09 AWST). Sending to the lab stays blocked for this CoC until the app is updated or the samples change. Your comment: “Sample 1 volume says 8400 L but it ran 420 min at 2.0 L/min, should be 840 L.”"
+  },
+  {
+   "name": "pixel7: reopening keeps Send blocked for the same CoC and app version",
+   "ok": true,
+   "detail": "[\"vol_mismatch\",\"vol_mismatch_pdf\",\"vol_mismatch\",\"vol_mismatch_pdf\",\"vol_mismatch\",\"vol_mismatch_pdf\",\"flagged_open\"]"
+  },
+  {
+   "name": "pixel7: manual flag: with all checks clear the tech can still tick 'Something looks wrong'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: manual flag blocks Send to the lab while ticked",
+   "ok": true,
+   "detail": "I have checked the CoC\nSend CoC to the lab\n\nBlocked while “Something looks wrong” is ticked. Send the error report, or untick it if you were mistaken."
+  },
+  {
+   "name": "pixel7: unticking the flag lets the tech continue (tick again to send)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: manual flag error report: comment on top, marked 'raised by hand', checks list says none failed",
+   "ok": true,
+   "detail": "TECH FLAG: SOMETHING LOOKS WRONG\nRaised by: field.test@envss.com.au (raised by hand from the CoC preview)\nTech's comment:\nThe field blank is listed first but I expected it last, and sample 3 should be Personal not Static.\n\n============================================================\n\nJOB / EVENT\nJob number: 0019358\nEvent: 0019358-001  (id eC)\nProject id: p1\nTurnaround: Standard\nSamples on CoC: 5  (event expects 5)\n\nFAILING CHECKS (0)\n(none: the tech raised the flag by hand)\n\nWARNINGS (2)\n- rejec"
+  },
+  {
+   "name": "pixel7: manual flag: no send to the lab was created",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: privacy lint blocks a tech name, a mobile number and a personal email on the generated spreadsheet (app side)",
+   "ok": true,
+   "detail": "[\"email address @ spreadsheet\",\"tech name @ spreadsheet\",\"phone number @ spreadsheet\"]"
+  },
+  {
+   "name": "pixel7: privacy block is an app problem: Send blocked, tech can send an error report",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: offline: button reads 'Send when online' and still needs the tick",
+   "ok": true,
+   "detail": "Send when online"
+  },
+  {
+   "name": "pixel7: offline: tap saves the send on the device (queue = 1), no row reached the server",
+   "ok": true,
+   "detail": "pending=1"
+  },
+  {
+   "name": "pixel7: offline: screen says it will send when back online and offers to cancel",
+   "ok": true,
+   "detail": "This CoC was already queued on 28/11/2026 16:09 AWST by field.test@envss.com.au. This one is identical, so it won't be sent again by accident.\nThe lab didn't get it: send it again…\nWaiting for signal. You have already tapped Send. It will go to the lab by itself when this device is back online.\nCancel the queued send"
+  },
+  {
+   "name": "pixel7: offline queue holds the safe auto-update (counted as pending)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pixel7: back online: the queued send goes (one row, queued for the worker) without another tap",
+   "ok": true,
+   "detail": "rows=1"
+  },
+  {
+   "name": "pixel7: back online: Drive copies queued after the send row exists",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: event page shows the 'Chain of custody to the lab' card with a Review and send button",
+   "ok": true,
+   "detail": "Chain of custody to the lab\nNot sent yet.\n\nChecks the samples, shows the CoC page for you to check, then sends it to the lab when you tap Send.\n\nReview and send CoC"
+  },
+  {
+   "name": "chromebook: review screen is a dialog (blocks auto-update while open)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: walkthrough helper text: four steps, nothing sent until Send",
+   "ok": true,
+   "detail": "Send CoC to the lab\nClose\nHow this works\nRead the checks below. Anything red has to be fixed before you can send.\nTell the lab when and where to collect the samples.\nLook at the CoC page. Zoom in and check every line against your samples.\nTick I have checked the CoC, then tap Send. Nothing is sent until you tap Send.\n\nThe CoC is made from your samples. You can't type on it. If it is wrong, fix the sample in the app, or use Something looks wrong at the bottom to tell John.\n\nFrom\nlab@envss.com.au\n"
+  },
+  {
+   "name": "chromebook: recipient shown: From lab@, To ohlwa@mpl.com.au, results in ESDAT to lab@, invoice to accounts@",
+   "ok": true,
+   "detail": "Send CoC to the lab\nClose\nHow this works\nRead the checks below. Anything red has to be fixed before you can send.\nTell the lab when and where to collect the samples.\nLook at the CoC page. Zoom in and check every line against your samples.\nTick I have checked the CoC, then tap Send. Nothing is sent until you tap Send.\n\nThe CoC is made from your samples. You can't type on it. If it is wrong, fix the sample in the app, or use Something looks wrong at the bottom to tell John.\n\nFrom\nlab@envss.com.au\nTo\nohlwa@mpl.com.au (Envirolab / MPL Perth)\nResults\nESDAT format, to lab@envss.com.au\nInvoice\naccounts@envss.com.au\nEvent\n0019358-001\nSTEP 1 · CHECKS\nCan't send yet: 2 problems to fix\nFIXChoose the co"
+  },
+  {
+   "name": "chromebook: collection location defaults to the ENVSS office, not the event address",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: before collection details: blocked on day and time",
+   "ok": true,
+   "detail": "[\"collection_date\",\"collection_time\"]"
+  },
+  {
+   "name": "chromebook: Send and the 'I have checked' tick are disabled while blocked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: tech can edit the collection location",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: 'Use the ENVSS office' puts the office address back",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: with day and time filled: no blocks (all sample checks pass)",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "chromebook: all-clear banner shown",
+   "ok": true,
+   "detail": "ALL CLEARVolumes match average flow × run time, blanks are N/A, every sample has an ID, times and analysis, and the sample count matches the event.\nPlease look at 2 things (these don't stop the send)\nCHECKSample 4 is rejected and has no volume. The lab is told it is rejected. Open sample\nCHECKCollection is on a Sunday. Check the lab can collect then."
+  },
+  {
+   "name": "chromebook: turnaround picker: saved on the event, in the spreadsheet build and on the CoC page (2 day)",
+   "ok": true,
+   "detail": "{\"ev\":\"2_day\",\"model\":\"2_day\",\"xlsx\":\"2_day\",\"txt\":\"CHAIN OF CUSTODY FORM - Client|ENVIROLAB GROUP  ·  Form 302|RESULTS REQUIRED IN ESDAT FORMAT|Email results to lab@envss.com.au|Email invoice to accounts@envss.com.au|Company:|Environmental Site Services (ENVSS)|Contact:|ENVSS office|Phone:|08 9355 4010|Address:|10 Bermondsey Street, West Leederville WA 6007|Job number:|0019358|Event:|0019358-001|Samples:|5|Date results required:|Standard|Same Day|1 day|2 day|3 day|SAMPLE COLLECTION REQUESTED|Day:|Sun 29 Nov 2026  (29/11/2026)|Time:|9:00 am to 12:00 pm|Where:|10 Bermondsey Street, West Leederville WA 6007|Prepared:|28/11/2026 16:09 AWST|Sample information|Tests Required|No.|Client Sample ID|Depth|Date Sampled|Type|Inhalable dust|Respirable dust|Crystalline silica|Run Time|(min)|Volume|(L)|Comments|0|C-BLANK|N/A|28/11/2026|Blank|X|N/A|N/A|Field blank|1|C-101|N/A|28/11/2026|Personal|X|420|840.0||2|C-102|N/A|28/11/2026|Personal|X|X|420|840.0||3|C-103|N/A|28/11/2026|Static|X|420|819.0||4|C-104|N/A|28/11/2026|Personal|X|||voided needs clean and return|Relinquished by (Company): ENVSS|Print name:  ENVSS|Date & time sent:  28/11/2026 16:09 AWST|Signature:  Sent electronically from the ENVSS Field app|Received by (Company):|Print name:|Date & time:|Lab use only: job no. ______   temp ______   seal ______|ENVSS Field  ·  Job 0019358  ·  0019358-001  ·  Results in ESDAT format|Page 1 of 1\"}"
+  },
+  {
+   "name": "chromebook: rejected sample with no volume is a warning, not a block",
+   "ok": true,
+   "detail": "[\"rejected_no_volume\",\"collection_weekend\"]"
+  },
+  {
+   "name": "chromebook: CoC page rendered on screen as an image (full page, A4 landscape)",
+   "ok": true,
+   "detail": "[{\"w\":1684,\"h\":1190,\"cw\":928}]"
+  },
+  {
+   "name": "chromebook: zoom in makes the image larger and scrollable",
+   "ok": true,
+   "detail": "928 -> 1568"
+  },
+  {
+   "name": "chromebook: tick is enabled once checks pass, Send still disabled until ticked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: ticking 'I have checked the CoC' enables Send",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: Send queues exactly one send row (mock; nothing emailed)",
+   "ok": true,
+   "detail": "rows=1"
+  },
+  {
+   "name": "chromebook: row: kind send, from lab@, to ohlwa@mpl.com.au, queued, job + event, who + when",
+   "ok": true,
+   "detail": "{\"id\":\"cs_c28b783e-69b8-4048-8ed0-c824d7d24070\",\"kind\":\"send\",\"status\":\"queued\",\"resend_of\":null,\"job_number\":\"0019358\",\"event_code\":\"0019358-001\",\"event_id\":\"eC\",\"project_id\":\"p1\",\"from_addr\":\"lab@envss.com.au\",\"to_addr\":\"ohlwa@mpl.com.au\",\"cc_addr\":null,\"reply_to\":\"lab@envss.com.au\",\"subject\":\"ENVSS chain of custody 0019358-001 (5 samples)\",\"body_text\":\"Hello,\\n\\nPlease find our chain of custody"
+  },
+  {
+   "name": "chromebook: row: collection day/time/location stored (office address default)",
+   "ok": true,
+   "detail": "{\"date\":\"2026-11-29\",\"from\":\"09:00\",\"to\":\"12:00\",\"location\":\"10 Bermondsey Street, West Leederville WA 6007\"}"
+  },
+  {
+   "name": "chromebook: row: CoC xlsx + PDF attached, files uploaded to field-exports under g/<job>/<event>/coc-send/",
+   "ok": true,
+   "detail": "[{\"name\":\"0019358-001_Laboratory_COC.xlsx\",\"mime\":\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\",\"bucket\":\"field-exports\",\"path\":\"g/0019358/0019358-001/coc-send/cs_c28b783e-69b8-4048-8ed0-c824d7d24070/0019358-001_Laboratory_COC.xlsx\",\"bytes\":17290},{\"name\":\"0019358-001_Laboratory_COC.pdf\",\"mime\":\"application/pdf\",\"bucket\":\"field-exports\",\"path\":\"g/0019358/0019358-001/coc-send/cs_c28b783e-69b8-4048-8ed0-c824d7d24070/0019358-001_Laboratory_COC.pdf\",\"bytes\":5079}] OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/coc-send/cs_c28b783e-69b8-4048-8ed0-c824d7d24070/0019358-001_Laboratory_COC.xlsx | POST /storage/v1/object/field-exports/g/0019358/0019358-001/coc-send/cs_c28b783e-69b8-4048-8ed0-c824d7d24070/0019358-001_Laboratory_COC.xlsx | OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/coc-send/cs_c28b783e-69b8-4048-8ed0-c824d7d24070/0019358-001_Laboratory_COC.pdf | POST /storage/v1/object/field-exports/g/0019358/0019358-001/coc-send/cs_c28b783e-69b8-4048-8ed0-c824d7d24070/0019358-001_Laboratory_COC.pdf | OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/drv_5b46c0bd-073f-4c55-8aef-e6035d41e530/0019358-001_Laboratory_COC.xlsx | POST /storage/v1/object/field-exports/g/0019358/0019358-001/drv_5b46c0bd-073f-4c55-8aef-e6035d41e530/0019358-001_Laboratory_COC.xlsx | OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/drv_464a1e9f-1b63-4f07-9d6d-79833562255a/0019358-001_Laboratory_COC.pdf | POST /storage/v1/object/field-exports/g/0019358/0019358-001/drv_464a1e9f-1b63-4f07-9d6d-79833562255a/0019358-001_Laboratory_COC.pdf | OPTIONS /storage/v1/object/field-exports/g/0019358/0019358-001/drv_56a1d1bc-c006-4f25-8666-228b1fc65145/0019358-001_Laboratory_COC.csv | POST /storage/v1/object/field-exports/g/0019358/0019358-001/drv_56a1d1bc-c006-4f25-8666-228b1fc65145/0019358-001_Laboratory_COC.csv"
+  },
+  {
+   "name": "chromebook: row: 5 samples, content hash, app version, device recorded",
+   "ok": true,
+   "detail": "[5,\"ffad65f35d3dc99f67856a6c049124b5fd618c9da91f51e10ed28e3f8f97995c\",\"48.19\"]"
+  },
+  {
+   "name": "chromebook: email states ESDAT, results to lab@, invoice to accounts@, collection day/time/where, office phone",
+   "ok": true,
+   "detail": "Hello,\n\nPlease find our chain of custody (Form 302) attached.\n\nJob number: 0019358\nEvent: 0019358-001\nSamples: 5\nTurnaround: 2 day\n\nRESULTS REQUIRED IN ESDAT FORMAT.\nEmail results and reports to lab@envss.com.au. Invoices to accounts@envss.com.au.\n\nSample collection requested\n  Day:   Sun 29 Nov 2026 (29/11/2026)\n  Time:  9:00 am to 12:00 pm\n  Where: 10 Bermondsey Street, West Leederville WA 6007\n\nAttached: 0019358-001_Laboratory_COC.xlsx, 0019358-001_Laboratory_COC.pdf.\n\nQuestions: ENVSS office, 08 9355 4010, or reply to lab@envss.com.au.\n\nThank you,\nENVSS"
+  },
+  {
+   "name": "chromebook: email has no tech name/email, worker name, client, project name or mobile",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "chromebook: CoC xlsx, PDF and CSV copies queued for Drive {job}_Field-App (existing Drive queue)",
+   "ok": true,
+   "detail": "[\"0019358-001_Laboratory_COC.xlsx\",\"0019358-001_Laboratory_COC.pdf\",\"0019358-001_Laboratory_COC.csv\"]"
+  },
+  {
+   "name": "chromebook: event audit trail records the queued send",
+   "ok": true,
+   "detail": "[\"Changed Turnaround\",\"COC queued to lab\"]"
+  },
+  {
+   "name": "chromebook: event card shows 'Sent … to ohlwa@mpl.com.au' and the collection",
+   "ok": true,
+   "detail": "Chain of custody to the lab\nSent 28/11/2026 16:09 AWST to ohlwa@mpl.com.au.\nCollection: Sun 29 Nov 2026, 9:00 am to 12:00 pm.\n\nChecks the samples, shows the CoC page for you to check, then sends it to the lab when you tap Send.\n\nReview and send CoC"
+  },
+  {
+   "name": "chromebook: duplicate guard: same CoC again says 'already sent' and Send stays disabled",
+   "ok": true,
+   "detail": "This CoC was already sent on 28/11/2026 16:09 AWST by field.test@envss.com.au. This one is identical, so it won't be sent again by accident.\nThe lab didn't get it: send it again…"
+  },
+  {
+   "name": "chromebook: resend path asks for a reason; Send stays disabled without it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: resend within 10 minutes of the last send is throttled",
+   "ok": true,
+   "detail": "I have checked the CoC\nSend amended CoC\n\nA CoC for this event was sent less than 10 minutes ago. Wait, then try again."
+  },
+  {
+   "name": "chromebook: changed samples after a send: offered as AMENDED, reason required",
+   "ok": true,
+   "detail": "A CoC for this event was sent on 28/11/2026 15:09 AWST by field.test@envss.com.au. This one is different (sample details). It will go as AMENDED and the lab is told it replaces the earlier one.\nWhy are you sending it again? (required, goes in the log)"
+  },
+  {
+   "name": "chromebook: amended CoC can be sent after reason + tick",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: amended row points back at the original and the subject says AMENDED, reason stored",
+   "ok": true,
+   "detail": "[\"cs_c28b783e-69b8-4048-8ed0-c824d7d24070\",\"ENVSS chain of custody 0019358-001 (5 samples) AMENDED\",\"Sample 1 ran 30 minutes longer\"]"
+  },
+  {
+   "name": "chromebook: no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: spreadsheet: Esdat ticked, results lab@, invoice accounts@ only, phone is the office number",
+   "ok": true,
+   "detail": "[true,\"lab@envss.com.au\",\"accounts@envss.com.au\",\"08 9355 4010\"]"
+  },
+  {
+   "name": "chromebook: spreadsheet: no 'Mob' label, no mobile number, no sampler / worker / client / project name",
+   "ok": true,
+   "detail": "CHAIN OF CUSTODY FORM - Client\nENVIROLAB GROUP\nNational phone number 1300 424 344\n[Copyright and Confidential]\nCompany:\nEnvironmental Site Services\nClient Project Name/Number/Site etc (ie report title):\nContact Person:\nENVSS office\n0019358\nProject Mgr:\nENVSS office\nPO No. (if applicable):\nSampler:\nENVSS office\nEnvirolab Quote No. :\nOnline price list\nAddress:\n10 Bermondsey St, West Leederville WA 6007\nDate results required:\nOr choose:\nx\nStandard\nSame Day\n1 day\n2 day\n3 day\nPhone:\n08 9355 4010\nNote: Inform lab in advance if urgent turnaround is required - surcharges apply\nEmail Results to:\nlab@en"
+  },
+  {
+   "name": "chromebook: spreadsheet: says RESULTS REQUIRED IN ESDAT FORMAT",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: spreadsheet: only 2 emails appear (lab@, accounts@) and 2 phone numbers (office, Envirolab national)",
+   "ok": true,
+   "detail": "lab@envss.com.au,lab@envss.com.au,accounts@envss.com.au"
+  },
+  {
+   "name": "chromebook: PDF text: ESDAT required, job number, office phone 08 9355 4010, accounts@ and lab@, collection details",
+   "ok": true,
+   "detail": "  CHAIN OF CUSTODY FORM - Client                                                                                                                              ENVIROLAB GROUP · Form 302\n\n                                                                                                                                                                Email results to lab@envss.com.au\n          RESULTS REQUIRED IN ESDAT FORMAT                                                                                                                    Email invoice to accounts@envss.com.au\n\n Company:           Environmental Site Services (ENVSS)                                                 Date results required:           Standard      Same Day        1 day    2 day    3 day\n Contact:           ENVSS office                                                                        SAMPLE COLLECTION REQUESTED"
+  },
+  {
+   "name": "chromebook: PDF text: no tech / worker / client / project / mobile",
+   "ok": true,
+   "detail": "  CHAIN OF CUSTODY FORM - Client                                                                                                                              ENVIROLAB GROUP · Form 302\n\n                                                                                                                                                                Email results to lab@envss.com.au\n          RESULTS REQUIRED IN ESDAT FORMAT                                                                                                                    Email invoice to accounts@envss.com.au\n\n Company:           En"
+  },
+  {
+   "name": "chromebook: PDF text: blank shows N/A for run time and volume; rejected sample noted",
+   "ok": true,
+   "detail": "  CHAIN OF CUSTODY FORM - Client                                                                                                                              ENVIROLAB GROUP · Form 302\n\n                                                                                                                                                                Email results to lab@envss.com.au\n          RESULTS REQUIRED IN ESDAT FORMAT                                                                                                                    Email invoice to accounts@envss.com.au\n\n Company:           Environmental Site Services (ENVSS)                                                 Date results required:           Standard      Same Day        1 day    2 day    3 day\n Contact:           ENVSS office                                                                        SAMPLE COLLECTION REQUESTED\n Phone:             08 9355 4010                                                                        Day:         Sun 29 Nov 2026 (29/11/2026)\n Address:           10 Bermondsey Street, West Leederville WA 6007                                      Time:        9:00 am to 12:00 pm\n Job number:        0019358                                                                             Where:       10 Bermondsey Street, West Leederville WA 6007\n Event:             0019358-001\n Samples:           5                                                                                   Prepared:      28/11/2026 16:10 AWST\n\nSample information                                              Tests Required\n No.      Client Sample ID    Depth Date Sampled       Type         Inhalable dust   Respirable dust   Crystalline silica   Run Time   Volume                           Comments\n                                                                                                                             (min)       (L)\n\n  0    C-BLANK                 N/A    28/11/2026      Blank               X                                                   N/A       N/A     Field blank\n\n  1    C-101                   N/A    28/11/2026     Personal             X                                                   420      840.0\n  2    C-102                   N/A    28/11/2026     Personal                              X                   X              420      840.0\n  3    C-103                   N/A    28/11/2026      Static              X                                                   420      819.0\n  4    C-104                   N/A    28/11/2026     Personal             X                                                                     voided needs clean and return\n\n\n Relinquished by (Company): ENVSS                                                                      Received by (Company):\n Print name: ENVSS                                                                                     Print name:\n Date & time sent: 28/11/2026 16:10 AWST                                                               Date & time:\n Signature: Sent electronically from the ENVSS Field app                                               Lab use only: job no. ______ temp ______ seal ______\n\n\n\n\nENVSS Field · Job 0019358 · 0019358-001 · Results in ESDAT format                                                                                                                            Page 1 of 1\n\f"
+  },
+  {
+   "name": "chromebook: data problems block: missing stop time, duplicate ID, no analysis, no flow, no ID, stop before start",
+   "ok": true,
+   "detail": "[\"time_missing\",\"no_analysis\",\"reject_reason\",\"flow_missing\",\"id_missing\",\"time_order\",\"id_dup\"]"
+  },
+  {
+   "name": "chromebook: rejected sample with no reason is blocked (reason check or not-finished gate)",
+   "ok": true,
+   "detail": "[\"time_missing\",\"no_analysis\",\"reject_reason\",\"flow_missing\",\"id_missing\",\"time_order\",\"id_dup\"]"
+  },
+  {
+   "name": "chromebook: these are tech-fixable: no 'app problem' banner and no APP PROBLEM tags",
+   "ok": true,
+   "detail": "Can't send yet: 7 problems to fix\nFIXSample 6 is missing its stop time. Open sample\nFIXSample 7 has no analysis requested. Open sample\nFIXSample 8 is rejected but has no reason recorded. Open sample\nFIXSample 9 has no flow recorded, so the volume cannot be worked out. Open sample\nFIXSample 10 has no"
+  },
+  {
+   "name": "chromebook: each sample problem has an Open sample button",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: Send and tick disabled with problems",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: after fixing the samples in the app the checks clear on reopen",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "chromebook: collection checks: past day, end before start, location too short",
+   "ok": true,
+   "detail": "[\"collection_date_past\",\"collection_window\",\"collection_location_short\"]"
+  },
+  {
+   "name": "chromebook: collection checks: empty location blocked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: volume that does not match average flow x run time is a BLOCK (app side) on the spreadsheet and the page",
+   "ok": true,
+   "detail": "[{\"id\":\"vol_mismatch\",\"fix\":\"app\",\"text\":\"Sample 1: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.\"},{\"id\":\"vol_mismatch_pdf\",\"fix\":\"app\",\"text\":\"Sample 1: volume on the CoC page is 8400 L; average flow x run time is 840 L.\"},{\"id\":\"vol_mismatch\",\"fix\":\"app\",\"text\":\"Sample 2: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.\"}]"
+  },
+  {
+   "name": "chromebook: tech is told it isn't theirs to fix and Send is blocked",
+   "ok": true,
+   "detail": "Can't send yet: 6 problems to fix\nAPP PROBLEMSample 1: volume on the spreadsheet is 8400 L; average flow x run time is 840 L. Open sample\nAPP PROBLEMSample 1: volume on the CoC page is 8400 L; average flow x run time is 840 L. Open sample\nAPP PROBLEMSample 2: volume on the spreadsheet is 8400 L; average flow x run time is 840 L. Open sample\nAPP PROBLEMSample 2: volume on the CoC page is 8400 L; av"
+  },
+  {
+   "name": "chromebook: flag box prompts for detail; report button is hidden until the box is ticked",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: tick 'Something looks wrong' reveals the comment box; report disabled with no comment",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: comment under 20 characters keeps the report disabled and shows the count",
+   "ok": true,
+   "detail": "9 / 20 characters"
+  },
+  {
+   "name": "chromebook: comment of 20+ characters enables 'Send error report to John'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: error report queued once: to john@envss.com.au from lab@, no send row to the lab",
+   "ok": true,
+   "detail": "[[\"john@envss.com.au\",\"lab@envss.com.au\"]]"
+  },
+  {
+   "name": "chromebook: tech's flag + comment are at the TOP of the email and stored in tech_flag",
+   "ok": true,
+   "detail": "TECH FLAG: SOMETHING LOOKS WRONG\nRaised by: field.test@envss.com.au (after the app's own checks failed)\nTech's comment:\nSample 1 volume says 8400 L but it ran 420 min at 2.0 L/min, should be 840 L.\n\n============================================================\n\nJOB / EVENT\nJob number: 0019358\nEvent: 0019358-001  (id eC)\nProject id: p1\nTurnaround: Standard\nSamples on CoC: 5  (event expects 5)\n\nFAILI"
+  },
+  {
+   "name": "chromebook: error email has job, event, every sample, failing checks with values, app version, device, tech user, time",
+   "ok": true,
+   "detail": "TECH FLAG: SOMETHING LOOKS WRONG\nRaised by: field.test@envss.com.au (after the app's own checks failed)\nTech's comment:\nSample 1 volume says 8400 L but it ran 420 min at 2.0 L/min, should be 840 L.\n\n============================================================\n\nJOB / EVENT\nJob number: 0019358\nEvent: 0019358-001  (id eC)\nProject id: p1\nTurnaround: Standard\nSamples on CoC: 5  (event expects 5)\n\nFAILING CHECKS (6)\n- [BLOCK / APP SIDE] vol_mismatch: Sample 1: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.   value=8400   expected=840\n- [BLOCK / APP SIDE] vol_mismatch_pdf: Sample 1: volume on the CoC page is 8400 L; average flow x run time is 840 L.   value=8400   expected=840\n- [BLOCK / APP SIDE] vol_mismatch: Sample 2: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.   value=8400   expected=840\n- [BLOCK / APP SIDE] vol_mismatch_pdf: Sample 2: volume on the CoC page is 8400 L; average flow x run time is 840 L.   value=8400   expected=840\n- [BLOCK / APP SIDE] vol_mismatch: Sample 3: volume on the spreadsheet is 8190 L; average flow x run time is 819 L.   value=8190   expected=819\n- [BLOCK / APP SIDE] vol_mismatch_pdf: Sample 3: volume on the CoC page is 8190 L; average flow x run time is 819 L.   value=8190   expected=819\n\nWARNINGS (2)\n- rejected_no_volume: Sample 4 is rejected and has no volume. The lab is told it is rejected.\n- collection_weekend: Collection is on a Sunday. Check the lab can collect then.\n\nSAMPLES\n- Sample 0 | id C-BLA"
+  },
+  {
+   "name": "chromebook: error email subject names the event and the failing check",
+   "ok": true,
+   "detail": "[ENVSS Field] CoC error report 0019358-001 - vol_mismatch, vol_mismatch_pdf, vol_mismatch (app v48.19)"
+  },
+  {
+   "name": "chromebook: error email attaches the CoC PDF, the page image(s) and the spreadsheet",
+   "ok": true,
+   "detail": "[\"0019358-001_Laboratory_COC.xlsx\",\"0019358-001_Laboratory_COC.pdf\",\"0019358-001_CoC_page1.png\"]"
+  },
+  {
+   "name": "chromebook: alert row stores failed checks as JSON for the log",
+   "ok": true,
+   "detail": "{\"failed\":[{\"id\":\"vol_mismatch\",\"fix\":\"app\",\"text\":\"Sample 1: volume on the spreadsheet is 8400 L; average flow x run time is 840 L.\",\"value\":8400,\"expected\":840},{\"id\":\"vol_mismatch_pdf\",\"fix\":\"app\",\"text\":\"Sample 1: volume on the CoC page is 8400 L; average flow x run time is 840 L.\",\"value\":8400,"
+  },
+  {
+   "name": "chromebook: screen then says the error report was queued/sent and Send to the lab stays blocked",
+   "ok": true,
+   "detail": "Error report queued\n\nYour report went to john@envss.com.au (28/11/2026 16:10 AWST). Sending to the lab stays blocked for this CoC until the app is updated or the samples change. Your comment: “Sample 1 volume says 8400 L but it ran 420 min at 2.0 L/min, should be 840 L.”"
+  },
+  {
+   "name": "chromebook: reopening keeps Send blocked for the same CoC and app version",
+   "ok": true,
+   "detail": "[\"vol_mismatch\",\"vol_mismatch_pdf\",\"vol_mismatch\",\"vol_mismatch_pdf\",\"vol_mismatch\",\"vol_mismatch_pdf\",\"flagged_open\"]"
+  },
+  {
+   "name": "chromebook: manual flag: with all checks clear the tech can still tick 'Something looks wrong'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: manual flag blocks Send to the lab while ticked",
+   "ok": true,
+   "detail": "I have checked the CoC\nSend CoC to the lab\n\nBlocked while “Something looks wrong” is ticked. Send the error report, or untick it if you were mistaken."
+  },
+  {
+   "name": "chromebook: unticking the flag lets the tech continue (tick again to send)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: manual flag error report: comment on top, marked 'raised by hand', checks list says none failed",
+   "ok": true,
+   "detail": "TECH FLAG: SOMETHING LOOKS WRONG\nRaised by: field.test@envss.com.au (raised by hand from the CoC preview)\nTech's comment:\nThe field blank is listed first but I expected it last, and sample 3 should be Personal not Static.\n\n============================================================\n\nJOB / EVENT\nJob number: 0019358\nEvent: 0019358-001  (id eC)\nProject id: p1\nTurnaround: Standard\nSamples on CoC: 5  (event expects 5)\n\nFAILING CHECKS (0)\n(none: the tech raised the flag by hand)\n\nWARNINGS (2)\n- rejec"
+  },
+  {
+   "name": "chromebook: manual flag: no send to the lab was created",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: privacy lint blocks a tech name, a mobile number and a personal email on the generated spreadsheet (app side)",
+   "ok": true,
+   "detail": "[\"email address @ spreadsheet\",\"tech name @ spreadsheet\",\"phone number @ spreadsheet\"]"
+  },
+  {
+   "name": "chromebook: privacy block is an app problem: Send blocked, tech can send an error report",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: offline: button reads 'Send when online' and still needs the tick",
+   "ok": true,
+   "detail": "Send when online"
+  },
+  {
+   "name": "chromebook: offline: tap saves the send on the device (queue = 1), no row reached the server",
+   "ok": true,
+   "detail": "pending=1"
+  },
+  {
+   "name": "chromebook: offline: screen says it will send when back online and offers to cancel",
+   "ok": true,
+   "detail": "This CoC was already queued on 28/11/2026 16:10 AWST by field.test@envss.com.au. This one is identical, so it won't be sent again by accident.\nThe lab didn't get it: send it again…\nWaiting for signal. You have already tapped Send. It will go to the lab by itself when this device is back online.\nCancel the queued send"
+  },
+  {
+   "name": "chromebook: offline queue holds the safe auto-update (counted as pending)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chromebook: back online: the queued send goes (one row, queued for the worker) without another tap",
+   "ok": true,
+   "detail": "rows=1"
+  },
+  {
+   "name": "chromebook: back online: Drive copies queued after the send row exists",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no requests left the test box (only localhost, jsdelivr CDN, mocked supabase)",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}

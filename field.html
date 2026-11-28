@@ -436,6 +436,7 @@ body.has-fab { padding-bottom: 104px; }
   </div>
   <div id="app"></div>
   <script src="config.js?v=48.19"></script>
+  <script src="coc-send-core.js?v=48.19"></script>
 
   <script src="noise.js"></script>
   <script>
@@ -4224,10 +4225,20 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
     const samplers = [];
     rows.forEach(t => (t.audit || []).forEach(a => { if (/^(START|STOP) pressed/.test(a.action || "")) { const n = operatorName(a.who); if (n && samplers.indexOf(n) === -1) samplers.push(n); } }));
     const who = samplers.join(", ");
+    /* v48.19 (John 28 Nov 2026 AWST, t770u/t769u): the CoC carries the job number and the sample details only. No project name,
+       client, or personal details (no sampler names, no mobile, no personal email). The only contact is the ENVSS office. Results
+       go to lab@, invoices to accounts@, and ESDAT is stated as the required results format. */
+    const CS = window.ENVSS_COC_SEND_CONFIG || {};
     ws.getCell("F5").value = String(p.number || "");
-    ["B5", "B6", "B7"].forEach(a => { ws.getCell(a).value = who; });
+    ["B5", "B6", "B7"].forEach(a => { ws.getCell(a).value = CS.contactLabel || "ENVSS office"; });
+    ws.getCell("B11").value = CS.officePhone || "08 9355 4010";
+    ws.getCell("C11").value = null;                    /* template "Mob:" label */
     ws.getCell("D11").value = null;
-    ws.getCell("B12").value = "lab@envss.com.au";
+    ws.getCell("B12").value = CS.resultsTo || "lab@envss.com.au";
+    ws.getCell("B14").value = CS.invoiceTo || "accounts@envss.com.au";
+    ws.getCell("K12").value = "x"; ws.getCell("K12").alignment = { horizontal: "center", vertical: "middle" }; ws.getCell("K12").font = { name: "Arial", size: 11, bold: true };
+    ws.getCell("L12").value = "Esdat";
+    ws.getCell("F13").value = "Lab Comments:  RESULTS REQUIRED IN ESDAT FORMAT. Email results to " + (CS.resultsTo || "lab@envss.com.au") + ".";
     /* lab turnaround: one "x" in the "Or choose" row (H9 Standard, J9 Same Day, L9 1 day, N9 2 day, P9 3 day) */
     const tat = opts.turnaround || ev.turnaround || "standard";
     Object.keys(COC_TAT_CELL).forEach(k => { ws.getCell(COC_TAT_CELL[k]).value = null; });
@@ -4319,10 +4330,10 @@ function operatorName(who) { return String(who || "").split(" <")[0].split(" · 
       for (let c = c1 + 1; c <= c2; c++) ws.getCell(r, c).value = null;
       ws.mergeCells(r, c1, r, c2);
     });
-    ws.getCell(F0 + 2, 2).value = who;                                  /* Print Name (B78) */
+    ws.getCell(F0 + 2, 2).value = "ENVSS";                              /* Print Name (B78): the company, no personal name (v48.19) */
     ws.getCell(F0 + 3, 2).value = nowStamp(opts.now || new Date());     /* Date & Time (B79) = COC created */
     ws.getCell(F0 + 3, 2).numFmt = "@";
-    ws.getCell(F0 + 4, 2).value = samplers.map(initials).join(", ");    /* Signature (B80) = initials */
+    ws.getCell(F0 + 4, 2).value = "ENVSS Field app";                    /* Signature (B80): no initials (v48.19) */
     box(F0, 1, F0 + foot.length - 1, LASTCOL);
 
     /* column widths: each analyte name wraps inside its own column; the Tests Required band is never
@@ -13020,6 +13031,7 @@ function fixOpen(ts) {
       const d = its.filter(it => it && it.status !== "stopped" && it.status !== "copied" && ((it.kind === "file" && !it.storageUploaded) || (!it.rowInserted && it.jobNumber))).length;
       if (d) r.push(d + " Drive file" + (d === 1 ? "" : "s") + " to upload");
     } catch (e) {}
+    try { const n = window.cocSend && cocSend.pending ? cocSend.pending() : 0; if (n) r.push(n + " CoC send" + (n === 1 ? "" : "s") + " to upload"); } catch (e) {}
     if (st.locInFlight > 0) r.push("START/STOP being saved");
     const cal = halfCalibration(); if (cal) r.push("calibration half entered (" + cal + ")");
     return r;
@@ -14068,6 +14080,8 @@ function fixOpen(ts) {
   render();
 })();
 </script>
+
+<script src="coc-send.js?v=48.19"></script>
 
 </body>
 </html>
