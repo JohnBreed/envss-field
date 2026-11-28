@@ -7,7 +7,7 @@ const CACHE = "envss-field-v48-19"; /* v48.19: lock-down guards. v48.18: same-de
 
 const BASE = new URL("./", self.location).href;
 const PAGE = BASE + "field.html";
-const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "noise.js", "vent.js", "fit-test.js", "fit-test.js?v=" + VERSION, "logo.svg", "vOSog.png", "coc-template.xlsx", "fonts-v38.css", "work/projlist/review.js"].map(p => BASE + p);
+const SAME_ORIGIN_ASSETS = ["field.html", "config.js?v=" + VERSION, "noise.js", "vent.js", "fit-test.js", "fit-test.js?v=" + VERSION, "logo.svg", "vOSog.png", "assets/vent/fume-cupboard.jpg", "assets/vent/spray-booth.jpg", "assets/vent/capture-hood.jpg", "assets/vent/downdraft-table.jpg", "assets/vent/biosafety-cabinet.jpg", "assets/vent/smoke-airflow.jpg", "coc-template.xlsx", "fonts-v38.css", "work/projlist/review.js"].map(p => BASE + p);
 const CDN_ASSETS = [
   "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
   "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js",

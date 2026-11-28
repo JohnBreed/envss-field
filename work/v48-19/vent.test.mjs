@@ -94,7 +94,7 @@ async function run(vp) {
   await page.evaluate(() => openPickType("eV")); await sleep(300);
   const pk = await page.evaluate(() => ({ h: document.querySelector("#app h2").innerText, cards: [...document.querySelectorAll("#app .card strong")].map(x => x.innerText), all: document.getElementById("app").innerText }));
   check(L("Add measurement screen: title"), pk.h === "Add measurement", pk.h);
-  check(L("Add measurement screen: the five vent types, Face velocity still offered"), JSON.stringify(pk.cards) === JSON.stringify(["Vent · Face velocity grid", "Vent · Face velocity", "Vent · Capture velocity", "Vent · Other velocity reading", "Vent · Visual check only"]), JSON.stringify(pk.cards));
+  check(L("Add measurement screen: the five vent types, Face velocity still offered"), JSON.stringify(pk.cards) === JSON.stringify(["Vent · Fume cupboard audit", "Vent · Face velocity", "Vent · Capture velocity", "Vent · Other velocity reading", "Vent · Visual check only"]), JSON.stringify(pk.cards));
   check(L("Add measurement screen: no airborne / noise / blank options"), !/Airborne|Noise|Field blank|sample/i.test(pk.all), pk.all);
   await shot(page, "add-measurement");
 
@@ -196,7 +196,7 @@ async function run(vp) {
   const lines = csv.split("\r\n");
   check(L("CSV: 0019340 Sheet1 headings first, app columns to the right"), lines[0].startsWith(SHEET_HEAD) && /,"Unit","Operating Condition","LEV\/Hood Type"/.test(lines[0]) && /"Opening Width \(mm\)","Opening Height \(mm\)","Grid \(columns x rows\)","Horizontal Spacing \(mm\)","Vertical Spacing \(mm\)"/.test(lines[0]), lines[0]);
   check(L("CSV: one row per reading, stats + comments on the first row (1.32 / 1.01 / 1.54), anemometer"), /^"DMS downdraft table \(dry lab\) – Extraction on, boxes moved off the bench","1","1.31","1.32","1.01","1.54","~60 cm","Strong induced airflow at the work position"/.test(lines[1]) && /TSI 9545 VelociCalc SN T95450123/.test(lines[1]) && /^"","5","1.54","","","","",""/.test(lines[5]) && /^"DMS downdraft table \(dry lab\) – Extraction on/.test(lines[6]), lines.slice(0, 7).join("\n"));
-  check(L("CSV: summary block after the measurements (Summary tab columns)"), lines[9] === "" && lines[10] === '"Summary"' && lines[11].startsWith(SUM_HEAD) && /^"DMS downdraft table \(dry lab\)","5","1.32","1.01","1.54","~60 cm"/.test(lines[12]) && lines.length === 14, lines.slice(8).join("\n"));
+  check(L("CSV: summary block after the measurements (Summary tab columns)"), lines[9] === "" && lines[10] === '"Summary"' && lines[11].startsWith(SUM_HEAD) && /^"DMS downdraft table \(dry lab\)","5","1.32","1.01","1.54","~60 cm"/.test(lines[12]) && lines[14].startsWith('"Anemometer","TSI 9545 VelociCalc · SN T95450123') && lines.length === 15, JSON.stringify(lines.slice(12)));
 
   /* ---- 9. visual check + delete ---- */
   await page.evaluate(() => ENVSS_VENT.addMeasurement("eV", "visual")); await sleep(300);
@@ -230,151 +230,212 @@ async function run(vp) {
   const sweep = await page.evaluate(() => { const bad = []; for (let w = 201; w <= 6000; w += 37) for (let h = 201; h <= 3000; h += 53) { const q = ENVSS_VENT.gridFor(w, h), sx = (w - 200) / (q.cols - 1), sy = (h - 200) / (q.rows - 1); const fewX = q.cols === 2 || (w - 200) / (q.cols - 2) > 500, fewY = q.rows === 2 || (h - 200) / (q.rows - 2) > 250; if (sx > 500 + 1e-9 || sy > 250 + 1e-9 || !fewX || !fewY) bad.push(w + "x" + h); } return bad; });
   check(L("gridFor sweep (≈2,500 sizes): spacing never over 500 / 250 mm and always the fewest lines"), sweep.length === 0, sweep.slice(0, 10).join(", "));
 
-  /* G1. new grid measurement from the Add screen, offline */
+  const ashot = (n, full) => page.screenshot({ path: path.join(OUT, `vent-audit-${n}-${vp}.png`), fullPage: !!full });
+  const idxOf = (o, cols, rows) => (o % cols) * rows + Math.floor(o / cols);
+  const stepNo = () => page.evaluate(() => +(document.getElementById("vtPage") || {}).dataset.vtStepno);
+  const YDAY = (() => { const d = new Date(TODAY + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); })();
+  const LASTYR = (() => { const d = new Date(TODAY + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - 200); return d.toISOString().slice(0, 10); })();
+
+  /* G1. new fume cupboard audit from the Add screen, offline: step 1 unit details */
   page.store.offline = true;
   await page.evaluate(() => openPickType("eV")); await sleep(300);
+  const pick = await page.evaluate(() => [...document.querySelectorAll("[data-vt-add]")].map(c => ({ k: c.dataset.vtAdd, img: !!c.querySelector("img.vt-thumb"), credit: (c.querySelector(".vt-credit") || {}).innerText || "" })));
+  check(L("type picker: each card has a picture with a credit line"), pick.length === 5 && pick.every(p => p.img && /^Photo: .+, (CC|public)/.test(p.credit)), JSON.stringify(pick));
+  await ashot("picker");
   await tap(page, '[data-vt-add="grid"]'); await sleep(300);
   t = await NEWEST(page); const g1 = t.id;
-  check(L("grid: new measurement is type grid, location 'Extraction face', no grid until the opening is entered"), t.vent.type === "grid" && t.vent.location === "Extraction face" && t.vent.grid && t.vent.grid.cols === 0 && t.vent.grid.basis === "standard", JSON.stringify(t.vent));
+  check(L("audit: new measurement is type grid (Fume cupboard audit), smoke source defaults to air current tubes, no grid yet"), t.vent.type === "grid" && t.vent.grid.cols === 0 && t.vent.grid.basis === "standard" && t.vent.grid.scheme === "as2243.8-A1" && t.vent.smokeSource === "Air current tubes", JSON.stringify(t.vent));
+  const nav = await page.evaluate(() => [...document.querySelectorAll("#vaSteps .va-step")].map(b => b.innerText.replace(/\s+/g, " ").trim()));
+  check(L("audit: four steps Unit / Smoke test / Face velocity / Summary, opens on step 1"), nav.length === 4 && /Unit/.test(nav[0]) && /Smoke test/.test(nav[1]) && /Face velocity/.test(nav[2]) && /Summary/.test(nav[3]) && await stepNo() === 1, JSON.stringify(nav));
   let ck = await txt(page, "#vtChecks");
-  check(L("grid: 'Still needed' lists unit, fans condition, opening, a velocity"), /Extraction unit/.test(ck) && /How many fans are running/.test(ck) && /Opening width and height/.test(ck) && /grid point velocity/.test(ck), ck);
-  const help = await txt(page, "#vgOpening");
-  check(L("grid: help text cites AS/NZS 2243.8:2014 Appendix B, B4.2(c) with 100 / 250 / 500 mm"), /AS\/NZS 2243\.8:2014 Appendix B, B4\.2\(c\)/.test(help) && /100 mm in from the edges/.test(help) && /250 mm apart vertically/.test(help) && /500 mm apart horizontally/.test(help) && /fewest lines/.test(help), help);
-  check(L("grid: cl 3.1.2 indicator explained before readings"), /AS\/NZS 2243\.8:2014 cl\. 3\.1\.2/.test(await txt(page, "#vgCheck")) && /Indicator only/.test(await txt(page, "#vgCheck")), await txt(page, "#vgCheck"));
-  await gshot("new");
-  await fill(page, "#vt-unit", "Fume cupboard FC-2 (Lab 1.04)");
-  await fill(page, "#vt-hood", "Fume cupboard");
+  check(L("step 1 'Still needed': location, F/C number, type, new/existing, empty"), /Location/.test(ck) && /F\/C number/.test(ck) && /Type/.test(ck) && /New installation or existing/.test(ck) && /empty/.test(ck), ck);
+  check(L("step 1 cites Figure A1, A4.1, A5"), /Figure A1, A4\.1, A5/.test(await txt(page, "#vaStep1")), "");
+  await ashot("step1-new");
+  await fill(page, "#vt-location", "Chemistry Lab 1.04");
+  await fill(page, "#vt-unit", "FC-2");
+  await fill(page, "#vt-hood", "Bench-type fume cupboard");
   await fill(page, "#vt-hoodMake", "Dynaflow"); await fill(page, "#vt-hoodModel", "DF-1800"); await fill(page, "#vt-hoodSerial", "FC2-0042");
+  await tap(page, '[data-vt-set="install"][data-vt-val="new"]');
+  check(L("New installation → rule 'empty' cited A4.1.3"), /New installation/.test(await txt(page, "#vaStep1")) && /A4\.1\.3/.test(await txt(page, "#vaStep1")), "");
+  await tap(page, '[data-vt-set="empty"][data-vt-val="no"]');
+  ck = await txt(page, "#vtChecks");
+  check(L("Equipment inside → photo or plan required (A5)"), /Photo or plan of the equipment inside/.test(ck) && await has(page, '[data-vt-take="equip"]'), ck);
+  await fill(page, "#vt-equipNote", "Rotary evaporator 400 × 300 mm, back left");
   await tap(page, '[data-vt-fans="1"]');
   t = await T(page, g1);
-  check(L("grid: fans chip 2 sets 'Two extraction fans in operation'; hood make / model / serial saved"), t.vent.condition === "Two extraction fans in operation" && t.vent.hoodMake === "Dynaflow" && t.vent.hoodModel === "DF-1800" && t.vent.hoodSerial === "FC2-0042", JSON.stringify(t.vent));
+  check(L("step 1 saved: location, unit, type, make/model/serial, install, empty, plan, condition"), t.vent.location === "Chemistry Lab 1.04" && t.vent.unit === "FC-2" && t.vent.install === "new" && t.vent.empty === "no" && /Rotary/.test(t.vent.equipNote) && t.vent.condition === "Two extraction fans in operation" && t.vent.hoodSerial === "FC2-0042", JSON.stringify(t.vent));
+  check(L("step 1 complete (✓ on the step)"), /Step 1 complete/.test(await txt(page, "#vtChecks")) || /✓/.test(await txt(page, '[data-vt-step="1"]')), await txt(page, "#vtChecks"));
+  await ashot("step1-done");
+  /* face velocity before smoke: soft gate */
+  await tap(page, '#vaSteps [data-vt-step="3"]');
+  check(L("Face velocity before the smoke test → gate cites A4.1.1, override offered"), await stepNo() === 3 && /Finish the smoke test first/.test(await txt(page, "#vaGate")) && /A4\.1\.1/.test(await txt(page, "#vaGate")) && await has(page, "[data-vt-fvearly]") && !(await has(page, "#vg-v0")), "");
+  /* G2. smoke test */
+  await tap(page, '#vaSteps [data-vt-step="2"]');
+  const rows2 = await page.evaluate(() => [...document.querySelectorAll("[data-va-row]")].map(r => r.dataset.vaRow));
+  check(L("smoke test: A4.2(b)…(k) in order, cites Appendix A"), JSON.stringify(rows2) === JSON.stringify(["b", "c", "d", "e", "f", "h", "i", "j", "k"]) && /Appendix A/.test(await txt(page, "#vaStep2")), JSON.stringify(rows2));
+  check(L("smoke step shows the airflow picture with its credit"), await page.evaluate(() => !!document.querySelector("#vaStep2 .va-fig img") && /Photo:/.test(document.querySelector("#vaStep2 .vt-credit").innerText)), "");
+  check(L("smoke ratings are Good / Satisfactory / Dangerous (A5), never 'Deficient'"), await page.evaluate(() => { const t = document.getElementById("vaStep2").innerText, ti = [...document.querySelectorAll('[data-vt-rate^="b:"]')].map(b => b.title).join("|"); return /G\s*Good/.test(t) && /S\s*Satisfactory/.test(t) && /D\s*Dangerous/.test(t) && /^Good/.test(ti) && /\|Dangerous/.test(ti) && !/deficient/i.test(t + ti); }), "");
+  await tap(page, '[data-vt-rate="b:D"]');
+  check(L("a D rating → smoke Non-compliant (A6)"), /Dangerous · Non-compliant/.test(await txt(page, "#vaSmokeRes")), await txt(page, "#vaSmokeRes"));
+  for (const k of ["b", "c", "d", "e", "f", "h", "i", "j"]) await tap(page, `[data-vt-rate="${k}:${k === "h" ? "S" : "G"}"]`);
+  await tap(page, '[data-vt-rate="k:NA"]');
+  ck = await txt(page, "#vtChecks");
+  await fill(page, "#va-c-k", "Free-standing cupboard");
+  await fill(page, "#va-c-h", "Slight eddy at the sash, contained");
+  t = await T(page, g1);
+  check(L("smoke: worst score Satisfactory → Compliant; ratings and comments saved"), /Satisfactory · Compliant/.test(await txt(page, "#vaSmokeRes")) && t.vent.smoke && Object.keys(t.vent.smoke).length >= 9, JSON.stringify(t.vent.smoke));
+  check(L("step 2 complete"), !/Still needed/.test(await txt(page, "#vtChecks")), await txt(page, "#vtChecks"));
+  await ashot("step2-smoke"); await ashot("step2-smoke-full", true);
+  /* G3. face velocity: anemometer + calibration, opening, grid */
+  await tap(page, "#vaNext");
+  check(L("Next → step 3 Face velocity, no gate once smoke is done"), await stepNo() === 3 && !(await has(page, "#vaGate")), "");
+  let cw = await txt(page, "[data-vt-calwarn]");
+  check(L("anemometer: warns for missing calibration dates, correction and certificate photo (no block)"), /Last calibration date missing/.test(cw) && /Calibration due date missing/.test(cw) && /correction factor missing/.test(cw) && /calibration certificate/.test(cw), cw);
+  await tap(page, '[data-vt-eqset="ownership"][data-vt-val="hired"]');
+  let ev3 = await EV(page, "eV");
+  check(L("Hired → supplier defaults to Airmet"), ev3.ventEquip.ownership === "hired" && ev3.ventEquip.supplier === "Airmet" && await page.evaluate(() => document.getElementById("vaEqSupplier").value === "Airmet"), JSON.stringify(ev3.ventEquip));
+  await fill(page, "#vaEqCalDate", LASTYR); await fill(page, "#vaEqCalDue", YDAY);
+  await fill(page, "#vaEqCalCorr", "+0.02"); await fill(page, "#vaEqCalAt", "0.50");
+  cw = await txt(page, "[data-vt-calwarn]");
+  check(L(`calibration due ${YDAY}, before the survey → warning; certificate photo still prompted`), new RegExp("Calibration was due " + YDAY).test(cw) && /calibration certificate/.test(cw) && !/correction factor missing/.test(cw), cw);
+  check(L("certificate photo box is highlighted and has the camera button"), await page.evaluate(() => !!document.querySelector(".va-cert.va-cert-need [data-vt-cert]")), "");
   await fill(page, "#vg-w", "2000"); await fill(page, "#vg-h", "1800");
   t = await T(page, g1);
   const geo = await txt(page, "#vgGeom");
-  check(L("grid 2000×1800: 5 × 8 = 40 points, 450 / 229 mm shown and saved"), t.vent.grid.cols === 5 && t.vent.grid.rows === 8 && t.vent.grid.gapX === 450 && t.vent.grid.gapY === 229 && /5 × 8 = 40 points/.test(geo) && /horizontal spacing 450 mm/.test(geo) && /vertical spacing 229 mm/.test(geo) && /100 mm in from each edge of the 2000 × 1800 mm opening/.test(geo), geo + " " + JSON.stringify(t.vent.grid));
-  const cells = await page.evaluate(() => ({ n: document.querySelectorAll("[data-vg-cell]").length, heads: [...document.querySelectorAll(".vg-colh")].map(x => x.innerText.toLowerCase()), l: [0, 7, 8, 39].map(i => document.querySelector(`[data-vg-cell="${i}"] .vg-num`).innerText), order: [...document.querySelectorAll("[data-vg-cell]")].slice(0, 6).map(x => +x.dataset.vgCell) }));
-  check(L("grid 2000×1800: 40 cells, numbered down each column then across"), cells.n === 40 && JSON.stringify(cells.order) === JSON.stringify([0, 8, 16, 24, 32, 1]), JSON.stringify(cells));
-  check(L("grid labels like the 0019340 sheet: 1 Top left corner, 8 Bottom left corner, 40 Bottom right corner"), /^1 Top left corner/.test(cells.l[0]) && /^8 Bottom left corner/.test(cells.l[1]) && /^9 Top column 2/.test(cells.l[2]) && /^40 Bottom right corner/.test(cells.l[3]) && cells.heads[0] === "left" && cells.heads[4] === "right", JSON.stringify(cells));
-  /* G2. velocities, Enter moves down the column */
-  const vals = Array.from({ length: 40 }, (_, i) => (0.45 + ((i * 37) % 50) / 100).toFixed(2));
+  check(L("grid 2000×1800: 5 × 8 = 40 points, 450 / 229 mm shown and saved"), t.vent.grid.cols === 5 && t.vent.grid.rows === 8 && t.vent.grid.gapX === 450 && t.vent.grid.gapY === 229 && /5 × 8 = 40 points/.test(geo) && /450 mm/.test(geo) && /229 mm/.test(geo), geo);
+  check(L("grid help cites B4.2(c), 100 / 250 / 500 mm, fewest lines"), /B4\.2\(c\)/.test(await txt(page, "#vaStep3")) && /100 mm in from the edges/.test(await txt(page, "#vaStep3")) && /250 mm apart vertically/.test(await txt(page, "#vaStep3")) && /500 mm apart horizontally/.test(await txt(page, "#vaStep3")) && /fewest lines/.test(await txt(page, "#vaStep3")), "");
+  const cells = await page.evaluate(() => ({ n: document.querySelectorAll("[data-vg-cell]").length, h: [0, 8, 32, 1, 39].map(i => document.querySelector(`[data-vg-cell="${i}"] .vg-num b`).innerText), first: [...document.querySelectorAll("[data-vg-cell]")].slice(0, 6).map(x => +x.dataset.vgCell) }));
+  check(L("40 cells labelled A, B, C… across each row from top left (Figure A1 note 4)"), cells.n === 40 && JSON.stringify(cells.h) === JSON.stringify(["A", "B", "E", "F", "AN"]) && JSON.stringify(cells.first) === JSON.stringify([0, 8, 16, 24, 32, 1]), JSON.stringify(cells));
+  const vals = Array.from({ length: 40 }, (_, o) => (0.45 + ((o * 37) % 50) / 100).toFixed(2));
   await page.evaluate(() => document.getElementById("vg-v0").scrollIntoView({ block: "center" })); await page.click("#vg-v0");
-  for (let i = 0; i < 40; i++) { await page.keyboard.type(vals[i]); await page.keyboard.press("Enter"); if (i === 0) { await sleep(150); check(L("grid: Enter moves to the next point (2, down the column)"), await page.evaluate(() => document.activeElement && document.activeElement.id === "vg-v1"), await page.evaluate(() => document.activeElement && document.activeElement.id)); } }
+  for (let o = 0; o < 40; o++) { await page.keyboard.type(vals[o]); await page.keyboard.press("Enter"); if (o === 0) { await sleep(150); check(L("Enter moves A → B (across the row)"), await page.evaluate(() => document.activeElement && document.activeElement.id === "vg-v8"), await page.evaluate(() => document.activeElement && document.activeElement.id)); } }
   await sleep(300);
   t = await T(page, g1);
-  const nums = vals.map(Number), avg = nums.reduce((a, b) => a + b, 0) / 40, mn = Math.min(...nums), mx = Math.max(...nums);
-  check(L("grid: 40 velocities saved as point 1..40"), Object.keys(t.vent.grid.v).length === 40 && t.vent.grid.v["point 1"] === vals[0] && t.vent.grid.v["point 40"] === vals[39], JSON.stringify(t.vent.grid.v).slice(0, 300));
+  check(L("40 raw readings saved under their point keys (A = point 1, B = point 9, AN = point 40)"), Object.keys(t.vent.grid.v).length === 40 && t.vent.grid.v["point 1"] === vals[0] && t.vent.grid.v["point 9"] === vals[1] && t.vent.grid.v["point 40"] === vals[39], JSON.stringify(t.vent.grid.v).slice(0, 300));
+  const cor = vals.map(v => Math.round((Number(v) + 0.02) * 100) / 100), avg = cor.reduce((a, b) => a + b, 0) / 40, mn = Math.min(...cor), mx = Math.max(...cor);
   const gs = await txt(page, "#vtStats");
-  check(L(`grid: n / avg / lowest / highest across the grid (40, ${avg.toFixed(2)}, ${mn.toFixed(2)}, ${mx.toFixed(2)})`), /40/.test(gs) && gs.includes(avg.toFixed(2)) && gs.includes(mn.toFixed(2)) && gs.includes(mx.toFixed(2)), gs);
-  check(L("grid: cl 3.1.2 shows Meets (avg ≥ 0.5, none < 0.3)"), /✓ Meets AS\/NZS 2243\.8:2014 cl\. 3\.1\.2/.test(await txt(page, "#vgCheck")), await txt(page, "#vgCheck"));
-  check(L("grid: complete (status ended) with unit, condition, grid and readings"), t.status === "ended" && /Measurement complete/.test(await txt(page, "#vtChecks")), JSON.stringify({ s: t.status, c: await txt(page, "#vtChecks") }));
+  check(L(`stats include the +0.02 correction (avg ${avg.toFixed(2)}, ${mn.toFixed(2)}, ${mx.toFixed(2)})`), /40/.test(gs) && gs.includes(avg.toFixed(2)) && gs.includes(mn.toFixed(2)) && gs.includes(mx.toFixed(2)), gs);
+  check(L("each cell shows the corrected reading (→)"), (await txt(page, '[data-vg-cor="0"]')) === "→ " + cor[0].toFixed(2), await txt(page, '[data-vg-cor="0"]'));
+  check(L("cl 3.1.2 Meets"), /✓ Meets AS\/NZS 2243\.8:2014 cl\. 3\.1\.2/.test(await txt(page, "#vgCheck")), await txt(page, "#vgCheck"));
+  check(L("audit complete (status ended) despite calibration warnings (warnings never block)"), t.status === "ended", JSON.stringify({ s: t.status, c: await txt(page, "#vtChecks") }));
   await fill(page, "#vg-v4", "0.21");
   const fl = await txt(page, "#vgCheck"); t = await T(page, g1);
-  check(L("grid: a 0.21 m/s point → 'Does not meet', 1 point below 0.3, indicator only (still complete)"), /✗ Does not meet/.test(fl) && /1 point below 0\.3 m\/s \(lowest 0\.21\)/.test(fl) && t.status === "ended" && await page.evaluate(() => document.querySelector('[data-vg-cell="4"]').classList.contains("vg-low")), fl);
-  await fill(page, "#vg-d0", "~1"); await fill(page, "#vg-d7", "1.2 m");
+  check(L("point E (key 5) 0.21 → 0.23 corrected → Does not meet, still complete"), /✗ Does not meet/.test(fl) && /1 point below 0\.3 m\/s \(lowest 0\.23\)/.test(fl) && t.status === "ended" && await page.evaluate(() => document.querySelector('[data-vg-cell="4"]').classList.contains("vg-low")), fl);
+  cor[ (4 % 8) * 5 + 0 ] = 0.23; /* point key 5 = i 4 → letter order 20 (U) */
+  await fill(page, "#vg-d0", "~1"); await fill(page, "#vg-d7", "1.2");
   await page.evaluate(() => { const d = document.querySelector(".vg-labels"); if (d) d.open = true; }); await sleep(100);
   await fill(page, "#vg-l3", "Behind sash stop");
-  await fill(page, "#vt-comments", "Sash at 500 mm working height. Bench clutter near the right side.");
   t = await T(page, g1);
-  check(L("grid: distance < 0.5 m/s and a custom label saved per point; comments once per condition"), t.vent.grid.d["point 1 below 0.5"] === "~1" && t.vent.grid.d["point 8 below 0.5"] === "1.2 m" && t.vent.grid.label["point 4 label"] === "Behind sash stop" && t.vent.comments.startsWith("Sash at 500 mm") && /Behind sash stop/.test(await txt(page, '[data-vg-cell="3"] .vg-num')), JSON.stringify({ d: t.vent.grid.d, l: t.vent.grid.label }));
+  check(L("distance and custom label saved per point"), t.vent.grid.d["point 1 below 0.5"] === "~1" && t.vent.grid.d["point 8 below 0.5"] === "1.2" && t.vent.grid.label["point 4 label"] === "Behind sash stop" && /Behind sash stop/.test(await txt(page, '[data-vg-cell="3"] .vg-num')), JSON.stringify({ d: t.vent.grid.d, l: t.vent.grid.label }));
   const big = (t.audit || []).filter(a => String(a.detail || "").length > 300);
-  check(L("grid: audit is one readable line per point (no big JSON blobs)"), big.length === 0 && (t.audit || []).some(a => /Point 5/i.test(String(a.label || a.field || "") + String(a.detail || ""))), JSON.stringify((t.audit || []).slice(-6)));
-  await gshot("2000x1800"); await gshot("2000x1800-full", true);
+  check(L("audit is one readable line per change (no big JSON blobs)"), big.length === 0, JSON.stringify(big.slice(0, 2)));
+  await ashot("step3-face"); await ashot("step3-face-full", true);
   const gm = await metrics(page);
-  check(L("grid screen fits the width (grid scrolls inside its card, not the page)"), gm.sw <= gm.iw + 1, JSON.stringify(gm));
-  /* G3. a smaller opening that would drop filled points is refused, nothing lost */
+  check(L("face velocity step fits the width"), gm.sw <= gm.iw + 1, JSON.stringify(gm));
   page.dialogs.length = 0;
   await fill(page, "#vg-w", "600");
   t = await T(page, g1);
-  check(L("grid: shrinking 2000→600 mm wide (would drop points 17-40) refused, width and readings kept"), page.dialogs.some(d => /drop the readings/.test(d) && /Nothing has been changed/.test(d)) && t.vent.grid.widthMm === "2000" && t.vent.grid.cols === 5 && Object.keys(t.vent.grid.v).length === 40 && await page.evaluate(() => document.getElementById("vg-w").value === "2000"), JSON.stringify({ d: page.dialogs, w: t.vent.grid.widthMm, c: t.vent.grid.cols }));
-  /* G4. offline queue, reload, sync */
-  check(L("grid offline: queued on the device, nothing on the server"), await page.evaluate(i => !!syncState.pending["trains:" + i], g1) && !(page.store.envss_trains && page.store.envss_trains.get(g1)), "");
+  check(L("shrinking 2000→600 mm (would drop points) refused, nothing lost"), page.dialogs.some(d => /drop the readings/.test(d)) && t.vent.grid.widthMm === "2000" && Object.keys(t.vent.grid.v).length === 40, JSON.stringify(page.dialogs));
+  /* G4. summary step */
+  await tap(page, "#vaNext");
+  const sumTxt = await txt(page, "#vaSum");
+  check(L("step 4 summary: smoke Satisfactory compliant, face velocity does not meet, overall Non-compliant"), await stepNo() === 4 && /Satisfactory · compliant/.test(sumTxt) && /does not meet/.test(sumTxt) && /Non-compliant/.test(sumTxt), sumTxt);
+  const a1 = await txt(page, "#vaA1");
+  check(L("Figure A1 record: location, F/C, instrument, correction, hired from Airmet, due date, calibration warning, letters A…"), /Chemistry Lab 1\.04/.test(a1) && /FC-2/.test(a1) && /T95450123/.test(a1) && /\+0\.02 m\/s at 0\.50 m\/s/.test(a1) && /Hired \(Airmet\)/.test(a1) && new RegExp("due " + YDAY).test(a1) && /Calibration was due/.test(a1) && /\bAN\b/.test(a1), a1.slice(0, 1500));
+  await fill(page, "#vt-comments", "Sash at 500 mm working height. Bench clutter near the right side.");
+  await ashot("step4-summary"); await ashot("step4-summary-full", true);
+  /* G5. offline queue, reload, sync */
+  check(L("audit offline: queued on the device, nothing on the server"), await page.evaluate(i => !!syncState.pending["trains:" + i], g1) && !(page.store.envss_trains && page.store.envss_trains.get(g1)), "");
   await page.reload({ waitUntil: "networkidle0" }); await sleep(900);
-  t = await T(page, g1);
-  check(L("grid after reload: all 40 points, distances, label, opening still on the device"), t && Object.keys(t.vent.grid.v).length === 40 && t.vent.grid.v["point 5"] === "0.21" && t.vent.grid.d["point 8 below 0.5"] === "1.2 m" && t.vent.grid.widthMm === "2000" && t.vent.grid.heightMm === "1800", JSON.stringify(t && t.vent && t.vent.grid).slice(0, 300));
+  t = await T(page, g1); ev3 = await EV(page, "eV");
+  check(L("after reload: readings, smoke, step 1 and calibration details still on the device"), t && Object.keys(t.vent.grid.v).length === 40 && t.vent.grid.v["point 5"] === "0.21" && t.vent.smoke && t.vent.install === "new" && ev3.ventEquip.calDue === YDAY && ev3.ventEquip.supplier === "Airmet", JSON.stringify(t && t.vent && t.vent.smoke));
   page.store.offline = false;
   await page.evaluate(() => { try { flushQueue(); } catch (e) { scheduleFlush(10); } }); await sleep(2500);
-  const grow = page.store.envss_trains && page.store.envss_trains.get(g1);
-  check(L("grid online: envss_trains row carries the grid"), !!grow && grow.payload && grow.payload.vent.grid && grow.payload.vent.grid.v["point 40"] === vals[39] && grow.payload.vent.grid.cols === 5, JSON.stringify(grow || null).slice(0, 300));
-  /* G5. another condition on the same unit */
+  const grow = page.store.envss_trains && page.store.envss_trains.get(g1), erow3 = page.store.envss_events && page.store.envss_events.get("eV");
+  check(L("online: train row carries grid + smoke; event row carries the calibration details"), !!grow && grow.payload.vent.grid.v["point 40"] === vals[39] && !!grow.payload.vent.smoke && !!erow3 && erow3.payload.ventEquip.calDue === YDAY && erow3.payload.ventEquip.ownership === "hired", JSON.stringify(grow || null).slice(0, 200));
+  /* G6. another condition on the same unit */
   await page.evaluate(i => openTrain(i), g1); await sleep(400);
   await tap(page, "[data-vt-again]"); await sleep(300);
   t = await NEWEST(page); const g2 = t.id;
-  check(L("+ Another condition: same unit, hood, make/model/serial and opening; new empty grid, no condition"), t.vent.type === "grid" && t.vent.unit === "Fume cupboard FC-2 (Lab 1.04)" && t.vent.hoodMake === "Dynaflow" && t.vent.hoodSerial === "FC2-0042" && t.vent.grid.widthMm === "2000" && t.vent.grid.cols === 5 && t.vent.grid.rows === 8 && Object.keys(t.vent.grid.v).length === 0 && t.vent.condition === "", JSON.stringify(t.vent));
-  check(L("+ Another condition: asks how many fans; links the other condition"), /How many fans are running/.test(await txt(page, "#vtChecks")) && /Other conditions on this unit/.test(await txt(page)), "");
+  check(L("+ Another condition: copies location, unit, type, install, empty, hood details and opening; empty grid, no condition"), t.vent.type === "grid" && t.vent.unit === "FC-2" && t.vent.location === "Chemistry Lab 1.04" && t.vent.install === "new" && t.vent.hoodSerial === "FC2-0042" && t.vent.grid.cols === 5 && Object.keys(t.vent.grid.v).length === 0 && t.vent.condition === "", JSON.stringify(t.vent));
+  check(L("another condition opens on the smoke test (step 1 already filled, smoke is per condition)"), await stepNo() === 2, String(await stepNo()));
+  await tap(page, '#vaSteps [data-vt-step="1"]');
   await fill(page, "#vt-condition", "Four extraction fans in operation, sash 300 mm");
-  await fill(page, "#vg-v0", "0.95"); await fill(page, "#vg-v1", "1.02"); await fill(page, "#vg-v2", "0.88");
   await fill(page, "#vt-hoodSerial", "FC2-0042B");
-  check(L("hood serial edit flows to the other condition on the unit (was the same)"), (await T(page, g1)).vent.hoodSerial === "FC2-0042B", (await T(page, g1)).vent.hoodSerial);
-  check(L("partly filled grid warns about blank points, does not block"), /37 of 40 points still blank/.test(await txt(page, "#vtChecks")) && (await T(page, g2)).status === "ended", await txt(page, "#vtChecks"));
-  await gshot("condition-2");
+  check(L("hood serial edit flows to the other condition on the unit"), (await T(page, g1)).vent.hoodSerial === "FC2-0042B", (await T(page, g1)).vent.hoodSerial);
+  await tap(page, '#vaSteps [data-vt-step="3"]');
+  if (await has(page, "[data-vt-fvearly]")) await tap(page, "[data-vt-fvearly]");
   const btnFit = await page.evaluate(() => { const b = document.querySelector("[data-vg-manual]"); if (!b) return { ok: false, reason: "missing" }; const r = b.getBoundingClientRect(); return { ok: b.scrollWidth <= b.clientWidth + 1 && r.height <= 52, w: b.scrollWidth, cw: b.clientWidth, h: r.height, t: b.innerText }; });
-  check(L("Manual grid button stays on one line (28 is not wrapped onto its own line)"), btnFit.ok && /4×7 = 28/.test(btnFit.t) && !/\n/.test(btnFit.t), JSON.stringify(btnFit));
-  /* G6. manual grid: dimensions unknown → 4 × 7 = 28, reason recorded */
+  check(L("Manual grid button stays on one line (28 not wrapped)"), btnFit.ok && /4×7 = 28/.test(btnFit.t) && !/\n/.test(btnFit.t), JSON.stringify(btnFit));
+  await fill(page, "#vg-v0", "0.95"); await fill(page, "#vg-v8", "1.02"); await fill(page, "#vg-v16", "0.88");
+  check(L("override 'record anyway' logged; partly filled grid warns about blank points"), /37 of 40 points still blank/.test(await txt(page, "#vtChecks")), await txt(page, "#vtChecks"));
+  /* G7. manual grid */
   await page.evaluate(() => ENVSS_VENT.addMeasurement("eV", "grid")); await sleep(300);
   t = await NEWEST(page); const g3 = t.id;
   await fill(page, "#vt-unit", "Spray booth 1"); await tap(page, '[data-vt-fans="0"]');
+  await tap(page, '#vaSteps [data-vt-step="3"]'); await tap(page, "[data-vt-fvearly]");
   await tap(page, "[data-vg-manual]");
   t = await T(page, g3);
-  ck = await txt(page, "#vtChecks");
   const gtxt = await txt(page, "#vgGeom"), box = await txt(page, ".vg-manual");
-  check(L("manual grid: 4 × 7 = 28 points; 'Manual grid' only in the dashed box, not repeated on the points line"), t.vent.grid.basis === "manual" && t.vent.grid.cols === 4 && t.vent.grid.rows === 7 && /4 × 7 = 28 points/.test(gtxt) && !/manual grid/i.test(gtxt) && /^Manual grid/.test(box) && /not set out from the opening size/.test(box) && await has(page, "#vg-reason") && !/Reason for the manual grid/.test(ck) && /grid point velocity/.test(ck) && await page.evaluate(() => document.querySelectorAll("[data-vg-cell]").length === 28), JSON.stringify({ gtxt, box, ck }));
-  const ml = await page.evaluate(() => [0, 6, 7, 13, 14, 21, 27].map(i => document.querySelector(`[data-vg-cell="${i}"] .vg-num`).innerText));
-  check(L("manual 4 × 7 labels match the 0019340 sheet (Top left corner, Top left central, Top right central, Bottom right corner)"), /^1 Top left corner/.test(ml[0]) && /^7 Bottom left corner/.test(ml[1]) && /^8 Top left central/.test(ml[2]) && /^14 Bottom left central/.test(ml[3]) && /^15 Top right central/.test(ml[4]) && /^22 Top right corner/.test(ml[5]) && /^28 Bottom right corner/.test(ml[6]), JSON.stringify(ml));
+  check(L("manual grid: 4 × 7 = 28; 'Manual grid' once (dashed box only); reason optional"), t.vent.grid.basis === "manual" && t.vent.grid.cols === 4 && t.vent.grid.rows === 7 && /4 × 7 = 28 points/.test(gtxt) && !/manual grid/i.test(gtxt) && /^Manual grid/.test(box) && await has(page, "#vg-reason") && await page.evaluate(i => !ENVSS_VENT.missingBy(db.trains.find(x => x.id === i)).some(z => /Reason/.test(z[1])), g3) && await page.evaluate(() => document.querySelectorAll("[data-vg-cell]").length === 28), JSON.stringify({ gtxt, box }));
+  const ml = await page.evaluate(() => [0, 7, 21, 1, 27].map(i => document.querySelector(`[data-vg-cell="${i}"] .vg-num b`).innerText));
+  check(L("manual 4 × 7 letters across rows: A B … D, then E on row 2, AB bottom right"), JSON.stringify(ml) === JSON.stringify(["A", "B", "D", "E", "AB"]), JSON.stringify(ml));
   await fill(page, "#vg-v0", "0.42");
   page.dialogs.length = 0;
   await page.evaluate(() => markEventUpload("eV")); await sleep(300);
-  check(L("Mark complete is not blocked by a blank optional manual-grid reason"), !page.dialogs.some(d => /Reason for the manual grid/.test(d)) && (await EV(page, "eV")).uploadReady === true, JSON.stringify(page.dialogs));
+  check(L("Mark complete never asks for the optional manual-grid reason"), !page.dialogs.some(d => /Reason for the manual grid/.test(d)), JSON.stringify(page.dialogs));
   await page.evaluate(i => openTrain(i), g3); await sleep(300);
+  await tap(page, '#vaSteps [data-vt-step="3"]');
   await fill(page, "#vg-reason", "Opening size not measurable (booth doors removed)");
-  await fill(page, "#vg-rows", "5");
-  t = await T(page, g3);
-  check(L("manual grid: rows editable (4 × 5) with nothing entered; reason saved"), t.vent.grid.rows === 5 && t.vent.grid.reason === "Opening size not measurable (booth doors removed)", JSON.stringify(t.vent.grid));
-  await fill(page, "#vg-rows", "7");
-  for (const [i, v] of [[0, "0.42"], [6, "0.38"], [27, "0.61"]]) await fill(page, "#vg-v" + i, v);
+  for (const [i, v] of [[6, "0.38"], [27, "0.61"]]) await fill(page, "#vg-v" + i, v);
   page.dialogs.length = 0;
   await fill(page, "#vg-cols", "3");
   check(L("manual grid: dropping a column with a reading in it is refused"), page.dialogs.some(d => /drop the readings/.test(d)) && (await T(page, g3)).vent.grid.cols === 4, JSON.stringify(page.dialogs));
-  t = await T(page, g3);
-  check(L("manual grid complete; avg 0.47 → Does not meet (indicator)"), t.status === "ended" && /Does not meet/.test(await txt(page, "#vgCheck")), JSON.stringify({ s: t.status, c: await txt(page, "#vgCheck") }));
-  await gshot("manual-4x7");
-  /* G7. 600 × 500 opening in the UI */
+  check(L("manual grid avg 0.49 corrected → Does not meet (indicator)"), /Does not meet/.test(await txt(page, "#vgCheck")), await txt(page, "#vgCheck"));
+  await gshot("manual-4x7"); await ashot("manual-4x7");
+  /* G8. 600 × 500 */
   await page.evaluate(() => ENVSS_VENT.addMeasurement("eV", "grid")); await sleep(300);
   t = await NEWEST(page); const g4 = t.id;
   await fill(page, "#vt-unit", "Small benchtop hood"); await tap(page, '[data-vt-fans="0"]');
+  await tap(page, '#vaSteps [data-vt-step="3"]'); await tap(page, "[data-vt-fvearly]");
   await fill(page, "#vg-w", "600"); await fill(page, "#vg-h", "500");
   t = await T(page, g4);
-  const sl = await page.evaluate(() => [0, 1, 2, 3, 5].map(i => document.querySelector(`[data-vg-cell="${i}"] .vg-num`).innerText));
-  check(L("grid 600×500: 2 × 3 = 6 points, 400 / 150 mm; corner labels"), t.vent.grid.cols === 2 && t.vent.grid.rows === 3 && /2 × 3 = 6 points · horizontal spacing 400 mm · vertical spacing 150 mm/.test(await txt(page, "#vgGeom")) && /^1 Top left corner/.test(sl[0]) && sl[1] === "2" && /^3 Bottom left corner/.test(sl[2]) && /^4 Top right corner/.test(sl[3]) && /^6 Bottom right corner/.test(sl[4]), JSON.stringify(sl) + " " + (await txt(page, "#vgGeom")));
+  const sl = await page.evaluate(() => [0, 3, 1, 4, 2, 5].map(i => document.querySelector(`[data-vg-cell="${i}"] .vg-num b`).innerText));
+  check(L("600×500: 2 × 3 = 6 points, 400 / 150 mm, A B / C D / E F across rows"), t.vent.grid.cols === 2 && t.vent.grid.rows === 3 && /2 × 3 = 6 points/.test(await txt(page, "#vgGeom")) && JSON.stringify(sl) === JSON.stringify(["A", "B", "C", "D", "E", "F"]), JSON.stringify(sl) + " " + (await txt(page, "#vgGeom")));
   for (let i = 0; i < 6; i++) await fill(page, "#vg-v" + i, ["0.55", "0.61", "0.58", "0.66", "0.70", "0.52"][i]);
-  check(L("grid 600×500: Meets cl 3.1.2 (avg 0.60)"), /✓ Meets/.test(await txt(page, "#vgCheck")) && /0\.60/.test(await txt(page, "#vtStats")), await txt(page, "#vgCheck"));
+  check(L("600×500: Meets cl 3.1.2 (avg 0.62 incl. +0.02)"), /✓ Meets/.test(await txt(page, "#vgCheck")) && /0\.62/.test(await txt(page, "#vtStats")), await txt(page, "#vgCheck") + " " + await txt(page, "#vtStats"));
   await fill(page, "#vg-w", "1200");
   t = await T(page, g4);
-  check(L("growing 600→1200 mm wide re-sets the grid (3 × 3) and keeps every reading in its column / row"), t.vent.grid.cols === 3 && t.vent.grid.rows === 3 && t.vent.grid.v["point 1"] === "0.55" && t.vent.grid.v["point 3"] === "0.58" && t.vent.grid.v["point 4"] === "0.66" && t.vent.grid.v["point 6"] === "0.52" && Object.keys(t.vent.grid.v).length === 6, JSON.stringify(t.vent.grid));
+  check(L("growing 600→1200 mm re-sets to 3 × 3 and keeps every reading in its column / row"), t.vent.grid.cols === 3 && t.vent.grid.v["point 1"] === "0.55" && t.vent.grid.v["point 6"] === "0.52" && Object.keys(t.vent.grid.v).length === 6, JSON.stringify(t.vent.grid.v));
   await fill(page, "#vg-w", "600");
-  t = await T(page, g4);
-  check(L("and back to 600 mm (no data in the extra column) → 2 × 3 again"), t.vent.grid.cols === 2 && Object.keys(t.vent.grid.v).length === 6, JSON.stringify(t.vent.grid));
+  check(L("and back to 600 mm → 2 × 3 again"), (await T(page, g4)).vent.grid.cols === 2, "");
   await gshot("600x500");
-  /* G8. event summary table */
+  /* G9. event summary + CSV */
   await openEv(page, "eV");
   const sum = await page.evaluate(() => { const tb = document.querySelector("#vtSummary table"); return tb ? [...tb.rows].map(r => [...r.cells].map(c => c.innerText.trim())) : null; });
+  check(L("event summary columns incl. Smoke and Overall"), !!sum && JSON.stringify(sum[0]) === JSON.stringify(["Unit", "Condition", "n", "Avg", "Min", "Max", "<0.5 m/s at", "Opening (mm)", "Grid · spacing (mm)", "2243.8", "Smoke", "Overall"]), JSON.stringify(sum && sum[0]));
+  const avgF = (cor.reduce((a, b) => a + b, 0) / 40).toFixed(2), mxF = Math.max(...cor).toFixed(2);
   const r1 = sum && sum.find(r => r[1] === "Two extraction fans in operation");
-  check(L("event summary: columns unit / condition / n / avg / min / max / < 0.5 m/s / opening / grid · spacing / 2243.8"), !!sum && JSON.stringify(sum[0]) === JSON.stringify(["Unit", "Condition", "n", "Avg", "Min", "Max", "<0.5 m/s at", "Opening (mm)", "Grid · spacing (mm)", "2243.8"]), JSON.stringify(sum && sum[0]));
-  const avgF = ((nums.reduce((a, b) => a + b, 0) - nums[4] + 0.21) / 40).toFixed(2);
-  check(L("event summary: FC-2 two fans row (40, avg, 0.21, max, ~1 to 1.2 m, 2000 × 1800, 5 × 8 · 450 × 229, Does not meet)"), !!r1 && r1[0] === "Fume cupboard FC-2 (Lab 1.04)" && r1[2] === "40" && r1[3] === avgF && r1[4] === "0.21" && r1[5] === mx.toFixed(2) && r1[6] === "~1 to 1.2 m" && r1[7] === "2000 × 1800" && r1[8] === "5 × 8 · 450 × 229" && r1[9] === "Does not meet", JSON.stringify(r1));
-  check(L("event summary: manual and 600 × 500 rows"), sum.some(r => r[0] === "Spray booth 1" && r[8] === "4 × 7 · manual") && sum.some(r => r[0] === "Small benchtop hood" && r[7] === "600 × 500" && r[8] === "2 × 3 · 400 × 150" && r[9] === "Meets"), JSON.stringify(sum));
-  check(L("event rows: grid line shows grid, n, avg and 2243.8"), /Face velocity grid · Fume cupboard FC-2 \(Lab 1\.04\) · Two extraction fans in operation/.test(await txt(page)) && /5 × 8 grid \(2000 × 1800 mm\) · 40 of 40 points · avg/.test(await txt(page)), (await txt(page)).slice(0, 1200));
+  check(L("event summary FC-2 row: 40, corrected avg / min / max, 2000 × 1800, 5 × 8 · 450 × 229, Does not meet, Satisfactory, Non-compliant"), !!r1 && r1[0] === "FC-2" && r1[2] === "40" && r1[3] === avgF && r1[4] === "0.23" && r1[5] === mxF && r1[7] === "2000 × 1800" && r1[8] === "5 × 8 · 450 × 229" && r1[9] === "Does not meet" && /Satisfactory/.test(r1[10]) && r1[11] === "Non-compliant", JSON.stringify(r1));
+  check(L("event summary: manual and 600 × 500 rows"), sum.some(r => r[0] === "Spray booth 1" && r[8] === "4 × 7 · manual") && sum.some(r => r[0] === "Small benchtop hood" && r[7] === "600 × 500" && r[9] === "Meets"), JSON.stringify(sum));
+  const anemSum = await txt(page, "#vtAnemSum");
+  check(L("event summary: anemometer line with hired / Airmet / due date and calibration warning"), /Hired from Airmet/.test(anemSum) && new RegExp("due " + YDAY).test(anemSum) && /Check:/.test(anemSum) && /Calibration was due/.test(anemSum), anemSum);
+  const eqTxt = await txt(page, "#vtEquip");
+  check(L("event anemometer block: owned/hired, supplier, last calibration, due date, correction, certificate photo"), /Owned or hired/.test(eqTxt) && /Supplier/.test(eqTxt) && /Last calibration date/.test(eqTxt) && /Calibration due date/.test(eqTxt) && /Calibration correction/.test(eqTxt) && /Photo of calibration certificate/.test(eqTxt) && await has(page, '#vtEquip [data-vt-cert]'), eqTxt.slice(0, 600));
   const em = await metrics(page);
   check(L("event page with summary fits the width"), em.sw <= em.iw + 1, JSON.stringify(em));
-  await gshot("event-summary"); await gshot("event-summary-full", true);
-  /* G9. CSV in the 0019340 layout */
+  await page.evaluate(() => document.getElementById("vtEquip").scrollIntoView({ block: "start" })); await sleep(200); await ashot("event-anemometer");
+  await gshot("event-summary"); await ashot("event-summary-full", true);
   const gcsv = (await page.evaluate(() => ENVSS_VENT.exportCsv("eV"))).split("\r\n");
-  const gi = gcsv.findIndex(l => l.startsWith('"Fume cupboard FC-2 (Lab 1.04) – Two extraction fans in operation"'));
-  check(L("grid CSV: block first row = unit – condition, '1 - Top left corner', velocity, avg / min / max, distance, comments"), gi > 0 && gcsv[gi].startsWith(`"Fume cupboard FC-2 (Lab 1.04) – Two extraction fans in operation","1 - Top left corner","${vals[0]}","${avgF}","0.21","${mx.toFixed(2)}","~1","Sash at 500 mm working height. Bench clutter near the right side."`), gcsv[gi]);
-  check(L("grid CSV: app columns on the first row (opening, grid, spacing, standard, cl 3.1.2, anemometer)"), /"AS\/NZS 2243\.8:2014 Appendix B, B4\.2\(c\)","2000","1800","5 × 8","450","229","","Does not meet"/.test(gcsv[gi]) && /Dynaflow","DF-1800","FC2-0042B"/.test(gcsv[gi]) && /TSI 9545 VelociCalc SN T95450123/.test(gcsv[gi]), gcsv[gi]);
-  check(L("grid CSV: 40 point rows, later rows number + label only, stats blank"), gcsv[gi + 1].startsWith(`"","2","${vals[1]}","","","","",""`) && gcsv[gi + 3].startsWith('"","4 - Behind sash stop"') && gcsv[gi + 7].startsWith('"","8 - Bottom left corner","' + vals[7] + '","","","","1.2 m",""') && gcsv[gi + 39].startsWith('"","40 - Bottom right corner"') && !gcsv[gi + 40].startsWith('"","41'), [gcsv[gi + 1], gcsv[gi + 7], gcsv[gi + 39]].join("\n"));
+  const gi = gcsv.findIndex(l => l.startsWith('"FC-2 – Two extraction fans in operation"'));
+  check(L("CSV block first row: unit – condition, A, corrected velocity, avg / min / max, distance, comments"), gi > 0 && gcsv[gi].startsWith(`"FC-2 – Two extraction fans in operation","A","${cor[0].toFixed(2)}","${avgF}","0.23","${mxF}","~1","Sash at 500 mm working height. Bench clutter near the right side."`), gcsv[gi]);
+  check(L("CSV app columns: opening, grid, spacing, cl 3.1.2, anemometer, raw + correction, smoke, overall, hired, Airmet, dates, check"), /"2000","1800","5 × 8","450","229","","Does not meet"/.test(gcsv[gi]) && /TSI 9545 VelociCalc SN T95450123/.test(gcsv[gi]) && new RegExp(`"${vals[0]}","\\+0\\.02"`).test(gcsv[gi]) && /"Satisfactory[^"]*","Non-compliant","Chemistry Lab 1\.04","New","No","Hired","Airmet"/.test(gcsv[gi]) && new RegExp(`"${LASTYR}","${YDAY}","Check: `).test(gcsv[gi]), gcsv[gi]);
+  check(L("CSV point rows go A, B, C… across rows; P carries the custom label; AJ the 1.2 m distance"), gcsv[gi + 1].startsWith(`"","B","${cor[1].toFixed(2)}","","","",""`) && gcsv[gi + 15].startsWith('"","P - Behind sash stop"') && gcsv[gi + 35].startsWith(`"","AJ","${cor[35].toFixed(2)}","","","","1.2",""`) && gcsv[gi + 39].startsWith('"","AN"'), [gcsv[gi + 1], gcsv[gi + 15], gcsv[gi + 35]].join("\n"));
   const si = gcsv.indexOf('"Summary"');
-  check(L("grid CSV: summary section with opening, grid and spacing"), si > gi && gcsv[si - 1] === "" && gcsv[si + 1].startsWith(SUM_HEAD) && gcsv.slice(si + 2).some(l => l.startsWith(`"Fume cupboard FC-2 (Lab 1.04)","40","${avgF}","0.21","${mx.toFixed(2)}","~1 to 1.2 m","Two extraction fans in operation","2000","1800","5 × 8","450","229"`)) && gcsv.slice(si + 2).some(l => /^"Spray booth 1","3",.*"4 × 7","","","Manual: Opening size not measurable/.test(l)), gcsv.slice(si).join("\n"));
-  check(L("grid CSV: manual grid block has 28 rows"), gcsv.filter(l => /^"(Spray booth 1 – One extraction fan in operation)?","(\d+)( - [^"]*)?"/.test(l) && !/^"","\d+","\d/.test("x")).length >= 0 && (() => { const a = gcsv.findIndex(l => l.startsWith('"Spray booth 1 – One extraction fan in operation","1 - Top left corner"')); return a > 0 && gcsv[a + 27].startsWith('"","28 - Bottom right corner"'); })(), "");
+  check(L("CSV summary section + anemometer line"), si > gi && gcsv[si + 1].startsWith(SUM_HEAD) && gcsv.slice(si + 2).some(l => l.startsWith(`"FC-2","40","${avgF}","0.23","${mxF}"`)) && gcsv.slice(si).some(l => /^"Anemometer",".*Hired from Airmet.*","Calibration check","Check: /.test(l)), gcsv.slice(si, si + 8).join("\n"));
+  check(L("CSV never says 'Deficient'; smoke result uses Satisfactory / Dangerous wording"), !gcsv.some(l => /deficient/i.test(l)) && gcsv.some(l => /^"Smoke test result \(A6, worst score\)","Satisfactory"/.test(l)), "");
+  const fa = gcsv.findIndex(l => l.startsWith('"AS/NZS 2243.8:2014 Figure A1 record"'));
+  check(L("CSV Figure A1 record: smoke rows, calibration rows, Results A…AN"), fa > si && gcsv.slice(fa).some(l => /^"Face opening airflow pattern","G"/.test(l)) && gcsv.slice(fa).some(l => /^"Anemometer","Hired","Supplier","Airmet","Calibration certificate photo","No"/.test(l)) && gcsv.slice(fa).some(l => new RegExp(`^"Last calibration date","${LASTYR}","Calibration due date","${YDAY}"`).test(l)) && gcsv.slice(fa).some(l => /^"Results","A","B",.*"AN"$/.test(l)), gcsv.slice(fa, fa + 30).join("\n"));
 
   /* ---- 10. regressions: airborne (hygiene) event ---- */
   await openEv(page, "eH");

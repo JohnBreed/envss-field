@@ -33,15 +33,29 @@ Measurements are ordinary train rows (`trainKind: "vent"`, data in `t.vent`) so 
 No COC (vent trains are left out of COCs on mixed events), no Podio writes, no Drive sheet fill: the event menu has
 "Export vent survey CSV" in the Drive template's column order. Tests: `work/v48-19/vent.test.mjs` (Pixel 7 + Chromebook).
 
-**Face velocity grid** (type `grid`, first on the Add measurement screen): one measurement per extraction unit + fan
-condition ("How many fans are running?" 1-4 chips or free text; "+ Another condition on this unit" copies the unit,
-hood make/model/serial and opening). The grid is set out from the opening width × height (mm) per
-AS/NZS 2243.8:2014 Appendix B, B4.2(c): first/last lines 100 mm in from the edges, equally spaced, not more than
-250 mm vertically / 500 mm horizontally, fewest lines (`n = ceil((size - 200) / max) + 1`; 2000×1800 → 5×8 = 40,
-600×500 → 2×3 = 6). A manual grid (default 4×7 = 28) has an optional reason (it does not block completing). The older single-location Face velocity type stays on the Add measurement screen alongside the grid. Points are numbered down each column then across,
-labelled like the 0019340 sheet ("1 - Top left corner"); each has velocity, optional distance where velocity < 0.5 m/s
-and an optional label. n / average / lowest / highest and the cl. 3.1.2 indicator (average ≥ 0.5 m/s, no point
-< 0.3 m/s) are shown but never block. Data lives in `t.vent.grid` (`v` / `d` / `label` maps keyed "point N"), so the
-shared change audit writes one readable line per point. A size change that would drop a filled point is refused.
-The event page shows a velocity summary table; the CSV puts the 0019340 Sheet1 columns first (stats and comments on
-the first row of each block; the distance-below-0.5 header is in metres, (m); the sheet's blank column A is omitted), then a Summary block, with app-only columns to the right.
+**Fume cupboard audit** (type `grid`, first on the Add measurement screen) walks the tester through
+AS/NZS 2243.8:2014 in four steps, each citing its clause: (1) Unit details: location, F/C number, type, make/model/serial,
+new or existing installation (A4.1.3 empty / A4.1.2 normal working conditions), empty or equipment inside (photo or plan,
+A5), smoke source (air current tubes, A3), fan condition. (2) Smoke test (Appendix A), done before face velocity (A4.1.1;
+a soft gate with a logged "record anyway"): A4.2(b)–(k) in order, each rated G Good / S Satisfactory / D Dangerous (A5)
+or N/A with a reason, comment and photos; result = worst score, compliant if all S or better (A6). (3) Face velocity
+(Appendix B): opening width × height (mm) sets the B4.2(c) grid (first/last lines 100 mm in, not more than 250 mm
+vertically / 500 mm horizontally, fewest lines; 2000×1800 → 5×8 = 40, 600×500 → 2×3 = 6); a manual grid (default
+4×7 = 28) has an optional reason that never blocks. Points are lettered A, B, C… across each row from top left (Figure A1
+note 4); Enter moves to the next letter. Older records keep their stored "point N" keys and show "was N" beside the
+letter (nothing moved). Readings are stored raw; reported figures add the anemometer calibration correction (Figure A1
+note 3). cl. 3.1.2 indicator (average ≥ 0.5 m/s, no point < 0.3 m/s). (4) Summary: smoke result, face velocity result,
+overall, and a Figure A1-style record. "+ Another condition on this unit" copies the unit details and opening.
+
+**Anemometer** (once per event): Owned / Hired (supplier defaults to Airmet when Hired), make, model, serial, last
+calibration date, calibration due date, correction (m/s at m/s) and a "Photo of calibration certificate" (stored on the
+device and uploaded under `…/t/vent-cert-<event id>/`). Warnings, never blocks: due date before the survey date, missing
+dates, last calibration over 12 months before the survey (B3), missing or non-numeric correction, no certificate photo.
+Shown on the event page, in step 3, the summary, the Figure A1 record and the CSV.
+
+The single-location Face velocity type stays on the Add screen. The event page shows a velocity summary table (with Smoke
+and Overall). The CSV puts the 0019340 Sheet1 columns first (distance header in metres, (m); blank column A omitted),
+then app-only columns (raw reading, correction, smoke, overall, location, installation, empty, anemometer owned/hired,
+supplier, calibration dates and check), a Summary block with an anemometer line, and one Figure A1 record per audit.
+Type picker pictures are freely licensed (credits on each card and in `assets/vent/ATTRIBUTION.md`), precached by
+`sw-field.js`, with an SVG icon if a picture fails.

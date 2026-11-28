@@ -26,7 +26,7 @@
   const str = v => (v == null ? "" : String(v));
 
   const TYPES = [
-    ["grid", "Face velocity grid", "Grid of points across the extraction face, set out from the opening size (AS/NZS 2243.8 Appendix B). One per fan condition."],
+    ["grid", "Fume cupboard audit", "Guided AS/NZS 2243.8:2014 audit: unit details, smoke test (Appendix A) first, then the face velocity grid (Appendix B) and the Figure A1 record."],
     ["face", "Face velocity", "At the extraction face, hood opening or sash."],
     ["capture", "Capture velocity", "At the source or work position, a set distance from the face."],
     ["other", "Other velocity reading", "e.g. edge of a table, breathing zone, booth length, duct."],
@@ -35,6 +35,28 @@
   /* the Add measurement list: the grid replaces the single-location face reading (kept only so older records still open) */
   const PICK = ["grid", "face", "capture", "other", "visual"];
   const typeName = k => (TYPES.find(a => a[0] === k) || [])[1] || "Vent measurement";
+  /* type picker images: freely licensed, credited in the app and in assets/vent/ATTRIBUTION.md; SVG icon if an image fails */
+  const TYPE_IMG = {
+    grid: { src: "assets/vent/fume-cupboard.jpg", alt: "Fume cupboard", credit: "Photo: Hey Paul from Sacramento, CA, USA, CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Fume_Hood.jpg" },
+    face: { src: "assets/vent/spray-booth.jpg", alt: "Spray booth", credit: "Photo: Chrysler Restorers SA, CC0 1.0", page: "https://commons.wikimedia.org/wiki/File:Spray_booth.jpg" },
+    capture: { src: "assets/vent/capture-hood.jpg", alt: "Capture hood on an extraction arm", credit: "Photo: Borderlands Roomba, CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Welding_booth_with_local_exhaust_system.jpg" },
+    other: { src: "assets/vent/downdraft-table.jpg", alt: "Downdraft table", credit: "Photo: akarmy (Flickr), CC BY 2.0", page: "https://www.flickr.com/photos/50868481@N00/11281325085" },
+    visual: { src: "assets/vent/biosafety-cabinet.jpg", alt: "Enclosed cabinet", credit: "Photo: Ca.garcia.s, CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Biological_Safety_Cabinet_(Class_II,_Type_A2)_Front_view.jpg" }
+  };
+  const SMOKE_IMG = { src: "assets/vent/smoke-airflow.jpg", alt: "Smoke released to show airflow", credit: "Photo: NIOSH, public domain", page: "https://commons.wikimedia.org/wiki/File:Smoke_generator_to_visualize_airflow.jpg" };
+  const TYPE_SVG = {
+    grid: '<rect x="8" y="8" width="48" height="48" rx="3"/><rect x="14" y="14" width="36" height="22"/><path d="M14 26h36M20 42h24"/>',
+    face: '<path d="M10 54V18l22-10 22 10v36"/><path d="M18 54V28h28v26M24 36h16"/>',
+    capture: '<path d="M10 10h14v10M24 20l14 14M38 34l6 6"/><path d="M40 36l12 0 4 10H36z"/><path d="M14 56h40"/>',
+    other: '<rect x="8" y="30" width="48" height="8" rx="2"/><path d="M12 38v16M52 38v16M16 30v-6h32v6M20 34h24"/>',
+    visual: '<circle cx="32" cy="32" r="10"/><path d="M6 32c8-12 16-18 26-18s18 6 26 18c-8 12-16 18-26 18S14 44 6 32z"/>'
+  };
+  function typeSvg(k) { return `<svg class="vt-thumb" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TYPE_SVG[k] || TYPE_SVG.visual}</svg>`; }
+  function imgWithFallback(im, k, cls) {
+    if (!im) return typeSvg(k);
+    return `<span class="vt-tw"><img class="${cls || "vt-thumb"}" src="${im.src}" alt="${esc(im.alt)}" loading="lazy" onerror="this.style.display='none';var n=this.nextElementSibling;if(n)n.style.display='block'"><span style="display:none">${typeSvg(k)}</span></span>`;
+  }
+  const FC_TYPES = ["Bench-type fume cupboard", "Walk-in fume cupboard", "Downdraught fume cupboard", "Variable air volume fume cupboard"];
   const HOODS = ["Booth", "Canopy hood", "Downdraft table", "Fume cupboard", "Slot / lip extraction", "Captor hood", "Enclosure", "On-tool extraction", "Extraction hood", "Local exhaust ventilation"];
 
   const isVentEvent = ev => !!ev && (ev.podioEventKind === "vent" || ev.type === "vent");
@@ -51,7 +73,17 @@
     const x = t.vent || {};
     if (create) { if (!Array.isArray(x.readings)) x.readings = []; if (!Array.isArray(x.photos)) x.photos = []; }
     if (create && x.type === "grid" && !x.grid) x.grid = { basis: "standard", widthMm: "", heightMm: "", cols: 0, rows: 0, gapX: 0, gapY: 0, reason: "", v: {}, d: {}, label: {} };
-    if (x.grid) { ["v", "d", "label"].forEach(k => { if (!x.grid[k] || typeof x.grid[k] !== "object") x.grid[k] = {}; }); }
+    if (x.grid) { ["v", "d", "label", "lo", "hi"].forEach(k => { if (!x.grid[k] || typeof x.grid[k] !== "object") x.grid[k] = {}; }); }
+    if (create && x.grid && !x.grid.scheme) {
+      /* AS/NZS 2243.8 Figure A1 note 4: points A, B, C... from top left, across rows. Older grids were numbered 1, 2, 3...
+         down each column. Nothing is moved or deleted: the readings stay on the same physical point; the old number is kept
+         alongside the new letter (prevNumbering) so earlier sheets still match. */
+      const had = gridHasData(x.grid);
+      x.grid.scheme = "as2243.8-A1";
+      if (had) { x.grid.prevNumbering = "down-columns"; note(t, "Grid point labels", "now A, B, C… across rows per AS/NZS 2243.8 Figure A1 note 4; previous numbers (down each column) kept beside each letter; no readings moved"); }
+    }
+    if (create && x.type === "grid" && !x.smoke) x.smoke = {};
+    if (create && x.type === "grid") { if (!Array.isArray(x.equipPhotos)) x.equipPhotos = []; if (!x.smokePhotos || typeof x.smokePhotos !== "object") x.smokePhotos = {}; }
     return x;
   }
   const numOf = s => { const v = String(s == null ? "" : s).trim().replace(",", "."); if (v === "" || !/^-?\d*\.?\d+$/.test(v)) return null; const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
@@ -77,27 +109,60 @@
   const ptKey = i => "point " + (i + 1);
   const ptDKey = i => "point " + (i + 1) + " below 0.5";
   const ptLKey = i => "point " + (i + 1) + " label";
-  function colName(c, cols) {
-    if (cols <= 1) return "centre";
-    if (c === 0) return "left"; if (c === cols - 1) return "right";
-    if (cols === 3) return "centre";
-    if (cols === 4) return c === 1 ? "left central" : "right central";
-    return "column " + (c + 1);
-  }
-  function defaultLabel(i, cols, rows) {
-    const c = Math.floor(i / rows), r = i % rows, cn = colName(c, cols);
-    const edge = rows === 1 ? "" : r === 0 ? "Top" : r === rows - 1 ? "Bottom" : "";
-    if (!edge) return rows === 1 ? cn.charAt(0).toUpperCase() + cn.slice(1) : "";
-    return edge + " " + cn + (cn === "left" || cn === "right" ? " corner" : "");
-  }
+  /* AS/NZS 2243.8 Figure A1 note 4 / Figure B1: label points A, B, C... starting top left and working across rows.
+     Storage keys stay "point N" in the original down-the-column order, so no existing reading ever moves. */
+  function letters(n) { let s = ""; n = n + 1; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
+  const ordOf = (i, cols, rows) => (i % rows) * cols + Math.floor(i / rows);
+  const idxOf = (o, cols, rows) => (o % cols) * rows + Math.floor(o / cols);
+  function defaultLabel(i, cols, rows) { return letters(ordOf(i, cols, rows)); }
+  function gridHasData(q) { return !!q && ["v", "d", "label", "lo", "hi"].some(k => q[k] && Object.keys(q[k]).some(j => str(q[k][j]).trim() !== "")); }
   function gridOf(t) { const x = (t && t.vent) || {}; return x.type === "grid" && x.grid ? x.grid : null; }
   const gridN = q => (q && q.cols > 0 && q.rows > 0 ? q.cols * q.rows : 0);
-  function pointLabel(q, i) { return str(q.label[ptLKey(i)]).trim() || defaultLabel(i, q.cols, q.rows); }
-  function gridVals(q) { const out = []; for (let i = 0; i < gridN(q); i++) { const n = numOf(q.v[ptKey(i)]); if (n != null) out.push(n); } return out; }
+  const pointId = (q, i) => defaultLabel(i, q.cols, q.rows);
+  const customLabel = (q, i) => str(q.label[ptLKey(i)]).trim();
+  const legacyNo = (q, i) => (q.prevNumbering === "down-columns" || (!q.scheme && gridHasData(q)) ? i + 1 : null);
+  function pointLabel(q, i) { const c = customLabel(q, i); return pointId(q, i) + (c ? " - " + c : ""); }
+  const ptLoKey = i => "point " + (i + 1) + " min";
+  const ptHiKey = i => "point " + (i + 1) + " max";
+  /* calibration correction (Figure A1 "Calibration correction factor: … m/s at … m/s"; notes 3: reported figures include it).
+     Applied to the face velocity audit only, as an offset added to each raw reading: corrected = reading + correction. */
+  /* John 28 Nov 2026 (t750u, t751u): anemometers are hired (Airmet); last calibration, due date, correction and a certificate photo.
+     Warnings only, never a block. B3: calibration certificate issued within the past 12 months. */
+  function calWarnings(ev) {
+    const e = (ev && ev.ventEquip) || {}, w = [];
+    const day = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str(d).trim()); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null; };
+    const survey = day(ev && ev.date) != null ? day(ev.date) : day(new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10));
+    const last = day(e.calDate), due = day(e.calDue);
+    if (!str(e.calDate).trim()) w.push("Last calibration date missing");
+    else if (last == null) w.push("Last calibration date is not a date (use YYYY-MM-DD)");
+    if (!str(e.calDue).trim()) w.push("Calibration due date missing");
+    else if (due == null) w.push("Calibration due date is not a date (use YYYY-MM-DD)");
+    else if (survey != null && due < survey) w.push("Calibration was due " + e.calDue + ", before the survey date (" + (ev && ev.date || "today") + ")");
+    if (last != null && survey != null && survey - last > 365 * 864e5) w.push("Last calibration is more than 12 months before the survey (AS/NZS 2243.8 B3)");
+    if (!str(e.calCorr).trim()) w.push("Calibration correction factor missing (readings are reported uncorrected)");
+    else if (calNum(e.calCorr) == null) w.push("Calibration correction factor is not a number (e.g. +0.02, -0.01 or 0); readings are reported uncorrected");
+    if (!((e.certPhotos || []).length)) w.push("Take a photo of the calibration certificate");
+    return w;
+  }
+  function calSummary(ev) {
+    const e = (ev && ev.ventEquip) || {};
+    const own = e.ownership === "hired" ? "Hired" + (str(e.supplier).trim() ? " from " + str(e.supplier).trim() : "") : e.ownership === "owned" ? "Owned" : "";
+    const bits = [[e.make, e.model].filter(Boolean).join(" "), str(e.serial).trim() ? "SN " + str(e.serial).trim() : "", own,
+      str(e.calDate).trim() ? "calibrated " + str(e.calDate).trim() : "", str(e.calDue).trim() ? "due " + str(e.calDue).trim() : "",
+      str(e.calCorr).trim() ? "correction " + str(e.calCorr).trim() + " m/s" + (str(e.calAt).trim() ? " at " + str(e.calAt).trim() + " m/s" : "") : "",
+      (e.certPhotos || []).length ? "certificate photo" : ""].filter(Boolean);
+    const w = calWarnings(ev);
+    return { text: bits.join(" · "), status: w.length ? "Check: " + w.join("; ") : "OK", warnings: w };
+  }
+  function calNum(v) { return numOf(str(v).trim().replace(/^\+\s*/, "").replace(/\s*m\/s$/i, "")); }
+  function calOf(t) { const ev = evOf(t) || {}, e = ev.ventEquip || {}; const k = calNum(e.calCorr); return { k: k == null ? 0 : k, set: k != null, at: str(e.calAt).trim(), raw: str(e.calCorr).trim(), date: str(e.calDate).trim() }; }
+  const r2 = n => Math.round(n * 100) / 100;
+  function corrected(q, i, k) { const n = numOf(q.v[ptKey(i)]); return n == null ? null : r2(n + (k || 0)); }
+  function gridVals(q, k) { const out = []; for (let i = 0; i < gridN(q); i++) { const n = corrected(q, i, k); if (n != null) out.push(n); } return out; }
   /* AS/NZS 2243.8 cl. 3.1.2: average not less than 0.5 m/s, individual measurements not less than 0.3 m/s (indicator only) */
   function stdCheck(t) {
     const s = stats(t); if (!s.n) return null;
-    const low = gridOf(t) ? gridVals(gridOf(t)).filter(n => n < 0.3).length : 0;
+    const low = gridOf(t) ? gridVals(gridOf(t), calOf(t).k).filter(n => n < 0.3).length : 0;
     return { ok: s.avg >= 0.5 && s.min >= 0.3, avgOk: s.avg >= 0.5, minOk: s.min >= 0.3, low, s };
   }
   function below05Range(t) {
@@ -112,6 +177,53 @@
     if (odd.length) out = [out].concat(odd).filter(Boolean).join("; ");
     return out;
   }
+  /* ---------- smoke test (AS/NZS 2243.8:2014 Appendix A) ---------- */
+  const SMOKE = [
+    { k: "b", step: "A4.2(b)", name: "Face opening airflow pattern", how: "Sash at the maximum working aperture (A4.2(a)). Release smoke in line with the face opening around the whole perimeter of the entry. It should flow smoothly in and through; looping or eddying points to room turbulence or a containment problem." },
+    { k: "c", step: "A4.2(c)", name: "Cupboard airflow pattern", how: "Release smoke around any equipment, tanks or sinks inside. Watch for eddies carrying smoke to the front or out. If a removable base sits over a sump, check there is no reverse flow out of the sump and that the sump is exhausted." },
+    { k: "d", step: "A4.2(d)", name: "Containment along bottom of cupboard", how: "Release smoke progressively along the floor, starting at the front. Watch the sides of the base for eddies carrying smoke forward or out; if found, move the smoke source around to investigate." },
+    { k: "e", step: "A4.2(e)", name: "Containment along walls of cupboard", how: "Release smoke along the internal walls. Watch for eddies carrying smoke to the front or out." },
+    { k: "f", step: "A4.2(f)", name: "Containment with sash fully open", how: "Release smoke behind and close to the sash at several points across the opening. Watch for eddies forming in line with or in front of the sash or its handles, fed from inside." },
+    { k: "h", step: "A4.2(g)–(h)", name: "Containment with sash half open", how: "Lower the sash to halfway (g), then release smoke behind and close to the sash at several points across the opening (h)." },
+    { k: "i", step: "A4.2(i)", name: "Containment with sash at minimum opening", how: "Move the sash to its minimum opening and watch for eddies." },
+    { k: "j", step: "A4.2(j)", name: "Containment under abnormal conditions", how: "Spot-check nearby fume cupboards, doors and windows opening, air-conditioning, ventilation, traffic and other equipment. If any affect containment, repeat steps (d) to (k) under those conditions and record them. Record any equipment inside on a plan or photo." },
+    { k: "k", step: "A4.2(k)", name: "Leaks at joints and service penetrations (built-in cupboards)", how: "Only if the cupboard is built into the laboratory walls: release smoke along all joints and service penetrations, around the sash and the opening, looking for air jets leaking in from the wall cavity or ceiling space. Otherwise mark N/A.", na: true }
+  ];
+  const RATE = { G: "Good", S: "Satisfactory", D: "Dangerous", NA: "N/A" };
+  const RATE_HOW = { G: "smoke travels straight to exhaust without reverse flow or eddies", S: "reverse flow or eddies, but the smoke does not escape the cupboard", D: "reverse flow or eddies escape the cupboard" };
+  const smokeCK = row => row.name + " comment";
+  function smokeOf(t) {
+    const x = t.vent || {}, sm = x.smoke || {};
+    const rows = SMOKE.map(row => ({ row, r: str(sm[row.name]).trim(), c: str(sm[smokeCK(row)]).trim(), photos: ((x.smokePhotos || {})[row.name] || []) }));
+    const rated = rows.filter(z => z.r && z.r !== "NA");
+    const order = { G: 0, S: 1, D: 2 };
+    const worst = rated.length ? rated.reduce((a, z) => (order[z.r] > order[a] ? z.r : a), "G") : "";
+    const unrated = rows.filter(z => !z.r);
+    const naNoReason = rows.filter(z => z.r === "NA" && !z.row.na && !z.c);
+    const done = !unrated.length && !naNoReason.length && rated.length > 0;
+    return { rows, worst, unrated, naNoReason, done, compliant: done ? worst !== "D" : null, dangerous: worst === "D" };
+  }
+  /* Figure A1 "Max. variation of readings from average: %" and cl. 3.1.2 note 3 (investigate points more than 20% from the average) */
+  function variation(t) {
+    const q = gridOf(t); const s = stats(t); if (!q || !s.n || !s.avg) return { pct: null, over: [] };
+    const k = calOf(t).k; let pct = 0; const over = [];
+    for (let i = 0; i < gridN(q); i++) { const v = corrected(q, i, k); if (v == null) continue; const d = Math.abs(v - s.avg) / s.avg * 100; if (d > pct) pct = d; if (d > 20 + 1e-9) over.push(pointId(q, i)); }
+    over.sort((a, b) => a.length - b.length || (a < b ? -1 : 1));
+    return { pct: Math.round(pct), over };
+  }
+  function unstable(t) {
+    const q = gridOf(t); if (!q) return [];
+    const out = [];
+    for (let i = 0; i < gridN(q); i++) { const m = numOf(q.v[ptKey(i)]), lo = numOf(q.lo[ptLoKey(i)]), hi = numOf(q.hi[ptHiKey(i)]); if (m == null || !m || lo == null || hi == null) continue; if (hi > m * 1.2 + 1e-9 || lo < m * 0.8 - 1e-9) out.push(pointId(q, i)); }
+    return out;
+  }
+  function fvResult(t) { const q = gridOf(t), c = stdCheck(t); if (!q || !gridN(q) || !c) return null; return c.ok; }
+  function overall(t) {
+    const sm = smokeOf(t), fv = fvResult(t);
+    if (sm.dangerous || fv === false) return "Non-compliant";
+    if (sm.done && fv === true && !missing(t).length) return "Compliant";
+    return "Incomplete";
+  }
   function geomText(q) {
     if (!gridN(q)) return "";
     const pts = q.cols + " × " + q.rows + " = " + gridN(q) + " points";
@@ -120,7 +232,7 @@
   }
   function stats(t) {
     const q0 = gridOf(t);
-    const x = t.vent || {}; const vals = q0 ? gridVals(q0) : (x.readings || []).map(numOf).filter(n => n != null);
+    const x = t.vent || {}; const vals = q0 ? gridVals(q0, calOf(t).k) : (x.readings || []).map(numOf).filter(n => n != null);
     if (!vals.length) return { n: 0, avg: null, min: null, max: null };
     const sum = vals.reduce((a, b) => a + b, 0);
     return { n: vals.length, avg: sum / vals.length, min: Math.min.apply(null, vals), max: Math.max.apply(null, vals) };
@@ -130,27 +242,47 @@
     const x = t.vent || {}, m = [];
     if (!str(x.unit).trim()) m.push("Extraction unit");
     const q = gridOf(t);
-    if (q) {
-      if (!str(x.condition).trim()) m.push("How many fans are running (condition)");
-      if (!gridN(q)) m.push("Opening width and height (or a manual grid)");
-      if (!stats(t).n) m.push("At least one grid point velocity");
-      return m;
-    }
+    if (q) { m.length = 0; return missingBy(t).map(z => z[1]); }
     if (!str(x.location).trim()) m.push("Measurement location");
     if (x.type === "visual") { if (!str(x.comments).trim()) m.push("Comments (what was seen)"); }
     else if (!stats(t).n) m.push("At least one velocity reading");
     return m;
   }
+  /* what each step of the audit still needs: [step, text] */
+  function missingBy(t) {
+    const x = t.vent || {}, q = gridOf(t), m = [];
+    if (!str(x.location).trim()) m.push([1, "Location"]);
+    if (!str(x.unit).trim()) m.push([1, "F/C number / unit"]);
+    if (!str(x.hood).trim()) m.push([1, "Type"]);
+    if (!x.install) m.push([1, "New installation or existing"]);
+    if (!x.empty) m.push([1, "Fume cupboard empty? (Yes / No)"]);
+    else if (x.empty === "no" && !(x.equipPhotos || []).length && !str(x.equipNote).trim()) m.push([1, "Photo or plan of the equipment inside (A5)"]);
+    if (!str(x.smokeSource).trim()) m.push([1, "Smoke source used"]);
+    const sm = smokeOf(t);
+    sm.unrated.forEach(z => m.push([2, "Smoke " + z.row.step + " " + z.row.name + ": G, S or D"]));
+    sm.naNoReason.forEach(z => m.push([2, "Smoke " + z.row.step + " " + z.row.name + ": reason for N/A"]));
+    if (q) {
+      if (!gridN(q)) m.push([3, "Opening width and height (or a manual grid)"]);
+      if (!stats(t).n) m.push([3, "Face velocity readings"]);
+      /* anemometer details are warnings, not blocks (John t750u "Don't block for now") */
+    }
+    return m;
+  }
   const complete = t => isVent(t) && !!t.vent && !missing(t).length;
-  const started = t => { const x = t.vent || {}; return !!(str(x.unit).trim() || str(x.location).trim() || stats(t).n || str(x.comments).trim() || (x.photos || []).length); };
+  const started = t => { const x = t.vent || {}; return !!(str(x.unit).trim() || str(x.location).trim() || stats(t).n || str(x.comments).trim() || (x.photos || []).length || (x.smoke && Object.keys(x.smoke).length)); };
   function warnings(t) {
     const x = t.vent || {}, w = [];
     const q = gridOf(t);
     if (q) {
       const N = gridN(q); let blank = 0;
-      for (let i = 0; i < N; i++) { const r = str(q.v[ptKey(i)]).trim(); if (r === "") { blank++; continue; } const n = numOf(r); if (n == null) w.push("Point " + (i + 1) + " is not a number"); else if (n < 0 || n > 50) w.push("Point " + (i + 1) + " (" + r + " m/s) looks wrong. Check it"); }
+      for (let i = 0; i < N; i++) { const r = str(q.v[ptKey(i)]).trim(); if (r === "") { blank++; continue; } const n = numOf(r); if (n == null) w.push("Point " + pointId(q, i) + " is not a number"); else if (n < 0 || n > 50) w.push("Point " + pointId(q, i) + " (" + r + " m/s) looks wrong. Check it"); }
       if (N && blank && blank < N) w.push(blank + " of " + N + " points still blank");
       if (N > 150) w.push("Large grid (" + N + " points). Check the opening size");
+      if (x.install === "new" && x.empty === "no") w.push("New installations are tested with the cupboard empty (A4.1.3 / B4.1.3)");
+      if (x.fvEarly && !smokeOf(t).done) w.push("Face velocity recorded before the smoke test was finished (A4.1.1 / B4.1.1: smoke test first)");
+      const va = variation(t); if (va.over.length) w.push("Point" + (va.over.length === 1 ? " " : "s ") + va.over.join(", ") + " more than 20% from the average: investigate (cl. 3.1.2 note 3)");
+      const us = unstable(t); if (us.length) w.push("Readings cycled over ±20% at " + us.join(", ") + ": record the instability in Comments (B4.2(e), B5)");
+      calWarnings(evOf(t)).forEach(z => w.push("Anemometer: " + z));
       return w;
     }
     (x.readings || []).forEach((r, i) => { if (str(r).trim() === "") return; const n = numOf(r); if (n == null) w.push("Reading " + (i + 1) + " is not a number"); else if (n < 0 || n > 50) w.push("Reading " + (i + 1) + " (" + r + " m/s) looks wrong. Check it"); });
@@ -175,9 +307,12 @@
   function summaryOf(t) {
     const x = t.vent || {}, s = stats(t), q = gridOf(t);
     if (q) {
-      const b = [gridN(q) ? q.cols + " × " + q.rows + " grid" + (q.basis === "manual" ? " (manual)" : " (" + str(q.widthMm) + " × " + str(q.heightMm) + " mm)") : "grid not set"];
+      const sm = smokeOf(t);
+      const b = [sm.done ? "smoke " + RATE[sm.worst] : "smoke test " + (sm.rows.some(z => z.r) ? "in progress" : "not started")];
+      b.push(gridN(q) ? q.cols + " × " + q.rows + " grid" + (q.basis === "manual" ? " (manual)" : " (" + str(q.widthMm) + " × " + str(q.heightMm) + " mm)") : "grid not set");
       if (s.n) { b.push(s.n + " of " + gridN(q) + " points", "avg " + f2(s.avg) + " m/s (" + f2(s.min) + "–" + f2(s.max) + ")"); const c = stdCheck(t); b.push(c.ok ? "meets 2243.8" : "below 2243.8"); }
       else b.push("no readings yet");
+      b.push(overall(t));
       if ((x.photos || []).length) b.push(x.photos.length + " photo" + (x.photos.length === 1 ? "" : "s"));
       return b.join(" · ");
     }
@@ -196,8 +331,9 @@
     return `<div class="wrap">
     <button class="btn ghost" onclick="openEvent('${esc(id)}')">← ${ev ? esc(ev.code) : "Event"}</button>
     <h2 class="brand-type" style="color:var(--navy)">Add measurement</h2>
-    ${TYPES.filter(a => PICK.includes(a[0])).sort((a, b) => PICK.indexOf(a[0]) - PICK.indexOf(b[0])).map(([k, name, blurb]) => `<div class="card" style="cursor:pointer" data-vt-add="${k}" onclick="ENVSS_VENT.addMeasurement('${esc(id)}','${k}')">
-      <strong>Vent · ${esc(name)}</strong><div class="muted">${esc(blurb)}</div></div>`).join("")}
+    ${TYPES.filter(a => PICK.includes(a[0])).sort((a, b) => PICK.indexOf(a[0]) - PICK.indexOf(b[0])).map(([k, name, blurb]) => `<div class="card vt-type-img" style="cursor:pointer" data-vt-add="${k}" onclick="ENVSS_VENT.addMeasurement('${esc(id)}','${k}')">
+      ${imgWithFallback(TYPE_IMG[k], k)}<div><strong>Vent · ${esc(name)}</strong><div class="muted">${esc(blurb)}</div>${TYPE_IMG[k] ? `<div class="vt-credit">${esc(TYPE_IMG[k].credit)}</div>` : ""}</div></div>`).join("")}
+    <p class="help">Photo credits and licences: assets/vent/ATTRIBUTION.md. The pictures are examples only.</p>
   </div>`;
   }
   function addMeasurement(eventId, type, copyFrom) {
@@ -211,11 +347,14 @@
     delete t.rotameter; delete t.v44Equip; t.contaminantId = ""; t.mode = "static";
     if (copyFrom && copyFrom.vent && x.type === "grid") {
       /* another condition on the same unit: same unit, hood and opening; a new condition and an empty grid */
-      ["unit", "hood", "hoodMake", "hoodModel", "hoodSerial", "location"].forEach(k => { if (copyFrom.vent[k] != null) x[k] = str(copyFrom.vent[k]); });
+      ["unit", "hood", "hoodMake", "hoodModel", "hoodSerial", "location", "install", "empty", "equipNote", "smokeSource", "testedBy"].forEach(k => { if (copyFrom.vent[k] != null) x[k] = str(copyFrom.vent[k]); });
       const q0 = copyFrom.vent.grid;
       if (q0) Object.assign(x.grid, { basis: q0.basis || "standard", widthMm: str(q0.widthMm), heightMm: str(q0.heightMm), cols: q0.cols || 0, rows: q0.rows || 0, gapX: q0.gapX || 0, gapY: q0.gapY || 0, reason: str(q0.reason) });
     } else if (copyFrom && copyFrom.vent) { ["unit", "hood", "condition"].forEach(k => { x[k] = str(copyFrom.vent[k]); }); }
-    if (x.type === "grid" && !str(x.location).trim()) x.location = "Extraction face";
+    if (x.type === "grid") {
+      if (!str(x.smokeSource).trim()) x.smokeSource = "Air current tubes";
+      if (!str(x.testedBy).trim()) { try { const o = typeof g.getOperator === "function" ? g.getOperator() : null; if (o && o.name) x.testedBy = o.name; } catch (e) {} }
+    }
     note(t, "Vent measurement added", typeName(x.type) + (copyFrom ? " · same unit as " + dn(copyFrom) : ""));
     sync(t); save(); openVent(t.id);
     return t;
@@ -318,78 +457,225 @@
       : `<div class="vt-stats vt-empty" id="vtStats">n, average, lowest and highest are worked out across the grid as you enter velocities.</div>`;
   }
   function cellsHtml(t) {
-    const q = gridOf(t), N = gridN(q);
+    const q = gridOf(t), N = gridN(q), k = calOf(t).k;
     if (!N) return `<div id="vgCells"></div>`;
     let h = `<div class="vg-scroll" id="vgCells"><div class="vg-grid" style="grid-template-columns:repeat(${q.cols},minmax(84px,1fr))">`;
-    for (let c = 0; c < q.cols; c++) h += `<div class="vg-colh">${esc(colName(c, q.cols))}</div>`;
     for (let r = 0; r < q.rows; r++) for (let c = 0; c < q.cols; c++) {
-      const i = c * q.rows + r, v = str(q.v[ptKey(i)]), lab = pointLabel(q, i);
-      h += `<div class="vg-cell ${band(numOf(v))}" data-vg-cell="${i}" title="${esc(lab)}"><div class="vg-num">${i + 1}${lab ? ` <span>${esc(lab)}</span>` : ""}</div>
-        <input id="vg-v${i}" data-vg-v="${i}" value="${esc(v)}" inputmode="decimal" placeholder="m/s" autocomplete="off" aria-label="Point ${i + 1}${lab ? " " + esc(lab) : ""} velocity (m/s)">
-        <input id="vg-d${i}" class="vg-d" data-vg-d="${i}" value="${esc(q.d[ptDKey(i)])}" placeholder="&lt;0.5 (m)" autocomplete="off" aria-label="Point ${i + 1} distance where velocity drops below 0.5 m/s (m)"></div>`;
+      const i = c * q.rows + r, v = str(q.v[ptKey(i)]), id = pointId(q, i), cl = customLabel(q, i), was = legacyNo(q, i), cv = corrected(q, i, k);
+      h += `<div class="vg-cell ${band(cv)}" data-vg-cell="${i}" title="${esc(pointLabel(q, i))}"><div class="vg-num">${cellHead(q, i)}</div>
+        <input id="vg-v${i}" data-vg-v="${i}" value="${esc(v)}" inputmode="decimal" placeholder="m/s" autocomplete="off" aria-label="Point ${esc(id)}${cl ? " " + esc(cl) : ""} velocity (m/s)">
+        <div class="vg-cor" data-vg-cor="${i}">${cv != null && k ? "→ " + f2(cv) : ""}</div>
+        <input id="vg-d${i}" class="vg-d" data-vg-d="${i}" value="${esc(q.d[ptDKey(i)])}" placeholder="&lt;0.5 (m)" autocomplete="off" aria-label="Point ${esc(id)} distance where velocity drops below 0.5 m/s (m)"></div>`;
+      void was;
     }
     h += `</div></div>`;
     return h;
   }
+  function cellHead(q, i) { const cl = customLabel(q, i), was = legacyNo(q, i); return `<b>${esc(pointId(q, i))}</b>${cl ? ` <span>${esc(cl)}</span>` : ""}${was ? ` <span class="vg-was">was ${was}</span>` : ""}`; }
   function labelsHtml(t) {
     const q = gridOf(t), N = gridN(q); if (!N) return "";
-    let h = `<details class="vg-labels"><summary>Point labels (optional)</summary><p class="help">Numbered down each column, then across, as on the field sheet. Leave blank to keep the default.</p><div class="vg-lablist">`;
-    for (let i = 0; i < N; i++) h += `<label class="vg-lab"><span>${i + 1}</span><input id="vg-l${i}" data-vg-l="${i}" value="${esc(q.label[ptLKey(i)])}" placeholder="${esc(defaultLabel(i, q.cols, q.rows) || "Point " + (i + 1))}" autocomplete="off"></label>`;
+    const ords = Array.from({ length: N }, (_, o) => idxOf(o, q.cols, q.rows));
+    let h = `<details class="vg-labels"><summary>Point notes (optional)</summary><p class="help">Points are A, B, C… from top left, across each row (Figure A1 note 4). Add a note to a point if useful, e.g. "behind sash stop".</p><div class="vg-lablist">`;
+    ords.forEach(i => { h += `<label class="vg-lab"><span>${esc(pointId(q, i))}</span><input id="vg-l${i}" data-vg-l="${i}" value="${esc(q.label[ptLKey(i)])}" placeholder="Note for ${esc(pointId(q, i))}" autocomplete="off"></label>`; });
+    h += `</div></details><details class="vg-labels" id="vgRange"><summary>Fluctuation during each 15 s reading (optional)</summary><p class="help">B4.2(e): read each point for at least 15 s. If the reading cycles more than ±20% of its mean or fluctuates rapidly, record the lowest and highest seen; it is flagged for Comments.</p><div class="vg-lablist">`;
+    ords.forEach(i => { h += `<div class="vg-lab vg-lohi"><span>${esc(pointId(q, i))}</span><input id="vg-lo${i}" data-vg-lo="${i}" value="${esc(q.lo[ptLoKey(i)])}" inputmode="decimal" placeholder="lowest" autocomplete="off" aria-label="Point ${esc(pointId(q, i))} lowest during reading"><input id="vg-hi${i}" data-vg-hi="${i}" value="${esc(q.hi[ptHiKey(i)])}" inputmode="decimal" placeholder="highest" autocomplete="off" aria-label="Point ${esc(pointId(q, i))} highest during reading"></div>`; });
     return h + `</div></details>`;
   }
-  function gridPageHtml(t) {
-    const ev = evOf(t), x = vt(t, true), q = gridOf(t), eq = (ev && ev.ventEquip) || {}, units = usedUnits(t);
-    const manual = q.basis === "manual";
-    const typeOpts = TYPES.filter(a => PICK.includes(a[0]) || a[0] === x.type).map(([k, n]) => `<option value="${k}" ${k === x.type ? "selected" : ""}>${esc(n)}</option>`).join("");
+
+  /* ---------- guided audit (AS/NZS 2243.8:2014): 1 unit, 2 smoke (App. A), 3 face velocity (App. B), 4 summary (Fig. A1) ---------- */
+  const STEPS = [[1, "Unit"], [2, "Smoke test"], [3, "Face velocity"], [4, "Summary"]];
+  const stepOf = new Map();
+  function curStep(t) {
+    if (stepOf.has(t.id)) return stepOf.get(t.id);
+    const m = missingBy(t); const first = m.length ? Math.min.apply(null, m.map(z => z[0])) : 4;
+    return Math.min(first, 4);
+  }
+  const stepDone = (t, n) => (n === 4 ? !missingBy(t).length : !missingBy(t).some(z => z[0] === n));
+  function stepNavHtml(t, cur) {
+    return `<nav class="va-steps" id="vaSteps">${STEPS.map(([n, name]) => `<button type="button" class="va-step ${n === cur ? "on" : ""} ${stepDone(t, n) ? "done" : ""}" data-vt-step="${n}" aria-current="${n === cur ? "step" : "false"}"><span>${stepDone(t, n) ? "✓" : n}</span>${esc(name)}</button>`).join("")}</nav>`;
+  }
+  function stepChecksHtml(t, n) {
+    const m = missingBy(t).filter(z => n === 4 || z[0] === n).map(z => (n === 4 ? "Step " + z[0] + ": " : "") + z[1]);
+    const w = n === 1 || n === 4 ? warnings(t).filter(x => n === 4 || /A4\.1\.3/.test(x)) : n === 3 ? warnings(t).filter(x => !/A4\.1\.3/.test(x)) : [];
+    if (n === 3 && !warnings(t).some(x => /^Anemometer/.test(x))) { /* nothing extra */ }
+    if (!m.length && !w.length) return `<div class="vt-checks vt-ok" id="vtChecks">✓ ${n === 4 ? "Audit complete" : "Step " + n + " complete"}</div>`;
+    return `<div class="vt-checks" id="vtChecks">${m.length ? `<div class="vt-miss">Still needed: ${m.map(esc).join(", ")}</div>` : ""}${w.map(x => `<div class="vt-warn">⚠ ${esc(x)}</div>`).join("")}</div>`;
+  }
+  const cite = s => `<span class="va-cite">${esc(s)}</span>`;
+  function choice(key, val, label, cur) { return `<button type="button" class="chip va-choice ${cur === val ? "on" : ""}" data-vt-set="${key}" data-vt-val="${val}" aria-pressed="${cur === val}">${esc(label)}</button>`; }
+  function photoSetHtml(t, set, label) {
+    const ph = C().photos, x = t.vent, list = set === "1" ? x.photos || [] : set === "equip" ? x.equipPhotos || [] : ((x.smokePhotos || {})[set.slice(6)] || []);
+    return `<div class="vt-photos">${list.map((ref, i) => `<div class="vt-photo">${ph && ph.imgTag ? ph.imgTag(ref, label + " " + (i + 1)) : ""}<button type="button" class="btn ghost" data-vt-delphoto="${i}" data-vt-pset="${esc(set)}">Remove</button></div>`).join("")}</div>
+      <label class="btn ghost vt-take">📷 ${esc(label)}<input type="file" accept="image/*" capture="environment" data-vt-take="${esc(set)}" hidden></label>`;
+  }
+  function ruleHtml(x) {
+    if (x.install === "new") return `<p class="va-rule">New installation: smoke test and face velocity with the cupboard <b>empty</b> (no apparatus) ${cite("A4.1.3, B4.1.3, cl. 4.2.2, 4.2.3")}</p>`;
+    if (x.install === "existing") return `<p class="va-rule">Existing installation: test at <b>normal working conditions</b>, with any bulky apparatus that normally sits inside left in place ${cite("A4.1.2, B4.1.2")}</p>`;
+    return "";
+  }
+  function step1Html(t) {
+    const x = t.vent, units = usedUnits(t);
     const sib = (C().trainsOf(t.eventId) || []).filter(y => isVent(y) && y !== t && gridOf(y) && str(y.vent.unit).trim() && str(y.vent.unit).trim().toLowerCase() === str(x.unit).trim().toLowerCase());
-    return `<div class="wrap vt-page" id="vtPage" data-vt-id="${esc(t.id)}" data-vt-grid="1">
+    return `<div class="card vt-card" id="vaStep1"><h3 class="vt-h">1 · Unit details ${cite("Figure A1, A4.1, A5")}</h3>
+      ${field("location", "Location", x.location, "e.g. Chemistry Lab 2.14, Building C")}
+      <label for="vt-unit">F/C number / unit</label>
+      <input id="vt-unit" data-vt="unit" value="${esc(x.unit)}" placeholder="e.g. FC-2" autocomplete="off" list="vtUnits">
+      <datalist id="vtUnits">${units.map(u => `<option value="${esc(u.vent.unit)}"></option>`).join("")}</datalist>
+      ${units.length ? `<p class="help">Units already on this event: ${units.map(u => `<button type="button" class="chip" data-vt-unit="${esc(u.id)}">${esc(u.vent.unit)}</button>`).join(" ")}</p>` : ""}
+      <label for="vt-hood">Type</label>
+      <input id="vt-hood" data-vt="hood" value="${esc(x.hood)}" placeholder="e.g. Bench-type fume cupboard" autocomplete="off" list="vtHoods">
+      <datalist id="vtHoods">${FC_TYPES.concat(HOODS).map(h => `<option value="${esc(h)}"></option>`).join("")}</datalist>
+      <p class="help">Fume cupboard types: bench-type, walk-in, downdraught, variable air volume ${cite("cl. 2.1")}. The standard covers ducted fume cupboards only, not recirculating cabinets ${cite("cl. 1.1")}.</p>
+      <div class="vt-grid3"><div>${field("hoodMake", "Make <span class=\"muted\">(optional)</span>", x.hoodMake, "e.g. Dynaflow")}</div><div>${field("hoodModel", "Model <span class=\"muted\">(optional)</span>", x.hoodModel, "Model")}</div><div>${field("hoodSerial", "Serial <span class=\"muted\">(optional)</span>", x.hoodSerial, "Serial number")}</div></div>
+      <label>New installation or existing?</label>
+      <div class="va-choices">${choice("install", "new", "New (commissioning)", x.install)}${choice("install", "existing", "Existing", x.install)}</div>
+      ${ruleHtml(x)}
+      <label>Fume cupboard empty?</label>
+      <div class="va-choices">${choice("empty", "yes", "Yes, empty", x.empty)}${choice("empty", "no", "No, equipment inside", x.empty)}</div>
+      ${x.empty === "no" ? `<div class="va-sub"><p class="help">Attach a photo or plan showing the size, shape and position of everything inside during the tests ${cite("A5, A4.2(j)")}.</p>
+        ${photoSetHtml(t, "equip", "Equipment photo / plan")}
+        <label for="vt-equipNote">Or describe the plan <span class="muted">(size, shape, position)</span></label><textarea id="vt-equipNote" data-vt="equipNote" rows="2" placeholder="e.g. Rotary evaporator 400 × 300 mm, back left; water bath centre">${esc(x.equipNote)}</textarea></div>` : ""}
+      ${field("smokeSource", "Smoke source used", x.smokeSource, "Air current tubes")}
+      <p class="help">Smoke shall be generated with air current tubes ${cite("A3")}.</p>
+      <label for="vt-condition">Operating condition <span class="muted">(optional)</span></label>
+      <div class="vg-fans" aria-label="How many fans are running?">${FANS.map((f, i) => `<button type="button" class="chip ${str(x.condition) === f ? "on" : ""}" data-vt-fans="${i}">${i + 1} fan${i ? "s" : ""}</button>`).join("")}</div>
+      <input id="vt-condition" data-vt="condition" value="${esc(x.condition)}" placeholder="e.g. Two extraction fans in operation" autocomplete="off">
+      ${sib.length ? `<p class="help">Other conditions on this unit: ${sib.map(y => `<a href="#" onclick="openTrain('${esc(y.id)}');return false">${esc(dn(y))}${str(y.vent.condition).trim() ? " · " + esc(y.vent.condition) : ""}</a>`).join(", ")}</p>` : ""}
+      <label>Photos of the unit <span class="muted">(optional)</span></label>
+      ${photoSetHtml(t, "1", "Unit photo")}
+    </div>`;
+  }
+  function step2Html(t) {
+    const x = t.vent, sm = smokeOf(t);
+    const rateBtns = z => ["G", "S", "D"].concat(["NA"]).map(r => `<button type="button" class="chip va-rate va-r${r} ${z.r === r ? "on" : ""}" data-vt-rate="${z.row.k}:${r}" aria-pressed="${z.r === r}" title="${esc(RATE[r] + (RATE_HOW[r] ? ": " + RATE_HOW[r] : ""))}">${r === "NA" ? "N/A" : r}</button>`).join("");
+    return `<div class="card vt-card" id="vaStep2"><h3 class="vt-h">2 · Smoke test ${cite("Appendix A, cl. 3.1.1")}</h3>
+      <div class="va-fig">${imgWithFallback(SMOKE_IMG, "visual", "va-figimg")}<div class="help">Smoke shows how air moves into and through the cupboard ${cite("A2")}. Use air current tubes ${cite("A3")}.<div class="vt-credit">${esc(SMOKE_IMG.credit)}. Example image, not from the standard.</div></div></div>
+      <p class="va-rule">Do the smoke test and record it <b>before</b> the face velocity ${cite("A4.1.1")}. Containment is assessed by this test ${cite("cl. 3.1.1")}.</p>
+      ${ruleHtml(x)}
+      <p class="help"><b>G</b> Good: ${RATE_HOW.G}. <b>S</b> Satisfactory: ${RATE_HOW.S}. <b>D</b> Dangerous: ${RATE_HOW.D} ${cite("A5")}.</p>
+      <ol class="va-proc"><li value="1"><b>(a)</b> Open the sash to the maximum working aperture ${cite("A4.2(a)")}.</li></ol>
+      ${sm.rows.map(z => `<div class="va-row ${z.r ? "rated va-x" + z.r : ""}" id="vaRow-${z.row.k}" data-va-row="${z.row.k}">
+        <div class="va-rowh"><b>(${z.row.step.replace(/^A4\.2\(|\)$/g, "").replace(")–(", "–")}) ${esc(z.row.name)}</b> ${cite(z.row.step)}</div>
+        <p class="help">${esc(z.row.how)}</p>
+        <div class="va-rates" role="group" aria-label="${esc(z.row.name)} result">${rateBtns(z)}</div>
+        <input id="va-c-${z.row.k}" data-va-c="${z.row.k}" value="${esc(z.c)}" placeholder="${z.row.na ? "Comment (or why N/A)" : "Comment" + (z.r === "NA" ? " (required for N/A)" : "")}" autocomplete="off">
+        ${photoSetHtml(t, "smoke:" + z.row.name, "Photo")}
+      </div>`).join("")}
+      <label for="vt-smokeComments">(l) Observations of satisfactory and unsatisfactory smoke distribution ${cite("A4.2(l)")}</label>
+      <textarea id="vt-smokeComments" data-vt="smokeComments" rows="2" placeholder="Brief observations">${esc(x.smokeComments)}</textarea>
+      <div id="vaSmokeRes">${smokeResHtml(t)}</div>
+    </div>`;
+  }
+  function smokeResHtml(t) {
+    const sm = smokeOf(t);
+    if (!sm.rows.some(z => z.r)) return `<div class="vg-std"><span class="muted">Smoke result: worst score across the rows; compliant if all are S or better ${cite("A6")}.</span></div>`;
+    const cls = sm.dangerous ? "vg-fail" : sm.done ? "vg-pass" : "";
+    return `<div class="vg-std ${cls}" id="vaSmoke"><b>Smoke result: ${sm.worst ? RATE[sm.worst] : "—"}${sm.done ? (sm.compliant ? " · Compliant" : " · Non-compliant") : sm.dangerous ? " · Non-compliant" : " · not finished"}</b> ${cite("A6: worst score; any D is non-compliant")}</div>`;
+  }
+  function eqField(id, key, label, val, ph, extra) { return `<div><label for="${id}">${label}</label><input id="${id}" data-vt-eq="${key}" value="${esc(val)}" placeholder="${esc(ph)}" autocomplete="off" ${extra || ""}></div>`; }
+  function step3Html(t) {
+    const x = t.vent, q = gridOf(t), manual = q.basis === "manual", ev = evOf(t) || {}, e = ev.ventEquip || {}, sm = smokeOf(t);
+    const gate = !sm.done && !x.fvEarly && !stats(t).n;
+    return `<div class="card vt-card" id="vaStep3"><h3 class="vt-h">3 · Face velocity ${cite("Appendix B, cl. 3.1.2")}</h3>
+      ${ruleHtml(x)}
+      <h4 class="va-h4">Anemometer ${cite("B3, Figure A1")}</h4>
+      <p class="help">Calibrated within the past 12 months by an accredited laboratory; reads 0.1–1.0 m/s at 0.05 m/s resolution or better. A thermal anemometer is preferred. Do not use a glowing hot-wire anemometer in a combustible atmosphere ${cite("B3")}. Entered once for the event; each reading is shown corrected (→) ${cite("B4.2(e), Figure A1 note 3")}.</p>
+      <div class="va-anem">${anemFieldsHtml(ev, "vaEq")}</div>
+      <h4 class="va-h4">Opening and grid ${cite("B4.2(a)–(c), Figure B1")}</h4>
+      <p class="help">(a) Open the sash to the maximum face opening, then measure it.</p>
+      <div class="vt-grid2"><div><label for="vg-w">Face opening width (mm)</label><input id="vg-w" data-vg="widthMm" value="${esc(q.widthMm)}" inputmode="numeric" placeholder="e.g. 1500" autocomplete="off"></div>
+      <div><label for="vg-h">Face opening height (mm)</label><input id="vg-h" data-vg="heightMm" value="${esc(q.heightMm)}" inputmode="numeric" placeholder="e.g. 500" autocomplete="off"></div></div>
+      ${geomHtml(t)}
+      <p class="help">Grid per ${STD.ref}: points ${STD.edge} mm in from the edges of the opening, then equally spaced, not more than ${STD.maxY} mm apart vertically nor more than ${STD.maxX} mm apart horizontally, using the fewest lines that meet this.</p>
+      ${manual ? `<div class="vg-manual"><b>Manual grid</b> <span class="muted">(not set out from the opening size)</span>
+        <div class="vt-grid2"><div><label for="vg-cols">Columns (across)</label><input id="vg-cols" data-vg="cols" value="${esc(q.cols)}" inputmode="numeric" autocomplete="off"></div><div><label for="vg-rows">Rows (down)</label><input id="vg-rows" data-vg="rows" value="${esc(q.rows)}" inputmode="numeric" autocomplete="off"></div></div>
+        <label for="vg-reason">Reason for the manual grid <span class="muted">(optional)</span></label><input id="vg-reason" data-vg="reason" value="${esc(q.reason)}" placeholder="e.g. opening size unknown, obstruction, site requirement" autocomplete="off">
+        <button type="button" class="btn ghost" data-vg-standard="1">Use the standard grid from the opening size</button></div>`
+      : `<button type="button" class="btn ghost vg-manbtn" data-vg-manual="1">Manual grid instead (${MANUAL_DEFAULT.cols}×${MANUAL_DEFAULT.rows} = ${MANUAL_DEFAULT.cols * MANUAL_DEFAULT.rows})</button>`}
+      <h4 class="va-h4">Readings (m/s) ${cite("B4.2(b), (d), (e)")}</h4>
+      <p class="help">(b) Stand back about 0.5 m from the face and to one side. (d) Hold the probe steady, normal to the plane of the sash (highest reading). (e) Read for at least 15 s at each point and enter the reading. Points go A, B, C… from top left, across each row (Figure A1 note 4); Enter moves to the next letter. Optionally note the distance from the face where velocity drops below 0.5 m/s (metres).</p>
+      ${gate ? `<div class="va-gate" id="vaGate"><b>Finish the smoke test first.</b> The standard requires the smoke test before face velocity ${cite("A4.1.1, B4.1.1")}.<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn mid" data-vt-step="2">Go to the smoke test</button><button type="button" class="btn ghost" data-vt-fvearly="1">Record face velocity anyway</button></div></div>` : cellsHtml(t) + labelsHtml(t)}
+      ${gridStatsHtml(t)}
+      ${stdHtml(t)}
+    </div>`;
+  }
+  function a1Html(t) {
+    const x = t.vent, q = gridOf(t), sm = smokeOf(t), s = stats(t), va = variation(t), cal = calOf(t), ev = evOf(t) || {}, e = ev.ventEquip || {}, N = gridN(q);
+    const ords = Array.from({ length: N }, (_, o) => idxOf(o, q.cols, q.rows));
+    const chunks = []; for (let j = 0; j < ords.length; j += 8) chunks.push(ords.slice(j, j + 8));
+    const cv = i => { const v = corrected(q, i, cal.k); return v == null ? "" : f2(v); };
+    const lohi = (i, w) => { const n = numOf((w === "lo" ? q.lo[ptLoKey(i)] : q.hi[ptHiKey(i)])); return n == null ? "" : f2(r2(n + cal.k)); };
+    return `<div class="va-a1" id="vaA1"><h4 class="va-h4">Record ${cite("Figure A1: reporting of velocity and smoke test results")}</h4>
+      <table class="va-kv"><tbody>
+        <tr><th>Location</th><td>${esc(x.location)}</td></tr><tr><th>F/C number</th><td>${esc(x.unit)}</td></tr><tr><th>Type</th><td>${esc(x.hood)}</td></tr>
+        <tr><th>Installation</th><td>${x.install === "new" ? "New (commissioning)" : x.install === "existing" ? "Existing" : ""}</td></tr>
+      </tbody></table>
+      <h5>Smoke test</h5>
+      <table class="va-kv"><tbody><tr><th>Fume cupboard empty</th><td>${x.empty === "yes" ? "Yes" : x.empty === "no" ? "No (plan / photo attached: " + ((x.equipPhotos || []).length + (str(x.equipNote).trim() ? " + description" : "")) + ")" : ""}</td></tr><tr><th>Smoke source used</th><td>${esc(x.smokeSource)}</td></tr></tbody></table>
+      <div class="vg-scroll"><table class="vg-sum va-smoke"><thead><tr><th>Test position</th><th>Result</th><th>Comments</th></tr></thead><tbody>
+        ${sm.rows.map(z => `<tr><td>${esc(z.row.name)}</td><td class="va-res va-x${esc(z.r)}">${z.r === "NA" ? "N/A" : esc(z.r)}</td><td>${esc(z.c)}${z.photos.length ? ` <span class="muted">(${z.photos.length} photo${z.photos.length === 1 ? "" : "s"})</span>` : ""}</td></tr>`).join("")}
+      </tbody></table></div>
+      <p class="help">G Good · S Satisfactory · D Dangerous ${cite("A5")}. Result: <b>${sm.worst ? RATE[sm.worst] : "—"}</b>${sm.done ? " · " + (sm.compliant ? "Compliant" : "Non-compliant") : ""}.</p>
+      <h5>Face velocity</h5>
+      <table class="va-kv"><tbody>
+        <tr><th>Face opening</th><td>${q.basis === "manual" ? "Manual grid" + (str(q.reason).trim() ? " (" + esc(q.reason) + ")" : "") : "Width " + esc(q.widthMm) + " mm · Height " + esc(q.heightMm) + " mm"}</td></tr>
+        <tr><th>No. of readings</th><td>${N ? s.n + " of " + N + " (" + q.cols + " × " + q.rows + ")" : ""}</td></tr>
+        <tr><th>Instrument</th><td>${esc([e.make, e.model].filter(Boolean).join(" "))}</td></tr><tr><th>Serial no.</th><td>${esc(e.serial)}</td></tr>
+        <tr><th>Calibration correction factor</th><td>${cal.set ? esc((cal.k > 0 && !/^\+/.test(cal.raw) ? "+" : "") + cal.raw) + " m/s at " + esc(cal.at || "—") + " m/s" : ""}</td></tr>
+        <tr><th>Owned / hired</th><td>${e.ownership === "hired" ? "Hired" + (str(e.supplier).trim() ? " (" + esc(e.supplier) + ")" : "") : e.ownership === "owned" ? "Owned" : ""}</td></tr>
+        <tr><th>Last calibration / due</th><td>${esc(e.calDate || "")}${e.calDue ? " / due " + esc(e.calDue) : ""}${(e.certPhotos || []).length ? " · certificate photo" : ""}</td></tr>
+        <tr><th>Calibration check</th><td>${(() => { const w = calWarnings(ev); return w.length ? `<span class="vt-warn">${esc(w.join("; "))}</span>` : "OK"; })()}</td></tr>
+      </tbody></table>
+      ${chunks.map(ch => `<div class="vg-scroll"><table class="vg-sum va-res-t"><thead><tr><th>Results</th>${ch.map(i => `<th>${esc(pointId(q, i))}</th>`).join("")}</tr></thead><tbody>
+        <tr><th>Reading</th>${ch.map(i => `<td>${cv(i)}</td>`).join("")}</tr>
+        ${ch.some(i => lohi(i, "hi")) ? `<tr><th>Maximum</th>${ch.map(i => `<td>${lohi(i, "hi")}</td>`).join("")}</tr>` : ""}
+        ${ch.some(i => lohi(i, "lo")) ? `<tr><th>Minimum</th>${ch.map(i => `<td>${lohi(i, "lo")}</td>`).join("")}</tr>` : ""}
+      </tbody></table></div>`).join("")}
+      <table class="va-kv"><tbody>
+        <tr><th>Total mean value / average face velocity</th><td>${s.n ? f2(s.avg) + " m/s" : ""}</td></tr>
+        <tr><th>Maximum / minimum reading</th><td>${s.n ? f2(s.max) + " / " + f2(s.min) + " m/s" : ""}</td></tr>
+        <tr><th>No. of points</th><td>${N || ""}</td></tr>
+        <tr><th>Max. variation of readings from average</th><td>${va.pct != null ? va.pct + " %" : ""}</td></tr>
+      </tbody></table>
+      <p class="help">All readings in m/s. Average to two decimal places. All figures include the calibration correction factor ${cite("Figure A1 notes 1–3")}.</p>
+    </div>`;
+  }
+  function step4Html(t) {
+    const x = t.vent, sm = smokeOf(t), fv = fvResult(t), ov = overall(t), s = stats(t);
+    const pill = (ok, txt) => `<span class="va-pill ${ok === true ? "ok" : ok === false ? "bad" : ""}">${esc(txt)}</span>`;
+    return `<div class="card vt-card" id="vaStep4"><h3 class="vt-h">4 · Summary ${cite("A6, cl. 3.1.2, Figure A1")}</h3>
+      <div class="va-sum" id="vaSum">
+        <div><span>Smoke test</span>${pill(sm.done ? sm.compliant : sm.dangerous ? false : null, sm.done ? RATE[sm.worst] + " · " + (sm.compliant ? "compliant" : "non-compliant") : sm.dangerous ? "Dangerous · non-compliant" : "not finished")}</div>
+        <div><span>Face velocity</span>${pill(fv, fv == null ? "not finished" : (fv ? "meets" : "does not meet") + " cl. 3.1.2 · avg " + f2(s.avg) + " m/s, max " + f2(s.max) + ", min " + f2(s.min))}</div>
+        <div><span>Overall</span>${pill(ov === "Compliant" ? true : ov === "Non-compliant" ? false : null, ov)}</div>
+      </div>
+      <p class="help">Overall = smoke test compliant (all S or better, A6) and face velocity meets cl. 3.1.2 (average ≥ 0.5 m/s, every point ≥ 0.3 m/s). These two tests are not the full compliance testing for commissioning or annual inspection ${cite("B5 note 2; cl. 4.2, 5.5.4")}.</p>
+      ${a1Html(t)}
+      <label for="vt-comments">Comments / conclusions ${cite("Figure A1, B5 note 1")}</label><textarea id="vt-comments" data-vt="comments" rows="3" placeholder="Conclusions; record any unstable readings here">${esc(x.comments)}</textarea>
+      <div class="vt-grid2"><div>${field("testedBy", "Tested by (print)", x.testedBy, "Name")}</div><div><label>Date</label><input value="${esc((evOf(t) || {}).date || "")}" disabled></div></div>
+      <p class="help">Testing shall be carried out by a competent person ${cite("cl. 4.2.7")}. Results go to the person in charge of the laboratory ${cite("B5")}.</p>
+    </div>`;
+  }
+  function gridPageHtml(t) {
+    const ev = evOf(t), x = vt(t, true), eq = (ev && ev.ventEquip) || {};
+    const typeOpts = TYPES.filter(a => PICK.includes(a[0]) || a[0] === x.type).map(([k, n]) => `<option value="${k}" ${k === x.type ? "selected" : ""}>${esc(n)}</option>`).join("");
+    const n = curStep(t);
+    const body = n === 1 ? step1Html(t) : n === 2 ? step2Html(t) : n === 3 ? step3Html(t) : step4Html(t);
+    return `<div class="wrap vt-page" id="vtPage" data-vt-id="${esc(t.id)}" data-vt-grid="1" data-vt-stepno="${n}">
       <button class="btn ghost" onclick="openEvent('${esc(t.eventId)}')">← Event ${ev ? esc(ev.code) : ""}</button>
       <div class="row" style="margin-top:10px;align-items:center;gap:10px"><h2 class="brand-type" style="margin:0;color:var(--navy)">${esc(dn(t))}</h2><span id="vtBadge">${badgeHtml(t)}</span></div>
-      <p class="muted">${esc(typeName(x.type))}${eq.serial || eq.model ? " · anemometer " + esc([eq.make, eq.model].filter(Boolean).join(" ")) + (eq.serial ? " SN " + esc(eq.serial) : "") : ` · <span class="vt-warn">no anemometer on the event yet</span>`}</p>
-      ${checksHtml(t)}
-      <div class="card vt-card"><h3 class="vt-h">Extraction unit</h3>
-        <label for="vt-type">Measurement type</label><select id="vt-type" data-vt="type">${typeOpts}</select>
-        <label for="vt-unit">Extraction unit / equipment</label>
-        <input id="vt-unit" data-vt="unit" value="${esc(x.unit)}" placeholder="e.g. Fume cupboard FC-2, Lab 1.04" autocomplete="off" list="vtUnits">
-        <datalist id="vtUnits">${units.map(u => `<option value="${esc(u.vent.unit)}"></option>`).join("")}</datalist>
-        ${units.length ? `<p class="help">Units already on this event: ${units.map(u => `<button type="button" class="chip" data-vt-unit="${esc(u.id)}">${esc(u.vent.unit)}</button>`).join(" ")}</p>` : ""}
-        <label for="vt-hood">LEV / hood type <span class="muted">(optional)</span></label>
-        <input id="vt-hood" data-vt="hood" value="${esc(x.hood)}" placeholder="e.g. Fume cupboard" autocomplete="off" list="vtHoods">
-        <datalist id="vtHoods">${HOODS.map(h => `<option value="${esc(h)}"></option>`).join("")}</datalist>
-        <div class="vt-grid3"><div>${field("hoodMake", "Hood make <span class=\"muted\">(optional)</span>", x.hoodMake, "e.g. Dynaflow")}</div><div>${field("hoodModel", "Model <span class=\"muted\">(optional)</span>", x.hoodModel, "Model")}</div><div>${field("hoodSerial", "Serial <span class=\"muted\">(optional)</span>", x.hoodSerial, "Serial number")}</div></div>
-        ${sib.length ? `<p class="help">Other conditions on this unit: ${sib.map(y => `<a href="#" onclick="openTrain('${esc(y.id)}');return false">${esc(dn(y))}${str(y.vent.condition).trim() ? " · " + esc(y.vent.condition) : ""}</a>`).join(", ")}</p>` : ""}
-      </div>
-      <div class="card vt-card"><h3 class="vt-h">Condition</h3>
-        <label for="vt-condition">How many fans are running?</label>
-        <div class="vg-fans">${FANS.map((f, i) => `<button type="button" class="chip ${str(x.condition) === f ? "on" : ""}" data-vt-fans="${i}">${i + 1}</button>`).join("")}</div>
-        <input id="vt-condition" data-vt="condition" value="${esc(x.condition)}" placeholder="e.g. Two extraction fans in operation, sash at 500 mm" autocomplete="off">
-        ${field("location", "Measurement location <span class=\"muted\">(optional)</span>", x.location, "Extraction face")}
-      </div>
-      <div class="card vt-card" id="vgOpening"><h3 class="vt-h">Opening and grid</h3>
-        <div class="vt-grid2"><div><label for="vg-w">Opening width (mm)</label><input id="vg-w" data-vg="widthMm" value="${esc(q.widthMm)}" inputmode="numeric" placeholder="e.g. 1500" autocomplete="off"></div>
-        <div><label for="vg-h">Opening height (mm)</label><input id="vg-h" data-vg="heightMm" value="${esc(q.heightMm)}" inputmode="numeric" placeholder="e.g. 500" autocomplete="off"></div></div>
-        ${geomHtml(t)}
-        <p class="help">Grid per ${STD.ref}: points ${STD.edge} mm in from the edges of the opening, then equally spaced, not more than ${STD.maxY} mm apart vertically nor more than ${STD.maxX} mm apart horizontally, using the fewest lines that meet this.</p>
-        ${manual ? `<div class="vg-manual"><b>Manual grid</b> <span class="muted">(not set out from the opening size)</span>
-          <div class="vt-grid2"><div><label for="vg-cols">Columns (across)</label><input id="vg-cols" data-vg="cols" value="${esc(q.cols)}" inputmode="numeric" autocomplete="off"></div><div><label for="vg-rows">Rows (down)</label><input id="vg-rows" data-vg="rows" value="${esc(q.rows)}" inputmode="numeric" autocomplete="off"></div></div>
-          <label for="vg-reason">Reason for the manual grid <span class="muted">(optional)</span></label><input id="vg-reason" data-vg="reason" value="${esc(q.reason)}" placeholder="e.g. opening size unknown, obstruction, site requirement" autocomplete="off">
-          <button type="button" class="btn ghost" data-vg-standard="1">Use the standard grid from the opening size</button></div>`
-        : `<button type="button" class="btn ghost vg-manbtn" data-vg-manual="1">Manual grid instead (${MANUAL_DEFAULT.cols}×${MANUAL_DEFAULT.rows} = ${MANUAL_DEFAULT.cols * MANUAL_DEFAULT.rows})</button>`}
-      </div>
-      <div class="card vt-card"><h3 class="vt-h">Face velocity grid (m/s)</h3>
-        <p class="help">Velocity at each point, and optionally the distance from the face where it drops below 0.5 m/s (metres; any text is kept as typed).</p>
-        ${cellsHtml(t)}
-        ${labelsHtml(t)}
-        ${gridStatsHtml(t)}
-        ${stdHtml(t)}
-      </div>
-      <div class="card vt-card"><h3 class="vt-h">Comments and photos</h3>
-        <label for="vt-comments">Comments for this condition</label><textarea id="vt-comments" data-vt="comments" rows="3" placeholder="Observations, obstructions, sash position, smoke test">${esc(x.comments)}</textarea>
-        ${photosHtml(t)}
+      <p class="muted">${esc(typeName(x.type))}${str(x.unit).trim() ? " · " + esc(x.unit) : ""} · AS/NZS 2243.8:2014${eq.serial || eq.model ? " · anemometer " + esc([eq.make, eq.model].filter(Boolean).join(" ")) + (eq.serial ? " SN " + esc(eq.serial) : "") : ""}</p>
+      <label for="vt-type" class="va-typel">Measurement type</label><select id="vt-type" data-vt="type">${typeOpts}</select>
+      ${stepNavHtml(t, n)}
+      ${stepChecksHtml(t, n)}
+      ${body}
+      <div class="row va-nav" style="gap:10px;flex-wrap:wrap;margin-top:12px">
+        ${n > 1 ? `<button type="button" class="btn ghost" data-vt-step="${n - 1}">← Back</button>` : ""}
+        ${n < 4 ? `<button type="button" class="btn mid" data-vt-step="${n + 1}" id="vaNext">Next: ${esc(STEPS[n][1])} →</button>` : `<button type="button" class="btn mid" onclick="openEvent('${esc(t.eventId)}')">Done</button>`}
       </div>
       <div class="row vt-actions" style="gap:10px;flex-wrap:wrap;margin-top:12px">
-        <button type="button" class="btn mid" data-vt-again="1">+ Another condition on this unit</button>
-        <button type="button" class="btn ghost" onclick="openEvent('${esc(t.eventId)}')">Done</button>
+        <button type="button" class="btn ghost" data-vt-again="1">+ Another condition on this unit</button>
+        ${n < 4 ? `<button type="button" class="btn ghost" onclick="openEvent('${esc(t.eventId)}')">Done for now</button>` : ""}
         ${typeof g.isAdmin === "function" && g.isAdmin() ? `<button type="button" class="btn ghost vt-del" data-vt-delete="1">Delete measurement</button>` : ""}
       </div>
       ${auditHtml(t)}
@@ -400,23 +686,25 @@
   function reshape(t, cols, rows, why) {
     const q = gridOf(t), oc = q.cols, or = q.rows;
     if (cols === oc && rows === or) return true;
-    const nv = {}, nd = {}, nl = {}, lost = [];
+    const nv = {}, nd = {}, nl = {}, nlo = {}, nhi = {}, lost = [];
     for (let i = 0; i < gridN(q); i++) {
-      const has = [q.v[ptKey(i)], q.d[ptDKey(i)], q.label[ptLKey(i)]].some(v => str(v).trim() !== "");
+      const has = [q.v[ptKey(i)], q.d[ptDKey(i)], q.label[ptLKey(i)], q.lo[ptLoKey(i)], q.hi[ptHiKey(i)]].some(v => str(v).trim() !== "");
       if (!has) continue;
       const c = Math.floor(i / or), r = i % or;
-      if (c >= cols || r >= rows) { lost.push(i + 1); continue; }
+      if (c >= cols || r >= rows) { lost.push(pointId(q, i)); continue; }
       const j = c * rows + r;
       if (str(q.v[ptKey(i)]).trim()) nv[ptKey(j)] = q.v[ptKey(i)];
       if (str(q.d[ptDKey(i)]).trim()) nd[ptDKey(j)] = q.d[ptDKey(i)];
       if (str(q.label[ptLKey(i)]).trim()) nl[ptLKey(j)] = q.label[ptLKey(i)];
+      if (str(q.lo[ptLoKey(i)]).trim()) nlo[ptLoKey(j)] = q.lo[ptLoKey(i)];
+      if (str(q.hi[ptHiKey(i)]).trim()) nhi[ptHiKey(j)] = q.hi[ptHiKey(i)];
     }
     if (lost.length) {
       alert("That would change the grid to " + cols + " × " + rows + " and drop the readings already entered at point" + (lost.length === 1 ? " " : "s ") + lost.join(", ") + ".\n\nNothing has been changed. Clear those points first if the grid really is smaller.");
       return false;
     }
     const moved = gridN(q) && Object.keys(q.v).length && rows !== or;
-    q.v = nv; q.d = nd; q.label = nl; q.cols = cols; q.rows = rows;
+    q.v = nv; q.d = nd; q.label = nl; q.lo = nlo; q.hi = nhi; q.cols = cols; q.rows = rows;
     note(t, "Grid " + (oc && or ? oc + " × " + or : "not set") + " → " + cols + " × " + rows, why + (moved ? "; entered points kept their column and row" : ""));
     return true;
   }
@@ -431,7 +719,11 @@
     const q = gridOf(t); if (!q) return;
     const set = (id, html) => { const el = document.getElementById(id); if (el) el.outerHTML = html; };
     set("vtStats", gridStatsHtml(t)); set("vgCheck", stdHtml(t));
-    document.querySelectorAll("[data-vg-cell]").forEach(el => { const i = +el.dataset.vgCell, lab = pointLabel(q, i), num = el.querySelector(".vg-num"); if (num) num.innerHTML = (i + 1) + (lab ? ` <span>${esc(lab)}</span>` : ""); el.title = lab; const n = numOf(q.v[ptKey(i)]); el.classList.remove("vg-low", "vg-mid", "vg-ok"); const b = band(n); if (b) el.classList.add(b); });
+    const n0 = +((document.getElementById("vtPage") || {}).dataset || {}).vtStepno || 0;
+    if (n0) { set("vtChecks", stepChecksHtml(t, n0)); set("vaSteps", stepNavHtml(t, n0)); }
+    const sr = document.getElementById("vaSmokeRes"); if (sr) sr.innerHTML = smokeResHtml(t);
+    const k = calOf(t).k;
+    document.querySelectorAll("[data-vg-cell]").forEach(el => { const i = +el.dataset.vgCell, num = el.querySelector(".vg-num"); if (num) num.innerHTML = cellHead(q, i); el.title = pointLabel(q, i); const n = corrected(q, i, k); el.classList.remove("vg-low", "vg-mid", "vg-ok"); const b = band(n); if (b) el.classList.add(b); const co = el.querySelector(".vg-cor"); if (co) co.textContent = n != null && k ? "→ " + f2(n) : ""; });
   }
   function gridInput(t, el) {
     const q = gridOf(t); if (!q) return false;
@@ -439,6 +731,8 @@
     if (d.vgV != null) { const k = ptKey(+d.vgV), v = el.value.trim(); if (v) q.v[k] = v; else delete q.v[k]; return true; }
     if (d.vgD != null) { const k = ptDKey(+d.vgD), v = el.value.trim(); if (v) q.d[k] = v; else delete q.d[k]; return true; }
     if (d.vgL != null) { const k = ptLKey(+d.vgL), v = el.value.trim(); if (v) q.label[k] = v; else delete q.label[k]; return true; }
+    if (d.vgLo != null) { const k = ptLoKey(+d.vgLo), v = el.value.trim(); if (v) q.lo[k] = v; else delete q.lo[k]; return true; }
+    if (d.vgHi != null) { const k = ptHiKey(+d.vgHi), v = el.value.trim(); if (v) q.hi[k] = v; else delete q.hi[k]; return true; }
     if (d.vg === "widthMm" || d.vg === "heightMm" || d.vg === "reason") { q[d.vg] = el.value.trim(); return true; }
     if (d.vg === "cols" || d.vg === "rows") return true; /* applied on change */
     return false;
@@ -469,6 +763,21 @@
   }
   function gridClick(t, b) {
     const q = gridOf(t), x = t.vent;
+    if (b.dataset.vtStep && q) { flushDirty(); stepOf.set(t.id, Math.max(1, Math.min(4, +b.dataset.vtStep))); C().render(); try { const pg = document.getElementById("vaSteps"); if (pg) pg.scrollIntoView({ block: "start" }); else g.scrollTo(0, 0); } catch (e) {} return true; }
+    if (b.dataset.vtSet && x) {
+      const key = b.dataset.vtSet, val = b.dataset.vtVal, before = str(x[key]);
+      if (before === val) return true;
+      x[key] = val; note(t, key === "install" ? "Installation" : "Fume cupboard empty", (before || "blank") + " → " + val); sync(t); save(); C().render(); return true;
+    }
+    if (b.dataset.vtRate && x) {
+      const [k, r] = b.dataset.vtRate.split(":"), row = SMOKE.find(z => z.k === k); if (!row) return true;
+      x.smoke = x.smoke || {}; const before = str(x.smoke[row.name]);
+      if (before === r) { delete x.smoke[row.name]; note(t, "Smoke " + row.step, row.name + ": " + before + " → blank"); }
+      else { x.smoke[row.name] = r; note(t, "Smoke " + row.step, row.name + ": " + (before || "blank") + " → " + r); }
+      if (smokeOf(t).done && !x.smokeDoneAt) x.smokeDoneAt = new Date().toISOString();
+      sync(t); save(); C().render(); return true;
+    }
+    if (b.dataset.vtFvearly && x) { x.fvEarly = new Date().toISOString(); note(t, "Face velocity before smoke test finished", "chosen on site (A4.1.1 asks for the smoke test first)"); sync(t); save(); C().render(); return true; }
     if (b.dataset.vtFans != null && x) {
       const before = str(x.condition); x.condition = FANS[+b.dataset.vtFans];
       note(t, "Condition", (before || "blank") + " → " + x.condition); sync(t); save(); C().render(); return true;
@@ -514,11 +823,12 @@
   const focusVal = new Map();
   let dirty = false;
   function flushDirty() { if (!dirty) return; dirty = false; const t = curVent(); if (t) sync(t); save(); }
-  function onFocus(e) { const el = e.target; if (!el || !el.dataset || !curVent()) return; if (el.dataset.vt || el.dataset.vtR != null || el.dataset.vg || el.dataset.vgV != null || el.dataset.vgD != null || el.dataset.vgL != null) focusVal.set(el, el.value); }
+  function onFocus(e) { const el = e.target; if (!el || !el.dataset || !curVent()) return; if (el.dataset.vt || el.dataset.vtR != null || el.dataset.vg || el.dataset.vgV != null || el.dataset.vgD != null || el.dataset.vgL != null || el.dataset.vgLo != null || el.dataset.vgHi != null || el.dataset.vaC != null) focusVal.set(el, el.value); }
   function onInput(e) {
     const el = e.target; if (!el || !el.dataset) return; const t = curVent(); if (!t) return;
     const x = vt(t, true);
     if (gridInput(t, el)) {}
+    else if (el.dataset.vaC != null) { const row = SMOKE.find(z => z.k === el.dataset.vaC); if (!row) return; x.smoke = x.smoke || {}; const v = el.value.trim(); if (v) x.smoke[smokeCK(row)] = v; else delete x.smoke[smokeCK(row)]; }
     else if (el.dataset.vtR != null) { const i = +el.dataset.vtR; x.readings[i] = el.value.trim(); }
     else if (el.dataset.vt && el.dataset.vt !== "type") x[el.dataset.vt] = el.value;
     else return;
@@ -526,7 +836,41 @@
        exactly like the other sample screens. Leaving the box, Enter, or the app going to the background commits. */
     dirty = true; sync(t); softPaint(t);
   }
+  function anemEvent() { const v = view(); const ev = C().eventById(v.eventId); return isVentEvent(ev) ? ev : null; }
+  function anemClick(b) {
+    const ev = anemEvent(); if (!ev) return;
+    ev.ventEquip = Object.assign({ make: "", model: "", serial: "" }, ev.ventEquip || {});
+    const e = ev.ventEquip;
+    if (b.dataset.vtEqset) {
+      const before = str(e.ownership), val = b.dataset.vtVal; if (before === val) return;
+      e.ownership = val; evNote(ev, "Anemometer owned / hired", (before || "blank") + " → " + val);
+      if (val === "hired" && !str(e.supplier).trim()) { e.supplier = "Airmet"; evNote(ev, "Anemometer supplier", "blank → Airmet (default for hired)"); }
+    } else {
+      const i = +b.dataset.vtCertdel, list = e.certPhotos || [], ref = list[i]; if (!ref) return;
+      if (!confirm("Remove this calibration certificate photo?")) return;
+      list.splice(i, 1); try { const pid = String(ref).replace("envss-photo:", ""); if (C().photos && C().photos.discard) C().photos.discard(pid); } catch (err) {}
+      evNote(ev, "Calibration certificate photo removed", "photo " + (i + 1));
+    }
+    (C().trainsOf(ev.id) || []).forEach(y => { if (isVent(y) && y.vent) sync(y); });
+    save(); C().render();
+  }
+  async function onCert(el) {
+    const ev = anemEvent(); const file = el.files && el.files[0]; if (!ev || !file) return;
+    try {
+      const ph = C().photos; if (!ph || !ph.attach) { alert("Photos are not available on this device."); return; }
+      /* event-level photo: its own holder id so the shared photo queue stores and uploads it under the event */
+      const holder = { id: "vent-cert-" + ev.id, eventId: ev.id };
+      const ref = await ph.attach(file, holder, "ventCalCert"); if (!ref) return;
+      ev.ventEquip = Object.assign({ make: "", model: "", serial: "" }, ev.ventEquip || {});
+      (ev.ventEquip.certPhotos = ev.ventEquip.certPhotos || []).push(ref);
+      if (holder.photoRefs) ev.ventEquip.certPhotoRefs = Object.assign({}, ev.ventEquip.certPhotoRefs, holder.photoRefs);
+      evNote(ev, "Calibration certificate photo added", "photo " + ev.ventEquip.certPhotos.length);
+      (C().trainsOf(ev.id) || []).forEach(y => { if (isVent(y) && y.vent) sync(y); });
+      save(); C().render();
+    } catch (err) { alert("The photo could not be saved on this device: " + (err && err.message || err)); }
+  }
   function onChange(e) {
+    const el0 = e.target; if (el0 && el0.dataset && el0.dataset.vtCert) { onCert(el0); return; }
     const el = e.target; if (!el || !el.dataset) return; const t = curVent(); if (!t) return;
     if (el.dataset.vtTake) { onFile(t, el); return; }
     const x = vt(t, true);
@@ -535,7 +879,10 @@
       note(t, "Measurement type", typeName(before) + " → " + typeName(x.type)); sync(t); save(); C().render(); return;
     }
     if (gridChange(t, el)) return;
-    if (gridOf(t) && (el.dataset.vgV != null || el.dataset.vgD != null || el.dataset.vgL != null || el.dataset.vg === "reason")) { focusVal.set(el, el.value); dirty = false; sync(t); save(); softPaint(t); return; }
+    if (gridOf(t) && (el.dataset.vgV != null || el.dataset.vgD != null || el.dataset.vgL != null || el.dataset.vgLo != null || el.dataset.vgHi != null || el.dataset.vaC != null || el.dataset.vg === "reason")) {
+      if (el.dataset.vaC != null && smokeOf(t).done && !t.vent.smokeDoneAt) t.vent.smokeDoneAt = new Date().toISOString();
+      focusVal.set(el, el.value); dirty = false; sync(t); save(); softPaint(t); return;
+    }
     if (gridOf(t) && /^hood/.test(el.dataset.vt || "")) propagateUnit(t, el.dataset.vt, focusVal.has(el) ? str(focusVal.get(el)) : "", el.value.trim());
     if (el.dataset.vt || el.dataset.vtR != null) {
       const nv = el.value.trim();
@@ -549,7 +896,8 @@
     const el0 = e.target;
     if (el0 && el0.dataset && el0.dataset.vgV != null && e.key === "Enter") {
       const t0 = curVent(); if (!t0 || !gridOf(t0)) return; e.preventDefault(); flushDirty();
-      const nx = document.getElementById("vg-v" + (+el0.dataset.vgV + 1)); if (nx) nx.focus(); else el0.blur();
+      const q0 = gridOf(t0), i0 = +el0.dataset.vgV, o = ordOf(i0, q0.cols, q0.rows) + 1;
+      const nx = o < gridN(q0) ? document.getElementById("vg-v" + idxOf(o, q0.cols, q0.rows)) : null; if (nx) nx.focus(); else el0.blur();
       return;
     }
     const el = e.target; if (!el || !el.dataset || el.dataset.vtR == null || e.key !== "Enter") return; const t = curVent(); if (!t) return;
@@ -562,20 +910,28 @@
     const box = document.getElementById("vtReads"); if (box) box.innerHTML = readingsHtml(t);
     const last = document.getElementById("vt-r" + (x.readings.length - 1)); if (last) last.focus();
   }
+  function photoList(x, set, create) {
+    if (set === "equip") { if (!Array.isArray(x.equipPhotos)) x.equipPhotos = []; return x.equipPhotos; }
+    if (set.startsWith("smoke:")) { const k = set.slice(6); x.smokePhotos = x.smokePhotos || {}; if (!Array.isArray(x.smokePhotos[k])) { if (!create) return []; x.smokePhotos[k] = []; } return x.smokePhotos[k]; }
+    return x.photos;
+  }
   async function onFile(t, el) {
     const file = el.files && el.files[0]; if (!file) return;
     try {
       const ph = C().photos; if (!ph || !ph.attach) { alert("Photos are not available on this device."); return; }
-      const ref = await ph.attach(file, t, "ventPhoto");
+      const set = String(el.dataset.vtTake || "1"), x = vt(t, true);
+      const ref = await ph.attach(file, t, set === "equip" ? "ventEquipPhoto" : set.startsWith("smoke:") ? "ventSmokePhoto" : "ventPhoto");
       if (!ref) return;
-      vt(t, true).photos.push(ref); note(t, "Vent photo added", "photo " + t.vent.photos.length); sync(t); save(); C().render();
+      const list = photoList(x, set, true); list.push(ref);
+      note(t, set === "equip" ? "Equipment photo / plan added" : set.startsWith("smoke:") ? "Smoke test photo added" : "Vent photo added", (set.startsWith("smoke:") ? set.slice(6) + " · " : "") + "photo " + list.length); sync(t); save(); C().render();
     } catch (err) { alert("The photo could not be saved on this device: " + (err && err.message || err)); }
   }
   function onClick(e) {
-    const b = e.target.closest && e.target.closest("[data-vt-addread],[data-vt-again],[data-vt-delete],[data-vt-delphoto],[data-vt-unit],[data-vt-equip-save],[data-vt-export],[data-vt-fans],[data-vg-manual],[data-vg-standard]");
+    const b = e.target.closest && e.target.closest("[data-vt-eqset],[data-vt-certdel],[data-vt-addread],[data-vt-again],[data-vt-delete],[data-vt-delphoto],[data-vt-unit],[data-vt-equip-save],[data-vt-export],[data-vt-fans],[data-vg-manual],[data-vg-standard],[data-vt-step],[data-vt-set],[data-vt-rate],[data-vt-fvearly]");
     if (!b) return false;
     if (b.dataset.vtExport) { exportCsv(b.dataset.vtExport); return true; }
     if (b.dataset.vtEquipSave) return true;
+    if (b.dataset.vtEqset || b.dataset.vtCertdel != null) { anemClick(b); return true; }
     const t = curVent(); if (!t) return false;
     const x = vt(t, true);
     if (gridClick(t, b)) return true;
@@ -589,9 +945,9 @@
       note(t, "Unit picked", x.unit + " (from " + dn(src) + "; was " + (before || "blank") + ")"); sync(t); save(); C().render(); return true;
     }
     if (b.dataset.vtDelphoto != null) {
-      const i = +b.dataset.vtDelphoto, ref = x.photos[i]; if (!ref) return true;
+      const set = String(b.dataset.vtPset || "1"), list = photoList(x, set, false), i = +b.dataset.vtDelphoto, ref = list[i]; if (!ref) return true;
       if (!confirm("Remove this photo from the measurement?")) return true;
-      x.photos.splice(i, 1);
+      list.splice(i, 1);
       try { const pid = String(ref).replace("envss-photo:", ""); if (C().photos && C().photos.discard) C().photos.discard(pid); } catch (err) {}
       note(t, "Vent photo removed", "photo " + (i + 1)); sync(t); save(); C().render(); return true;
     }
@@ -605,14 +961,28 @@
   }
 
   /* ---------- event screen: anemometer once per event + export ---------- */
+  function anemFieldsHtml(ev, pfx) {
+    const q = ev.ventEquip || {}, id = k => pfx + k.charAt(0).toUpperCase() + k.slice(1), ph = C().photos, certs = q.certPhotos || [];
+    const ch = (val, label) => `<button type="button" class="chip va-choice ${q.ownership === val ? "on" : ""}" data-vt-eqset="ownership" data-vt-val="${val}" aria-pressed="${q.ownership === val}">${label}</button>`;
+    const inp = (k, label, ph2, extra) => `<div><label for="${id(k)}">${label}</label><input id="${id(k)}" data-vt-eq="${k}" value="${esc(q[k])}" placeholder="${esc(ph2)}" autocomplete="off" ${extra || ""}></div>`;
+    const w = calWarnings(ev);
+    return `<label>Owned or hired?</label><div class="va-choices">${ch("owned", "Owned")}${ch("hired", "Hired")}</div>
+      ${q.ownership === "hired" ? `<div class="vt-grid2">${inp("supplier", "Supplier", "Airmet")}</div>` : ""}
+      <div class="vt-grid3">${inp("make", "Make", "e.g. TSI")}${inp("model", "Model", "e.g. 9545 VelociCalc")}${inp("serial", "Serial", "Serial number")}</div>
+      <div class="vt-grid3">${inp("calDate", "Last calibration date", "YYYY-MM-DD", 'inputmode="numeric"')}${inp("calDue", "Calibration due date", "YYYY-MM-DD", 'inputmode="numeric"')}<div></div></div>
+      <div class="va-cal">${inp("calCorr", "Calibration correction (m/s)", "e.g. +0.02 or 0", 'inputmode="decimal"')}<span>m/s at</span>${inp("calAt", "Reference (m/s)", "e.g. 0.50", 'inputmode="decimal"')}<span>m/s</span></div>
+      <p class="help">Correction from the certificate: the amount to <b>add</b> to each reading (0 if none). Fume cupboard audit figures include it (AS/NZS 2243.8 Figure A1 notes 3). Calibrated within the past 12 months (B3).</p>
+      <div class="va-cert ${certs.length ? "" : "va-cert-need"}"><b>📄 Photo of calibration certificate</b>${certs.length ? "" : ` <span class="vt-req">please take one</span>`}
+        <div class="vt-photos">${certs.map((ref, i) => `<div class="vt-photo">${ph && ph.imgTag ? ph.imgTag(ref, "Calibration certificate " + (i + 1)) : ""}<button type="button" class="btn ghost" data-vt-certdel="${i}">Remove</button></div>`).join("")}</div>
+        <label class="btn mid vt-take">📷 Photo of calibration certificate<input type="file" accept="image/*" capture="environment" data-vt-cert="${esc(ev.id)}" hidden></label></div>
+      <div class="va-calwarn" data-vt-calwarn="1">${w.length ? w.map(x => `<div class="vt-warn">⚠ ${esc(x)}</div>`).join("") : `<div class="vt-okchip" style="display:inline-block">Calibration details complete</div>`}</div>`;
+  }
   function equipHtml(ev) {
     const q = ev.ventEquip || {};
     const done = !!(str(q.serial).trim() || str(q.model).trim());
     return `<div class="card vt-equip" id="vtEquip"><h3 class="vt-h">Anemometer <span class="${done ? "vt-okchip" : "vt-req"}">${done ? "entered" : "enter once for this event"}</span></h3>
-      <div class="vt-grid3"><div><label for="vtEqMake">Make</label><input id="vtEqMake" data-vt-eq="make" value="${esc(q.make)}" placeholder="e.g. TSI" autocomplete="off"></div>
-      <div><label for="vtEqModel">Model</label><input id="vtEqModel" data-vt-eq="model" value="${esc(q.model)}" placeholder="e.g. 9545 VelociCalc" autocomplete="off"></div>
-      <div><label for="vtEqSerial">Serial</label><input id="vtEqSerial" data-vt-eq="serial" value="${esc(q.serial)}" placeholder="Serial number" autocomplete="off"></div></div>
-      <p class="help">Used for every measurement on this event.</p></div>`;
+      ${anemFieldsHtml(ev, "vtEq")}
+      <p class="help">Used for every measurement on this event. Typed in for now (a Podio pick list may come later). Warnings never block.</p></div>`;
   }
   const eqFocus = new Map();
   function eqInput(e) {
@@ -626,8 +996,15 @@
       eqFocus.set(el, el.value);
       const chip = document.querySelector("#vtEquip h3 span"); const done = !!(ev.ventEquip.serial || ev.ventEquip.model);
       if (chip) { chip.className = done ? "vt-okchip" : "vt-req"; chip.textContent = done ? "entered" : "enter once for this event"; }
+      (C().trainsOf(ev.id) || []).forEach(y => { if (isVent(y) && y.vent) sync(y); });
+      document.querySelectorAll("[data-vt-calwarn]").forEach(box => { const w = calWarnings(ev); box.innerHTML = w.length ? w.map(x => `<div class="vt-warn">⚠ ${esc(x)}</div>`).join("") : `<div class="vt-okchip" style="display:inline-block">Calibration details complete</div>`; });
+      save();
+      if (v.page === "vent" && curVent()) C().render();
+      return true;
     }
-    save(); return true;
+    save();
+    if (v.page === "vent") { const t = curVent(); if (t) softPaint(t); }
+    return true;
   }
   function summaryRows(eventId) {
     return ventsOf(eventId).filter(t => t.vent.type !== "visual").map(t => {
@@ -636,14 +1013,16 @@
         range: below05Range(t), width: q ? str(q.widthMm) : "", height: q ? str(q.heightMm) : "",
         grid: q && gridN(q) ? q.cols + " × " + q.rows : "", gapX: q && gridN(q) && q.basis !== "manual" && q.cols > 1 ? String(q.gapX) : "", gapY: q && gridN(q) && q.basis !== "manual" && q.rows > 1 ? String(q.gapY) : "",
         basis: q ? (gridN(q) ? (q.basis === "manual" ? "Manual" + (str(q.reason).trim() ? ": " + str(q.reason).trim() : "") : STD.ref) : "") : typeName(x.type),
-        check: q && c ? (c.ok ? "Meets" : "Does not meet") : "" };
+        check: q && c ? (c.ok ? "Meets" : "Does not meet") : "",
+        smoke: q ? (() => { const sm = smokeOf(t); return sm.done ? RATE[sm.worst] + (sm.compliant ? " (compliant)" : " (non-compliant)") : sm.dangerous ? "Dangerous (non-compliant)" : ""; })() : "",
+        overall: q ? overall(t) : "", fc: q ? str(x.location).trim() : "" };
     });
   }
   function summaryHtml(ev) {
     const rows = summaryRows(ev.id); if (!rows.length) return "";
-    return `<div class="card vt-card" id="vtSummary"><h3 class="vt-h">Velocity summary</h3><div class="vg-scroll"><table class="vg-sum"><thead><tr><th>Unit</th><th>Condition</th><th>n</th><th>Avg</th><th>Min</th><th>Max</th><th>&lt;0.5 m/s at</th><th>Opening (mm)</th><th>Grid · spacing (mm)</th><th>2243.8</th></tr></thead><tbody>`
-      + rows.map(r => `<tr onclick="openTrain('${esc(r.t.id)}')"><td>${esc(r.unit || "—")}</td><td>${esc(r.condition || "—")}</td><td>${r.n || ""}</td><td>${r.avg}</td><td>${r.min}</td><td>${r.max}</td><td>${esc(r.range)}</td><td>${r.width && r.height ? esc(r.width + " × " + r.height) : ""}</td><td>${esc(r.grid)}${r.gapX || r.gapY ? " · " + esc((r.gapX || "–") + " × " + (r.gapY || "–")) : r.grid && gridOf(r.t).basis === "manual" ? " · manual" : ""}</td><td class="${r.check === "Meets" ? "vg-tpass" : r.check ? "vg-tfail" : ""}">${esc(r.check)}</td></tr>`).join("")
-      + `</tbody></table></div><p class="help">Velocities in m/s. Spacing is horizontal × vertical between grid lines (${STD.ref}). 2243.8 = ${STD.pass} indicator (average ≥ 0.5 m/s, no point &lt; 0.3 m/s).</p></div>`;
+    return `<div class="card vt-card" id="vtSummary"><h3 class="vt-h">Velocity summary</h3><div class="vg-scroll"><table class="vg-sum"><thead><tr><th>Unit</th><th>Condition</th><th>n</th><th>Avg</th><th>Min</th><th>Max</th><th>&lt;0.5 m/s at</th><th>Opening (mm)</th><th>Grid · spacing (mm)</th><th>2243.8</th><th>Smoke</th><th>Overall</th></tr></thead><tbody>`
+      + rows.map(r => `<tr onclick="openTrain('${esc(r.t.id)}')"><td>${esc(r.unit || "—")}</td><td>${esc(r.condition || "—")}</td><td>${r.n || ""}</td><td>${r.avg}</td><td>${r.min}</td><td>${r.max}</td><td>${esc(r.range)}</td><td>${r.width && r.height ? esc(r.width + " × " + r.height) : ""}</td><td>${esc(r.grid)}${r.gapX || r.gapY ? " · " + esc((r.gapX || "–") + " × " + (r.gapY || "–")) : r.grid && gridOf(r.t).basis === "manual" ? " · manual" : ""}</td><td class="${r.check === "Meets" ? "vg-tpass" : r.check ? "vg-tfail" : ""}">${esc(r.check)}</td><td>${esc(r.smoke)}</td><td class="${r.overall === "Compliant" ? "vg-tpass" : r.overall === "Non-compliant" ? "vg-tfail" : ""}">${esc(r.overall)}</td></tr>`).join("")
+      + `</tbody></table></div><p class="help">Velocities in m/s. Spacing is horizontal × vertical between grid lines (${STD.ref}). 2243.8 = ${STD.pass} indicator (average ≥ 0.5 m/s, no point &lt; 0.3 m/s). Smoke = AS/NZS 2243.8 Appendix A worst score (A6). Audit readings include the anemometer calibration correction.</p>${(() => { const cs = calSummary(ev); return `<p class="help" id="vtAnemSum"><b>Anemometer:</b> ${esc(cs.text || "not entered")} · <span class="${cs.warnings.length ? "vt-warn" : "vg-tpass"}">${esc(cs.status)}</span></p>`; })()}</div>`;
   }
   function ventsOf(eventId) { return (C().trainsOf(eventId) || []).filter(t => isVent(t) && t.vent && t.status !== "not_used").sort((a, b) => (Number(a.sampleNo) || 0) - (Number(b.sampleNo) || 0)); }
   function paintEvent() {
@@ -713,8 +1092,8 @@
   /* CSV laid out like the 0019340 field sheet (Sheet1 columns, stats and comments on the first row of each block),
      then a summary block like its Summary tab; app-only columns sit to the right so the sheet columns paste straight in. */
   const SHEET_COLS = ["Extraction Unit/Equipment", "Measurement Number", "Measured Velocity (m/s)", "Average Velocity (m/s)", "Lowest Recorded Velocity (m/s)", "Highest Recorded Velocity (m/s)", "Distance From Extraction Face at which velocity < 0.5 m/s (m)", "Comments"];
-  const APP_COLS = ["Unit", "Operating Condition", "LEV/Hood Type", "Hood Make", "Hood Model", "Hood Serial", "Measurement Type", "Measurement Location", "Distance From Extraction Face (cm)", "Point Label", "Grid Basis", "Opening Width (mm)", "Opening Height (mm)", "Grid (columns x rows)", "Horizontal Spacing (mm)", "Vertical Spacing (mm)", "Manual Grid Reason", "AS/NZS 2243.8 cl 3.1.2", "Photos", "Anemometer", "Field app measurement"];
-  const SUM_COLS = ["Extraction Unit", "Number of Measurements", "Average Velocity (m/s)", "Lowest Recorded Velocity (m/s)", "Highest Recorded Velocity (m/s)", "Distance From Extraction Face at which velocity < 0.5 m/s (m)", "Operating Condition", "Opening Width (mm)", "Opening Height (mm)", "Grid (columns x rows)", "Horizontal Spacing (mm)", "Vertical Spacing (mm)", "Grid Basis", "AS/NZS 2243.8 cl 3.1.2"];
+  const APP_COLS = ["Unit", "Operating Condition", "LEV/Hood Type", "Hood Make", "Hood Model", "Hood Serial", "Measurement Type", "Measurement Location", "Distance From Extraction Face (cm)", "Point Label", "Grid Basis", "Opening Width (mm)", "Opening Height (mm)", "Grid (columns x rows)", "Horizontal Spacing (mm)", "Vertical Spacing (mm)", "Manual Grid Reason", "AS/NZS 2243.8 cl 3.1.2", "Photos", "Anemometer", "Field app measurement", "Raw Reading (m/s)", "Calibration Correction (m/s)", "Point Min During Reading (m/s)", "Point Max During Reading (m/s)", "Previous Point No.", "Smoke Test Result (A6)", "Overall (Smoke + cl 3.1.2)", "Location", "Installation", "Fume Cupboard Empty", "Anemometer Owned/Hired", "Anemometer Supplier", "Last Calibration", "Calibration Due", "Calibration Check"];
+  const SUM_COLS = ["Extraction Unit", "Number of Measurements", "Average Velocity (m/s)", "Lowest Recorded Velocity (m/s)", "Highest Recorded Velocity (m/s)", "Distance From Extraction Face at which velocity < 0.5 m/s (m)", "Operating Condition", "Opening Width (mm)", "Opening Height (mm)", "Grid (columns x rows)", "Horizontal Spacing (mm)", "Vertical Spacing (mm)", "Grid Basis", "AS/NZS 2243.8 cl 3.1.2", "Smoke Test Result (A6)", "Overall (Smoke + cl 3.1.2)"];
   function csvRows(eventId) {
     const ev = C().eventById(eventId); if (!ev) return [];
     const qe = ev.ventEquip || {}; const anem = [qe.make, qe.model].filter(Boolean).join(" ") + (qe.serial ? " SN " + qe.serial : "");
@@ -724,15 +1103,21 @@
       const x = t.vent, s = stats(t), q = gridOf(t), r = sumOf(t), c = stdCheck(t);
       const unitCell = [str(x.unit).trim(), str(x.condition).trim()].filter(Boolean).join(" – ");
       const statCells = [s.n ? f2(s.avg) : "", s.n ? f2(s.min) : "", s.n ? f2(s.max) : ""];
-      const app = (label, first) => first ? [x.unit, x.condition, x.hood, x.hoodMake, x.hoodModel, x.hoodSerial, typeName(x.type), x.location, q ? "" : x.distanceCm, label,
-        r ? r.basis : "", r ? r.width : "", r ? r.height : "", r ? r.grid : "", r ? r.gapX : "", r ? r.gapY : "", q && q.basis === "manual" ? q.reason : "", q && c ? (c.ok ? "Meets" : "Does not meet") : "", (x.photos || []).length || "", anem, dn(t)]
-        : blank(9).concat([label], blank(11));
+      const cal = calOf(t);
+      const pt = i => q && i != null ? [str(q.v[ptKey(i)]), cal.set ? cal.raw : "", str(q.lo[ptLoKey(i)]), str(q.hi[ptHiKey(i)]), legacyNo(q, i) || ""] : blank(5);
+      const cs = calSummary(ev);
+      const anemCols = [qe.ownership === "hired" ? "Hired" : qe.ownership === "owned" ? "Owned" : "", qe.ownership === "hired" ? (qe.supplier || "") : "", qe.calDate || "", qe.calDue || "", cs.status];
+      const tail = () => (q ? [r ? r.smoke : "", r ? r.overall : "", x.location, x.install === "new" ? "New" : x.install === "existing" ? "Existing" : "", x.empty === "yes" ? "Yes" : x.empty === "no" ? "No" : ""] : blank(5)).concat(anemCols);
+      const app = (label, first, i) => first ? [x.unit, x.condition, x.hood, x.hoodMake, x.hoodModel, x.hoodSerial, typeName(x.type), x.location, q ? "" : x.distanceCm, label,
+        r ? r.basis : "", r ? r.width : "", r ? r.height : "", r ? r.grid : "", r ? r.gapX : "", r ? r.gapY : "", q && q.basis === "manual" ? q.reason : "", q && c ? (c.ok ? "Meets" : "Does not meet") : "", (x.photos || []).length || "", anem, dn(t)].concat(pt(i), tail())
+        : blank(9).concat([label], blank(11), pt(i), blank(10));
       if (q) {
         const N = gridN(q);
         if (!N) { rows.push([unitCell, "", ""].concat(statCells, ["", x.comments], app("", true))); return; }
-        for (let i = 0; i < N; i++) {
-          const lab = pointLabel(q, i), num = lab ? (i + 1) + " - " + lab : String(i + 1), d = str(q.d[ptDKey(i)]);
-          rows.push(i === 0 ? [unitCell, num, str(q.v[ptKey(i)])].concat(statCells, [d, x.comments], app(lab, true)) : ["", num, str(q.v[ptKey(i)]), "", "", "", d, ""].concat(app(lab, false)));
+        /* A, B, C… across rows (Figure A1 note 4); Measured Velocity includes the calibration correction (note 3) */
+        for (let o = 0; o < N; o++) {
+          const i = idxOf(o, q.cols, q.rows), num = pointLabel(q, i), d = str(q.d[ptDKey(i)]), cv = corrected(q, i, cal.k), vv = cv == null ? str(q.v[ptKey(i)]) : f2(cv), lab = customLabel(q, i);
+          rows.push(o === 0 ? [unitCell, num, vv].concat(statCells, [d, x.comments], app(lab, true, i)) : ["", num, vv, "", "", "", d, ""].concat(app(lab, false, i)));
         }
         return;
       }
@@ -742,8 +1127,46 @@
     });
     if (sums.length) {
       rows.push([]); rows.push(["Summary"]); rows.push(SUM_COLS);
-      sums.forEach(r => rows.push([r.unit, r.n || "", r.avg, r.min, r.max, r.range, r.condition, r.width, r.height, r.grid, r.gapX, r.gapY, r.basis, r.check]));
+
+      sums.forEach(r => rows.push([r.unit, r.n || "", r.avg, r.min, r.max, r.range, r.condition, r.width, r.height, r.grid, r.gapX, r.gapY, r.basis, r.check, r.smoke, r.overall]));
+      const cs = calSummary(ev); rows.push(["Anemometer", cs.text, "Calibration check", cs.status]);
     }
+    /* one Figure A1 record per fume cupboard audit (AS/NZS 2243.8:2014 "Reporting of velocity and smoke test results") */
+    ventsOf(eventId).filter(t => gridOf(t)).forEach(t => {
+      const x = t.vent, q = gridOf(t), sm = smokeOf(t), s = stats(t), va = variation(t), cal = calOf(t), N = gridN(q);
+      rows.push([]); rows.push(["AS/NZS 2243.8:2014 Figure A1 record", dn(t) + (str(x.condition).trim() ? " · " + str(x.condition).trim() : "")]);
+      rows.push(["Location", x.location]); rows.push(["F/C Number", x.unit]); rows.push(["Type", x.hood]);
+      rows.push(["Installation", x.install === "new" ? "New (A4.1.3 / B4.1.3: tested empty)" : x.install === "existing" ? "Existing (A4.1.2 / B4.1.2: normal working conditions)" : ""]);
+      rows.push(["SMOKE TEST"]); rows.push(["Fume cupboard empty", x.empty === "yes" ? "Yes" : x.empty === "no" ? "No (plan or photo attached)" : ""]);
+      if (x.empty === "no" && str(x.equipNote).trim()) rows.push(["Equipment plan", x.equipNote]);
+      rows.push(["Smoke source used", x.smokeSource]);
+      rows.push(["Test position", "Result", "Comments", "Photos", "Clause"]);
+      sm.rows.forEach(z => rows.push([z.row.name, z.r === "NA" ? "N/A" : z.r, z.c, z.photos.length || "", z.row.step]));
+      rows.push(["Smoke observations (A4.2(l))", x.smokeComments]);
+      rows.push(["Smoke test result (A6, worst score)", sm.worst ? RATE[sm.worst] : "", sm.done ? (sm.compliant ? "Compliant" : "Non-compliant") : sm.dangerous ? "Non-compliant" : "Not finished"]);
+      rows.push(["FACE VELOCITY"]);
+      rows.push(["Face opening width (mm)", q.widthMm, "Height (mm)", q.heightMm, "No. of readings", s.n]);
+      if (q.basis === "manual") rows.push(["Grid", "Manual " + q.cols + " × " + q.rows, "Reason", q.reason]);
+      else rows.push(["Grid (B4.2(c))", N ? q.cols + " × " + q.rows : "", "Horizontal spacing (mm)", q.cols > 1 ? q.gapX : "", "Vertical spacing (mm)", q.rows > 1 ? q.gapY : ""]);
+      rows.push(["Instrument", anem.replace(/ SN .*$/, ""), "Serial no.", qe.serial || ""]);
+      rows.push(["Calibration correction factor", cal.set ? cal.raw + " m/s at " + (cal.at || "") + " m/s" : ""]);
+      rows.push(["Anemometer", qe.ownership === "hired" ? "Hired" : qe.ownership === "owned" ? "Owned" : "", "Supplier", qe.ownership === "hired" ? (qe.supplier || "") : "", "Calibration certificate photo", (qe.certPhotos || []).length ? "Yes" : "No"]);
+      rows.push(["Last calibration date", qe.calDate || "", "Calibration due date", qe.calDue || "", "Calibration check", calSummary(ev).status]);
+      const ords = Array.from({ length: N }, (_, o) => idxOf(o, q.cols, q.rows));
+      const lohi = (i, w) => { const n = numOf(w === "lo" ? q.lo[ptLoKey(i)] : q.hi[ptHiKey(i)]); return n == null ? "" : f2(r2(n + cal.k)); };
+      rows.push(["Results"].concat(ords.map(i => pointId(q, i))));
+      rows.push(["Reading (m/s)"].concat(ords.map(i => { const v = corrected(q, i, cal.k); return v == null ? "" : f2(v); })));
+      if (ords.some(i => lohi(i, "hi"))) rows.push(["Maximum (m/s)"].concat(ords.map(i => lohi(i, "hi"))));
+      if (ords.some(i => lohi(i, "lo"))) rows.push(["Minimum (m/s)"].concat(ords.map(i => lohi(i, "lo"))));
+      if (ords.some(i => legacyNo(q, i))) rows.push(["Previous point no."].concat(ords.map(i => legacyNo(q, i) || "")));
+      rows.push(["Total mean value / Average face velocity (m/s)", s.n ? f2(s.avg) : "", "Maximum (m/s)", s.n ? f2(s.max) : "", "Minimum (m/s)", s.n ? f2(s.min) : ""]);
+      rows.push(["No. of points", N || "", "Max. variation of readings from average (%)", va.pct != null ? va.pct : ""]);
+      rows.push(["Face velocity (cl 3.1.2: average >= 0.5 m/s, every point >= 0.3 m/s)", fvResult(t) == null ? "" : fvResult(t) ? "Meets" : "Does not meet"]);
+      rows.push(["Overall (smoke test + face velocity)", overall(t)]);
+      rows.push(["Comments/conclusions", x.comments]);
+      rows.push(["Tested by (print)", x.testedBy, "Date", (ev && ev.date) || ""]);
+      rows.push(["Notes", "All readings in m/s. Average to two decimal places. All figures reported include the calibration correction factor. Points A, B, C… start top left and work across rows."]);
+    });
     return rows;
   }
   function exportCsv(eventId) {
@@ -816,11 +1239,24 @@
       + ".vg-geom{margin:6px 0}.vg-manual{margin-top:8px;padding:10px;border-radius:10px;border:1px dashed rgba(255,255,255,.35)}.vg-manbtn{white-space:nowrap}.vg-fans{display:flex;gap:8px;margin:4px 0 8px}.vg-fans .chip{min-width:44px;min-height:40px;font-weight:700}.vg-fans .chip.on{outline:2px solid #3BB273}"
       + ".vg-std{margin-top:10px;padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.2)}.vg-pass{border-color:#3BB273}.vg-fail{border-color:#FF6B6B}"
       + ".vg-labels{margin:6px 0}.vg-labels summary{cursor:pointer;font-weight:700}.vg-lablist{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}.vg-lab{display:flex;align-items:center;gap:6px}.vg-lab span{min-width:24px;text-align:right;font-weight:700}.vg-lab input{flex:1;min-width:0}"
-      + ".vg-sum{border-collapse:collapse;width:100%;font-size:13px}.vg-sum th,.vg-sum td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.15);text-align:left;white-space:nowrap}.vg-sum tbody tr{cursor:pointer}.vg-tpass{color:#7BE0A4;font-weight:700}.vg-tfail{color:#FF8A8A;font-weight:700}";
+      + ".vg-sum{border-collapse:collapse;width:100%;font-size:13px}.vg-sum th,.vg-sum td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.15);text-align:left;white-space:nowrap}.vg-sum tbody tr{cursor:pointer}.vg-tpass{color:#7BE0A4;font-weight:700}.vg-tfail{color:#FF8A8A;font-weight:700}"
+      + ".va-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:10px 0 4px}.va-step{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:10px;border:2px solid rgba(255,255,255,.18);background:transparent;color:inherit;font-size:12px;font-weight:700;cursor:pointer;min-height:52px}"
+      + ".va-step span{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.12);font-size:13px}.va-step.on{border-color:#5B8DEF;background:rgba(91,141,239,.16)}.va-step.done span{background:#3BB273;color:#06210f}"
+      + ".va-cite{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.2px;color:#9FC1FF;background:rgba(91,141,239,.14);border-radius:6px;padding:0 6px;margin-left:2px;white-space:nowrap}.va-h4{margin:14px 0 4px;color:var(--navy)}.va-typel{margin-top:6px}"
+      + ".va-rule{margin:8px 0;padding:8px 10px;border-left:4px solid #5B8DEF;background:rgba(91,141,239,.08);border-radius:6px}.va-choices{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}.va-choice{min-height:42px;padding:0 14px;font-weight:700}.chip.on{outline:2px solid #3BB273}"
+      + ".va-sub{margin:6px 0 10px;padding:8px 10px;border:1px dashed rgba(255,255,255,.3);border-radius:10px}.va-proc{margin:6px 0;padding-left:20px}"
+      + ".va-row{margin:10px 0;padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.15)}.va-row.va-xG{border-color:#3BB273}.va-row.va-xS{border-color:#FFB020}.va-row.va-xD{border-color:#FF6B6B}.va-row.va-xNA{border-style:dashed}.va-rowh{margin-bottom:2px}"
+      + ".va-rates{display:flex;gap:8px;margin:6px 0}.va-rate{min-width:52px;min-height:44px;font-weight:800;font-size:16px}.va-rG.on{background:#123A22;color:#7BE0A4}.va-rS.on{background:#3A2A0E;color:#FFC861}.va-rD.on{background:#3A1212;color:#FF8A8A}.va-rNA{font-size:13px}"
+      + ".va-row input{width:100%;box-sizing:border-box}.va-row .vt-photos{margin:6px 0 0}.va-gate{margin:8px 0;padding:12px;border-radius:10px;border:2px solid #FFB020;background:rgba(255,176,32,.08)}"
+      + ".va-cal{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 10px}.va-cal>div{flex:1 1 120px}.va-cal>span{padding-bottom:12px;opacity:.8}.vg-cor{font-size:12px;opacity:.8;min-height:14px}.vg-was{opacity:.6;font-size:10px}.vg-lohi input{width:80px;flex:1}"
+      + ".va-sum{display:grid;gap:8px;margin:6px 0}.va-sum>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.va-sum span:first-child{min-width:110px;font-weight:700}.va-pill{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:700}.va-pill.ok{background:#123A22;color:#7BE0A4}.va-pill.bad{background:#3A1212;color:#FF8A8A}"
+      + ".va-a1{margin:12px 0;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)}.va-a1 h5{margin:12px 0 4px}.va-kv{border-collapse:collapse;width:100%;font-size:13px}.va-kv th{text-align:left;padding:4px 8px 4px 0;width:45%;vertical-align:top;opacity:.85}.va-kv td{padding:4px 0}"
+      + ".va-res{font-weight:800}.va-res.va-xG{color:#7BE0A4}.va-res.va-xS{color:#FFC861}.va-res.va-xD{color:#FF8A8A}.va-res-t td,.va-res-t th{text-align:center}.va-smoke td{white-space:normal}"
+      + ".vt-type-img{display:flex;gap:12px;align-items:center}.vt-type-img .vt-thumb{flex:0 0 84px;width:84px;height:64px;border-radius:8px;object-fit:cover;background:#1B2440}.vt-type-img svg.vt-thumb{padding:8px;box-sizing:border-box}.vt-credit{font-size:10px;opacity:.65;margin-top:2px}.va-fig{display:flex;gap:10px;align-items:flex-start;margin:6px 0}.va-fig img,.va-fig .va-figimg{width:96px;height:72px;object-fit:cover;border-radius:8px;flex:0 0 96px}.vt-tw{display:contents}.va-cert{margin:10px 0;padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.2)}.va-cert-need{border-color:#FFB020;background:rgba(255,176,32,.08)}.va-calwarn{margin:6px 0}";
     document.head.appendChild(st);
     try { g.render(); } catch (e) {}
   }
   if (document.readyState === "complete") setTimeout(install, 0); else g.addEventListener("load", install);
 
-  g.ENVSS_VENT = { version: VENT_VERSION, loaded: true, isVentEvent, isVent, addMeasurement, openVent, stats, missing, complete, exportCsv, csvRows, summaryRows, gridFor, defaultLabel, stdCheck, below05Range, TYPES, PICK, STD };
+  g.ENVSS_VENT = { version: VENT_VERSION, loaded: true, isVentEvent, isVent, addMeasurement, openVent, stats, missing, complete, exportCsv, csvRows, summaryRows, gridFor, defaultLabel, letters, stdCheck, below05Range, smokeOf, overall, variation, calWarnings, missingBy, TYPES, PICK, STD, SMOKE, TYPE_IMG };
 })(window);
