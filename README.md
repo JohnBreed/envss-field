@@ -23,3 +23,12 @@ GitHub Pages is a static site. Google sign-in uses Google Identity Services in t
 4. Restrict the OAuth consent screen to the `envss.com.au` Workspace if you want.
 
 After that, staff sign in with their Google Workspace account. The name and email stay on that device until they tap Sign out.
+
+## Vent survey measurements (v48.19, `vent.js`)
+
+Events linked to the Podio *Vent Survey Event* app (`podioEventKind: "vent"`) record measurements instead of samples:
+anemometer make/model/serial once per event, then one measurement per extraction unit + location with a numbered
+velocity list (m/s), automatic average/lowest/highest, optional "distance where velocity < 0.5 m/s", comments and photos.
+Measurements are ordinary train rows (`trainKind: "vent"`, data in `t.vent`) so they save offline and sync like samples.
+No COC (vent trains are left out of COCs on mixed events), no Podio writes, no Drive sheet fill: the event menu has
+"Export vent survey CSV" in the Drive template's column order. Tests: `work/v48-19/vent.test.mjs` (Pixel 7 + Chromebook).
