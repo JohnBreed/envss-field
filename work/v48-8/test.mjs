@@ -210,7 +210,13 @@ async function run(vp) {
 
   /* 11. noise STOP is unchanged (no prompt) */
   await open(page, "n2");
-  await page.click("#btnStop"); await g19ok(page); await sleep(600);
+  await page.click("#btnStop"); await sleep(500);
+  /* v48.19c: a noise STOP first asks for LAeq, LCpeak and hearing protection (no flow prompt) */
+  for (let i = 0; i < 4; i++) {
+    if (await page.evaluate(() => !!document.querySelector(".cg-modal"))) { await page.type("#cgLAeq", "84.9"); await page.type("#cgLCpeak", "103.8"); await page.click('#cgHpd [data-hpd="no"]'); await page.click("#cgYes"); await sleep(600); }
+    else { await g19ok(page); await sleep(400); }
+  }
+  await sleep(300);
   t = await T(page, "n2");
   check(`[${vp}] noise STOP does not show the flow prompt and still stops`, !(await modal(page)) && t.status === "ended" && !!t.endAt, JSON.stringify({ s: t.status, endFlow: t.endFlow, acts: (t.audit || []).map(a => a.action) }));
 

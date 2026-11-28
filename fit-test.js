@@ -7,7 +7,7 @@
    PDF (signed or unsigned), Drive copy into {job}_Field-App/Fit-Tests, zip download. No Podio writes. */
 (function (root) {
   "use strict";
-  const VERSION = "48.19";   /* v48.19: version bump only (fit testing unchanged). v48.18: version bump only */
+  const VERSION = "48.19";   /* v48.19c: a report cannot be signed or made into a PDF until pass/fail, company, respirator model and protocol are filled in; the confirm form can no longer blank values the photo reader found (collectForm keeps the record value for any box the tech did not touch); OCR (first read and retake) lands on the live record and fills the fields; "Still to fill in" list; an empty report is not saved or counted. v48.18: version bump only */
 
   const PDF_SRC = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const ZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js";
@@ -1249,7 +1249,9 @@
       ["lastName", "Last name"],
       ["firstName", "First name"],
       ["testDateRaw", "Test date"],
-      ["model", "Respirator model"]
+      ["company", "Company"],
+      ["model", "Respirator model"],
+      ["protocol", "Protocol"]
     ];
     required.forEach(function (r) {
       if (!trim(fields[r[0]]) && !(r[0] === "model" && trim(fields.respirator))) missing.push(r[1]);
@@ -1259,7 +1261,7 @@
     const low = (extras.lowFields || []).slice();
     flags.forEach(function (f) { if (low.indexOf(f.field) < 0) low.push(f.field); });
     missing.forEach(function (label) {
-      const map = { "Last name": "lastName", "First name": "firstName", "Test date": "testDate", "Respirator model": "model", "Pass/fail": "result" };
+      const map = { "Last name": "lastName", "First name": "firstName", "Test date": "testDate", "Company": "company", "Respirator model": "model", "Protocol": "protocol", "Pass/fail": "result" };
       if (map[label] && low.indexOf(map[label]) < 0) low.push(map[label]);
     });
 
@@ -1376,7 +1378,8 @@
     version: VERSION, isFitEvent, fitSeqOf, nextFitSeq, fitEventCode, fileNameFor,
     parseReport, parseTsiDate, parseFf, ffMeets, safeToken, parseYesNo, wordsFromVision, findLabelHits, parseExercisesFromWords, parseReportFromBoxes, joinWords, clipWordsToReport, slimOcrWords, normalizeDeviceWords,
     driveSubfolder: DRIVE_SUBFOLDER, tesseractAssets: TESS,
-    isReportSigned, makeTechSignOff, techDisplayName, techSignOffLine, formatAwst, formatDateOnly
+    isReportSigned, makeTechSignOff, techDisplayName, techSignOffLine, formatAwst, formatDateOnly,
+    missingFields, isEmptyReport, applyParsed, isReportComplete
   };
   root.envssFit = api;
 
@@ -1389,7 +1392,39 @@
   function reportsOf(eventId) {
     return ((typeof db !== "undefined" && db && db.fitReports) || []).filter(r => r && r.eventId === eventId);
   }
-  function reportById(id) { return ((typeof db !== "undefined" && db && db.fitReports) || []).find(r => r && r.id === id) || null; }
+  /* v48.19c: a report started with "Enter manually" lives in memory (draft) until something is typed; only then is it added to db.fitReports. */
+  let draftRep = null;
+  const activeOcr = new Set();   /* report ids being read in THIS session; a "running" status left over from a reload / another device is stale */
+  function reportById(id) {
+    const hit = ((typeof db !== "undefined" && db && db.fitReports) || []).find(r => r && r.id === id);
+    if (hit) return hit;
+    return draftRep && draftRep.id === id ? draftRep : null;
+  }
+  /* The five things a signed report must carry (John, 28 Nov 2026): pass/fail, company, respirator model, protocol (+ the person's name). */
+  const REQUIRED = [["lastName", "Last name"], ["firstName", "First name"], ["result", "Pass/fail"], ["company", "Company"], ["model", "Respirator model"], ["protocol", "Protocol"]];
+  function missingFields(rep) {
+    if (!rep) return [];
+    return REQUIRED.filter(function (r) {
+      const v = trim(rep[r[0]]);
+      if (r[0] === "result") return v !== "PASS" && v !== "FAIL";
+      return !v;
+    }).map(function (r) { return { key: r[0], label: r[1] }; });
+  }
+  function isEmptyReport(rep) {
+    if (!rep) return true;
+    if (rep.photo || rep.photoDataUrl || rep.sigClient || rep.signedAt || rep.pdfName) return false;
+    const keys = ["idNumber", "lastName", "firstName", "company", "location", "testDateRaw", "dueDateRaw", "portaCountSn", "respirator", "manufacturer", "model", "respiratorStyle", "respiratorSize", "protocol", "passLevel", "approval", "efficiency", "overallFf", "result", "operator", "operatorName", "note"];
+    if (keys.some(function (k) { return trim(rep[k]); })) return false;
+    return !(rep.exercises || []).some(function (x) { return x && (trim(x.exercise) || trim(x.fitFactorRaw) || trim(x.duration) || x.pass); });
+  }
+  function isReportComplete(rep) { return isReportSigned(rep) && !missingFields(rep).length; }
+  function addDraftToDb(rep) {
+    if (draftRep && draftRep.id === rep.id) {
+      (db.fitReports || (db.fitReports = [])).push(rep);
+      draftRep = null;
+      evLog(root.eventById && root.eventById(rep.eventId), "Fit-test report added", [rep.lastName, rep.firstName].filter(Boolean).join(", ") || "entered by hand");
+    }
+  }
   function evLog(ev, action, detail) {
     if (!ev) return;
     ev.audit = ev.audit || [];
@@ -1499,9 +1534,9 @@
 
   function stageOf(ev) {
     if (!isFitEvent(ev)) return null;
-    const reps = reportsOf(ev.id);
+    const reps = reportsOf(ev.id).filter(function (r) { return !isEmptyReport(r); });   /* v48.19c: an empty report is not counted */
     if (!reps.length) return ev.uploadReady ? "upload_ready" : "planned";
-    const allSigned = reps.every(isReportSigned);
+    const allSigned = reps.every(isReportComplete);
     if (allSigned && ev.uploadReady) return "upload_ready";
     if (allSigned) return "ev_complete";
     return "ev_needs";
@@ -1529,7 +1564,25 @@
     };
   }
 
-  function applyParsed(rep, parsed) {
+  /* v48.19c: mode "replace" (default) = the photo reader's non-blank values win and a blank read never blanks a value already on the report
+     (a retake that misses a field keeps what was there); mode "fill" = only blank fields are filled (the tech typed while the photo was being read). */
+  function applyParsed(rep, parsed, mode) {
+    const before = {};
+    ["idNumber", "lastName", "firstName", "company", "location", "testDateRaw", "testDateDisplay", "testTime", "dueDateRaw", "dueDateDisplay", "portaCountSn", "n95Companion", "respirator", "manufacturer", "model", "respiratorStyle", "respiratorSize", "protocol", "passLevel", "approval", "efficiency", "overallFf", "result", "operator", "operatorName", "note"].forEach(function (k) { before[k] = rep[k]; });
+    const hadEx = (rep.exercises || []).filter(function (x) { return x && (trim(x.exercise) || trim(x.fitFactorRaw)); });
+    applyParsedRaw(rep, parsed);
+    Object.keys(before).forEach(function (k) {
+      const old = before[k];
+      if (!trim(old)) return;
+      if (mode === "fill" || !trim(rep[k])) rep[k] = old;
+    });
+    if (hadEx.length && (mode === "fill" || !(rep.exercises || []).length)) rep.exercises = hadEx;
+    rep.overallPass = rep.result === "PASS" ? true : rep.result === "FAIL" ? false : rep.overallPass;
+    if (trim(before.testDateRaw) && (mode === "fill" || !trim(rep.testDateRaw))) { rep.testDate = parseTsiDate(rep.testDateRaw); }
+    rep.missing = missingFields(rep).map(function (m) { return m.label; });
+    return rep;
+  }
+  function applyParsedRaw(rep, parsed) {
     const f = (parsed && parsed.fields) || {};
     rep.idNumber = f.idNumber || "";
     rep.lastName = f.lastName || "";
@@ -1569,8 +1622,23 @@
     return rep;
   }
 
+  /* v48.19c: the confirm form writes back ONLY the boxes the tech changed. Every box remembers what it was drawn with (data-v0); a box still
+     showing that value is left alone, so a form drawn before the photo was read (blank) can never wipe what the photo reader put on the record.
+     A box the tech changed (even to blank) is written as typed. */
   function collectForm(rep) {
-    const g = id => (document.getElementById(id) || {}).value || "";
+    const cur = {
+      fitIdNumber: rep.idNumber, fitLast: rep.lastName, fitFirst: rep.firstName, fitCompany: rep.company, fitLocation: rep.location,
+      fitTestDate: rep.testDateDisplay || (rep.testDate && rep.testDate.display) || "", fitTestTime: rep.testTime, fitDueDate: rep.dueDateDisplay || (rep.dueDate && rep.dueDate.display) || "",
+      fitPorta: rep.portaCountSn, fitN95: rep.n95Companion, fitRespirator: rep.respirator, fitMfr: rep.manufacturer, fitModel: rep.model, fitStyle: rep.respiratorStyle,
+      fitSize: rep.respiratorSize, fitProtocol: rep.protocol, fitPassLevel: rep.passLevel, fitApproval: rep.approval, fitEfficiency: rep.efficiency, fitOverallFf: rep.overallFf,
+      fitResult: rep.result, fitOperator: rep.operator, fitOperatorName: rep.operatorName, fitNote: rep.note
+    };
+    const g = id => {
+      const el = document.getElementById(id);
+      if (!el) return cur[id] == null ? "" : String(cur[id]);
+      if (el.dataset && el.dataset.v0 !== undefined && String(el.value) === el.dataset.v0 && cur[id] != null) return String(cur[id]);   /* untouched box: keep the record's value */
+      return el.value || "";
+    };
     rep.idNumber = trim(g("fitIdNumber"));
     rep.lastName = trim(g("fitLast"));
     rep.firstName = trim(g("fitFirst"));
@@ -1620,7 +1688,9 @@
         fitFactor: parseFf((document.getElementById("fitExF" + i) || {}).value)
       });
     });
-    if (ex.length) {
+    const domHasEx = ex.some(function (r) { return r.exercise || r.fitFactorRaw || r.duration || r.pass; });
+    const recHasEx = (rep.exercises || []).some(function (r) { return r && (trim(r.exercise) || trim(r.fitFactorRaw)); });
+    if (ex.length && (domHasEx || !recHasEx)) {   /* v48.19c: an all-blank table (drawn before the photo was read) never replaces exercises already on the record */
       const level = parseFloat(rep.passLevel);
       ex.forEach(r => { r.fail = r.pass === "no" || ffMeets(r.fitFactor, level) === false; });
       rep.exercises = ex;
@@ -1630,7 +1700,8 @@
   }
 
   function lowClass(rep, field) {
-    return (rep.low || []).indexOf(field) >= 0 || (rep.missing || []).indexOf(field) >= 0 ? " fit-low" : "";
+    if (missingFields(rep).some(function (m) { return m.key === field; })) return " fit-low";
+    return (rep.low || []).indexOf(field) >= 0 ? " fit-low" : "";
   }
 
   function photoPid(rep) {
@@ -1644,6 +1715,14 @@
     return "";
   }
 
+  function isReading(rep) { return !!rep && rep.ocrStatus === "running" && activeOcr.has(rep.id); }
+  function missingHtml(rep) {
+    const m = missingFields(rep);
+    return "<div class=\"fit-missing\" id=\"fitMissing\"" + (m.length ? "" : " hidden") + ">"
+      + (isReading(rep) ? "<p class=\"fit-warn\" id=\"fitReading\">Still reading the photo. The boxes fill in when it finishes.</p>" : "")
+      + (m.length ? "<p class=\"fit-warn\">Still to fill in before this can be signed: <strong id=\"fitMissingList\">" + esc(m.map(function (x) { return x.label; }).join(", ")) + "</strong></p>" : "")
+      + "</div>";
+  }
   function confirmHtml(rep, ev) {
     const psrc = photoSrc(rep);
     const flags = (rep.flags || []).map(f => "<li>" + esc(f.reason) + "</li>").join("");
@@ -1661,12 +1740,13 @@
         + "<option value=\"no\"" + (ex.pass === "no" ? " selected" : "") + ">Fail</option></select></td></tr>";
     }).join("");
     const inp = (id, field, label, val, extra) =>
-      "<label class=\"" + lowClass(rep, field) + "\">" + esc(label) + "<input id=\"" + id + "\" value=\"" + esc(val || "") + "\" " + (extra || "") + "></label>";
+      "<label class=\"" + lowClass(rep, field) + "\">" + esc(label) + "<input id=\"" + id + "\" value=\"" + esc(val || "") + "\" data-v0=\"" + esc(val || "") + "\" " + (extra || "") + "></label>";
     return "<div class=\"wrap fit-screen\" id=\"fitConfirm\">"
       + "<button class=\"btn ghost back-ctl\" id=\"fitBackEvent\">← " + esc(ev.code) + "</button>"
       + "<h2 class=\"brand-type\" style=\"color:var(--navy)\">Confirm fit-test report</h2>"
       + "<p class=\"help\">Check every field against the photo before the person who was tested signs. Your ENVSS sign-off is filled in from your sign-in.</p>"
       + msg
+      + missingHtml(rep)
       + (flags ? "<ul class=\"fit-flags\">" + flags + "</ul>" : "")
       + fails
       + "<div class=\"fit-grid\">"
@@ -1686,22 +1766,22 @@
       + inp("fitDueDate", "dueDate", "Due date (DD/MM/YYYY)", rep.dueDateDisplay || (rep.dueDate && rep.dueDate.display) || "")
       + inp("fitPorta", "portaCountSn", "PortaCount S/N", rep.portaCountSn)
       + inp("fitN95", "n95Companion", "N95-Companion", rep.n95Companion)
-      + "<label class=\"" + lowClass(rep, "respirator") + "\">Respirator<textarea id=\"fitRespirator\" rows=\"2\">" + esc(rep.respirator || "") + "</textarea></label>"
+      + "<label class=\"" + lowClass(rep, "respirator") + "\">Respirator<textarea id=\"fitRespirator\" rows=\"2\" data-v0=\"" + esc(rep.respirator || "") + "\">" + esc(rep.respirator || "") + "</textarea></label>"
       + inp("fitMfr", "manufacturer", "Manufacturer", rep.manufacturer)
       + inp("fitModel", "model", "Model", rep.model)
-      + "<label>Respirator style<textarea id=\"fitStyle\" rows=\"2\">" + esc(rep.respiratorStyle || "") + "</textarea></label>"
+      + "<label>Respirator style<textarea id=\"fitStyle\" rows=\"2\" data-v0=\"" + esc(rep.respiratorStyle || "") + "\">" + esc(rep.respiratorStyle || "") + "</textarea></label>"
       + inp("fitSize", "respiratorSize", "Respirator size", rep.respiratorSize)
       + inp("fitProtocol", "protocol", "Protocol", rep.protocol)
       + inp("fitPassLevel", "passLevel", "Pass level", rep.passLevel)
       + inp("fitApproval", "approval", "Approval", rep.approval)
       + inp("fitEfficiency", "efficiency", "Efficiency &lt;99%", rep.efficiency)
       + inp("fitOverallFf", "overallFf", "Overall fit factor", rep.overallFf)
-      + "<label class=\"" + lowClass(rep, "result") + "\">Overall result<select id=\"fitResult\">"
+      + "<label class=\"" + lowClass(rep, "result") + "\">Overall result<select id=\"fitResult\" data-v0=\"" + esc(rep.result || "") + "\">"
       + "<option value=\"\"></option><option value=\"PASS\"" + (rep.result === "PASS" ? " selected" : "") + ">PASS</option>"
       + "<option value=\"FAIL\"" + (rep.result === "FAIL" ? " selected" : "") + ">FAIL</option></select></label>"
       + inp("fitOperator", "operator", "Fit-test operator", rep.operator)
       + inp("fitOperatorName", "operatorName", "Name on report", rep.operatorName)
-      + "<label>Note<textarea id=\"fitNote\" rows=\"2\">" + esc(rep.note || "") + "</textarea></label>"
+      + "<label>Note<textarea id=\"fitNote\" rows=\"2\" data-v0=\"" + esc(rep.note || "") + "\">" + esc(rep.note || "") + "</textarea></label>"
       + "<h3 class=\"brand-type\" style=\"margin-top:12px\">Exercises</h3>"
       + "<div class=\"fit-ex-wrap\"><table class=\"fit-ex\"><thead><tr><th>Exercise</th><th>Duration</th><th>Fit factor</th><th>Pass</th></tr></thead><tbody>"
       + exRows + "</tbody></table></div>"
@@ -1709,7 +1789,7 @@
       + "</div></div>"
       + "<div class=\"footer-actions\">"
       + "<button type=\"button\" class=\"btn mid\" id=\"fitSaveDraft\">Save without signing</button>"
-      + "<button type=\"button\" class=\"btn orange\" id=\"fitToSign\">Continue to signature</button>"
+      + "<button type=\"button\" class=\"btn orange\" id=\"fitToSign\"" + (isReading(rep) ? " disabled" : "") + ">" + (isReading(rep) ? "Reading the photo…" : "Continue to signature") + "</button>"
       + "</div></div>";
   }
 
@@ -1738,6 +1818,7 @@
       + "<div class=\"card\"><label>Person tested</label><canvas id=\"fitSigClient\" class=\"fit-sig\" width=\"700\" height=\"220\"></canvas>"
       + "<button type=\"button\" class=\"btn ghost\" id=\"fitClearClient\">Clear</button></div>"
       + "<div class=\"footer-actions\"><button type=\"button\" class=\"btn orange\" id=\"fitMakePdf\">Save signed PDF</button></div>"
+      + (missingFields(rep).length ? "<p class=\"fit-warn\" id=\"fitSignMissing\">Not complete: " + esc(missingFields(rep).map(function (x) { return x.label; }).join(", ")) + ". Go back to details and fill these in before saving the signed PDF.</p>" : "")
       + "</div>";
   }
 
@@ -1746,14 +1827,15 @@
     const reps = reportsOf(ev.id);
     const rows = reps.length ? reps.map(r => {
       const signed = isReportSigned(r);
-      const who = [r.lastName, r.firstName].filter(Boolean).join(", ") || "Details not filled in";
+      const empty = isEmptyReport(r), gaps = missingFields(r);
+      const who = [r.lastName, r.firstName].filter(Boolean).join(", ") || (empty ? "Empty report (not counted)" : "Details not filled in");
       const res = r.result ? "<strong>" + esc(r.result) + "</strong>" : "No result yet";
       const fail = (r.exerciseFails || []).length ? " · exercise fail: " + esc(r.exerciseFails.join(", ")) : "";
       return "<div class=\"train\" data-fit-open=\"" + esc(r.id) + "\">"
-        + "<div class=\"pouch\">" + (signed ? "✓" : "…") + "</div>"
+        + "<div class=\"pouch\">" + (signed && !gaps.length ? "✓" : "…") + "</div>"
         + "<div><div class=\"row-title\">" + esc(who) + " · " + esc(r.model || r.respirator || "Respirator not set") + "</div>"
-        + "<div class=\"muted\">" + res + fail + (signed ? " · signed" : " · not signed") + (r.ocrSource === "device" ? " · read on device" + (r.ocrPendingVision ? " (Vision re-read when online)" : "") : "") + (r.pdfName ? " · " + esc(r.pdfName) : "") + "</div></div>"
-        + "<span class=\"badge " + (signed ? "s-ok" : "s-needs") + "\">" + (signed ? "Signed" : "In progress") + "</span></div>";
+        + "<div class=\"muted\">" + res + fail + (signed ? " · signed" : " · not signed") + (!empty && gaps.length ? " · <span class=\"fit-warn\">still to fill in: " + esc(gaps.map(x => x.label).join(", ")) + "</span>" : "") + (r.ocrSource === "device" ? " · read on device" + (r.ocrPendingVision ? " (Vision re-read when online)" : "") : "") + (r.pdfName ? " · " + esc(r.pdfName) : "") + "</div></div>"
+        + "<span class=\"badge " + (signed && !gaps.length ? "s-ok" : "s-needs") + "\">" + (signed ? (gaps.length ? "Signed, incomplete" : "Signed") : "In progress") + "</span></div>";
     }).join("") : "<div class=\"empty\">No fit-test reports yet. Add one from a PortaCount report photo, or enter the details by hand.</div>";
     const st = stageOf(ev);
     return "<div class=\"wrap\" id=\"fitEvent\">"
@@ -1878,7 +1960,7 @@
   }
   function applyVision(rep, j) {
     const parsed = parseReport(j.text || "", { pages: j.pages, annotations: j.annotations, confidence: null });
-    applyParsed(rep, parsed);
+    applyParsed(rep, parsed, rep.fieldsEdited ? "fill" : "replace");
     rep.ocrText = j.text || "";
     if (parsed.ocrWords && parsed.ocrWords.length) rep.ocrWords = parsed.ocrWords;
     rep.ocrStatus = "ok";
@@ -1887,17 +1969,33 @@
     return parsed;
   }
 
+  /* v48.19c: the result of a read always lands on the report that is in db.fitReports NOW (looked up by id after every await), never on a
+     stale copy the closure was holding (a sync pull can swap the object while Vision is answering), and it is stamped changed so it is sent. */
+  function liveOf(rep) { return reportById(rep.id) || rep; }
+  function stamped(rep) { if (typeof root.touch === "function") root.touch(rep); return rep; }
   async function runOcr(rep, file) {
-    rep.ocrStatus = "running";
-    rep.ocrMessage = "Reading the photo…";
-    rep.fieldsEdited = false;
+    activeOcr.add(rep.id);
+    try { await runOcrInner(rep, file); }
+    finally {
+      activeOcr.delete(rep.id);
+      const live = liveOf(rep);
+      if (live.ocrStatus === "running") { live.ocrStatus = "failed"; live.ocrMessage = "The photo could not be read. Fill in the boxes, or retake the photo."; }
+      stamped(live);
+    }
+  }
+  async function runOcrInner(rep, file) {
+    let live = liveOf(rep);
+    live.ocrStatus = "running";
+    live.ocrMessage = "Reading the photo…";
+    live.fieldsEdited = false;
     let small = file;
     try { small = await downscaleBlob(file, 1600, 0.72); } catch (e) { small = file; }
     if (isOffline()) { await runDeviceOcr(rep, file, small, "offline"); return; }
     const cfg = root.sbCfg && root.sbCfg();
     if (!cfg || !cfg.supabaseUrl) {
-      rep.ocrStatus = "unavailable";
-      rep.ocrMessage = "OCR not set up yet, enter manually";
+      live = liveOf(rep);
+      live.ocrStatus = "unavailable";
+      live.ocrMessage = "OCR not set up yet, enter manually";
       return;
     }
     let out;
@@ -1909,21 +2007,24 @@
       return;
     }
     const res = out.res, j = out.j;
+    live = liveOf(rep);
     if (res.status === 503 && j.error === "OCR_NOT_CONFIGURED") {
-      rep.ocrStatus = "not_configured";
-      rep.ocrMessage = "OCR not set up yet, enter manually";
+      live.ocrStatus = "not_configured";
+      live.ocrMessage = "OCR not set up yet, enter manually";
       return;
     }
     if (visionUnreachable(out)) { await runDeviceOcr(rep, file, small, "network"); return; }
     if (!res.ok) {
-      rep.ocrStatus = "failed";
-      rep.ocrMessage = j.message || "Could not read the photo. Enter the details manually, or retake it.";
+      live.ocrStatus = "failed";
+      live.ocrMessage = j.message || "Could not read the photo. Enter the details manually, or retake it.";
       return;
     }
-    const parsed = applyVision(rep, j);
-    await dropPending(rep.id);
-    rep.ocrMessage = parsed.missing.length || parsed.flags.length
-      ? "Check the highlighted fields against the photo."
+    const parsed = applyVision(live, j);
+    await dropPending(live.id);
+    live = liveOf(rep);
+    const still = missingFields(live);
+    live.ocrMessage = still.length || parsed.flags.length
+      ? "Check the highlighted fields against the photo." + (still.length ? " The photo did not give: " + still.map(function (x) { return x.label; }).join(", ") + "." : "")
       : "Fields were filled from the photo. Please check them before signing.";
   }
 
@@ -2078,12 +2179,13 @@
 
   const DEVICE_MSG = "Read on device (no internet). Check every field against the photo. When you are back online it is re-read with Google Vision, unless you have changed a field.";
   async function runDeviceOcr(rep, file, small, why) {
-    rep.ocrMessage = "No internet. Reading the photo on this device…";
+    liveOf(rep).ocrMessage = "No internet. Reading the photo on this device…";
     try {
       const reader = typeof root.__envssDeviceOcr === "function" ? root.__envssDeviceOcr : deviceRead;
       const out = await reader(file);
       const parsed = parseReport(out.text || "", { ocrWords: out.words || [], pageW: out.pageW, pageH: out.pageH, source: "device" });
-      applyParsed(rep, parsed);
+      rep = liveOf(rep);
+      applyParsed(rep, parsed, rep.fieldsEdited ? "fill" : "replace");
       rep.ocrText = out.text || "";
       if (parsed.ocrWords && parsed.ocrWords.length) rep.ocrWords = parsed.ocrWords;
       rep.ocrStatus = "ok";
@@ -2091,6 +2193,7 @@
       rep.ocrDeviceAt = new Date().toISOString();
       rep.ocrMessage = DEVICE_MSG;
     } catch (e) {
+      rep = liveOf(rep);
       console.warn("[ENVSS] on-device OCR", e);
       const ready = await deviceOcrReady();
       rep.ocrStatus = "failed";
@@ -2099,6 +2202,7 @@
         ? "No internet, and this device could not read the photo (" + (e && e.message || e) + "). Enter the details manually; it is re-read with Google Vision when you are back online unless you change a field."
         : "No internet, and the on-device reader has not been downloaded yet (it downloads once while the app is open online). Enter the details manually; it is re-read with Google Vision when you are back online unless you change a field.";
     }
+    rep = liveOf(rep);
     rep.ocrOfflineReason = why || "offline";
     rep.ocrPendingVision = await savePending(rep.id, small);
   }
@@ -2196,18 +2300,26 @@
 
   async function startFromFile(ev, file, manual) {
     const rep = blankReport(ev);
-    (db.fitReports || (db.fitReports = [])).push(rep);
     if (file) {
+      (db.fitReports || (db.fitReports = [])).push(rep);
       await attachPhoto(rep, ev, file);
-      if (!manual) await runOcr(rep, file);
-      else { rep.ocrStatus = "skipped"; rep.ocrMessage = "Entered manually."; }
+      if (!manual) {
+        /* v48.19c: show the confirm screen straight away with "Reading the photo…" (Continue is off until the read finishes), so nobody types into, or signs, a half-read form. */
+        const reading = runOcr(rep, file);
+        openConfirm(rep);
+        await reading;
+      } else { rep.ocrStatus = "skipped"; rep.ocrMessage = "Entered manually."; }
+      const live = liveOf(rep);
+      evLog(ev, "Fit-test report added", live.lastName || "new report");
+      save();
+      if (view.page === "event" && view.eventId === ev.id) openConfirm(live);
     } else {
+      /* v48.19c: "Enter manually" starts an in-memory draft. Nothing is saved, synced or counted until something is typed (28 Nov: an empty report was saved from a Mac). */
       rep.ocrStatus = "skipped";
       rep.ocrMessage = "Entered manually. You can attach a photo with Retake photo.";
+      draftRep = rep;
+      openConfirm(rep);
     }
-    evLog(ev, "Fit-test report added", rep.lastName || "new report");
-    save();
-    openConfirm(rep);
   }
 
   async function jpegForPdf(rep) {
@@ -2626,6 +2738,8 @@
   }
 
   async function finishPdf(rep, ev, signed) {
+    const gaps = missingFields(rep);
+    if (gaps.length) throw new Error("The PDF can't be made yet. Still to fill in: " + gaps.map(x => x.label).join(", ") + ".");
     const out = await buildReportPdf(rep, { signed: signed !== false && isReportSigned(rep) });
     rep.pdfName = out.name;
     rep.pdfBytes = out.bytes;
@@ -2742,10 +2856,12 @@
     root.markEventUpload = function (id) {
       const ev = root.eventById && root.eventById(id);
       if (!isFitEvent(ev)) return _mark ? _mark.apply(this, arguments) : null;
-      const reps = reportsOf(ev.id);
+      const reps = reportsOf(ev.id).filter(r => !isEmptyReport(r));   /* v48.19c: an empty report is not counted */
       if (!reps.length) { alert("Add and sign at least one fit-test report before marking this event complete."); return; }
       const unsigned = reps.filter(r => !isReportSigned(r));
       if (unsigned.length) { alert("This event cannot be marked complete until every report is signed.\nUnsigned: " + unsigned.length + "."); return; }
+      const incomplete = reps.filter(r => missingFields(r).length);
+      if (incomplete.length) { alert("This event cannot be marked complete until every report has pass/fail, company, respirator model and protocol filled in.\nIncomplete: " + incomplete.map(r => ([r.lastName, r.firstName].filter(Boolean).join(", ") || "unnamed") + " (" + missingFields(r).map(x => x.label).join(", ") + ")").join("; ") + "."); return; }
       ev.uploadReady = true;
       evLog(ev, "Marked event complete", "All fit-test reports signed");
       saveQuiet();
@@ -2808,13 +2924,29 @@
           const t = e && e.target;
           if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.type === "file") return;
           const rep = reportById(view.fitReportId);
-          if (rep && !rep.fieldsEdited) { markFieldsEdited(rep, "fields edited"); saveQuiet(); }
+          if (!rep) return;
+          if (draftRep && draftRep.id === rep.id) { collectForm(rep); if (!isEmptyReport(rep)) { addDraftToDb(rep); saveQuiet(); } }
+          if (!rep.fieldsEdited) { markFieldsEdited(rep, "fields edited"); saveQuiet(); }
+          /* live "Still to fill in" list from what is on screen (a copy: nothing is written until the tech continues or saves) */
+          try {
+            const tmp = Object.assign({}, rep); collectForm(tmp);
+            const gaps = missingFields(tmp), box = document.getElementById("fitMissing");
+            if (box) {
+              box.hidden = !gaps.length;
+              const lst = document.getElementById("fitMissingList");
+              if (lst) lst.textContent = gaps.map(x => x.label).join(", ");
+              else if (gaps.length) box.innerHTML += "<p class=\"fit-warn\">Still to fill in before this can be signed: <strong id=\"fitMissingList\">" + esc(gaps.map(x => x.label).join(", ")) + "</strong></p>";
+            }
+          } catch (e2) {}
         };
         confirmBox.addEventListener("input", onEdit);
         confirmBox.addEventListener("change", onEdit);
       }
       const backEv = document.getElementById("fitBackEvent");
-      if (backEv) backEv.onclick = () => { view.fitScreen = ""; view.fitReportId = ""; root.render(); };
+      if (backEv) backEv.onclick = () => {
+        if (draftRep && draftRep.id === view.fitReportId) { try { collectForm(draftRep); } catch (e) {} if (isEmptyReport(draftRep)) draftRep = null; else { const d = draftRep; addDraftToDb(d); save(); } }
+        view.fitScreen = ""; view.fitReportId = ""; root.render();
+      };
       const retake = document.getElementById("fitRetake");
       const retakeInp = document.getElementById("fitPhotoInput");
       if (retake && retakeInp) {
@@ -2827,10 +2959,15 @@
             const rep = reportById(view.fitReportId);
             if (!f || !rep) return;
             await attachPhoto(rep, ev, f);
-            await runOcr(rep, f);
-            evLog(ev, "Fit-test photo retaken", "");
+            if (draftRep && draftRep.id === rep.id) addDraftToDb(rep);
+            const reading = runOcr(rep, f);
+            openConfirm(rep);   /* v48.19c: reading banner + Continue off until the new photo has been read */
+            await reading;
+            const live = liveOf(rep);
+            evLog(ev, "Fit-test photo retaken", missingFields(live).length ? "still to fill in: " + missingFields(live).map(x => x.label).join(", ") : "all required fields read");
+            stamped(live);
             save();
-            openConfirm(rep);
+            if (view.page === "event" && view.eventId === ev.id) openConfirm(live);
           };
         }
       }
@@ -2850,8 +2987,14 @@
         if (!rep) return;
         collectForm(rep);
         markFieldsEdited(rep, "saved without signing");
+        if (draftRep && draftRep.id === rep.id) { if (isEmptyReport(rep)) { alert("Nothing has been entered yet, so there is nothing to save."); return; } addDraftToDb(rep); }
         evLog(ev, "Fit-test report saved", "unsigned draft");
         save();
+        const gaps = missingFields(rep);
+        if (gaps.length) {
+          alert("Saved. The PDF is made once these are filled in: " + gaps.map(x => x.label).join(", ") + ".");
+          view.fitScreen = ""; root.render(); return;
+        }
         try {
           draft.disabled = true;
           await finishPdf(rep, ev, false);
@@ -2870,6 +3013,16 @@
         collectForm(rep);
         markFieldsEdited(rep, "fields confirmed");
         if (!trim(rep.lastName) || !trim(rep.firstName)) { alert("Enter the worker’s last and first name before signing."); return; }
+        if (isReading(rep)) { alert("Still reading the photo. Wait for the boxes to fill in."); return; }
+        const gaps = missingFields(rep);
+        if (gaps.length) {
+          if (draftRep && draftRep.id === rep.id) addDraftToDb(rep);
+          saveQuiet();
+          alert("This report can't be signed yet. Still to fill in: " + gaps.map(x => x.label).join(", ") + ".");
+          const list = document.getElementById("fitMissingList"); if (list) list.textContent = gaps.map(x => x.label).join(", ");
+          return;
+        }
+        if (draftRep && draftRep.id === rep.id) addDraftToDb(rep);
         saveQuiet();
         openSign(rep);
       };
@@ -2890,6 +3043,8 @@
       if (make) make.onclick = async () => {
         const rep = reportById(view.fitReportId);
         if (!rep || !pads || !pads.client) return;
+        const gaps = missingFields(rep);
+        if (gaps.length) { alert("This report can't be signed yet. Still to fill in: " + gaps.map(x => x.label).join(", ") + "."); return; }
         if (!pads.client.isDirty()) { alert("The person who was tested needs to sign."); return; }
         const at = new Date().toISOString();
         rep.sigClient = pads.client.toDataURL();
@@ -2927,7 +3082,7 @@
       + ".fit-fields label,.fit-screen label{display:block;margin:8px 0 0;font-weight:700}"
       + ".fit-fields input,.fit-fields textarea,.fit-fields select,.fit-screen select{width:100%;box-sizing:border-box}"
       + ".fit-low{background:#3A1616;border-radius:10px;padding:6px 8px;color:#FFC9C4}"
-      + ".fit-flags{color:#FFD9A8;font-weight:600}.fit-warn{color:#FFC9C4;font-weight:700}"
+      + ".fit-missing{margin:8px 0}.fit-flags{color:#FFD9A8;font-weight:600}.fit-warn{color:#FFC9C4;font-weight:700}"
       + ".fit-ex-wrap{overflow:auto}.fit-ex{width:100%;border-collapse:collapse;font-size:13px}"
       + ".fit-ex th,.fit-ex td{padding:4px;border-bottom:1px solid var(--edge,#3A4A7A)}"
       + ".fit-sig{width:100%;height:180px;background:#fff;border:2px solid var(--edge,#3A4A7A);border-radius:12px;touch-action:none}"
@@ -2957,6 +3112,11 @@
     api.warmDeviceOcr = warmDeviceOcr;
     api.rereadPending = rereadPending;
     api.markFieldsEdited = markFieldsEdited;
+    api.missingFields = missingFields;
+    api.isEmptyReport = isEmptyReport;
+    api.isReportComplete = isReportComplete;
+    api.collectForm = collectForm;
+    api.reportById = reportById;
     api.loadPending = loadPending;
     root.envssFit = api;
     /* Vision re-read of photos that were read on the device, once the signal is back. */

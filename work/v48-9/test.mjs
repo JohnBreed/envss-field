@@ -170,6 +170,9 @@ async function run(vp) {
     document.getElementById("fitResult").value = "PASS";
     document.getElementById("fitPassLevel").value = "100";
     document.getElementById("fitOverallFf").value = "200+";
+    /* v48.19c: company and protocol are required before signing */
+    document.getElementById("fitCompany").value = "Acme Mining";
+    document.getElementById("fitProtocol").value = "OSHA FAST-FILTERING FACEPIECE";
   });
   await page.evaluate(() => { const b = document.getElementById("fitToSign"); if (b) b.scrollIntoView({ block: "center" }); });
   await sleep(200);

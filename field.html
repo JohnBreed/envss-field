@@ -5614,22 +5614,44 @@ followUpComplete = function (t) {
     const parts = [c.attached + " of " + ts.length + " attached"]; if (c.to_follow) parts.push(c.to_follow + " to follow"); if (c.not_supplied) parts.push(c.not_supplied + " not supplied"); if (c[""]) parts.push(c[""] + " not asked");
     return `<p class="dl-sum ${c.attached === ts.length ? "ok" : ""}" id="dailyLogSummary">Daily logs: ${parts.join(", ")}</p>`;
   }
-  /* STOP reminder: gentle, non-blocking bottom sheet */
-  function remind(t) {
-    const old = document.getElementById("dlRemind"); if (old) old.remove();
-    const d = document.createElement("div"); d.id = "dlRemind"; d.className = "dl-remind"; d.setAttribute("role", "status");
-    d.innerHTML = `<div><strong>Collect daily log</strong> from ${esc([(t.person || {}).first, (t.person || {}).last].filter(Boolean).join(" ") || displayNo(t))}</div>
+  /* STOP reminder: non-blocking bottom sheet. v48.19c (John, 28 Nov 2026): it must show for EVERY personal sample at STOP, including quick back-to-back
+     stops (S13 to S17 and N5 had no daily log answer because each new sheet replaced the last one and it closed itself after 20 s).
+     Now: a queue. Every stopped personal sample with no answer is added; the sheet stays until each one is answered (Take photo / Not supplied / Later),
+     shows how many are waiting, and survives a reload (ids kept on the device). Samples already stopped before this version are not added. */
+  const DLQ_KEY = "envss-dailylog-queue-v4819c";
+  let dlQ = [];
+  try { dlQ = JSON.parse(localStorage.getItem(DLQ_KEY) || "[]").filter(x => typeof x === "string"); } catch (e) { dlQ = []; }
+  function dlSave() { try { localStorage.setItem(DLQ_KEY, JSON.stringify(dlQ)); } catch (e) {} }
+  function dlPrune() { dlQ = dlQ.filter(id => { const t = db.trains.find(x => x.id === id); return t && wantsLog(t) && t.endAt && !statusOf(t); }); }
+  function nameOf(t) { return [(t.person || {}).first, (t.person || {}).last].filter(Boolean).join(" ") || displayNo(t); }
+  function paintQueue() {
+    dlPrune(); dlSave();
+    const old = document.getElementById("dlRemind");
+    if (!dlQ.length) { if (old) old.remove(); return; }
+    const t = db.trains.find(x => x.id === dlQ[0]); if (!t) return;
+    const d = old || document.createElement("div"); d.id = "dlRemind"; d.className = "dl-remind"; d.setAttribute("role", "status");
+    d.dataset.dlFor = t.id; d.dataset.dlCount = String(dlQ.length);
+    d.innerHTML = `<div><strong>Collect daily log</strong> from ${esc(nameOf(t))} <span class="muted">(${esc(displayNo(t))}${dlQ.length > 1 ? " · " + (dlQ.length - 1) + " more waiting" : ""})</span></div>
       <div class="dl-rbtns"><button type="button" class="btn" data-r="photo">📷 Take photo</button><button type="button" class="btn ghost" data-r="not_supplied">Not supplied</button><button type="button" class="btn ghost" data-r="later">Later</button></div>`;
-    document.body.appendChild(d);
-    const close = () => d.remove(); const timer = setTimeout(close, 20000);
-    d.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { clearTimeout(timer); close(); const r = b.dataset.r;
-      if (r === "photo") { setStatus(t, "attached"); save(); render(); setTimeout(() => { const i = document.getElementById("dlCam"); if (i) i.click(); }, 50); }
-      else { setStatus(t, r === "later" ? "to_follow" : "not_supplied", "at STOP"); save(); render(); } });
+    if (!old) document.body.appendChild(d);
+    d.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { const r = b.dataset.r; const id = d.dataset.dlFor; const x = db.trains.find(y => y.id === id); if (!x) { dlQ = dlQ.filter(i => i !== id); paintQueue(); return; }
+      dlQ = dlQ.filter(i => i !== id);
+      if (r === "photo") { setStatus(x, "attached"); save(); render(); paintQueue(); setTimeout(() => { const i = document.getElementById("dlCam"); if (i) i.click(); }, 50); }
+      else { setStatus(x, r === "later" ? "to_follow" : "not_supplied", "at STOP"); save(); render(); paintQueue(); } });
   }
+  function remind(t) { if (!t || dlQ.indexOf(t.id) >= 0 || statusOf(t)) return; dlQ.push(t.id); dlSave(); paintQueue(); }
   let pre = null;
   document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#btnStop")) { const t = cur(); pre = t ? { id: t.id, endAt: t.endAt } : null; } }, true);
   document.addEventListener("click", e => { if (!(e.target.closest && e.target.closest("#btnStop")) || !pre) return; const p = pre; pre = null;
     setTimeout(() => { const t = db.trains.find(x => x.id === p.id); if (t && wantsLog(t) && t.endAt && t.endAt !== p.endAt && statusOf(t) !== "attached" && statusOf(t) !== "not_supplied") remind(t); }, 150); });
+  /* a stop that did not come through the STOP button on the open screen (typed stop time, a different path) is picked up too, for stops made in this session */
+  const dlSession = Date.now();
+  setInterval(() => { try {
+    (db.trains || []).forEach(t => { if (!wantsLog(t) || !t.endAt || statusOf(t) || dlQ.indexOf(t.id) >= 0) return;
+      const st = (t.audit || []).slice().reverse().find(a => a && /^(STOP pressed|STOP entered|Stop time (entered|changed))/i.test(a.action || "")); if (st && Date.parse(st.at) >= dlSession) remind(t); });
+    if (dlQ.length && !document.getElementById("dlRemind")) paintQueue();
+  } catch (e) {} }, 1500);
+  window.addEventListener("load", () => setTimeout(paintQueue, 1200));
   const _render44c = render;
   render = function () {
     const r = _render44c.apply(this, arguments);
@@ -5653,7 +5675,7 @@ followUpComplete = function (t) {
     return r;
   };
   window.render = render;
-  window.v44DailyLog = { statusOf, pages, label: t => (wantsLog(t) ? (statusOf(t) || "not_asked") : ""),
+  window.v44DailyLog = { statusOf, pages, queue: () => dlQ.slice(), wantsLog, label: t => (wantsLog(t) ? (statusOf(t) || "not_asked") : ""),
     ref: t => { if (!wantsLog(t) || statusOf(t) !== "attached") return ""; const s = src(t) || t; return pages(t).map(p => p.path || ("local:" + p.pid)).join("; ") + (s === t ? "" : " (held on " + displayNo(s) + ")"); } };
   const st = document.createElement("style"); st.textContent =
     ".dl-card{margin-top:12px}.dl-chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid #6B5A2E;background:#2A2412;color:#E8D9A8;white-space:nowrap}" +
@@ -12163,7 +12185,8 @@ function fixOpen(ts) {
       w.innerHTML = `<div class="v488-dialog" role="dialog" aria-modal="true" aria-labelledby="v488Q">
         <p class="v488-q" id="v488Q">Was there a deviation from the initial flow rate?</p>
         <p class="help" id="v488Start">${hasStart ? "Initial flow rate: <strong>" + esc(start) + " L/min</strong>" : "No start flow was recorded. Enter the end flow (L/min)."}</p>
-        ${hasStart ? `<button type="button" class="btn green lg" id="v488No" style="width:100%;margin:8px 0 12px">No</button>` : ""}
+        ${hasStart ? `<p class="help" id="v488Read">Read the rotameter on this pump now. The expected end flow is the start flow. Confirm it only if the rotameter still shows it; otherwise enter what you read.</p>
+        <button type="button" class="btn green lg" id="v488No" style="width:100%;margin:8px 0 12px">Rotameter reads ${esc(start)} L/min: confirm</button>` : ""}
         <label for="v488End">${hasStart ? "Or enter the end flow (L/min)" : "End flow (L/min)"}</label>
         <input id="v488End" inputmode="decimal" value="${esc(initialEnd)}" placeholder="L/min" autocomplete="off">
         <div id="v488Warn">${warnHtml(t, initialEnd)}</div>
@@ -12177,8 +12200,19 @@ function fixOpen(ts) {
       endIn.addEventListener("input", () => { w.querySelector("#v488Warn").innerHTML = warnHtml(t, endIn.value); showErr(""); });
       const finish = (choice, value) => { w.remove(); resolve({ choice, value }); };
       const noBtn = w.querySelector("#v488No");
+      const openedAt = Date.now();
+      /* v48.19c (John, 28 Nov 2026): the app may pre-fill the expected end flow, but the tech approves each one. An end flow exactly equal to the start
+         is recorded as "confirmed equal" (accepted, not a different reading) so a review can tell accepted from measured. Quick taps are marked. */
+      const markBasis = (basis, quickMs) => {
+        t.endFlowBasis = basis; t.endFlowBasisAt = nowIso();
+        const quick = basis !== "measured" && quickMs < 6000 && Date.now() - (window.__v488LastEqualAt || 0) < 90000;
+        if (basis !== "measured") window.__v488LastEqualAt = Date.now();
+        if (basis === "confirmed_equal") audit(t, "End flow confirmed equal to start", "Tech tapped confirm: rotameter reads " + start + " L/min (accepted the expected value, nothing typed)" + (quick ? " · quick confirm: " + Math.round(quickMs / 1000) + " s after the last one" : ""));
+        else if (basis === "typed_equal") audit(t, "End flow confirmed equal to start", "Tech typed " + t.endFlow + " L/min, same as the start flow" + (quick ? " · quick confirm: " + Math.round(quickMs / 1000) + " s after the last one" : ""));
+      };
       if (noBtn) noBtn.onclick = () => {
         writeEnd(t, start);
+        markBasis("confirmed_equal", Date.now() - openedAt);
         audit(t, "Flow deviation at STOP", "No — end flow set to the initial flow rate, " + start + " L/min");
         try { saveQuiet(); } catch (e) {}
         finish("no", start);
@@ -12188,6 +12222,7 @@ function fixOpen(ts) {
         if (v == null) { showErr(hasStart ? "Enter the end flow, or choose No." : "Enter the end flow."); endIn.focus(); return; }
         writeEnd(t, v);
         const same = hasStart && flowEq(v, start);
+        markBasis(same ? "typed_equal" : "measured", Date.now() - openedAt);
         audit(t, "Flow deviation at STOP", same
           ? "End flow entered as " + v + " L/min, same as the initial flow rate"
           : "End flow entered as " + v + " L/min (initial " + (hasStart ? start + " L/min" : "not recorded") + ")");
@@ -14150,6 +14185,81 @@ function fixOpen(ts) {
     + ".g19-dupe{font-size:.85em;margin-left:6px}.g19-dym{margin:4px 0}.g19-case{margin:4px 0}.g19-chip-loc{background:#5A2A2A;color:#FFD0D0}";
   document.head.appendChild(st);
   render();
+})();
+</script>
+
+
+<script>
+/* ===== v48.19c capture guards (John, 28 Nov 2026 AWST, usage review of 28 Nov 7 pm) =====
+   Noise: LAeq and LCpeak must both be entered before a noise sample can be stopped (STOP, or a typed stop time). Personal noise samples are also asked
+   for hearing protection at that point if it has not been answered. The results are written the way the sample screen writes them (noise.js setStopValues).
+   Guards apply going forward: a sample that is already stopped is not touched, and a running sample from before this version stops the same way (it is just asked first).
+   Fails open: if noise.js did not load, STOP works as before. Offline-first, no schema change, nothing is sent anywhere.
+   (End-flow confirmation lives in the v48.8 question above; the daily-log queue in the v44c block; the fit-test rules in fit-test.js.) */
+(function () {
+  "use strict";
+  const e9 = s => (typeof esc === "function" ? esc(s) : String(s == null ? "" : s));
+  const bypass = new Set();
+  const curT = () => (view.page === "train" ? (db.trains || []).find(x => x.id === view.trainId) : null);
+  const noiseApi = () => (window.ENVSS_NOISE && ENVSS_NOISE.loaded && typeof ENVSS_NOISE.stopGaps === "function" ? ENVSS_NOISE : null);
+  const NUM = /^-?\d{1,3}(?:[.,]\d{1,2})?$/;
+  function askNoiseResults(t, gaps, needHpd) {
+    return new Promise(resolve => {
+      const old = document.querySelector('.v483-modal[data-cg="noise"]'); if (old) old.remove();
+      const w = document.createElement("div"); w.className = "v483-modal cg-modal"; w.setAttribute("data-cg", "noise");
+      const row = (k, label, ph) => `<label for="cg${k}">${label}</label><input id="cg${k}" inputmode="decimal" autocomplete="off" placeholder="${ph}" style="width:100%;box-sizing:border-box">`;
+      w.innerHTML = `<div class="v483-dialog" role="dialog" aria-modal="true"><h3 style="margin:0 0 6px" id="cgTitle">Enter the results before stopping</h3>
+        <p class="help" id="cgWhy">${e9(displayNo(t))}: ${gaps.length ? e9(gaps.join(" and ")) + " " + (gaps.length > 1 ? "are" : "is") + " needed from the meter before this noise sample can be stopped." : "Hearing protection is needed before this noise sample can be stopped."}</p>
+        ${gaps.indexOf("LAeq") >= 0 ? row("LAeq", "LAeq dB(A)", "e.g. 84.9") : ""}${gaps.indexOf("LCpeak") >= 0 ? row("LCpeak", "LCpeak dB(C)", "e.g. 103.8") : ""}
+        ${needHpd ? `<label style="margin-top:10px">Hearing protection worn?</label><div class="filters" id="cgHpd"><button type="button" class="chip" data-hpd="yes">Yes</button><button type="button" class="chip" data-hpd="no">No</button><button type="button" class="chip" data-hpd="unknown">Unknown</button></div>
+          <div id="cgHpdBox" style="display:none"><label for="cgHpdModel">Brand / model</label><input id="cgHpdModel" placeholder="Brand model or Unknown" style="width:100%;box-sizing:border-box"><label for="cgHpdClass">Class / attenuation</label><input id="cgHpdClass" placeholder="e.g. Class 4 / SLC80 or Unknown" style="width:100%;box-sizing:border-box"></div>` : ""}
+        <p class="help v483-err" id="cgErr" role="alert"></p>
+        <div class="row" style="gap:10px;justify-content:flex-end;margin-top:12px"><button type="button" class="btn ghost" id="cgNo">Cancel</button><button type="button" class="btn orange" id="cgYes">Save and STOP</button></div></div>`;
+      document.body.appendChild(w);
+      let asked = "";
+      w.querySelectorAll("[data-hpd]").forEach(b => b.onclick = () => { asked = b.dataset.hpd; w.querySelectorAll("[data-hpd]").forEach(x => x.classList.toggle("on", x === b)); const bx = w.querySelector("#cgHpdBox"); if (bx) bx.style.display = asked === "yes" ? "" : "none"; });
+      const done = v => { w.remove(); resolve(v); };
+      w.querySelector("#cgNo").onclick = () => done(false);
+      w.querySelector("#cgYes").onclick = () => {
+        const err = w.querySelector("#cgErr"), vals = {};
+        for (const k of gaps) { const v = ((w.querySelector("#cg" + k) || {}).value || "").trim(); if (!NUM.test(v)) { err.textContent = "Enter " + k + " as a number (for example " + (k === "LAeq" ? "84.9" : "103.8") + ")."; const i = w.querySelector("#cg" + k); if (i) i.focus(); return; } vals[k] = v; }
+        if (needHpd && !asked) { err.textContent = "Choose Yes, No or Unknown for hearing protection."; return; }
+        const hpd = needHpd ? { asked, model: ((w.querySelector("#cgHpdModel") || {}).value || "").trim(), classRating: ((w.querySelector("#cgHpdClass") || {}).value || "").trim() } : null;
+        try { noiseApi().setStopValues(t, vals, hpd); } catch (e) { err.textContent = "Could not save: " + (e && e.message || e); return; }
+        done(true);
+      };
+      setTimeout(() => { const f = w.querySelector("input"); if (f) f.focus(); }, 0);
+    });
+  }
+  function stopNeeds(t) {
+    const N = noiseApi(); if (!N || !t) return null;
+    const gaps = N.stopGaps(t), needHpd = !!(N.needsHpdAtStop && N.needsHpdAtStop(t) && !(t.rejectAsked === "yes"));
+    return gaps.length || needHpd ? { gaps, needHpd } : null;
+  }
+  window.addEventListener("click", async e => {
+    const b = e.target && e.target.closest && e.target.closest("#btnStop"); if (!b || b.disabled || bypass.has("stop")) return;
+    const t = curT(); if (!t || !t.startAt || t.endAt && t.status !== "running") return;
+    const need = stopNeeds(t); if (!need) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (document.querySelector(".cg-modal")) return;
+    const ok = await askNoiseResults(t, need.gaps, need.needHpd);
+    if (!ok) return;
+    bypass.add("stop"); try { (document.getElementById("btnStop") || b).click(); } finally { bypass.delete("stop"); }
+  }, true);
+  /* a stop time typed in the Edit time / Enter time dialog (no STOP press) needs the same results */
+  window.addEventListener("click", async e => {
+    const b = e.target && e.target.closest && e.target.closest('.v483-modal[data-v483="time"] #v483Save'); if (!b || bypass.has("tsave")) return;
+    const w = b.closest(".v483-modal"), t = curT(); if (!t || t.endAt) return;
+    const tm = w.querySelector("#v483t-stop"), dt = w.querySelector("#v483d-stop"); if (!tm || !tm.value || !dt || !dt.value) return;
+    const need = stopNeeds(t); if (!need) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    w.style.visibility = "hidden";
+    const ok = await askNoiseResults(t, need.gaps, need.needHpd);
+    w.style.visibility = "";
+    if (!ok) return;
+    bypass.add("tsave"); try { b.click(); } finally { bypass.delete("tsave"); }
+  }, true);
+  window.v4819c = { stopNeeds, askNoiseResults };
 })();
 </script>
 
