@@ -1,0 +1,896 @@
+{
+ "passed": 178,
+ "failed": 0,
+ "results": [
+  {
+   "name": "[pixel7] app is v48.19 with the guard constants (14 h warn, 5 min grace, 15 min late start, 0.5 dB)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] test operator is admin",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (1) START on a phone: no laptop warning",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (1) phone START runs straight away, not flagged",
+   "ok": true,
+   "detail": "\"running\""
+  },
+  {
+   "name": "[pixel7] (2) STOP 15 h after START warns first (still running)",
+   "ok": true,
+   "detail": "Run over 14 hours\n\nSample 2 started 27 Nov, 8:59 pm AWST. Stopping now makes a run of 15.0 h, over the 14 h a normal shift runs. That usually means START or STOP was on the wrong day.\n\nIf the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.\n\nCancel\nStop anyway"
+  },
+  {
+   "name": "[pixel7] (2) Cancel leaves it running",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (2) Stop anyway -> v48.8 flow question -> stopped, confirmation in audit",
+   "ok": true,
+   "detail": "[\"g19:long\",\"v488\"]"
+  },
+  {
+   "name": "[pixel7] (6) just stopped: 'fix typos without a reason until …', Location not locked",
+   "ok": true,
+   "detail": "{\"banner\":\"Just stopped\\n\\nYou can fix typos without a reason until 12:04 pm (5 min after STOP). After that, changing an answer asks for a reason.\",\"lock\":false,\"ro\":false}"
+  },
+  {
+   "name": "[pixel7] (6) typo fixed in the grace window with no prompt",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (6) after 5 minutes the stopped sample locks",
+   "ok": true,
+   "detail": "{\"banner\":\"Stopped sample: answers are locked\\n\\nEmpty boxes can still be filled in. To change something already entered, give a reason first.\\n\\nChange an answer…\",\"ro\":true}"
+  },
+  {
+   "name": "[pixel7] (6) tapping a filled box asks 'Why change a stopped sample?'",
+   "ok": true,
+   "detail": "Why change a stopped sample?\n\nSample 2 was stopped 28 Nov, 11:53 am AWST. You tapped Static location. Give a reason to unlock it. The reason, your name and this device go in the audit trail.\n\nCorrecting a typo / wrong entry\nDetails received after the shift\nOffice / lab correction\nOther (type the reason)\nDetails (optional)\n\nCancel\nUnlock to edit"
+  },
+  {
+   "name": "[pixel7] (6) a reason is required",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (6) with a reason it unlocks, saves and audits the reason",
+   "ok": true,
+   "detail": "[{\"at\":\"2026-11-28T03:59:44.679Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Edit after STOP unlocked\",\"detail\":\"Correcting a typo / wrong entry (wrong bay) · Android\",\"g19edit\":{\"reason\":\"typo\",\"reasonText\":\"wrong bay\",\"device\":\"Android\",\"mobile\":true}},{\"at\":\"2026-11-28T03:59:45.096Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Location\",\"field\":\"location\",\"from\":\"Bay 2 north\",\"to\":\"Bay 2 south\",\"detail\":\"Bay 2 north → Bay 2 south\"}]"
+  },
+  {
+   "name": "[pixel7] (6) changing an answered Yes / No on an older stopped sample asks first",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (10) hygiene rotameter is a pick-list; an old value not in the list is kept and labelled",
+   "ok": true,
+   "detail": "{\"v\":\"OLD-ROTA-9\",\"first\":\"OLD-ROTA-9 (not in the list)\",\"hidden\":\"none\"}"
+  },
+  {
+   "name": "[pixel7] (10) list = Podio rotameters + ones used before (23555270), no free text",
+   "ok": true,
+   "detail": "[\"\",\"0935\",\"2510A2A12BNBN-NL230314101 0014 'ENVSS1'\",\"2510A2A12BNBN-NL230314101 0019 'ENVSS2'\",\"2520A4A0BNBN-NL-05\",\"2520A4A40BNBN-NL-04\",\"2520A4A40BNBN-NL-06\",\"3338\",\"4435\",\"FR4A40BNBN-NL-01\",\"FR4A40BNBN-NL-02\",\"HF30LPM-01\",\"SKC (375-0550) 23556533\",\"SKC-04\",\"SKC-05\",\"23555270\",\"OLD-ROTA-9\"]"
+  },
+  {
+   "name": "[pixel7] (10) picking a rotameter saves it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (8) until 3 Dec: manual start typed an hour late asks for a comment, says it is required from 4 December 2026 (not saved yet)",
+   "ok": true,
+   "detail": "[\"This start time is 61 min ago. Add a comment saying why START wasn't pressed at the pump (at least a few words). From 4 December 2026 the comment will be required. Press Save again to carry on without one.\",\"(asked: start time entered late)\"]"
+  },
+  {
+   "name": "[pixel7] (8) from 4 Dec 2026 00:00 AWST the comment is required (Save twice still refused)",
+   "ok": true,
+   "detail": "[\"This start time is 61 min ago. Add a comment saying why START wasn't pressed at the pump (at least a few words).\",\"(required: start time entered late)\"]"
+  },
+  {
+   "name": "[pixel7] (8) 3 Dec 23:59 AWST is still the warning",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (8) with the comment it saves as a manual time",
+   "ok": true,
+   "detail": "[{\"at\":\"2026-11-28T03:59:48.313Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Start time\",\"field\":\"startAt\",\"from\":\"\",\"to\":\"2026-11-28T02:59:00.000Z\",\"detail\":\"(empty) → 28 Nov, 10:59:00 am AWST\"}]"
+  },
+  {
+   "name": "[pixel7] (8) a manual start within 15 min needs no comment",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (8) until 3 Dec: Save again carries on without a comment, noted in the audit trail",
+   "ok": true,
+   "detail": "[\"Late manual start saved without a comment — confirmed\",\"Start time entered manually\",\"Changed Start time\",\"Changed Needs Office Approval\"]"
+  },
+  {
+   "name": "[pixel7] (2) typed times 15.5 h apart warn before saving",
+   "ok": true,
+   "detail": "Run over 14 hours\n\nSample 6 started 27 Nov, 6:00 am AWST. These times make a run of 15.5 h, over the 14 h a normal shift runs. That usually means START or STOP was on the wrong day.\n\nIf the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.\n\nGo back\nSave anyway"
+  },
+  {
+   "name": "[pixel7] (2) Save anyway saves both times with the confirmation",
+   "ok": true,
+   "detail": "[\"Times more than 14 h apart — confirmed\",\"Start time entered manually\",\"Stop time entered manually\",\"Changed Status\",\"Changed Start time\",\"Changed Stop time\"]"
+  },
+  {
+   "name": "[pixel7] (3) inline: head IESS01 already running on 0019920-001",
+   "ok": true,
+   "detail": "⚠ Sample head IESS01 is already running on Sample 1 (0019920-001, started 28 Nov, 9:59 am AWST). Each running sample needs its own head. Check the head ID."
+  },
+  {
+   "name": "[pixel7] (3) START asks 'Start anyway?'",
+   "ok": true,
+   "detail": "Sample head already running\n\nSample 1: Sample head IESS01 is already running on Sample 1 (0019920-001, started 28 Nov, 9:59 am AWST). Each running sample needs its own head.\n\nIf the other sample has really finished, press STOP on it first. Otherwise check the head ID.\n\nCancel\nStart anyway"
+  },
+  {
+   "name": "[pixel7] (3) Start anyway starts it and logs it",
+   "ok": true,
+   "detail": "[\"g19:head\"]"
+  },
+  {
+   "name": "[pixel7] (4) suggestions: project client first, then companies used before; duplicates by case / spaces merged; a near-duplicate is tagged 'check spelling'",
+   "ok": true,
+   "detail": "[\"Acme Mining project client\",\"Black Cat Syndicate\",\"BHP Contractors\",\"Black Cate Syndicate check spelling: also “Black Cat Syndicate”\",\"Downer\",\"MacMahon\"]"
+  },
+  {
+   "name": "[pixel7] (4) picking a suggestion saves it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (4) a new company is accepted exactly as typed (no Other step)",
+   "ok": true,
+   "detail": "New company: “Newco Scaffolding” is saved as typed"
+  },
+  {
+   "name": "[pixel7] (4) next time the new company is in the list",
+   "ok": true,
+   "detail": "[\"Newco Scaffolding\"]"
+  },
+  {
+   "name": "[pixel7] (4) typing 'Black Cate Syndicate': 'Did you mean Black Cat Syndicate?'",
+   "ok": true,
+   "detail": "Did you mean Black Cat Syndicate? (spelling looks like a company already used) Keep “Black Cate Syndicate”"
+  },
+  {
+   "name": "[pixel7] (4) tapping the suggestion uses it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (4) 'Mac': 'Did you mean MacMahon?' (short form)",
+   "ok": true,
+   "detail": "Did you mean MacMahon? (short form looks like a company already used) Keep “Mac”"
+  },
+  {
+   "name": "[pixel7] (4) 'Keep' leaves it exactly as typed and hides the prompt",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (4) near-duplicate rules: case, spacing, spelling; unrelated names are not flagged",
+   "ok": true,
+   "detail": "case,case,spelling,,"
+  },
+  {
+   "name": "[pixel7] (4b) first name 'lee' on blur: 'use Lee?' (all lower case)",
+   "ok": true,
+   "detail": "Capital letters (all lower case): use Lee? Keep “lee”"
+  },
+  {
+   "name": "[pixel7] (4b) last name 'MCDONALD-O'BRIEN': 'use McDonald-O'Brien?' (ALL CAPS, Mc / O' / hyphen)",
+   "ok": true,
+   "detail": "Capital letters (ALL CAPS): use McDonald-O'Brien? Keep “MCDONALD-O'BRIEN”"
+  },
+  {
+   "name": "[pixel7] (4b) 'use' applies McDonald-O'Brien; 'Keep' leaves 'lee' exactly as typed",
+   "ok": true,
+   "detail": "{\"first\":\"lee\",\"last\":\"McDonald-O'Brien\",\"sex\":\"male\",\"dob\":\"1985-03-04\",\"dobD\":\"04\",\"dobM\":\"03\",\"dobY\":\"1985\",\"occupation\":\"Fitter\",\"company\":\"Mac\",\"hours\":\"12\",\"daysOn\":\"8\",\"daysOff\":\"6\",\"occupationCode\":\"\"}"
+  },
+  {
+   "name": "[pixel7] (4b) mixed-up caps 'jOHN' -> John",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (4b) a properly cased name (with van der) is not flagged",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (4b) company 'zeta drilling pty ltd' -> 'Zeta Drilling Pty Ltd'",
+   "ok": true,
+   "detail": "Capital letters (all lower case): use Zeta Drilling Pty Ltd? Keep “zeta drilling pty ltd”"
+  },
+  {
+   "name": "[pixel7] (4b) a company already used with other caps gets 'Did you mean Newco Scaffolding?' instead (no double prompt)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (4b) acronyms and correct names are left alone; ALL CAPS company keeps state codes",
+   "ok": true,
+   "detail": "BHP=ok, JBS&G=ok, BHP Contractors=ok, WA LIMESTONE=WA Limestone, MacMahon=ok, O'Brien=ok"
+  },
+  {
+   "name": "[pixel7] (4) the project client's spelling wins over a more common typo; swapped letters count; different names are not flagged",
+   "ok": true,
+   "detail": "{\"typo\":[\"Acme Mining\"],\"client\":[],\"swap\":\"spelling\",\"far\":\"\"}"
+  },
+  {
+   "name": "[pixel7] (4) a stored typo is flagged on the sample but not rewritten",
+   "ok": true,
+   "detail": "Did you mean Black Cat Syndicate? (spelling looks like a company already used) Keep “Black Cate Syndicate”"
+  },
+  {
+   "name": "[pixel7] (5) until 30 Nov: no calibration is a notice (not a START gap) saying dose badges can't start from 1 December 2026",
+   "ok": true,
+   "detail": "{\"gap\":false,\"txt\":\"⚠ No start-of-day field calibration for 2026-11-28. From 1 December 2026, a dose badge without a pre-start calibration won't be able to start. Go to Calibration\",\"mode\":\"warn\"}"
+  },
+  {
+   "name": "[pixel7] (5) START asks to confirm (still prepped), same 1 December 2026 message",
+   "ok": true,
+   "detail": "No pre-start calibration\n\nNoise Sample 1: no start-of-day field calibration recorded for 2026-11-28.\n\nFrom 1 December 2026, a dose badge without a pre-start calibration won't be able to start. Record the calibrator level and meter reading now if you can.\n\nRecord calibration\nStart anyway"
+  },
+  {
+   "name": "[pixel7] (5) 'Record calibration': not started",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (5) 30 Nov 23:59:30 AWST: still the warning",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (5) from 1 Dec 2026 00:00 AWST: START gap + 'START is locked' notice",
+   "ok": true,
+   "detail": "{\"gap\":true,\"mode\":\"block\"}"
+  },
+  {
+   "name": "[pixel7] (5) from 1 Dec: START refused, calibration listed",
+   "ok": true,
+   "detail": "[\"Cannot start until these are filled:\\n• Start-of-day calibration (2026-11-28)\"]"
+  },
+  {
+   "name": "[pixel7] (5) until 30 Nov: 'Start anyway' starts it and logs it",
+   "ok": true,
+   "detail": "[\"g19:nocal\"]"
+  },
+  {
+   "name": "[pixel7] (5) calibration 0.8 dB off: inline warning",
+   "ok": true,
+   "detail": "⚠ Start-of-day calibration is off by 0.8 dB (limit ±0.5 dB). START will ask you to confirm."
+  },
+  {
+   "name": "[pixel7] (5) START asks to confirm the drift (not a block)",
+   "ok": true,
+   "detail": "Check the noise calibration\n\nStart-of-day calibration is off by 0.8 dB (limit ±0.5 dB).\n\nRe-check the calibrator on the meter. If the reading is right, carry on; it is noted in the audit trail.\n\nCancel\nStart anyway"
+  },
+  {
+   "name": "[pixel7] (5) Cancel: not started",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (5) Start anyway: running, logged",
+   "ok": true,
+   "detail": "[\"g19:drift\"]"
+  },
+  {
+   "name": "[pixel7] (3) AFM: cowl 13469 already running on 0019920-AFM-006",
+   "ok": true,
+   "detail": "⚠ Cowl 13469 is already running on Pump 4 (0019920-AFM-006, started 28 Nov, 8:59 am AWST). Each running sample needs its own cowl. Check the cowl number."
+  },
+  {
+   "name": "[pixel7] (10) AFM event rotameter is a pick-list",
+   "ok": true,
+   "detail": "{\"v\":\"FR4A40BNBN-NL-01\",\"n\":17,\"inputHidden\":\"none\"}"
+  },
+  {
+   "name": "[pixel7] (10) picking the AFM event rotameter copies it to samples, the field blank keeps none",
+   "ok": true,
+   "detail": "{\"ev\":\"FR4A40BNBN-NL-02\",\"f1\":\"FR4A40BNBN-NL-02\",\"f0\":\"\"}"
+  },
+  {
+   "name": "[pixel7] (10) new-event form rotameter is a pick-list",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (9) Location is not a required answer (it would block complete)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (9) event screen: '1 sample has no location: Sample 1' + chip on the row",
+   "ok": true,
+   "detail": "{\"line\":\"⚠ 1 sample has no location: Sample 1\",\"chips\":1}"
+  },
+  {
+   "name": "[pixel7] (9) Mark event complete: warning lists sample 1 (no location), not the blank or sample 2, and can be confirmed",
+   "ok": true,
+   "detail": "Location missing\n\n1 sample has no location. Tap a sample to add it, or carry on and add it later.\n\nSample 1 · Airborne · personal · Ann Nolocation\n\nGo back\nMark the event complete anyway"
+  },
+  {
+   "name": "[pixel7] (9) Go back: event not marked complete",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (9) Create COC shows the same warning",
+   "ok": true,
+   "detail": "Location missing\n\n1 sample has no location. Tap a sample to add it, or carry on and add it later.\n\nSample 1 · Airborne · personal · Ann Nolocation\n\nGo back\nCreate the COC anyway"
+  },
+  {
+   "name": "[pixel7] (9) the link opens the sample, which shows 'Location missing'",
+   "ok": true,
+   "detail": "⚠ Location missing. Add where this sample was taken (needed on the COC and the report)."
+  },
+  {
+   "name": "[pixel7] (9) 'Mark the event complete anyway' marks it, notes it on the sample, and 'Create COC now?' does not ask twice",
+   "ok": true,
+   "detail": "{\"ready\":true,\"a\":[\"complete\",\"coc\"]}"
+  },
+  {
+   "name": "[pixel7] (9) an empty Location on a stopped sample can be filled with no reason; the notice goes",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (9) with locations in, no warning and no event notice",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] (7) staff on the phone see the office flag on a laptop-entered sample, told to use Edit time",
+   "ok": true,
+   "detail": "Flagged to the office\n\nSTART / STOP or a time on this sample was entered on a laptop or Chromebook, not at the pump. If a time is wrong, use Edit time on this sample to correct it. The office checks and approves it.\n\nFlagged on this sample"
+  },
+  {
+   "name": "[pixel7] (7) phone presses are never flagged",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] reload keeps the saved values",
+   "ok": true,
+   "detail": "h1:running::Acme Mining:FR4A40BNBN-NL-02 h2:ended:Bay 2 south::FR4A40BNBN-NL-02 h4:prepped::Newco Scaffolding:FR4A40BNBN-NL-02 h7:running:Bay 7::4435 l1:ended:Pottery room:Acme Mining:FR4A40BNBN-NL-02 n1:running:Workshop:Acme Mining:"
+  },
+  {
+   "name": "[pixel7] other samples untouched",
+   "ok": true,
+   "detail": "[[\"ended\",0,false,\"23555270\"],[\"ended\",0,false,\"FR4A40BNBN-NL-02\"],[\"ended\",0,false,\"FR4A40BNBN-NL-02\"],[\"running\",0,false,\"FR4A40BNBN-NL-01\"],[\"ended\",0,false,\"FR4A40BNBN-NL-02\"],[\"ended\",0,false,\"FR4A40BNBN-NL-02\"]]"
+  },
+  {
+   "name": "[pixel7] no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7] no unexpected native alerts",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] app is v48.19 with the guard constants (14 h warn, 5 min grace, 15 min late start, 0.5 dB)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] test operator is admin",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (1) START on a Chromebook shows the 'Not at the pump?' warning first",
+   "ok": true,
+   "detail": "Not at the pump?\n\nYou're on a Chromebook, not a phone at the pump. START belongs on your phone, at the pump 📱\n\nYou can still press START here. The time is flagged for the office to approve.\n\nCancel\nPress START anyway"
+  },
+  {
+   "name": "[chromebook] (1) Cancel: not started",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (1) 'Press START anyway' starts it, flags needs office approval, no second reminder",
+   "ok": true,
+   "detail": "{\"seen\":[\"g19:laptop\"],\"f\":true,\"s\":\"running\"}"
+  },
+  {
+   "name": "[chromebook] (1) STOP on a Chromebook shows the same warning (still running until confirmed)",
+   "ok": true,
+   "detail": "Not at the pump?\n\nYou're on a Chromebook, not a phone at the pump. STOP belongs on your phone, at the pump 📱\n\nYou can still press STOP here. The time is flagged for the office to approve.\n\nCancel\nPress STOP anyway"
+  },
+  {
+   "name": "[chromebook] (2) STOP 15 h after START warns first (still running)",
+   "ok": true,
+   "detail": "Run over 14 hours\n\nSample 2 started 27 Nov, 9:00 pm AWST. Stopping now makes a run of 15.0 h, over the 14 h a normal shift runs. That usually means START or STOP was on the wrong day.\n\nIf the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.\n\nCancel\nStop anyway"
+  },
+  {
+   "name": "[chromebook] (2) Cancel leaves it running",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (2) Stop anyway -> laptop warning -> v48.8 flow question -> stopped, confirmation in audit",
+   "ok": true,
+   "detail": "[\"g19:long\",\"g19:laptop\",\"v488\"]"
+  },
+  {
+   "name": "[chromebook] (6) just stopped: 'fix typos without a reason until …', Location not locked",
+   "ok": true,
+   "detail": "{\"banner\":\"Just stopped\\n\\nYou can fix typos without a reason until 12:05 pm (5 min after STOP). After that, changing an answer asks for a reason.\",\"lock\":false,\"ro\":false}"
+  },
+  {
+   "name": "[chromebook] (6) typo fixed in the grace window with no prompt",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (6) after 5 minutes the stopped sample locks",
+   "ok": true,
+   "detail": "{\"banner\":\"Stopped sample: answers are locked\\n\\nEmpty boxes can still be filled in. To change something already entered, give a reason first.\\n\\nChange an answer…\",\"ro\":true}"
+  },
+  {
+   "name": "[chromebook] (6) tapping a filled box asks 'Why change a stopped sample?'",
+   "ok": true,
+   "detail": "Why change a stopped sample?\n\nSample 2 was stopped 28 Nov, 11:54 am AWST. You tapped Static location. Give a reason to unlock it. The reason, your name and this device go in the audit trail.\n\nCorrecting a typo / wrong entry\nDetails received after the shift\nOffice / lab correction\nOther (type the reason)\nDetails (optional)\n\nCancel\nUnlock to edit"
+  },
+  {
+   "name": "[chromebook] (6) a reason is required",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (6) with a reason it unlocks, saves and audits the reason",
+   "ok": true,
+   "detail": "[{\"at\":\"2026-11-28T04:00:31.445Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Edit after STOP unlocked\",\"detail\":\"Correcting a typo / wrong entry (wrong bay) · Chromebook\",\"g19edit\":{\"reason\":\"typo\",\"reasonText\":\"wrong bay\",\"device\":\"Chromebook\",\"mobile\":false}},{\"at\":\"2026-11-28T04:00:31.862Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Location\",\"field\":\"location\",\"from\":\"Bay 2 north\",\"to\":\"Bay 2 south\",\"detail\":\"Bay 2 north → Bay 2 south\"}]"
+  },
+  {
+   "name": "[chromebook] (6) changing an answered Yes / No on an older stopped sample asks first",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (10) hygiene rotameter is a pick-list; an old value not in the list is kept and labelled",
+   "ok": true,
+   "detail": "{\"v\":\"OLD-ROTA-9\",\"first\":\"OLD-ROTA-9 (not in the list)\",\"hidden\":\"none\"}"
+  },
+  {
+   "name": "[chromebook] (10) list = Podio rotameters + ones used before (23555270), no free text",
+   "ok": true,
+   "detail": "[\"\",\"0935\",\"2510A2A12BNBN-NL230314101 0014 'ENVSS1'\",\"2510A2A12BNBN-NL230314101 0019 'ENVSS2'\",\"2520A4A0BNBN-NL-05\",\"2520A4A40BNBN-NL-04\",\"2520A4A40BNBN-NL-06\",\"3338\",\"4435\",\"FR4A40BNBN-NL-01\",\"FR4A40BNBN-NL-02\",\"HF30LPM-01\",\"SKC (375-0550) 23556533\",\"SKC-04\",\"SKC-05\",\"23555270\",\"OLD-ROTA-9\"]"
+  },
+  {
+   "name": "[chromebook] (10) picking a rotameter saves it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (8) until 3 Dec: manual start typed an hour late asks for a comment, says it is required from 4 December 2026 (not saved yet)",
+   "ok": true,
+   "detail": "[\"This start time is 61 min ago. Add a comment saying why START wasn't pressed at the pump (at least a few words). From 4 December 2026 the comment will be required. Press Save again to carry on without one.\",\"(asked: start time entered late)\"]"
+  },
+  {
+   "name": "[chromebook] (8) from 4 Dec 2026 00:00 AWST the comment is required (Save twice still refused)",
+   "ok": true,
+   "detail": "[\"This start time is 61 min ago. Add a comment saying why START wasn't pressed at the pump (at least a few words).\",\"(required: start time entered late)\"]"
+  },
+  {
+   "name": "[chromebook] (8) 3 Dec 23:59 AWST is still the warning",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (8) with the comment it saves as a manual time",
+   "ok": true,
+   "detail": "[{\"at\":\"2026-11-28T04:00:34.873Z\",\"who\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"action\":\"Changed Needs Office Approval\",\"field\":\"needsOfficeApproval\",\"from\":\"\",\"to\":\"true\",\"detail\":\"(empty) → true\"}]"
+  },
+  {
+   "name": "[chromebook] (8) a manual start within 15 min needs no comment",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (8) until 3 Dec: Save again carries on without a comment, noted in the audit trail",
+   "ok": true,
+   "detail": "[\"Late manual start saved without a comment — confirmed\",\"Start time entered manually\",\"Changed Start time\",\"Changed Needs Office Approval\",\"Changed Needs Office Approval\"]"
+  },
+  {
+   "name": "[chromebook] (2) typed times 15.5 h apart warn before saving",
+   "ok": true,
+   "detail": "Run over 14 hours\n\nSample 6 started 27 Nov, 6:00 am AWST. These times make a run of 15.5 h, over the 14 h a normal shift runs. That usually means START or STOP was on the wrong day.\n\nIf the sample really ran this long (long or night shift), carry on. It is noted in the audit trail.\n\nGo back\nSave anyway"
+  },
+  {
+   "name": "[chromebook] (2) Save anyway saves both times with the confirmation",
+   "ok": true,
+   "detail": "[\"Times more than 14 h apart — confirmed\",\"Start time entered manually\",\"Stop time entered manually\",\"Changed Status\",\"Changed Start time\",\"Changed Stop time\",\"Changed Needs Office Approval\",\"Changed Needs Office Approval\"]"
+  },
+  {
+   "name": "[chromebook] (3) inline: head IESS01 already running on 0019920-001",
+   "ok": true,
+   "detail": "⚠ Sample head IESS01 is already running on Sample 1 (0019920-001, started 28 Nov, 10:00 am AWST). Each running sample needs its own head. Check the head ID."
+  },
+  {
+   "name": "[chromebook] (3) START asks 'Start anyway?'",
+   "ok": true,
+   "detail": "Sample head already running\n\nSample 1: Sample head IESS01 is already running on Sample 1 (0019920-001, started 28 Nov, 10:00 am AWST). Each running sample needs its own head.\n\nIf the other sample has really finished, press STOP on it first. Otherwise check the head ID.\n\nCancel\nStart anyway"
+  },
+  {
+   "name": "[chromebook] (3) Start anyway starts it and logs it",
+   "ok": true,
+   "detail": "[\"g19:head\",\"g19:laptop\"]"
+  },
+  {
+   "name": "[chromebook] (4) suggestions: project client first, then companies used before; duplicates by case / spaces merged; a near-duplicate is tagged 'check spelling'",
+   "ok": true,
+   "detail": "[\"Acme Mining project client\",\"Black Cat Syndicate\",\"BHP Contractors\",\"Black Cate Syndicate check spelling: also “Black Cat Syndicate”\",\"Downer\",\"MacMahon\"]"
+  },
+  {
+   "name": "[chromebook] (4) picking a suggestion saves it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (4) a new company is accepted exactly as typed (no Other step)",
+   "ok": true,
+   "detail": "New company: “Newco Scaffolding” is saved as typed"
+  },
+  {
+   "name": "[chromebook] (4) next time the new company is in the list",
+   "ok": true,
+   "detail": "[\"Newco Scaffolding\"]"
+  },
+  {
+   "name": "[chromebook] (4) typing 'Black Cate Syndicate': 'Did you mean Black Cat Syndicate?'",
+   "ok": true,
+   "detail": "Did you mean Black Cat Syndicate? (spelling looks like a company already used) Keep “Black Cate Syndicate”"
+  },
+  {
+   "name": "[chromebook] (4) tapping the suggestion uses it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (4) 'Mac': 'Did you mean MacMahon?' (short form)",
+   "ok": true,
+   "detail": "Did you mean MacMahon? (short form looks like a company already used) Keep “Mac”"
+  },
+  {
+   "name": "[chromebook] (4) 'Keep' leaves it exactly as typed and hides the prompt",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (4) near-duplicate rules: case, spacing, spelling; unrelated names are not flagged",
+   "ok": true,
+   "detail": "case,case,spelling,,"
+  },
+  {
+   "name": "[chromebook] (4b) first name 'lee' on blur: 'use Lee?' (all lower case)",
+   "ok": true,
+   "detail": "Capital letters (all lower case): use Lee? Keep “lee”"
+  },
+  {
+   "name": "[chromebook] (4b) last name 'MCDONALD-O'BRIEN': 'use McDonald-O'Brien?' (ALL CAPS, Mc / O' / hyphen)",
+   "ok": true,
+   "detail": "Capital letters (ALL CAPS): use McDonald-O'Brien? Keep “MCDONALD-O'BRIEN”"
+  },
+  {
+   "name": "[chromebook] (4b) 'use' applies McDonald-O'Brien; 'Keep' leaves 'lee' exactly as typed",
+   "ok": true,
+   "detail": "{\"first\":\"lee\",\"last\":\"McDonald-O'Brien\",\"sex\":\"male\",\"dob\":\"1985-03-04\",\"dobD\":\"04\",\"dobM\":\"03\",\"dobY\":\"1985\",\"occupation\":\"Fitter\",\"company\":\"Mac\",\"hours\":\"12\",\"daysOn\":\"8\",\"daysOff\":\"6\",\"occupationCode\":\"\"}"
+  },
+  {
+   "name": "[chromebook] (4b) mixed-up caps 'jOHN' -> John",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (4b) a properly cased name (with van der) is not flagged",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (4b) company 'zeta drilling pty ltd' -> 'Zeta Drilling Pty Ltd'",
+   "ok": true,
+   "detail": "Capital letters (all lower case): use Zeta Drilling Pty Ltd? Keep “zeta drilling pty ltd”"
+  },
+  {
+   "name": "[chromebook] (4b) a company already used with other caps gets 'Did you mean Newco Scaffolding?' instead (no double prompt)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (4b) acronyms and correct names are left alone; ALL CAPS company keeps state codes",
+   "ok": true,
+   "detail": "BHP=ok, JBS&G=ok, BHP Contractors=ok, WA LIMESTONE=WA Limestone, MacMahon=ok, O'Brien=ok"
+  },
+  {
+   "name": "[chromebook] (4) the project client's spelling wins over a more common typo; swapped letters count; different names are not flagged",
+   "ok": true,
+   "detail": "{\"typo\":[\"Acme Mining\"],\"client\":[],\"swap\":\"spelling\",\"far\":\"\"}"
+  },
+  {
+   "name": "[chromebook] (4) a stored typo is flagged on the sample but not rewritten",
+   "ok": true,
+   "detail": "Did you mean Black Cat Syndicate? (spelling looks like a company already used) Keep “Black Cate Syndicate”"
+  },
+  {
+   "name": "[chromebook] (5) until 30 Nov: no calibration is a notice (not a START gap) saying dose badges can't start from 1 December 2026",
+   "ok": true,
+   "detail": "{\"gap\":false,\"txt\":\"⚠ No start-of-day field calibration for 2026-11-28. From 1 December 2026, a dose badge without a pre-start calibration won't be able to start. Go to Calibration\",\"mode\":\"warn\"}"
+  },
+  {
+   "name": "[chromebook] (5) START asks to confirm (still prepped), same 1 December 2026 message",
+   "ok": true,
+   "detail": "No pre-start calibration\n\nNoise Sample 1: no start-of-day field calibration recorded for 2026-11-28.\n\nFrom 1 December 2026, a dose badge without a pre-start calibration won't be able to start. Record the calibrator level and meter reading now if you can.\n\nRecord calibration\nStart anyway"
+  },
+  {
+   "name": "[chromebook] (5) 'Record calibration': not started",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (5) 30 Nov 23:59:30 AWST: still the warning",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (5) from 1 Dec 2026 00:00 AWST: START gap + 'START is locked' notice",
+   "ok": true,
+   "detail": "{\"gap\":true,\"mode\":\"block\"}"
+  },
+  {
+   "name": "[chromebook] (5) from 1 Dec: START refused, calibration listed",
+   "ok": true,
+   "detail": "[\"Cannot start until these are filled:\\n• Start-of-day calibration (2026-11-28)\"]"
+  },
+  {
+   "name": "[chromebook] (5) until 30 Nov: 'Start anyway' starts it and logs it",
+   "ok": true,
+   "detail": "[\"g19:nocal\",\"g19:laptop\"]"
+  },
+  {
+   "name": "[chromebook] (5) calibration 0.8 dB off: inline warning",
+   "ok": true,
+   "detail": "⚠ Start-of-day calibration is off by 0.8 dB (limit ±0.5 dB). START will ask you to confirm."
+  },
+  {
+   "name": "[chromebook] (5) START asks to confirm the drift (not a block)",
+   "ok": true,
+   "detail": "Check the noise calibration\n\nStart-of-day calibration is off by 0.8 dB (limit ±0.5 dB).\n\nRe-check the calibrator on the meter. If the reading is right, carry on; it is noted in the audit trail.\n\nCancel\nStart anyway"
+  },
+  {
+   "name": "[chromebook] (5) Cancel: not started",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (5) Start anyway: running, logged",
+   "ok": true,
+   "detail": "[\"g19:drift\",\"g19:laptop\"]"
+  },
+  {
+   "name": "[chromebook] (3) AFM: cowl 13469 already running on 0019920-AFM-006",
+   "ok": true,
+   "detail": "⚠ Cowl 13469 is already running on Pump 4 (0019920-AFM-006, started 28 Nov, 9:00 am AWST). Each running sample needs its own cowl. Check the cowl number."
+  },
+  {
+   "name": "[chromebook] (10) AFM event rotameter is a pick-list",
+   "ok": true,
+   "detail": "{\"v\":\"FR4A40BNBN-NL-01\",\"n\":17,\"inputHidden\":\"none\"}"
+  },
+  {
+   "name": "[chromebook] (10) picking the AFM event rotameter copies it to samples, the field blank keeps none",
+   "ok": true,
+   "detail": "{\"ev\":\"FR4A40BNBN-NL-02\",\"f1\":\"FR4A40BNBN-NL-02\",\"f0\":\"\"}"
+  },
+  {
+   "name": "[chromebook] (10) new-event form rotameter is a pick-list",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (9) Location is not a required answer (it would block complete)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (9) event screen: '1 sample has no location: Sample 1' + chip on the row",
+   "ok": true,
+   "detail": "{\"line\":\"⚠ 1 sample has no location: Sample 1\",\"chips\":1}"
+  },
+  {
+   "name": "[chromebook] (9) Mark event complete: warning lists sample 1 (no location), not the blank or sample 2, and can be confirmed",
+   "ok": true,
+   "detail": "Location missing\n\n1 sample has no location. Tap a sample to add it, or carry on and add it later.\n\nSample 1 · Airborne · personal · Ann Nolocation\n\nGo back\nMark the event complete anyway"
+  },
+  {
+   "name": "[chromebook] (9) Go back: event not marked complete",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (9) Create COC shows the same warning",
+   "ok": true,
+   "detail": "Location missing\n\n1 sample has no location. Tap a sample to add it, or carry on and add it later.\n\nSample 1 · Airborne · personal · Ann Nolocation\n\nGo back\nCreate the COC anyway"
+  },
+  {
+   "name": "[chromebook] (9) the link opens the sample, which shows 'Location missing'",
+   "ok": true,
+   "detail": "⚠ Location missing. Add where this sample was taken (needed on the COC and the report)."
+  },
+  {
+   "name": "[chromebook] (9) 'Mark the event complete anyway' marks it, notes it on the sample, and 'Create COC now?' does not ask twice",
+   "ok": true,
+   "detail": "{\"ready\":true,\"a\":[\"complete\",\"coc\"]}"
+  },
+  {
+   "name": "[chromebook] (9) an empty Location on a stopped sample can be filled with no reason; the notice goes",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (9) with locations in, no warning and no event notice",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] (7) admin sees 'Needs office approval' with the Chromebook press",
+   "ok": true,
+   "detail": "Needs office approval\n\nSTART / STOP or times were entered on a laptop or Chromebook, not at the pump. Check them, then approve.\n\nSTART pressed on a Chromebook · 28 Nov, 12:00 pm AWST\nApprove times (office)"
+  },
+  {
+   "name": "[chromebook] (7) event list shows chips and a count",
+   "ok": true,
+   "detail": "{\"chip\":7,\"line\":\"5 samples need office approval (laptop / Chromebook START, STOP or typed times).\"}"
+  },
+  {
+   "name": "[chromebook] (7) staff see 'Flagged to the office' and are told to correct the time on their phone; no Approve button",
+   "ok": true,
+   "detail": "{\"card\":\"Flagged to the office\\n\\nSTART / STOP or a time on this sample was entered on a laptop or Chromebook, not at the pump. If a time is wrong, open this sample on your phone and use Edit time to correct it. The office checks and approves it.\\n\\nSTART pressed on a Chromebook · 28 Nov, 12:00 pm AWST\",\"admin\":false,\"btn\":false}"
+  },
+  {
+   "name": "[chromebook] (7) staff event list: 'flagged to office' chips + count with the phone hint",
+   "ok": true,
+   "detail": "{\"chip\":5,\"line\":\"5 samples need office approval (laptop / Chromebook START, STOP or typed times). If a time is wrong, correct it on your phone with Edit time.\"}"
+  },
+  {
+   "name": "[chromebook] (7) Approve clears the flag and keeps who / when",
+   "ok": true,
+   "detail": "{\"f\":false,\"a\":{\"at\":\"2026-11-28T04:01:04.659Z\",\"by\":\"V46 Test <field.test@envss.com.au> · Chromebook\",\"device\":\"Chromebook\",\"count\":1,\"v\":\"48.19\"},\"btn\":false}"
+  },
+  {
+   "name": "[chromebook] reload keeps the saved values",
+   "ok": true,
+   "detail": "h1:running::Acme Mining:FR4A40BNBN-NL-02 h2:ended:Bay 2 south::FR4A40BNBN-NL-02 h4:prepped::Newco Scaffolding:FR4A40BNBN-NL-02 h7:running:Bay 7::4435 l1:ended:Pottery room:Acme Mining:FR4A40BNBN-NL-02 n1:running:Workshop:Acme Mining:"
+  },
+  {
+   "name": "[chromebook] other samples untouched",
+   "ok": true,
+   "detail": "[[\"ended\",0,false,\"23555270\"],[\"ended\",0,false,\"FR4A40BNBN-NL-02\"],[\"ended\",0,false,\"FR4A40BNBN-NL-02\"],[\"running\",0,false,\"FR4A40BNBN-NL-01\"],[\"ended\",0,false,\"FR4A40BNBN-NL-02\"],[\"ended\",0,false,\"FR4A40BNBN-NL-02\"]]"
+  },
+  {
+   "name": "[chromebook] no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook] no unexpected native alerts",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7 counter] clean signed-out device: 21 deleted samples with an old 'Not stated' never show as 'still uploading'",
+   "ok": true,
+   "detail": "{\"st\":{\"pending\":0,\"trains\":0,\"text\":\"Online · Everything uploaded · Last synced 12:01 pm · Project list updated 12:01 pm\"},\"bad\":[]}"
+  },
+  {
+   "name": "[pixel7 counter] only reads were made",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7 counter] no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook counter] clean signed-out device: 21 deleted samples with an old 'Not stated' never show as 'still uploading'",
+   "ok": true,
+   "detail": "{\"st\":{\"pending\":0,\"trains\":0,\"text\":\"Online · Everything uploaded · Last synced 12:01 pm · Project list updated 12:01 pm\"},\"bad\":[]}"
+  },
+  {
+   "name": "[chromebook counter] only reads were made",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook counter] no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[pixel7 deep link] signed in: #event=eL&sample=l2 opens that sample and clears the hash",
+   "ok": true,
+   "detail": "{\"p\":\"train\",\"t\":\"l2\",\"h\":\"\"}"
+  },
+  {
+   "name": "[pixel7 deep link] signed out: sign-in screen, link kept in sessionStorage",
+   "ok": true,
+   "detail": "{\"gate\":true,\"stash\":\"{\\\"event\\\":\\\"eH\\\",\\\"sample\\\":\\\"h3\\\",\\\"at\\\":1795838485927}\"}"
+  },
+  {
+   "name": "[pixel7 deep link] after sign-in the stashed sample opens once",
+   "ok": true,
+   "detail": "{\"p\":\"train\",\"t\":\"h3\",\"stash\":null}"
+  },
+  {
+   "name": "[pixel7 deep link] #event= only opens the event",
+   "ok": true,
+   "detail": "{\"p\":\"event\",\"e\":\"eF\"}"
+  },
+  {
+   "name": "[pixel7 deep link] no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[chromebook deep link] signed in: #event=eL&sample=l2 opens that sample and clears the hash",
+   "ok": true,
+   "detail": "{\"p\":\"train\",\"t\":\"l2\",\"h\":\"\"}"
+  },
+  {
+   "name": "[chromebook deep link] signed out: sign-in screen, link kept in sessionStorage",
+   "ok": true,
+   "detail": "{\"gate\":true,\"stash\":\"{\\\"event\\\":\\\"eH\\\",\\\"sample\\\":\\\"h3\\\",\\\"at\\\":1795838498805}\"}"
+  },
+  {
+   "name": "[chromebook deep link] after sign-in the stashed sample opens once",
+   "ok": true,
+   "detail": "{\"p\":\"train\",\"t\":\"h3\",\"stash\":null}"
+  },
+  {
+   "name": "[chromebook deep link] #event= only opens the event",
+   "ok": true,
+   "detail": "{\"p\":\"event\",\"e\":\"eF\"}"
+  },
+  {
+   "name": "[chromebook deep link] no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "[narrow Chromebook] (1) laptop warning fits at phone width",
+   "ok": true,
+   "detail": "Not at the pump?\n\nYou're on a Chromebook, not a phone at the pump. START belongs on your phone, at the pump 📱\n\nYou can still press START here. The time is flagged for the office to approve.\n\nCancel\nPress START anyway"
+  },
+  {
+   "name": "[narrow Chromebook] (1) STOP gets the laptop warning too (after the 14 h one)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no request left the box except the CDN libraries; every Supabase call was answered by the in-memory mock",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}

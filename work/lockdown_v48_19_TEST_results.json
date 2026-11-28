@@ -1,0 +1,1244 @@
+[
+ {
+  "who": "anon",
+  "test": "RPC envss_log_app_open (must be blocked)",
+  "before": "DENIED/ERR 42501 permission denied for function envss_log_app_open",
+  "after_a": "DENIED/ERR 42501 permission denied for function envss_log_app_open",
+  "after_ab": "DENIED/ERR 42501 permission denied for function envss_log_app_open",
+  "rolled_back": "DENIED/ERR 42501 permission denied for function envss_log_app_open",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count app_settings",
+  "before": "DENIED/ERR 42501 permission denied for table app_settings",
+  "after_a": "DENIED/ERR 42501 permission denied for table app_settings",
+  "after_ab": "DENIED/ERR 42501 permission denied for table app_settings",
+  "rolled_back": "DENIED/ERR 42501 permission denied for table app_settings",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_admins",
+  "before": "DENIED/ERR 42501 permission denied for table envss_admins",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_admins",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_admins",
+  "rolled_back": "DENIED/ERR 42501 permission denied for table envss_admins",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_deletions",
+  "before": "141",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_deletions",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_deletions",
+  "rolled_back": "141",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_drive_copies",
+  "before": "DENIED/ERR 42501 permission denied for table envss_drive_copies",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_drive_copies",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_drive_copies",
+  "rolled_back": "DENIED/ERR 42501 permission denied for table envss_drive_copies",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_events",
+  "before": "49",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_events",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_events",
+  "rolled_back": "49",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_fit_reports",
+  "before": "DENIED/ERR 42501 permission denied for table envss_fit_reports",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_fit_reports",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_fit_reports",
+  "rolled_back": "DENIED/ERR 42501 permission denied for table envss_fit_reports",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_hires",
+  "before": "DENIED/ERR 42501 permission denied for table envss_hires",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_hires",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_hires",
+  "rolled_back": "DENIED/ERR 42501 permission denied for table envss_hires",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_login_log",
+  "before": "DENIED/ERR 42501 permission denied for table envss_login_log",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_login_log",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_login_log",
+  "rolled_back": "DENIED/ERR 42501 permission denied for table envss_login_log",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_projects",
+  "before": "5187",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_projects",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_projects",
+  "rolled_back": "5187",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_state",
+  "before": "0",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_state",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_state",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count envss_trains",
+  "before": "409",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_trains",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_trains",
+  "rolled_back": "409",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_dash_apps",
+  "before": "196",
+  "after_a": "196",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rolled_back": "196",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_dash_fit_tests",
+  "before": "7588",
+  "after_a": "7588",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rolled_back": "7588",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_dash_invoices",
+  "before": "9035",
+  "after_a": "9035",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rolled_back": "9035",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_dash_leads",
+  "before": "15654",
+  "after_a": "15654",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rolled_back": "15654",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_dash_projects",
+  "before": "7558",
+  "after_a": "7558",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rolled_back": "7558",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_field_afm_events",
+  "before": "DENIED/ERR 42501 permission denied for view v_field_afm_events",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_field_afm_events",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_field_afm_events",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_field_afm_events",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_field_afm_samples",
+  "before": "DENIED/ERR 42501 permission denied for view v_field_afm_samples",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_field_afm_samples",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_field_afm_samples",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_field_afm_samples",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_field_hyg_events",
+  "before": "DENIED/ERR 42501 permission denied for view v_field_hyg_events",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_field_hyg_events",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_field_hyg_events",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_field_hyg_events",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_field_podio_events",
+  "before": "DENIED/ERR 42501 permission denied for view v_field_podio_events",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_field_podio_events",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_field_podio_events",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_field_podio_events",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_field_podio_sync",
+  "before": "DENIED/ERR 42501 permission denied for view v_field_podio_sync",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_field_podio_sync",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_field_podio_sync",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_field_podio_sync",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "SELECT count v_field_pumps",
+  "before": "107",
+  "after_a": "107",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_field_pumps",
+  "rolled_back": "107",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W deletions insert",
+  "before": "ok rows=1",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_deletions",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_deletions",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W events delete",
+  "before": "ok rows=0",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_events",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_events",
+  "rolled_back": "ok rows=0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W events insert",
+  "before": "ok rows=1",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_events",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_events",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W events update",
+  "before": "ok rows=0",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_events",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_events",
+  "rolled_back": "ok rows=0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W login_log insert",
+  "before": "DENIED/ERR 42501 permission denied for table envss_login_log",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_login_log",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_login_log",
+  "rolled_back": "DENIED/ERR 42501 permission denied for table envss_login_log",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W photo upload (storage insert)",
+  "before": "ok rows=1",
+  "after_a": "DENIED/ERR 42501 new row violates row-level security policy for table \"object",
+  "after_ab": "DENIED/ERR 42501 new row violates row-level security policy for table \"object",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W projects delete",
+  "before": "ok rows=0",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_projects",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_projects",
+  "rolled_back": "ok rows=0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W projects insert",
+  "before": "ok rows=1",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_projects",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_projects",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W state insert",
+  "before": "ok rows=1",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_state",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_state",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W trains delete",
+  "before": "ok rows=0",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_trains",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_trains",
+  "rolled_back": "ok rows=0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anon",
+  "test": "W trains insert",
+  "before": "ok rows=1",
+  "after_a": "DENIED/ERR 42501 permission denied for table envss_trains",
+  "after_ab": "DENIED/ERR 42501 permission denied for table envss_trains",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count app_settings",
+  "before": "1",
+  "after_a": "1",
+  "after_ab": "1",
+  "rolled_back": "1",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_admins",
+  "before": "1",
+  "after_a": "1",
+  "after_ab": "1",
+  "rolled_back": "1",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_deletions",
+  "before": "141",
+  "after_a": "141",
+  "after_ab": "141",
+  "rolled_back": "141",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_drive_copies",
+  "before": "171",
+  "after_a": "171",
+  "after_ab": "171",
+  "rolled_back": "171",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_events",
+  "before": "49",
+  "after_a": "49",
+  "after_ab": "49",
+  "rolled_back": "49",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_fit_reports",
+  "before": "1",
+  "after_a": "1",
+  "after_ab": "1",
+  "rolled_back": "1",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_hires",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_login_log",
+  "before": "385",
+  "after_a": "385",
+  "after_ab": "385",
+  "rolled_back": "385",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_projects",
+  "before": "5187",
+  "after_a": "5187",
+  "after_ab": "5187",
+  "rolled_back": "5187",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_state",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count envss_trains",
+  "before": "409",
+  "after_a": "409",
+  "after_ab": "409",
+  "rolled_back": "409",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_dash_apps",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_dash_fit_tests",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_dash_invoices",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_dash_leads",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_dash_projects",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_field_afm_events",
+  "before": "4",
+  "after_a": "4",
+  "after_ab": "4",
+  "rolled_back": "4",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_field_afm_samples",
+  "before": "40",
+  "after_a": "40",
+  "after_ab": "40",
+  "rolled_back": "40",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_field_hyg_events",
+  "before": "150",
+  "after_a": "150",
+  "after_ab": "150",
+  "rolled_back": "150",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_field_podio_events",
+  "before": "4",
+  "after_a": "4",
+  "after_ab": "4",
+  "rolled_back": "4",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_field_podio_sync",
+  "before": "4",
+  "after_a": "4",
+  "after_ab": "4",
+  "rolled_back": "4",
+  "rollback_restores": true
+ },
+ {
+  "who": "admin",
+  "test": "SELECT count v_field_pumps",
+  "before": "107",
+  "after_a": "107",
+  "after_ab": "107",
+  "rolled_back": "107",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count app_settings",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_admins",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_deletions",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_drive_copies",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_events",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_fit_reports",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_hires",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_login_log",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_projects",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_state",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count envss_trains",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_dash_apps",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_dash_fit_tests",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_dash_invoices",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_dash_leads",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_dash_projects",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_field_afm_events",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_field_afm_samples",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_field_hyg_events",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_field_podio_events",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_field_podio_sync",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "anonsignin",
+  "test": "SELECT count v_field_pumps",
+  "before": "107",
+  "after_a": "107",
+  "after_ab": "107",
+  "rolled_back": "107",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count app_settings",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_admins",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_deletions",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_drive_copies",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_events",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_fit_reports",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_hires",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_login_log",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_projects",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_state",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count envss_trains",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_dash_apps",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_dash_fit_tests",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_dash_invoices",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_dash_leads",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_dash_projects",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_field_afm_events",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_field_afm_samples",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_field_hyg_events",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_field_podio_events",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_field_podio_sync",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "SELECT count v_field_pumps",
+  "before": "107",
+  "after_a": "107",
+  "after_ab": "107",
+  "rolled_back": "107",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "W events insert (must be blocked)",
+  "before": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "after_a": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "after_ab": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "rolled_back": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "rollback_restores": true
+ },
+ {
+  "who": "nonenvss",
+  "test": "W login_log insert (must be blocked)",
+  "before": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "after_a": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "after_ab": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "rolled_back": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "RPC envss_log_app_open",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count app_settings",
+  "before": "1",
+  "after_a": "1",
+  "after_ab": "1",
+  "rolled_back": "1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_admins",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_deletions",
+  "before": "141",
+  "after_a": "141",
+  "after_ab": "141",
+  "rolled_back": "141",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_drive_copies",
+  "before": "171",
+  "after_a": "171",
+  "after_ab": "171",
+  "rolled_back": "171",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_events",
+  "before": "49",
+  "after_a": "49",
+  "after_ab": "49",
+  "rolled_back": "49",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_fit_reports",
+  "before": "1",
+  "after_a": "1",
+  "after_ab": "1",
+  "rolled_back": "1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_hires",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_login_log",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_projects",
+  "before": "5187",
+  "after_a": "5187",
+  "after_ab": "5187",
+  "rolled_back": "5187",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_state",
+  "before": "0",
+  "after_a": "0",
+  "after_ab": "0",
+  "rolled_back": "0",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count envss_trains",
+  "before": "409",
+  "after_a": "409",
+  "after_ab": "409",
+  "rolled_back": "409",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_dash_apps",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_apps",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_dash_fit_tests",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_fit_tests",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_dash_invoices",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_invoices",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_dash_leads",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_leads",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_dash_projects",
+  "before": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "after_a": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "after_ab": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rolled_back": "DENIED/ERR 42501 permission denied for view v_dash_projects",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_field_afm_events",
+  "before": "4",
+  "after_a": "4",
+  "after_ab": "4",
+  "rolled_back": "4",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_field_afm_samples",
+  "before": "40",
+  "after_a": "40",
+  "after_ab": "40",
+  "rolled_back": "40",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_field_hyg_events",
+  "before": "150",
+  "after_a": "150",
+  "after_ab": "150",
+  "rolled_back": "150",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_field_podio_events",
+  "before": "4",
+  "after_a": "4",
+  "after_ab": "4",
+  "rolled_back": "4",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_field_podio_sync",
+  "before": "4",
+  "after_a": "4",
+  "after_ab": "4",
+  "rolled_back": "4",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "SELECT count v_field_pumps",
+  "before": "107",
+  "after_a": "107",
+  "after_ab": "107",
+  "rolled_back": "107",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W deletions insert (tombstone)",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W events update",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W events upsert (insert path)",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W events upsert (update path)",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W field-project insert",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W field-project update",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W login_log insert as someone else (must stay blocked)",
+  "before": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "after_a": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "after_ab": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "rolled_back": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W login_log insert own row",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W photo upload (storage insert)",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W podio-project insert (must stay blocked)",
+  "before": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "after_a": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "after_ab": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "rolled_back": "DENIED/ERR 42501 new row violates row-level security policy for table \"envss_",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W podio-project update (must stay 0 rows)",
+  "before": "ok rows=0",
+  "after_a": "ok rows=0",
+  "after_ab": "ok rows=0",
+  "rolled_back": "ok rows=0",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W trains upsert (insert path)",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ },
+ {
+  "who": "staff",
+  "test": "W trains upsert (update path)",
+  "before": "ok rows=1",
+  "after_a": "ok rows=1",
+  "after_ab": "ok rows=1",
+  "rolled_back": "ok rows=1",
+  "rollback_restores": true
+ }
+]

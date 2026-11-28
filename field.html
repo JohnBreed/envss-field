@@ -988,15 +988,50 @@ async function sbUpsert(table, row) {
 /* The ONE place that decides where the project list comes from.
    Today: envss_projects, paged. Later: swap to the Dashboard Bot's read-only view (v_dash_projects) by
    returning rows shaped as { id, payload: { id, source, number, name, status, ... }, updated_at }. */
-async function fetchProjectRows() {
-  const c = sbCfg();
+/* v48.19: download only what the app can use. Before: every Podio project ever copied (5,187 rows, 6 requests, about 2.6 MB)
+   on every start. Now: (1) field-created projects, (2) active Podio jobs, using the same rule the app already applies on the device
+   (isActiveProjectRec: status not Closed / Cancelled / On Hold, any job type, so AFM jobs typed HAZ stay), (3) safety net: any
+   project that already has a field event (server list, this device's list and queued project edits), even if Podio has since
+   closed it, so nothing in use disappears. Nothing is deleted anywhere; persist() already dropped closed, unreferenced Podio jobs
+   from the device copy, so this only stops downloading them. */
+function activeProjectsQuery() {
+  const f = "(payload->>source.is.null,payload->>source.neq.podio,payload->>status.not.in.(Closed,Cancelled,\"On Hold\"))";
+  return "&or=" + encodeURIComponent(f);
+}
+async function fetchProjectPages(url) {
   const all = [];
   for (let offset = 0; offset < 50000; offset += 1000) {
-    const res = await sbFetch(c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&order=id.asc&limit=1000&offset=" + offset, { headers: sbHeaders() });
-    if (!res.ok) throw new Error("envss_projects " + res.status);
+    const res = await sbFetch(url + "&offset=" + offset, { headers: sbHeaders() });
+    if (!res.ok) { const e = new Error("envss_projects " + res.status); e.status = res.status; throw e; }
     const rows = await res.json();
     all.push(...rows);
     if (rows.length < 1000) break;
+  }
+  return all;
+}
+async function fetchProjectRows() {
+  const c = sbCfg();
+  const base = c.supabaseUrl + "/rest/v1/envss_projects?select=id,payload,updated_at&order=id.asc&limit=1000";
+  let all;
+  try { all = await fetchProjectPages(base + activeProjectsQuery()); }
+  catch (e) {
+    if (e && e.status === 400) { all = await fetchProjectPages(base); return all; }   /* filter rejected by the server: old full download */
+    throw e;
+  }
+  /* safety net: projects that have a field event, from the server's event list plus this device's own */
+  const want = new Set();
+  const er = await sbFetch(c.supabaseUrl + "/rest/v1/envss_events?select=project_id&limit=5000", { headers: sbHeaders() });
+  if (!er.ok) throw new Error("envss_events " + er.status);
+  (await er.json()).forEach(r => { if (r && r.project_id) want.add(String(r.project_id)); });
+  (db.events || []).forEach(e => { if (e && e.projectId) want.add(String(e.projectId)); });
+  Object.keys(syncState.pending || {}).forEach(k => { if (k.indexOf("projects:") === 0) want.add(k.slice(9)); });
+  const have = new Set(all.map(r => r.id));
+  const missing = Array.from(want).filter(id => !have.has(id));
+  for (let i = 0; i < missing.length; i += 40) {
+    const ids = missing.slice(i, i + 40).map(id => '"' + String(id).replace(/"/g, "") + '"').join(",");
+    const res = await sbFetch(base + "&id=in." + encodeURIComponent("(" + ids + ")"), { headers: sbHeaders() });
+    if (!res.ok) throw new Error("envss_projects " + res.status);
+    all.push(...(await res.json()));
   }
   return all;
 }
