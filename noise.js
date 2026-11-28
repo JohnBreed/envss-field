@@ -336,7 +336,8 @@
   function valueRow(t, k) {
     const n = nz(t), x = n.values[k] || {};
     const filled = String(x.v == null ? "" : x.v).trim() !== "";
-    const req = k === "LAeq" && !filled;
+    /* v48.19c: LAeq and LCpeak are both required before a noise sample can be stopped (LCpeak shown as required until the sample has ended) */
+    const req = !filled && (k === "LAeq" || (k === "LCpeak" && !t.endAt));
     if (n.entry === "photo") {
       const shown = x.v ? esc2(x.v) : "—";
       return `<div class="nz-val" data-nz-row="${k}"><label>${VAL[k]}${req ? ' <span class="nz-req">required</span>' : ""}</label>
@@ -516,6 +517,35 @@
     const el = e.target; if (!el || !el.dataset || !el.dataset.nzTake || !el.files || !el.files[0]) return;
     const t = curTrain(); if (!t) return;
     takePhoto(t, el.dataset.nzTake, el.files[0]);
+  }
+
+  /* v48.19c (John, 28 Nov 2026): "they should have to enter the results before stopping". LAeq and LCpeak must both be numbers before a noise sample
+     (personal, SLM or static dose badge) can be stopped, by STOP or by typing a stop time. Guards apply going forward: a sample already stopped is not touched.
+     Personal samples are also asked for hearing protection if it has not been answered (same hpdAsked / hpd record the sample screen uses). */
+  function stopGaps(t) {
+    const out = [];
+    if (!t || !C().isNoise(t) || C().isBlank(t) || t.rejectAsked === "yes") return out;
+    if (num(val(t, "LAeq")) == null) out.push("LAeq");
+    if (num(val(t, "LCpeak")) == null) out.push("LCpeak");
+    return out;
+  }
+  const needsHpdAtStop = t => !!t && C().isNoise(t) && !C().isBlank(t) && !C().isStatic(t) && !t.hpdAsked;
+  function setStopValues(t, vals, hpd) {
+    const n = nz(t, true), at = new Date().toISOString();
+    Object.keys(vals || {}).forEach(k => {
+      const v = String(vals[k] == null ? "" : vals[k]).trim().replace(",", ".");
+      if (!v) return;
+      const was = (n.values[k] || {}).v;
+      n.values[k] = { v, src: "manual", at, via: "stop" };
+      note(t, VAL[k] + " entered at STOP", (was ? was + " → " : "") + v + " dB", "noise.values." + k, was || "", v);
+    });
+    if (hpd && hpd.asked) {
+      t.hpdAsked = hpd.asked;
+      t.hpd = Object.assign({}, t.hpd || {}, { worn: hpd.asked });
+      if (hpd.asked === "yes") Object.assign(t.hpd, { model: hpd.model || t.hpd.model || "", style: hpd.style || t.hpd.style || "", classRating: hpd.classRating || t.hpd.classRating || "" });
+      note(t, "Hearing protection answered at STOP", hpd.asked, "hpdAsked", "", hpd.asked);
+    }
+    C().saveQuiet();
   }
 
   /* follow-up list: LAeq required (A3), method and entry chosen */
@@ -852,7 +882,7 @@
   }
   if (document.readyState === "complete") setTimeout(installLate, 0); else g.addEventListener("load", installLate);
 
-  g.ENVSS_NOISE = { version: NOISE_VERSION, loaded: true, rejects, startGaps, equipHtml, hpdFields, installTrainLayer,
+  g.ENVSS_NOISE = { version: NOISE_VERSION, loaded: true, rejects, startGaps, equipHtml, hpdFields, installTrainLayer, stopGaps, needsHpdAtStop, setStopValues,
     flags, parseScreen, calState, duplicates, extraItems, device,
     addMeasurement, isNoiseEvent, nextEnvssNo, usedValues, optionOf };
 })(window);
