@@ -1,0 +1,452 @@
+{
+ "version": "48.19-labsync1",
+ "total": 89,
+ "failed": 0,
+ "results": [
+  {
+   "name": "csv: quotes and commas",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "esdat: 6 client samples, QC excluded",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "esdat: QC rows never become results",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "esdat: < prefix kept, value is the limit",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "esdat: Method_Type splits the three dust results",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "esdat: unmapped analyte listed, not dropped",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "esdat: sampled date parsed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "receipt: 6 samples across 2 pages",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "receipt: client ID is the second line only (page footer ignored)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "receipt: dates",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "receipt: bullets mapped to the heading at their x",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "receipt: heading words join bottom to top",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "receipt: header",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "receipt: bbox adapter",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "field: app payload normalised",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "field: kinds",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "field: flat table",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "match: field to receipt to ESDAT",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "match: field sample missing from receipt listed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "match: receipt/ESDAT sample with no field listed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "match: unused prepared sample listed, not an error",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "match: no receipt without ESDAT",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "match: grid cross-check passes when headings differ only by &",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "match: grid gap and date difference reported",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "match: ESDAT Field_ID disagreeing with the receipt is a conflict, not forced",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "volume: 2 L/min x 480 min = 960 L",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "volume: average of start and stop flow",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "volume: stop before start refused",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "mass: mg, ug, ng",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: 8 h 5/2 cat 3 = 1",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: 12 h 7/7 cat 3 = 40/42",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: 12 h 6/6 cat 3 = 40/42",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: 12 h 4/3 cat 3 = 40/48",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: cat 2 is daily 8/Hd",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: cat 4 takes the lower",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: factor above 1 is capped at 1 and says so",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: cat 1 never adjusted",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: shift outside 4 to 16 h not adjusted and flagged",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dmirs: missing roster for a weekly category is flagged, daily still works",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "legacy factor (issued report Table 2): 12 h 7/7 cat 3 = 0.932",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "dates: before 1 Dec 2026 both, from 1 Dec WEL only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "risk classes: >100 high, >50 medium, else low",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "pct text bins below 10 like the report",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limits: quartz 0.05 WES and WEL",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limits: gypsum WES 10, WEL 1.5 respirable",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limits: DPM WEL 0.01 as respirable EC, no SWA WES row (benchmark flagged)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limits: welding fume NOC 1 mg/m3 both",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limits: manganese WES 1, WEL inhalable 0.1; nickel WES 1, WEL 0.1; zinc oxide fume 5 -> 2",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limits: dust NOC has no WEL number",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limits: every limit says where it came from",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "limits: categories (DMIRS 2019 Table 1)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: one row per sample x analyte",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: unmatched field sample has no lab number and says why",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: unused sample (never sent) has no rows",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: TWA = mass / volume",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: lab ug converted to mg first",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: < LOR kept as a limit, flagged",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: quartz 12 h 7/7: Fa 0.9524, adj limit 0.04762, 52.5% Medium",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: sample date before 1 Dec compares WES and WEL",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: gypsum has WES 10 and WEL 1.5 (both compared)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: iron compared as Fe, Fe2O3 row is information only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: manganese cat 4 uses lower factor",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: lab analyte with no map is listed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: field blank has result, no TWA, no limit",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: blank note says so",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: calc note shows mass, volume, concentration, roster, factor and limits",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: sample dated 1 Dec 2026 gets WEL only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rows: sample dated 30 Nov 2026 gets both",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "sheet table: header + a row per result, same width",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "csv out: notes with commas stay in one cell",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "report: rows found in tables 5 to 8 only (TOC line ignored)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "report: occupation containing 'Gypsum' is not an analyte",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "report: number and % printed on the neighbouring line are picked up",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "report: < kept, table 7 rows have no label column",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "report: group of 4 welding rows belongs to the one sample",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: identical values are not differences",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: value that cannot come from the lab mass is called out",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: 'ours' < LOR shows the report dropping the <",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: legacy factor explains a % difference",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: a printed 50% is medium in the report; 48.7% of the adjusted limit is low in ours: class difference listed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: report rounding up explained",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: report Fe2O3 value matches the lab; basis difference is noted",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: DPM at the reporting limit matches",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: our result missing from the report is listed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "compare: report date different from app date listed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "table 2: rosters and rows parsed (name wrapped over two lines)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "table 2: differences are the weekly-factor rosters only, each explained by the legacy method",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "table 2: 12 h 7/7 respirable dust: report 2.7961, ours 2.857",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "core: no network, no storage, no file access, no e-mail address or phone number in it",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}
